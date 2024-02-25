@@ -18,10 +18,19 @@ class CRavenBMI : public bmixx::Bmi
     optStruct   Options;
     time_struct tt;
 
+    // vectors storing input/output variable names and ids are filled in the Initialize function
+    std::vector<std::string> input_var_names;
+    std::vector<int>         input_var_ids;
+    std::vector<std::string> output_var_names;
+    std::vector<int>         output_var_ids;
+    std::vector<int>         output_var_layer_index;
+    std::vector<std::string> output_var_type;
+
     // Internal functions for reading the YAML config file.
-    void ReadConfigFile(std::string config_file);
-    std::vector<char *> SplitLine(std::string line);
-    void ProcessConfigFileArgument(std::string config_key, std::string config_value);
+    void _ReadConfigFile(std::string config_file);
+    std::vector<char *> _SplitLineByWhitespace(std::string line);
+    std::vector<std::string> _SplitLineByColon(std::string line);
+    bool _IsValidSubBasinStateVariable(std::string var_name);
 
   public:
     CRavenBMI();

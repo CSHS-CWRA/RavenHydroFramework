@@ -10,7 +10,7 @@ const int MAX_TERMS_PER_GROUP=10;
 //////////////////////////////////////////////////////////////////
 /// constructor and destructor of expression term structure
 //
-expressionTerm::expressionTerm() 
+expressionTerm::expressionTerm()
 {
   type =TERM_UNKNOWN;
   mult =1.0;
@@ -62,7 +62,7 @@ dv_constraint::dv_constraint()
   penalty_over=1.0;
   slack_ind1=DOESNT_EXIST;
   slack_ind2=DOESNT_EXIST;
-  
+
   penalty_value=0;
 
   nConditions=0;
@@ -70,7 +70,7 @@ dv_constraint::dv_constraint()
 }
 dv_constraint::~dv_constraint()
 {
-  delete pExpression; 
+  delete pExpression;
   delete [] pConditions; nConditions=0;
 }
 void dv_constraint::AddCondition(dv_condition* pCond)
@@ -148,7 +148,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
   size_t i1=s.find("[");
   size_t i2=s.find("]");
   size_t i3=s.find("(");
-  
+
   if ((i1 != NPOS) && (i2 != NPOS) && (i3==NPOS)) { //array NOT nested within function
     string contents=s.substr(i1+1,i2-i1); cout<<" BRACKET CONTENTS: ["<<contents<<"]";
     n=s_to_i(contents.c_str());
@@ -156,12 +156,12 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
   }
 
   //----------------------------------------------------------------------
-  if      (s[0]=='!')  //decision variable e.g., !Q234 or !D42a 
+  if      (s[0]=='!')  //decision variable e.g., !Q234 or !D42a
   {
     int p=DOESNT_EXIST;
     int d=DOESNT_EXIST;
-    
-    if ((s[1] == 'Q') || (s[1] == 'h')) 
+
+    if ((s[1] == 'Q') || (s[1] == 'h'))
     {
       string sbid=s.substr(2,s.size() - 2); cout << "EXP BASIN ID: " << sbid<<endl;
       long SBID=s_to_l(sbid.c_str());
@@ -180,8 +180,8 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
         WriteWarning(warn.c_str(),true);
         return false;
       }
-    } 
-    else if (s[1] == 'D')  { 
+    }
+    else if (s[1] == 'D')  {
       string demandID;
       if (s[1] == '.') {demandID=s.substr(2);} //!D1234
       else             {demandID=s.substr(1);} //!D.FarmerBobsDemand
@@ -190,35 +190,35 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
         warn = "ConvertToExpressionTerm: invalid demand ID or demand from disabled subbasin used in expression " +
                warnstring +" goal/constraint will be ignored";
         WriteWarning(warn.c_str(),true);
-        return false; 
+        return false;
       }
     }
     else{
       warn="ConvertToExpression:: Unparseable term in expression starting with ! - only !Q, !d, or !h currently supported. "+warnstring;
       ExitGracefully(warn.c_str(), BAD_DATA_WARN);
     }
-    
+
     if      (s[1]=='Q')
     {
       if      (_aResIndices[p] != DOESNT_EXIST) {
-        term->DV_ind = GetDVColumnInd(DV_QOUTRES, _aResIndices[p]);  
-      } 
+        term->DV_ind = GetDVColumnInd(DV_QOUTRES, _aResIndices[p]);
+      }
       else if (_aSBIndices[p]  != DOESNT_EXIST) {
-        term->DV_ind=GetDVColumnInd(DV_QOUT,_aSBIndices[p]);  
+        term->DV_ind=GetDVColumnInd(DV_QOUT,_aSBIndices[p]);
       }
       else {
-        //invalid p - likely not enabled 
+        //invalid p - likely not enabled
       }
-    } 
+    }
     else if (s[1]=='D')
     {
       term->DV_ind=GetDVColumnInd(DV_DELIVERY,d);
-    } 
+    }
     else if (s[1]=='h'){
-      term->DV_ind=GetDVColumnInd(DV_STAGE,_aResIndices[p]);  
-    } 
+      term->DV_ind=GetDVColumnInd(DV_STAGE,_aResIndices[p]);
+    }
     term->type=TERM_DV;
-  } 
+  }
   //----------------------------------------------------------------------
   else if (s.find("@ts(") != NPOS) //time series (e.g., @ts(my_time_series,n)
   {
@@ -235,7 +235,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
       warn="ConvertToExpressionTerm: missing end parentheses in @ts expression"+warnstring;
       ExitGracefully(warn.c_str(), BAD_DATA_WARN);
     }
-    if ((is != NPOS) && (ie != NPOS)) 
+    if ((is != NPOS) && (ie != NPOS))
     {
       bool found=false;
       name  = s.substr(is+4,ie-is);
@@ -246,7 +246,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
           term->pTS = _pUserTimeSeries[i];
           found=true;
         }
-      }  
+      }
       term->timeshift=index;
       term->type     =TERM_TS;
       if (!found) {
@@ -271,7 +271,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
       warn="ConvertToExpressionTerm: missing end paretheses in @lookup expression"+warnstring;
       ExitGracefully(warn.c_str(), BAD_DATA_WARN);
     }
-    if ((is != NPOS) && (ie != NPOS)) 
+    if ((is != NPOS) && (ie != NPOS))
     {
       bool found=false;
       name = s.substr(is+8,ie-is);
@@ -282,7 +282,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
           term->pLT = _pUserLookupTables[i];
           found=true;
         }
-      }  
+      }
       term->nested_exp1 =x_in;
       term->type        =TERM_LT;
       if (!found) {
@@ -307,7 +307,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
       warn="ConvertToExpressionTerm: missing end paretheses in @max expression"+warnstring;
       ExitGracefully(warn.c_str(), BAD_DATA_WARN);
     }
-    if ((is != NPOS) && (ie != NPOS)) 
+    if ((is != NPOS) && (ie != NPOS))
     {
       x_in = s.substr(is+5,ie-is);
       y_in = s.substr(ie+1,ip-ie);
@@ -332,7 +332,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
       warn="ConvertToExpressionTerm: missing end paretheses in @min expression"+warnstring;
       ExitGracefully(warn.c_str(), BAD_DATA_WARN);
     }
-    if ((is != NPOS) && (ie != NPOS)) 
+    if ((is != NPOS) && (ie != NPOS))
     {
       x_in = s.substr(is+5,ie-is);
       y_in = s.substr(ie+1,ip-ie);
@@ -357,12 +357,12 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
       warn="ConvertToExpressionTerm: missing end parentheses in @convert expression"+warnstring;
       ExitGracefully(warn.c_str(), BAD_DATA_WARN);
     }
-    if ((is != NPOS) && (ie != NPOS)) 
+    if ((is != NPOS) && (ie != NPOS))
     {
       bool found=false;
       x_in  = s.substr(is+8,ie-is);
       units = s.substr(ie+1,ip-ie);
- 
+
       if (units == "ACREFTD_TO_CMS") {term->value=1.0/ACREFTD_PER_CMS;     found=true;}
       if (units == "CMS_TO_ACREFTD") {term->value=ACREFTD_PER_CMS;     found=true;}
       if (units == "INCHES_TO_MM"  ) {term->value=MM_PER_INCH;           found=true;}
@@ -398,7 +398,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     }
   }
   //----------------------------------------------------------------------
-  else if (GetNamedConstant(s)!=RAV_BLANK_DATA) // named constant 
+  else if (GetNamedConstant(s)!=RAV_BLANK_DATA) // named constant
   {
     term->type=TERM_CONST;
     term->value=GetNamedConstant(s);
@@ -431,7 +431,7 @@ string expTypeToString(termtype &typ){
   }
   return "?";
 }
-void SummarizeExpression(const char **s, const int Len, expressionStruct* exp) 
+void SummarizeExpression(const char **s, const int Len, expressionStruct* exp)
 {
   cout<<"*"<<endl;
   cout<<"EXPRESSION: "<<endl;
@@ -449,14 +449,14 @@ void SummarizeExpression(const char **s, const int Len, expressionStruct* exp)
 /// \brief Parses demand constraint expression of form (e.g.,) A * B(x) * C + D * E - F = G * H(t) [NO PARENTHESES!]
 /// \params s [in] - array of strings of [size: Len]
 /// \param Len [in] - length of string array
-/// \param lineno [in] - line number of original expression in input file filename, referenced in errors 
-/// \param filename [in] - name of input file, referenced in errors 
+/// \param lineno [in] - line number of original expression in input file filename, referenced in errors
+/// \param filename [in] - name of input file, referenced in errors
 /// \returns expressionStruct: a 2D array of pointers to grouped terms (e.g., [0]:[A,B,C], [1]:[D,E], [2]:[F], [3]:[G,H] for above example)
 //
-expressionStruct *CDemandOptimizer::ParseExpression(const char **s, 
+expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
                                                        const int    Len,
                                                        const int    lineno,
-                                                       const string filename) const 
+                                                       const string filename) const
 {
   int rhs_ind=-1;
   exptype          type       [MAX_EXP_GROUPS];
@@ -470,18 +470,18 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
   {
     type[i]=EXP;
     if ((s[i][0]=='+') || (s[i][0]=='*') || (s[i][0]=='=') || (s[i][0]=='/') || (s[i][0]=='<') || (s[i][0]=='>')){
-      type[i] = EXP_OP; 
-    } 
+      type[i] = EXP_OP;
+    }
     if (s[i-1][0]=='/'){type[i]=EXP_INV; }
 
     if ((s[i][0]=='=') || (s[i][0]=='~')){
-      comp=COMPARE_IS_EQUAL;    rhs_ind=i; 
+      comp=COMPARE_IS_EQUAL;    rhs_ind=i;
     }
-    if (s[i][0]=='<'){//works for <=, too 
-      comp=COMPARE_LESSTHAN;    rhs_ind=i; 
+    if (s[i][0]=='<'){//works for <=, too
+      comp=COMPARE_LESSTHAN;    rhs_ind=i;
     }
     if (s[i][0]=='>'){ //works for >=, too
-      comp=COMPARE_GREATERTHAN; rhs_ind=i; 
+      comp=COMPARE_GREATERTHAN; rhs_ind=i;
     }
   }
   if (comp == COMPARE_BETWEEN) {
@@ -492,9 +492,9 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
   int  k=0;
   int  DVcount=0;
   bool valid;
-  for (int i = 1; i < Len; i++) 
+  for (int i = 1; i < Len; i++)
   {
-    if (type[i] != EXP_OP) 
+    if (type[i] != EXP_OP)
     {
       terms[j][k] = new expressionTerm();
       valid=ConvertToExpressionTerm(to_string(s[i]),terms[j][k],lineno,filename);
@@ -511,8 +511,8 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
       if (type[i] == EXP_INV) {
         terms[j][k]->reciprocal=true;
       }
-      //Handle nested expressions 
-      if (terms[j][k]->nested_exp1 != "") 
+      //Handle nested expressions
+      if (terms[j][k]->nested_exp1 != "")
       {
         terms[j][k] = new expressionTerm();
         valid=ConvertToExpressionTerm(terms[j][k]->nested_exp1, terms[j][k + 1],lineno, filename);
@@ -522,7 +522,7 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
         //TODO - THROW WARNING IF DV IS IN NESTED EXP
         k++;
       }
-      if (terms[j][k]->nested_exp2 != "") 
+      if (terms[j][k]->nested_exp2 != "")
       {
         terms[j][k] = new expressionTerm();
         valid=ConvertToExpressionTerm(terms[j][k]->nested_exp2, terms[j][k + 1],lineno, filename);
@@ -534,13 +534,13 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
       }
       k++;
     }
-    else if (i!=1){ //operator - expression product term finished and expression doesn't start with + or - 
+    else if (i!=1){ //operator - expression product term finished and expression doesn't start with + or -
       termspergrp[j]=k;
       j++; k=0; DVcount=0;
     }
   }
 
-  //copy to new structure 
+  //copy to new structure
   int nGroups=j;
   expressionStruct *tmp;
   tmp=new expressionStruct();
@@ -561,13 +561,13 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
 }
 
 void CDemandOptimizer::CheckConditions(const int ii, const time_struct &tt)
-{ 
+{
   double dv_value;
   int p;
   dv_constraint *pC=_pConstraints[ii];
   _pConstraints[ii]->conditions_satisfied=false;
-  //Check if conditionals are satisfied 
-  for (int j = 0; j < pC->nConditions; j++) 
+  //Check if conditionals are satisfied
+  for (int j = 0; j < pC->nConditions; j++)
   {
     dv_value=0.0;
     if (pC->pConditions[j]->dv_name == "DAY_OF_YEAR") {
@@ -576,7 +576,7 @@ void CDemandOptimizer::CheckConditions(const int ii, const time_struct &tt)
     else if (pC->pConditions[j]->dv_name == "MONTH") {
       dv_value=(double)(tt.month);
     }
-    else if (pC->pConditions[j]->dv_name[0] == '!') { //decision variable 
+    else if (pC->pConditions[j]->dv_name[0] == '!') { //decision variable
       char   tmp =pC->pConditions[j]->dv_name[1];
       string tmp2=pC->pConditions[j]->dv_name.substr(2);
       long ind=s_to_l(tmp2.c_str());
@@ -595,7 +595,7 @@ void CDemandOptimizer::CheckConditions(const int ii, const time_struct &tt)
         //int d=GetDemandIndex(tmp2);
         //int p=_aDemandBasin[d];
         //dv_value = _pModel->GetSubBasinByID(p)->GetDemandDelivery();
-        //TODO 
+        //TODO
       }
       //TODO : handle user specified DVs
     }
@@ -614,15 +614,15 @@ void CDemandOptimizer::CheckConditions(const int ii, const time_struct &tt)
   _pConstraints[ii]->conditions_satisfied=true;
 }
     //////////////////////////////////////////////////////////////////
-/// adds constraint ii to LP solve problem statement 
+/// adds constraint ii to LP solve problem statement
 /// \params ii [in] - index of constraint in _pConstraints array
 /// \param pLinProg [out] - pointer to valid lpsolve structure to be modified
-/// \param tt [in] - time structure  
-/// \param *col_ind [in] - empty array (with memory reserved) for storing column indices 
+/// \param tt [in] - time structure
+/// \param *col_ind [in] - empty array (with memory reserved) for storing column indices
 /// \param *row_val [in] - empty array (with memory reserved) for storing row values
 //
 #ifdef _LPSOLVE_
-void CDemandOptimizer::AddConstraintToLP(const int ii, lp_lib::lprec* pLinProg, const time_struct &tt, int *col_ind, double *row_val) const 
+void CDemandOptimizer::AddConstraintToLP(const int ii, lp_lib::lprec* pLinProg, const time_struct &tt, int *col_ind, double *row_val) const
 {
   dv_constraint *pC=_pConstraints[ii];
 
@@ -632,11 +632,11 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, lp_lib::lprec* pLinProg, 
   double RHS;
   bool   group_has_dv;
   int    DV_ind;
-  
+
   int    nn=(int)((tt.model_time+TIME_CORRECTION)/1.0);//Options.timestep; //TMP DEBUG
- 
+
   expressionStruct *pE= pC->pExpression;
-  
+
   RHS=0.0;
   for (int j = 0; j < pE->nGroups; j++)
   {
@@ -654,7 +654,7 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, lp_lib::lprec* pLinProg, 
         if (pE->pTerms[j][k]->reciprocal == true) {
           //TODO: SHOULD CHECK FOR DIVIDE BY ZERO, BUT DO WHAT?
           coeff /=  EvaluateTerm(pE->pTerms[j], k, nn)/(pE->pTerms[j][k]->mult);
-        } 
+        }
         else {
           coeff *= (pE->pTerms[j][k]->mult) * EvaluateTerm(pE->pTerms[j], k, nn);
         }
@@ -692,9 +692,9 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, lp_lib::lprec* pLinProg, 
   retval = lp_lib::add_constraintex(pLinProg,i,row_val,col_ind,constr_type,RHS);
   ExitGracefullyIf(retval==0,"AddConstraintToLP::Error adding user-specified constraint/goal",RUNTIME_ERR);
 }
-#endif 
+#endif
 //////////////////////////////////////////////////////////////////
-/// evaluates term in constraint/goal expression to numerical value (unless term is DV) 
+/// evaluates term in constraint/goal expression to numerical value (unless term is DV)
 /// \params pTerms [in] - pointer to array of terms in expression group (e.g., (A*B*C(D,E) stored as [A,B,C,D,E])
 /// \param k [in] index of term to be evaluated (e.g., 2 would correspond to C)
 /// \param nn [in] current timestep index
@@ -707,8 +707,8 @@ double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const
   int kk;
   int p;
   const expressionTerm *pT=pTerms[k];
-  
-  if (pT->type == TERM_DV) 
+
+  if (pT->type == TERM_DV)
   {
     //do nothing - can't evaluate
     return -1;
@@ -718,22 +718,22 @@ double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const
     nshift=pT->timeshift;
     return pT->pTS->GetValue(nn+nshift);
   }
-  else if (pT->type == TERM_LT) 
+  else if (pT->type == TERM_LT)
   {
     kk=pT->nested_ind1;
     x=EvaluateTerm(pTerms,kk,nn);
-    return pT->pLT->GetValue(x); //decision variable can't be in lookup table 
+    return pT->pLT->GetValue(x); //decision variable can't be in lookup table
   }
-  else if (pT->type == TERM_CONST) 
+  else if (pT->type == TERM_CONST)
   {
     return pT->value;
   }
   else if (pT->type == TERM_HISTORY) //e.g., !Q100[-3]
-  { 
+  {
     nshift=pT->timeshift;
     char   tmp =pT->origexp[1];
     string tmp2=pT->origexp.substr(2);
-    p=_pModel->GetSubBasinIndex(s_to_l(tmp2.c_str())); 
+    p=_pModel->GetSubBasinIndex(s_to_l(tmp2.c_str()));
     if (tmp=='Q'){return _aQhist[p][nshift]; }
     if (tmp=='h'){return _ahhist[p][nshift]; }
     if (tmp=='D'){return _aDhist[p][nshift]; }
@@ -747,10 +747,10 @@ double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const
     x=EvaluateTerm(pTerms,pT->nested_ind1,nn);
     y=EvaluateTerm(pTerms,pT->nested_ind2,nn);
     return min(x,y);
-  } 
+  }
   else if (pT->type == TERM_CONVERT) {
     x=EvaluateTerm(pTerms,pT->nested_ind1,nn);
     return x*pT->value;
-  } 
+  }
   return 0;
 }

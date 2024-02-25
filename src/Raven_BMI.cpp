@@ -10,13 +10,28 @@
 const int GRID_SUBBASIN=1;
 const int GRID_HRU     =0;
 
+// constants used in the config file (cfg_file) parsing
+const std::string CFG_FILE_CLIARGS_TAG = "cli_args";
+const std::string CFG_FILE_INPVARS_TAG = "input_vars";
+const std::string CFG_FILE_OUTVARS_TAG = "output_vars";
+const std::string CFG_FILE_IOVAR_FORCE_TAG = "forcing";
+const std::string CFG_FILE_IOVAR_HRUST_TAG = "hru_state";
+const std::string CFG_FILE_IOVAR_SUBST_TAG = "subbasin_state";
+
 //////////////////////////////////////////////////////////////////
 /// \brief RavenBMI class constructor and destructor
 //
 CRavenBMI::CRavenBMI()
 {
-  //not sure how this will work with global variable defined in RavenMain.
   pModel=NULL;
+
+  // vectors storing input/output variable names and ids are filled in the Initialize function
+  input_var_names = std::vector<std::string>();
+  input_var_ids   = std::vector<int>();
+  output_var_names= std::vector<std::string>();
+  output_var_ids  = std::vector<int>();
+  output_var_layer_index = std::vector<int>();
+  output_var_type = std::vector<std::string>();
 }
 
 CRavenBMI::~CRavenBMI() {}
@@ -27,7 +42,7 @@ CRavenBMI::~CRavenBMI() {}
 ///
 /// \param line [in] string to be split
 /// \return vector of char* containing the split string
-std::vector<char *> CRavenBMI::SplitLine(std::string line)
+std::vector<char *> CRavenBMI::_SplitLineByWhitespace(std::string line)
 {
   std::vector<char *> args;
   std::istringstream iss(line);
@@ -46,38 +61,47 @@ std::vector<char *> CRavenBMI::SplitLine(std::string line)
 
 
 //////////////////////////////////////////////////////////////////
-/// @brief Sets values to Option struct based on command line arguments
+/// \brief Splits a string by colon into a vector of char*
 ///
-/// @param config_key Argument key of the yaml config file
-/// @param config_value Value of the argument
-/// @return void - sets values in Options struct
-void CRavenBMI::ProcessConfigFileArgument(std::string config_key, std::string config_value)
+/// \param line [in] string to be split
+/// \return vector of char* containing the split string
+std::vector<std::string> CRavenBMI::_SplitLineByColon(std::string line)
 {
-  if (config_key == "rvi_file") {
-    Options.rvi_filename = config_value;
-  } else if (config_key == "rvp_file") {
-    Options.rvp_filename = config_value;
-  } else if (config_key == "rvh_file") {
-    Options.rvh_filename = config_value;
-  } else if (config_key == "rvt_file") {
-    Options.rvt_filename = config_value;
-  } else if (config_key == "rvc_file") {
-    Options.rvc_filename = config_value;
-  } else if (config_key == "rvg_file") {
-    Options.rvg_filename = config_value;
-  } else if (config_key == "rve_file") {
-    Options.rve_filename = config_value;
-  } else if (config_key == "rvl_file") {
-    Options.rvl_filename = config_value;
-  } else if (config_key == "output_directory") {
-    Options.output_dir = config_value;
-  } else if (config_key == "main_output_directory") {
-    Options.main_output_dir = config_value;
-  } else {
-    // TODO: include all remaining options
-    cout << "WARNING: Unknown key '" << config_key << "' in Raven config file. Ignoring it." << endl;
+  int config_str_ini, config_str_mid;
+  std::vector<std::string> args;
+
+  config_str_ini = 0;
+  config_str_mid = (int)line.find(":", config_str_ini);
+
+  // simple case: no colon found - return a list of one element (the whole string)
+  if (config_str_mid == -1) {
+    args.push_back(line);
+    return args;
   }
-  return;
+
+  // first string is the key, add it to the list
+  args.push_back(line.substr(config_str_ini, config_str_mid - config_str_ini));
+
+  // even if there is nothing after the colon, add an empty string to the list to communicate that
+  //  the line HAD a final colon
+  args.push_back(line.substr(config_str_mid + 1));
+
+  return args;
+}
+
+
+//////////////////////////////////////////////////////////////////
+/// \brief Checks if a subbasin variable is valid
+///
+/// \param var_name [in] name of the variable
+/// \return true if the variable is valid, false otherwise
+bool CRavenBMI::_IsValidSubBasinStateVariable(std::string var_name)
+{
+  if ((var_name == "OUTFLOW") || (var_name == "STREAMFLOW") ||
+      (var_name == "RESERVOIR_STAGE")) {
+    return true;
+  }
+  return false;
 }
 
 
@@ -86,7 +110,7 @@ void CRavenBMI::ProcessConfigFileArgument(std::string config_key, std::string co
 ///
 /// \param config_file [in] name of configuration file
 /// \return void - sets values in Options struct
-void CRavenBMI::ReadConfigFile(std::string config_file)
+void CRavenBMI::_ReadConfigFile(std::string config_file)
 {
   ifstream CONFIG;
   int config_str_ini, config_str_end;    // used to parse the lines of the config file
@@ -94,14 +118,18 @@ void CRavenBMI::ReadConfigFile(std::string config_file)
   bool cli_args = false;                 // used to check if command line arguments were used
   std::vector<char *> args;              // used to parse the command line arguments
   char** argv;
+  int config_value_id;
+  std::vector<std::string> line_split_by_colon;
+  bool listing_inp_vars = false;         // flag to check if the config file is listing input variables
+  bool listing_out_vars = false;         // flag to check if the config file is listing output variables
 
   CONFIG.open(config_file);
   if (CONFIG.fail()) {
-    cout << "Cannot find configuration file " << config_file << endl;
+    throw std::logic_error("Cannot find configuration file " + config_file);
     return;
   }
 
-  // read line by line and parse
+  // read and parse line by line
   for( std::string line; getline( CONFIG, line ); )
   {
     // skip blank lines and comments
@@ -109,43 +137,120 @@ void CRavenBMI::ReadConfigFile(std::string config_file)
       continue;
     }
 
-    // parse line and update options struct accordingly
-    config_str_end = -1;
-    config_key = "";
-    config_value = "";
-    do {
-        // find ini and end of substring
-        config_str_ini = config_str_end + 1;
-        config_str_end = (int)line.find(":", config_str_ini);
+    // all lines of the config file must have one colon
+    line_split_by_colon = _SplitLineByColon(line);
+    if (line_split_by_colon.size() != 2) {
+      throw std::logic_error("WARNING: Invalid line in Raven config file: '" + line + "'");
+    }
 
-        // extract substring and trim leading and trailing whitespaces
-        config_value = line.substr(config_str_ini, config_str_end - config_str_ini);
-        config_value.erase(0, config_value.find_first_not_of(" \t"));
-        config_value.erase(config_value.find_last_not_of(" \t") + 1);
+    // just to make the code more readable
+    config_key = line_split_by_colon[0];
+    config_value = line_split_by_colon[1];
 
-        // set config_key if it is the first substring
-        if (config_key == "") {
-          config_key = config_value;
-          config_value = "";
+    // remove leading and trailing whitespaces
+    config_key.erase(0, config_key.find_first_not_of(" \t"));
+    config_key.erase(config_key.find_last_not_of(" \t") + 1);
+    config_value.erase(0, config_value.find_first_not_of(" \t"));
+    config_value.erase(config_value.find_last_not_of(" \t") + 1);
+
+    if (config_key == CFG_FILE_CLIARGS_TAG) {
+
+      cli_args = true;
+      // "Raven.exe" is a dummy argument to mimic the command line arguments
+      args = _SplitLineByWhitespace("Raven.exe " + config_value);
+      argv = args.data();
+      ProcessExecutableArguments((int)(args.size())-1, argv, Options);
+      listing_inp_vars = false;
+      listing_out_vars = false;
+      continue;
+
+    } else if (config_key == CFG_FILE_INPVARS_TAG) {
+
+      listing_inp_vars = true;
+      listing_out_vars = false;
+      continue;
+
+    } else if (config_key == CFG_FILE_OUTVARS_TAG) {
+
+      listing_out_vars = true;
+      listing_inp_vars = false;
+      continue;
+
+    } else if (listing_inp_vars) {
+
+      // all lines after the "input_vars:" line must be in the form "- [VAR_NAME]: [var_type]"
+      if (config_key.substr(0, 2) != "- ") {
+        throw std::logic_error("WARNING: Invalid input var line in Raven config file: " + line);
+      }
+
+      // remove the '- ' from the beginning of the line
+      config_key = config_key.substr(2);
+
+      if (config_value == CFG_FILE_IOVAR_FORCE_TAG) {
+        // case: regular - forcing as input
+        config_value_id = GetForcingTypeFromString(config_key);
+        if (config_value_id == F_UNRECOGNIZED) {
+          throw std::logic_error("WARNING: Invalid forcing type in Raven config file: '" + line + "'");
           continue;
         }
+        input_var_names.push_back(config_key);
+        input_var_ids.push_back(config_value_id);
+        continue;
+      } else if (config_value == CFG_FILE_IOVAR_HRUST_TAG) {
+        // case: data assimilation - HRU state as input
+        // TODO: implement
+        throw std::logic_error("WARNING: HRU state variables as input are not supported in the BMI interface yet.");
+        continue;
+      } else if (config_value == CFG_FILE_IOVAR_SUBST_TAG) {
+        // case: data assimilation - sub-basin state as input
+        // TODO: implement
+        throw std::logic_error("WARNING: Sub-basin state variables as input are not supported in the BMI interface yet.");
+        continue;
+      }
+      throw std::logic_error("WARNING: Invalid input var line in Raven config file: " + line);
+      continue;
 
-        // set options struct accordingly
-        if (config_key == "cli_args") {
-          cli_args = true;
-          // "Raven.exe" is a dummy argument to mimic the command line arguments
-          args = SplitLine("Raven.exe " + config_value);
-          argv = args.data();
-          ProcessExecutableArguments((int)(args.size())-1, argv, Options);
-          break;
+    } else if (listing_out_vars) {
+
+      // all lines after the "input_vars:" line must be in the form "- [VAR_NAME]: [var_type]"
+      if (config_key.substr(0, 2) != "- ") {
+        throw std::logic_error("WARNING: Invalid input var line in Raven config file: " + line );
+        continue;
+      }
+
+      // remove the '- ' from the beginning of the line
+      config_key = config_key.substr(2);
+
+      if (config_value == CFG_FILE_IOVAR_HRUST_TAG) {
+        // case: regular - state as output (evaluated after the model initialized)
+        output_var_names.push_back(config_key);
+        output_var_type.push_back(CFG_FILE_IOVAR_HRUST_TAG);
+        continue;
+
+      } else if (config_value == CFG_FILE_IOVAR_SUBST_TAG) {
+        // case: regular - special cases as output
+        if (_IsValidSubBasinStateVariable(config_key)) {
+          output_var_names.push_back(config_key);
+          output_var_type.push_back(CFG_FILE_IOVAR_SUBST_TAG);
         } else {
-          ProcessConfigFileArgument(config_key, config_value);
+          throw std::logic_error("WARNING: Invalid sub-basin state variable in Raven config file: '" + line + "'");
         }
+        continue;
 
-    } while (config_str_end != -1);
+      } else if (config_value == CFG_FILE_IOVAR_FORCE_TAG) {
+        // case: forcing as output? does it make sense?
+        throw std::logic_error("WARNING: Forcing variables as output are not supported in Raven's BMI interface.");
+        continue;
 
-    // if a "cli_args:" line was found then we can stop parsing
-    if (cli_args) { break; }
+      }
+
+      // if we got here, the line is invalid
+      throw std::logic_error("WARNING: Invalid output var line in Raven config file: " + line);
+      continue;
+    }
+
+    // if we got here, the line is invalid
+    throw std::logic_error("WARNING: Invalid line in Raven config file: " + line);
 
   }
   CONFIG.close();
@@ -163,7 +268,7 @@ void CRavenBMI::Initialize(std::string config_file)
 {
   //NOTE: ENSEMBLE MODE NOT SUPPORTED WITH BMI
 
-  ReadConfigFile(config_file);
+  _ReadConfigFile(config_file);
 
   PrepareOutputdirectory(Options);
 
@@ -177,8 +282,7 @@ void CRavenBMI::Initialize(std::string config_file)
   WARNINGS.close();
 
   Options.in_bmi_mode  = true;  // flag needed to ignore some arguments of the .rvi file
-  Options.rvt_filename = "";   // just a dummy filename to avoid errors
-  Options.duration     = ALMOST_INF;  // "infinity": will run as long as "Update()" is called
+  Options.rvt_filename = "";    // just a dummy filename to avoid errors
 
   //Read input files, create model, set model options
   if (!ParseInputFiles(pModel, Options)){
@@ -192,7 +296,32 @@ void CRavenBMI::Initialize(std::string config_file)
   pModel->SummarizeToScreen           (Options);
   pModel->GetEnsemble()->Initialize   (pModel,Options);
 
+  // pModel->Initialize() sets the duration to 365 (days) by default, but in BMI mode the duration
+  //  of the simulation is governed by the framwork consuming the BMI interface, so we set the
+  //  duration to ALMOST_INF(inite) to avoid the model stopping by itself
+  Options.duration = ALMOST_INF;
+
   CheckForErrorWarnings(false, pModel);
+
+  // all the output variables must be checked
+  int config_out_var_layer_index;
+  int config_value_id;
+  for (int i = 0; i < output_var_names.size(); i++) {
+    if (output_var_type[i] == CFG_FILE_IOVAR_SUBST_TAG) {
+      output_var_ids.push_back(-1);
+      output_var_layer_index.push_back(-1);
+      continue;
+    }
+    if (output_var_type[i] == CFG_FILE_IOVAR_HRUST_TAG) {
+      config_value_id = pModel->GetStateVarInfo()->StringToSVType(output_var_names[i],
+                                                                  config_out_var_layer_index,
+                                                                  true);
+      output_var_ids.push_back(config_value_id);
+      output_var_layer_index.push_back(config_out_var_layer_index);
+      continue;
+    }
+    throw std::logic_error("WARNING: Output variable '" + output_var_names[i] + "' has an invalid type '" + output_var_type[i] + "'.");
+  }
 
   PrepareOutputdirectory(Options); //adds new output folders, if needed
   pModel->WriteOutputFileHeaders(Options);
@@ -206,8 +335,8 @@ void CRavenBMI::Initialize(std::string config_file)
   pModel->UpdateHRUForcingFunctions  (Options,tt);
   pModel->UpdateDiagnostics          (Options,tt);
   pModel->WriteMinorOutput           (Options,tt);
-
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief run simulation for a single time step
 ///
@@ -238,6 +367,7 @@ void CRavenBMI::Update()
   //if ((Options.use_stopfile) && (CheckForStopfile(step,tt))) { break; }
   //step++;
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief run simulation for multiple time steps, ending at time 'time'
 ///
@@ -250,6 +380,7 @@ void CRavenBMI::UpdateUntil(double time)
     Update();
   }
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief called after simulation is done
 //
@@ -275,44 +406,41 @@ std::string CRavenBMI::GetComponentName()
 {
   return "Raven Hydrological Modelling Framework "+Options.version;
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief returns number of accessible input datasets
 /// \return number of accessible input datasets
 //
 int CRavenBMI::GetInputItemCount()
 {
-  return 2;
+  return (input_var_names.size());
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief returns array of accessible input dataset names
 /// \return array of accessible input dataset names
 //
 std::vector<std::string> CRavenBMI::GetInputVarNames()
 {
-  vector<string> names;
-  names.push_back("precipitation");
-  names.push_back("temp_ave");
-  return names;
+  return(input_var_names);
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief returns number of accessible output datasets
 /// \return number of accessible output datasets
 //
 int CRavenBMI::GetOutputItemCount()
 {
-  return 3;
+  return (output_var_names.size());
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief returns array of accessible output dataset names
 /// \return array of accessible output dataset names
 //
 std::vector<std::string> CRavenBMI::GetOutputVarNames()
 {
-  vector<string> names;
-  names.push_back("streamflow");
-  names.push_back("soil[0]");
-  names.push_back("snow");
-  return names;
+  return(output_var_names);
 }
 
 //------------------------------------------------------------------
@@ -325,17 +453,24 @@ std::vector<std::string> CRavenBMI::GetOutputVarNames()
 //
 int CRavenBMI::GetVarGrid(std::string name)
 {
-  //input variables
-  if      (name=="precipitation"){return GRID_HRU;}
-  else if (name=="temp_ave"     ){return GRID_HRU;}
 
-  //output variables
-  if      (name=="streamflow"   ){return GRID_SUBBASIN;}
-  else if (name=="soil[0]"      ){return GRID_HRU;}
-  else if (name=="snow"         ){return GRID_HRU;}
+  // subbasin states, surprisingly, follow the subbasin grid
+  if (_IsValidSubBasinStateVariable(name)) {
+    return(GRID_SUBBASIN);
+  }
 
-  return 0;
+  // forcings are applies to each HRU, so they follow the HRU grid
+  forcing_type Ftype = GetForcingTypeFromString(name);
+  if (Ftype != F_UNRECOGNIZED) {
+    return(GRID_HRU);  // is this a good assumption?
+  }
+
+  // if not a subbasin state nor a forcing, it MUST be a hru state var (or the code will just break)
+  int state_var_layer_idx;
+  sv_type SType = pModel->GetStateVarInfo()->StringToSVType(name, state_var_layer_idx, true);
+  return(GRID_HRU);
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief returns units of input or output variable as string
 /// \param name [in] - name of  variable
@@ -343,17 +478,29 @@ int CRavenBMI::GetVarGrid(std::string name)
 //
 std::string CRavenBMI::GetVarUnits(std::string name)
 {
-  //input variables
-  if      (name=="precipitation"){return "mm/d";}
-  else if (name=="temp_ave"     ){return "C";}
+  int state_var_layer_idx;
+  forcing_type Ftype;
+  sv_type SType;
 
-  //output variables
-  if      (name=="streamflow"   ){return "m3/s";}
-  else if (name=="soil[0]"      ){return "mm";  }
-  else if (name=="snow"         ){return "mm";  }
+  // "OUTFLOW" is just another name for "STREAMFLOW", but "OUTFLOW" does not
+  //   have a sv_type, so it needs to be treated as a special case
+  if (name == "OUTFLOW") {
+    SType = pModel->GetStateVarInfo()->StringToSVType("STREAMFLOW", state_var_layer_idx,
+                                                      true);
+    return(CStateVariable::GetStateVarUnits(SType));
+  }
 
-  return "";
+  // the variable can be a forcing, so we need to search for it
+  Ftype = GetForcingTypeFromString(name);
+  if (Ftype != F_UNRECOGNIZED) {
+    return(GetForcingTypeUnits(Ftype));
+  }
+
+  // if not a special case nor a forcing, it MUST be a state var (or the code will just break)
+  SType = pModel->GetStateVarInfo()->StringToSVType(name, state_var_layer_idx, true);
+  return(CStateVariable::GetStateVarUnits(SType));
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief returns type of input or output variable as string
 /// \param name [in] - name of  variable
@@ -363,6 +510,7 @@ std::string CRavenBMI::GetVarType(std::string name)
 {
   return "double";
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief returns size of input or output variable, in bytes
 /// \param name [in] - name of  variable
@@ -372,6 +520,7 @@ int CRavenBMI::GetVarItemsize(std::string name)
 {
   return sizeof(double);
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief returns total size of input or output variable array, in bytes
 /// \param name [in] - name of  variable
@@ -381,6 +530,7 @@ int CRavenBMI::GetVarNbytes(std::string name)
 {
   return GetVarItemsize(name)*GetGridSize(GetVarGrid(name));
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief returns variable location on unstructured grid
 /// \param name [in] - name of  variable
@@ -390,6 +540,7 @@ std::string CRavenBMI::GetVarLocation(std::string name)
 {
   return "node";
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief accessors for model basic elements
 //
@@ -414,10 +565,11 @@ void CRavenBMI::GetValue(std::string name, void* dest)
   int k,p;
   bool is_HRU_SV=false;
   int iSV=DOESNT_EXIST;
+  sv_type Stype= (sv_type)DOESNT_EXIST;
+  int Slayer=DOESNT_EXIST;
 
-  //output variables
-  if      (name=="streamflow")
-  {
+  if ((name == "OUTFLOW") || (name =="STREAMFLOW")) {
+    // special case: outflow = streamflow (subbasin state var)
     out=new double [pModel->GetNumSubBasins()];
     for (p = 0; p < pModel->GetNumSubBasins(); p++)
     {
@@ -430,12 +582,45 @@ void CRavenBMI::GetValue(std::string name, void* dest)
     }
     memcpy(dest,out,pModel->GetNumSubBasins()*sizeof(double));
     delete [] out;
-  }
-  else if (name == "soil[0]") {is_HRU_SV=true; iSV=pModel->GetStateVarIndex(SOIL,0);}
-  else if (name == "snow")    {is_HRU_SV=true; iSV=pModel->GetStateVarIndex(SNOW);  }
-  else {
-    throw std::logic_error("RavenBMI.GetValue: variable '" + name + "' not covered by this function.");
     return;
+  }
+  else if (name == "RESERVOIR_STAGE") {
+    // special case: reservoir stage is a subbasin state var
+    out=new double [pModel->GetNumSubBasins()];
+    for (p = 0; p < pModel->GetNumSubBasins(); p++) {
+      CSubBasin* pBasin = pModel->GetSubBasin(p);
+      if (pBasin->GetReservoir() != NULL) {
+        out[p] = pBasin->GetReservoir()->GetResStage();
+      } else {
+        out[p] = 0.0;  // or maybe '-1' to indicate that there is no reservoir?
+      }
+    }
+    memcpy(dest,out,pModel->GetNumSubBasins()*sizeof(double));
+    delete [] out;
+    return;
+  }
+  else {
+    // search in the output variable names
+    for (int i = 0; i < output_var_names.size(); i++) {
+      if (output_var_names[i] != name) {
+        continue;
+      }
+      if (output_var_type[i] != CFG_FILE_IOVAR_HRUST_TAG) {
+        throw std::logic_error("CRavenBMI.GetValue: variable '" + name + "' is not an HRU state variable.");
+        return;
+      }
+
+      Stype = (sv_type)output_var_ids[i];
+      Slayer = output_var_layer_index[i];
+      is_HRU_SV=true;
+      if (Slayer > -1) {
+        iSV = pModel->GetStateVarIndex(Stype, Slayer);
+      } else {
+        iSV = pModel->GetStateVarIndex(Stype);
+      }
+
+      break;
+    }
   }
 
   if ((is_HRU_SV) && (iSV!=DOESNT_EXIST))
@@ -446,9 +631,14 @@ void CRavenBMI::GetValue(std::string name, void* dest)
     }
     memcpy(dest,out,pModel->GetNumSubBasins()*sizeof(double));
     delete [] out;
+    return;
   }
 
+  // if it got here... dude, I have a bad news for you...
+  throw std::logic_error("RavenBMI.GetValue: variable '" + name + "' not covered by this function.");
+  return;
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief returns array of variable values for variable with supplied name at subset o flocations
 /// \param name [in] - name of  variable
@@ -463,16 +653,56 @@ void CRavenBMI::GetValueAtIndices(std::string name, void* dest, int* inds, int c
   bool is_HRU_SV=false;
   int iSV=DOESNT_EXIST;
   int i,k,p;
+  sv_type Stype=(sv_type)DOESNT_EXIST;
+  int Slayer=DOESNT_EXIST;
 
-  if      (name=="streamflow")
-  {
+  if ((name == "OUTFLOW") || (name =="STREAMFLOW")) {
+    // special case: outflow = streamflow (subbasin state var)
     for (i = 0; i <count; i++) {
       p=inds[i];
-      out[p]=pModel->GetSubBasin(p)->GetIntegratedOutflow(Options.timestep);
+      if (Options.ave_hydrograph){
+        out[p]=pModel->GetSubBasin(p)->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
+      }
+      else{
+        out[p]=pModel->GetSubBasin(p)->GetOutflowRate();
+      }
     }
   }
-  else if (name == "soil[0]") {is_HRU_SV=true; iSV=pModel->GetStateVarIndex(SOIL,0);}
-  else if (name == "snow")    {is_HRU_SV=true; iSV=pModel->GetStateVarIndex(SNOW);  }
+  else if (name == "RESERVOIR_STAGE") {
+    // special case: reservoir stage is a subbasin state var
+    for (i = 0; i <count; i++) {
+      p=inds[i];
+      CSubBasin* pBasin = pModel->GetSubBasin(p);
+      if (pBasin->GetReservoir() != NULL) {
+        out[p] = pBasin->GetReservoir()->GetResStage();
+      } else {
+        out[p] = 0.0;  // or maybe '-1' to indicate that there is no reservoir?
+      }
+    }
+  }
+  else {
+    // search in the output variable names
+    for (int i = 0; i < output_var_names.size(); i++) {
+      if (output_var_names[i] != name) {
+        continue;
+      }
+      if (output_var_type[i] != CFG_FILE_IOVAR_HRUST_TAG) {
+        throw std::logic_error("CRavenBMI.GetValue: variable '" + name + "' is not an HRU state variable.");
+        return;
+      }
+
+      Stype = (sv_type)output_var_ids[i];
+      Slayer = output_var_layer_index[i];
+      is_HRU_SV=true;
+      if (Slayer > -1) {
+        iSV = pModel->GetStateVarIndex(Stype, Slayer);
+      } else {
+        iSV = pModel->GetStateVarIndex(Stype);
+      }
+
+      break;
+    }
+  }
 
   if ((is_HRU_SV) && (iSV!=DOESNT_EXIST))
   {
@@ -517,9 +747,14 @@ void CRavenBMI::SetValue(std::string name, void* src)
   forcing_type Ftype;
   bool is_forcing=false;
 
-  if      (name=="precipitation"){is_forcing=true; Ftype=F_PRECIP;  }
-  else if (name=="temp_ave")     {is_forcing=true; Ftype=F_TEMP_AVE;}
+  Ftype = GetForcingTypeFromString(name);
+  if (Ftype != F_UNRECOGNIZED) {
+    is_forcing = true;
+  } else {
+    throw std::logic_error("CRavenBMI.SetValue: only accepts setting forcing values (for now).");
+  }
 
+  // all HRUs receive the same forcing
   if (is_forcing){
     for (int k=0;k<pModel->GetNumHRUs();k++){
       pModel->GetHydroUnit(k)->SetHRUForcing(Ftype, input[k]);
@@ -540,9 +775,14 @@ void CRavenBMI::SetValueAtIndices(std::string name, int* inds, int count, void* 
   forcing_type Ftype;
   bool is_forcing=false;
 
-  if      (name=="precipitation"){is_forcing=true; Ftype=F_PRECIP;}
-  else if (name=="temp_ave")     {is_forcing=true; Ftype=F_TEMP_AVE;}
+  Ftype = GetForcingTypeFromString(name);
+  if (Ftype != F_UNRECOGNIZED) {
+    is_forcing = true;
+  } else {
+    throw std::logic_error("WARNING: CRavenBMI.SetValueAtIndices: only accepts forcings now. Tried to set value for variable '"+name+"'");
+  }
 
+  // all HRUs receive the same forcing
   if (is_forcing){
     for (int i=0;i<count;i++){
       int k=inds[i];

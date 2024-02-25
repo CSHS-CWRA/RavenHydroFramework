@@ -240,7 +240,7 @@ public:/*-------------------------------------------------------*/
   double          GetDownstreamIrrDemand   (const double &t) const;    //[m3/s] cumulative downstream irrigation demand, including from this subbasin
   double          GetDemandDelivery        () const;                   //[m3/s] instantaneous delivery rate Qirr
   double          GetEnviroMinFlow         (const double &t) const;    //[m3/s] environmental minimum flow target from downstream outlet
-  bool            HasEnviroMinFlow         () const;                   // true if basin has enviro min flow time series 
+  bool            HasEnviroMinFlow         () const;                   // true if basin has enviro min flow time series
   bool            HasIrrigationDemand      () const;                   // true if basin has specified irrigation demand
   int             GetDiversionTargetIndex  (const int i) const;        // returns subbasin index p of diversion i
 
