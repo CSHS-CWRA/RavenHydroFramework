@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2024 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "HydroUnits.h"
 #include "Forcings.h"
@@ -706,7 +706,7 @@ double CHydroUnit::GetSurfaceTemperature() const
 ///
 /// \return current total land surface albedo in HRU [dimensionless]
 //
-double  CHydroUnit::GetTotalAlbedo() const
+double  CHydroUnit::GetTotalAlbedo(const bool subcanopy) const
 {
   double veg_albedo,land_albedo(0.0);
 
@@ -737,15 +737,20 @@ double  CHydroUnit::GetTotalAlbedo() const
     land_albedo =(snow_cover  )*snow_albedo+(1.0-snow_cover  )*land_albedo;
     //correction for urban surfaces?
 
-    veg_albedo    =_pVeg->albedo; //correction for wetness?
+    if (subcanopy) {
+       return land_albedo;
+    }
+    else // above canopy - handles 
+    {
+      veg_albedo    =_pVeg->albedo; //correction for wetness?
 
-    //JRC: checks put in just in case parameters not supplied (only cosmetic in Forcings.csv, since if not supplied, SW_RADIA_NET not used in calcs).
-    if (veg_albedo<0 ){veg_albedo=0.14;}
-    if (svf>1.0      ){svf=0.0;}
-    if (land_albedo<0){land_albedo=0.3;}
+      //JRC: checks put in just in case parameters not supplied (only cosmetic in Forcings.csv, since if not supplied, SW_RADIA_NET not used in calcs).
+      if (veg_albedo<0 ){veg_albedo=0.14;}
+      if (svf>1.0      ){svf=0.0;}
+      if (land_albedo<0){land_albedo=0.3;}
 
-    return (1.0-svf)*(Fc)*veg_albedo+((svf)*(Fc)+(1.0-Fc))*land_albedo;
-
+      return (1.0-svf)*(Fc)*veg_albedo+((svf)*(Fc)+(1.0-Fc))*land_albedo;
+    }
   }
   //else if (Options.albedo_type==ALBEDO_LANDUSE){
   //ground_albedo= _pSurface->albedo;

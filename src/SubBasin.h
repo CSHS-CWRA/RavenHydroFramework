@@ -45,6 +45,7 @@ private:/*------------------------------------------------------*/
   long                     _ID;   ///< unique ID of subbasin (must be positive)
   string                 _name;   ///< name
   bool               _disabled;   ///< true if disabled
+  int                _global_p;   ///< p index in _pModel subbasin array 
 
   const CModelABC     *_pModel;   ///< Pointer to model
 
@@ -112,6 +113,7 @@ private:/*------------------------------------------------------*/
 
   double                 _Qirr;   ///< Qirr (irrigation/diversion flow) at end of timestep [m3/s] (for MB accounting)
   double             _QirrLast;   ///< Qirr (irrigation/diversion flow) at start of timestep [m3/s] (for MB accounting)
+  double           _Qdelivered;   ///< delivered flow at end of time step if management optimization is used [m3/s]
 
   //Hydrograph Memory
   double            *_aQinHist;   ///< history of inflow from upstream into primary channel [m3/s][size:nQinHist] (aQinHist[n] = Qin(t-ndt))
@@ -252,6 +254,7 @@ public:/*-------------------------------------------------------*/
   //called during model construction/assembly:
   void            AddHRU                   (CHydroUnit *pHRU);
   void            AddReservoir             (CReservoir *pReservoir);
+  void            SetGlobalIndex           (const int p);
   bool            SetBasinProperties       (const string label,const double &value);
   void            SetAsNonHeadwater        ();
   double          CalculateBasinArea       ();
@@ -279,6 +282,7 @@ public:/*-------------------------------------------------------*/
   void            SetQinHist               (const int N, const double *aQi);
   void            SetDownstreamID          (const long down_SBID);
   void            SetDownstreamBasin       (const CSubBasin *pSB);
+  void            AddToDeliveredDemand     (const double Qdel);
   void            SetGauged                (const bool isgauged);
   void            Disable                  ();
   void            Enable                   ();
@@ -300,7 +304,7 @@ public:/*-------------------------------------------------------*/
                                             const time_struct &tt,
                                             const bool    initialize);//[m3/s]
 
-  double          ApplyIrrigationDemand    (const double &t,const double &Q) const; //[m3/s]
+  double          ApplyIrrigationDemand    (const double &t,const double &Q,const bool optimized) const; //[m3/s]
   double          GetDiversionFlow         (const int i, const double &Q, const optStruct &Options, const time_struct &tt, int &pDivert) const;
 
   void            RouteWater               (      double      *Qout_new,

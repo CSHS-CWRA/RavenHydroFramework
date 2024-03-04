@@ -212,6 +212,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             pSB=new CSubBasin(s_to_l(s[0]),s[1], pModel,s_to_l(s[2]),pChan,length,Qref,gaged,is_conduit);
             ExitGracefullyIf(pSB==NULL,"ParseHRUPropsFile",OUT_OF_MEMORY);
             pModel->AddSubBasin(pSB);
+            pSB->SetGlobalIndex(pModel->GetNumSubBasins()-1);
           }
         }
       }
@@ -461,6 +462,10 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
         pp->Tokenize(s,Len);
         if      (IsComment(s[0], Len)){}//comment line
         else if (!strcmp(s[0],":EndHRUGroup")){}//done
+        else if (s[0][0] == ':') {
+          string warn="ParseHRUPropsFile: Command found between :HRUGroup...:EndHRUGroup commands at line "+to_string(pp->GetLineNumber())+" of .rvh file. ONly HRU IDs should be in this command block.";
+          ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+        }
         else
         {
           int k;
@@ -634,12 +639,16 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
         pModel->AddSubBasinGroup(pSBGrp);
       }
       bool eof=false;
-      while ((Len==0) || (strcmp(s[0],":EndSubBasinGroup")))
+      while ( (Len==0) || (strcmp(s[0],":EndSubBasinGroup")) )
       {
         eof=pp->Tokenize(s,Len);
         if(eof) { break; }
         if      (IsComment(s[0], Len)){}//comment line
         else if (!strcmp(s[0],":EndSubBasinGroup")){}//done
+        else if (s[0][0] == ':') {
+          string warn="ParseHRUPropsFile: Command found between :SubBasinGroup...:EndSubBasinGroup commands at line "+to_string(pp->GetLineNumber())+" of .rvh file. ONly subbasin IDs should be between these two commands";
+          ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+        }
         else
         {
           int p;

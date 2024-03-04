@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2023 the Raven Development Team
+Copyright (c) 2008-2024 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -65,8 +65,9 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
 //    else if(!strcmp(s[0],":FlowDiversion"         )) { code=15; }//diverts flow from one basin to another
 //    else if(!strcmp(s[0],":IrrigationDemand"      )) { code=16; }//removes flow from basin
 //    else if(!strcmp(s[0],":UpdateStateVariable"   )) { code=17; }
-//    else if(!strcmp(s[0],":UpdateParameter"       )) { code=18; }
-    else if(!strcmp(s[0],":RepopulateHRUGroup"  )) { code=20; }
+    else if(!strcmp(s[0],":UpdateParameter"      )) { code=18; }
+    else if(!strcmp(s[0],":RepopulateHRUGroup"   )) { code=20; }
+
     switch(code)
     {
     case(-1):  //----------------------------------------------
@@ -212,6 +213,22 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
       //pSB->GetReservoir()->OverrideFlow(s_to_d(s[2]));
       //JRC: add CReservoir member _overrideQ which takes priority over override Q time series
       ExitGracefully("ParseLiveFile:SetReservoirFlow",STUB);
+      break;
+    }
+    case(18):  //----------------------------------------------
+    { /*:UpdateParameter [TYPE]  [param_name] [CLASS_NAME] [value]
+      :UpdateParameter SOIL HYDRAUL_COND MYSANDYSOIL 86.4
+      */
+      class_type ptype;
+      if     (!strcmp(s[1],"SOIL"      )) { ptype=CLASS_SOIL; }
+      else if(!strcmp(s[1],"VEGETATION")) { ptype=CLASS_VEGETATION; }
+      else if(!strcmp(s[1],"LANDUSE"   )) { ptype=CLASS_LANDUSE; }
+      else if(!strcmp(s[1],"TERRAIN"   )) { ptype=CLASS_TERRAIN; }
+      else if(!strcmp(s[1],"GLOBALS"   )) { ptype=CLASS_GLOBAL; }
+      else if(!strcmp(s[1],"SUBBASIN"  )) { ptype=CLASS_SUBBASIN; }
+      else if(!strcmp(s[1],"GAUGE"     )) { ptype=CLASS_GAUGE; }
+
+      pModel->UpdateParameter(ptype, s[2],s[3],s_to_d(s[4]));
       break;
     }
     case(20):  //----------------------------------------------

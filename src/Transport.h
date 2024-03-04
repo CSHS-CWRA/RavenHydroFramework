@@ -303,8 +303,8 @@ public:/*-------------------------------------------------------*/
           void   IncrementCumulInput        (const optStruct &Options,const time_struct &tt);
           void   IncrementCumulOutput       (const optStruct &Options);
 
-  virtual double ApplyInCatchmentRouting (const int p, const double *aUnitHydro, const double *aQlatHist,const double *aMlatHist,const int    nMlatHist, const double &tstep) const;
-  virtual void   ApplyConvolutionRouting  (const int p,const double *aRouteHydro,const double *aQinHist, const double *aMinHist,const int nSegments,const int nMinHist,const double &tstep,double *aMout_new) const;
+  virtual double ApplyInCatchmentRouting  (const int p,const double *aUnitHydro, const double *aQlatHist,const double *aMlatHist,const int nMlatHist,const double &tstep) const;
+  virtual void   ApplyConvolutionRouting  (const int p,const double *aRouteHydro,const double *aQinHist, const double *aMinHist, const int nSegments,const int nMinHist,const double &tstep,double *aMout_new) const;
           void   ApplySpecifiedMassInflows(const int p,const double t,double &Minnew);
           void   SetMassInflows           (const int p,const double Minnew);
           void   SetLateralInfluxes       (const int p,const double RoutedMass);

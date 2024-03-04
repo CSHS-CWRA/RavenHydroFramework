@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2023 the Raven Development Team
+Copyright (c) 2008-2024 the Raven Development Team
 ----------------------------------------------------------------*/
 
 #include "EnKF.h"
@@ -219,7 +219,7 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
   // should closely echo contents of AddToStateMatrix/UpdateFromStateMatrix
   //-----------------------------------------------
   int kk;
-  string tmp_names[2000];
+  
   _nStateVars=0;
   int ii=0;
   for(int i=0;i<_nAssimStates;i++)
@@ -233,15 +233,40 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
         _nStateVars+=pBasin->GetNumSegments();
         _nStateVars++; //Qlast
 
-        for (int n=0;n<pBasin->GetInflowHistorySize();n++){tmp_names[ii]="inflow_" +to_string(pp)+"_"+to_string(n); ii++; }
-        for (int n=0;n<pBasin->GetNumSegments();      n++){tmp_names[ii]="outflow_"+to_string(pp)+"_"+to_string(n); ii++; }
-        tmp_names[ii]="outflowlast_"+to_string(pp); ii++;
+        if (pBasin->GetReservoir() != NULL){_nStateVars+=2; }//resflow + resflow_last
+      }
+    }
+    else if(_aAssimStates[i]==RESERVOIR_STAGE) {
+      for(int pp=0;pp<pModel->GetSubBasinGroup(kk)->GetNumSubbasins();pp++)
+      {
+        CSubBasin* pBasin=pModel->GetSubBasinGroup(kk)->GetSubBasin(pp);
+        if (pBasin->GetReservoir() != NULL){_nStateVars+=2; }
+      }
+    }
+    else { //HRU state variable
+      _nStateVars+=pModel->GetHRUGroup(kk)->GetNumHRUs();
+    }
+  }
+
+  // get names of state variables
+  //-----------------------------------------------
+  _state_names=new string [ _nStateVars];
+  for(int i=0;i<_nAssimStates;i++)
+  {
+    kk=_aAssimGroupID[i];
+    if(_aAssimStates[i]==STREAMFLOW) {
+      for(int pp=0;pp<pModel->GetSubBasinGroup(kk)->GetNumSubbasins();pp++)
+      {
+        CSubBasin* pBasin=pModel->GetSubBasinGroup(kk)->GetSubBasin(pp);
+
+        for (int n=0;n<pBasin->GetInflowHistorySize();n++){_state_names[ii]="inflow_" +to_string(pp)+"_"+to_string(n); ii++; }
+        for (int n=0;n<pBasin->GetNumSegments();      n++){_state_names[ii]="outflow_"+to_string(pp)+"_"+to_string(n); ii++; }
+        _state_names[ii]="outflowlast_"+to_string(pp); ii++;
 
         if (pBasin->GetReservoir() != NULL)
         {
-          _nStateVars+=2; //resflow + resflow_last
-          tmp_names[ii]="resflow_"    +to_string(pp); ii++;
-          tmp_names[ii]="resflowlast_"+to_string(pp); ii++;
+          _state_names[ii]="resflow_"    +to_string(pp); ii++;
+          _state_names[ii]="resflowlast_"+to_string(pp); ii++;
         }
       }
     }
@@ -251,27 +276,21 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
         CSubBasin* pBasin=pModel->GetSubBasinGroup(kk)->GetSubBasin(pp);
         if (pBasin->GetReservoir() != NULL)
         {
-          _nStateVars+=2;
-          tmp_names[ii]="resstage_"    +to_string(pp); ii++;
-          tmp_names[ii]="resstagelast_"+to_string(pp); ii++;
+          _state_names[ii]="resstage_"    +to_string(pp); ii++;
+          _state_names[ii]="resstagelast_"+to_string(pp); ii++;
         }
       }
     }
     else { //HRU state variable
-      _nStateVars+=pModel->GetHRUGroup(kk)->GetNumHRUs();
       for (int n=0;n<pModel->GetHRUGroup(kk)->GetNumHRUs();n++)
       {
         int k=pModel->GetHRUGroup(kk)->GetHRU(n)->GetID();
         string svname = pModel->GetStateVarInfo()->SVTypeToString(_aAssimStates[i], _aAssimLayers[i]);
-        tmp_names[ii]=svname+"_" +to_string(k); ii++;
+        _state_names[ii]=svname+"_" +to_string(k); ii++;
       }
     }
   }
 
-  _state_names=new string [ _nStateVars];
-  for (int i = 0; i < _nStateVars; i++) {
-    _state_names[i]=tmp_names[i];
-  }
 
   //create empty _state_matrix
   //-----------------------------------------------

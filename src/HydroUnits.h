@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2024 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef HYDROUNITS_H
 #define HYDROUNITS_H
@@ -140,7 +140,7 @@ public:/*-------------------------------------------------------*/
   double                 GetSnowSWE           () const;
   double                 GetSnowCover         () const;
   double                 GetSurfaceTemperature() const;
-  double                 GetTotalAlbedo       () const;
+  double                 GetTotalAlbedo       (const bool subcanopy) const;
   double                 GetSnowDepth         () const;
 
   //Manipulator functions (used in parser)

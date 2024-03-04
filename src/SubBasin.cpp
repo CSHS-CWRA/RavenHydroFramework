@@ -42,6 +42,7 @@ CSubBasin::CSubBasin( const long           Identifier,
   _ID                =Identifier;
   _name              =Name;
   _is_conduit        =is_conduit;
+  _global_p          =DOESNT_EXIST;
 
   _basin_area        =0.0;
   _drainage_area     =0.0;
@@ -116,6 +117,7 @@ CSubBasin::CSubBasin( const long           Identifier,
 
   _Qirr=0.0;
   _QirrLast=0.0;
+  _Qdelivered=0.0;
 
   //Below are initialized in GenerateCatchmentHydrograph, GenerateRoutingHydrograph
   _aQlatHist     =NULL;  _nQlatHist     =0;
@@ -548,20 +550,22 @@ bool CSubBasin::HasEnviroMinFlow() const
 /// \param &Q [in] Estimate of subbasin outflow prior to applying demand [m3/s]
 /// \return irrigation demand outflow from subbasin at time t [m3/s]
 //
-double CSubBasin::ApplyIrrigationDemand(const double &t,const double &Q) const
+double CSubBasin::ApplyIrrigationDemand(const double &t,const double &Q,const bool optimized) const
 {
   if (_nIrrigDemands==0){return 0.0;}
 
-  //if using Management optimization, delivery determined by optimizer /todo[funct]
-  //return pModel->GetDemandOptimizer()->GetTotalWaterDemandDelivery(_global_index);
-
-  double Qirr;
+  //if using Management optimization, delivery determined by optimizer
+  if (optimized) {
+    return _Qdelivered; //as calculated from management optimization
+  }
+    
+  double Qdelivered;
   double Qdemand=GetTotalWaterDemand(t);
   double Qmin   =GetEnviroMinFlow(t);
 
-  Qirr=min(max((1.0-_unusable_flow_pct)*(Q-Qmin),0.0),Qdemand);
+  Qdelivered=min(max((1.0-_unusable_flow_pct)*(Q-Qmin),0.0),Qdemand);
 
-  return Qirr;
+  return Qdelivered;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns number of flow diversions
@@ -1014,6 +1018,10 @@ void CSubBasin::AddReservoir(CReservoir *pRes)
   _pReservoir=pRes;
 }
 
+void CSubBasin::SetGlobalIndex(const int p) 
+{
+  _global_p=p;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Sets basin properties
 /// \param label [in] String property identifier
@@ -1341,6 +1349,15 @@ void CSubBasin::SetDownstreamID(const long down_SBID){
 void CSubBasin::SetDownstreamBasin(const CSubBasin* pSB) {
   _pDownSB=pSB;
   if (_pReservoir!=NULL){_pReservoir->SetDownstreamBasin(pSB); }
+}
+/////////////////////////////////////////////////////////////////
+/// \brief increment quantity of total delivered demand from management 
+/// called by DemandOptimization routines only 
+/// this is zeroed out in UpdateSubBasin() every time step prior to management optimization call
+/// \param Qdel [in] demand delivery [m3/s]
+//
+void CSubBasin::AddToDeliveredDemand(const double Qdel) {
+  _Qdelivered+=Qdel;
 }
 /////////////////////////////////////////////////////////////////
 /// \brief Sets whether basin is gauged
@@ -1863,6 +1880,8 @@ void CSubBasin::GenerateCatchmentHydrograph(const double    &Qlat_avg,
 //
 void  CSubBasin::UpdateSubBasin(const time_struct &tt, const optStruct &Options)
 {
+  _Qdelivered=0; //reset each time step before demand optmization applied 
+
   if (Options.routing==ROUTE_DIFFUSIVE_VARY){UpdateRoutingHydro(Options.timestep); }
 
   if (_pReservoir != NULL){ _pReservoir->UpdateReservoir(tt,Options); }

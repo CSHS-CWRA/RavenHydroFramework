@@ -632,7 +632,9 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, lp_lib::lprec* pLinProg, 
   double RHS;
   bool   group_has_dv;
   int    DV_ind;
-  
+  double term;
+  bool   constraint_valid=true;
+
   int    nn=(int)((tt.model_time+TIME_CORRECTION)/1.0);//Options.timestep; //TMP DEBUG
  
   expressionStruct *pE= pC->pExpression;
@@ -651,12 +653,14 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, lp_lib::lprec* pLinProg, 
       }
       else if (!(pE->pTerms[j][k]->is_nested))
       {
+        term=EvaluateTerm(pE->pTerms[j], k, nn);
+        if (term==RAV_BLANK_DATA){constraint_valid=false;}
         if (pE->pTerms[j][k]->reciprocal == true) {
           //TODO: SHOULD CHECK FOR DIVIDE BY ZERO, BUT DO WHAT?
-          coeff /=  EvaluateTerm(pE->pTerms[j], k, nn)/(pE->pTerms[j][k]->mult);
+          coeff /=  term/(pE->pTerms[j][k]->mult);
         } 
         else {
-          coeff *= (pE->pTerms[j][k]->mult) * EvaluateTerm(pE->pTerms[j], k, nn);
+          coeff *= (pE->pTerms[j][k]->mult) * term;
         }
       }
     }
@@ -688,6 +692,7 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, lp_lib::lprec* pLinProg, 
       i++;
     }
   }
+  if (constraint_valid){return;} //usually due to blank time series element - no constraint applied
 
   retval = lp_lib::add_constraintex(pLinProg,i,row_val,col_ind,constr_type,RHS);
   ExitGracefullyIf(retval==0,"AddConstraintToLP::Error adding user-specified constraint/goal",RUNTIME_ERR);
@@ -717,6 +722,7 @@ double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const
   {
     nshift=pT->timeshift;
     return pT->pTS->GetValue(nn+nshift);
+    //TMP DEBUG - MUST HANDLE BLANK_VALUE - Should be equivalent to expression being invalid 
   }
   else if (pT->type == TERM_LT) 
   {

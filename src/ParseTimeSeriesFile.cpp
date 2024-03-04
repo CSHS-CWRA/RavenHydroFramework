@@ -728,9 +728,14 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       CSubBasin *pSB;
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,true,"TargetStage_"+to_string(SBID),SBID,"none",Options);
+      pTimeSer=CTimeSeries::Parse(p,true,"_TargetStage_"+to_string(SBID),SBID,"none",Options);
       if((pSB!=NULL) && (pSB->GetReservoir()!=NULL)) {
-        pSB->GetReservoir()->AddTargetStageTimeSeries(pTimeSer);
+        if (pModel->GetDemandOptimizer() != NULL) {
+          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        }
+        else {
+          pSB->GetReservoir()->AddTargetStageTimeSeries(pTimeSer);
+        }
       }
       else
       {
@@ -752,7 +757,12 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,true,"_MaxQDelta_"+to_string(SBID),SBID,"none",Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
-        pSB->GetReservoir()->AddMaxQIncreaseTimeSeries(pTimeSer);
+        if (pModel->GetDemandOptimizer() != NULL) {
+          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        }
+        else {
+          pSB->GetReservoir()->AddMaxQIncreaseTimeSeries(pTimeSer);
+        }
       }
       else
       {
@@ -773,8 +783,13 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if(Len>=2) { SBID=s_to_l(s[1]); }
       pSB=pModel->GetSubBasinByID(SBID);
       if((pSB!=NULL) && (pSB->GetReservoir()!=NULL)) {
-        pTimeSer=CTimeSeries::Parse(p,true,"QDeltaDec_"+to_string(SBID),SBID,"none",Options);
-        pSB->GetReservoir()->AddMaxQDecreaseTimeSeries(pTimeSer);
+        pTimeSer=CTimeSeries::Parse(p,true,"_MaxQDecrease_"+to_string(SBID),SBID,"none",Options);
+        if (pModel->GetDemandOptimizer() != NULL) {
+          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        }
+        else {
+          pSB->GetReservoir()->AddMaxQDecreaseTimeSeries(pTimeSer);
+        }
       }
       else
       {

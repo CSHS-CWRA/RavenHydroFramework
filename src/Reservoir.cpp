@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2024 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Reservoir.h"
 #include "Model.h"     // needed to define CModel
@@ -885,6 +885,7 @@ string CReservoir::GetCurrentConstraint() const {
   case(RC_TARGET):            {return "RC_TARGET"; }
   case(RC_DOWNSTREAM_FLOW):   {return "RC_DOWNSTREAM_FLOW"; }
   case(RC_MAX_FLOW_INCREASE): {return "RC_MAX_FLOW_INCREASE"; }
+  case(RC_MAX_FLOW_DECREASE): {return "RC_MAX_FLOW_DECREASE"; }
   case(RC_MIN_FLOW):          {return "RC_MIN_FLOW"; }
   case(RC_MAX_FLOW):          {return "RC_MAX_FLOW"; }
   case(RC_OVERRIDE_FLOW):     {return "RC_OVERRIDE_FLOW"; }

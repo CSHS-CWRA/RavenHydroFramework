@@ -98,6 +98,18 @@ int CDemandOptimizer::GetDemandIndexFromName(const string demand_tag) const
   } 
   return DOESNT_EXIST;
 }
+
+//////////////////////////////////////////////////////////////////
+// \brief returns true if time series with specified name 'TSname' exists, false otherwise
+// \params TSname [in] - name to be checked 
+// 
+bool CDemandOptimizer::UserTimeSeriesExists(string TSname) const
+{
+  for (int i = 0; i < _nUserTimeSeries; i++) {
+    if (_pUserTimeSeries[i]->GetName()==TSname){return true;}
+  }
+  return false;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief sets history length 
 /// \params n [in] - number of timesteps in history
@@ -199,6 +211,8 @@ void CDemandOptimizer::SetDemandPenalty(const string dname, const double& pen) {
     ExitGracefullyIf(pen<0,"CDemandOptimizer::SetDemandPenalty: invalid demand identifier in :DemandPenalty command.",BAD_DATA_WARN);
   }
 }
+
+
 //////////////////////////////////////////////////////////////////
 /// \brief adds decision variable constraint OR goal to _pConstraints member array 
 /// \params name [in] - constraint name
@@ -469,6 +483,10 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
     }
   }
 
+  // Convert reservoir commands to user-specified constraints
+  //------------------------------------------------------------------
+  AddReservoirConstraints();
+
   // Sift through user-specified goals, update _nSlackVars, reserve memory for _aSlackValues
   //------------------------------------------------------------------
   // ISSUE : THIS IS TOTAL POSSIBLE NUMBER OF SLACK VARIABLES; MAY NOT BE IN PLAY DUE TO CONSTRAINTS - for disabled constraints, just set penalty to zero>??
@@ -492,20 +510,26 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
   for (int ii = 0; ii < _nSlackVars; ii++) {
     _aSlackValues[ii]=0.0;
   }
+  
+  for (int i = 0; i < _nUserTimeSeries; i++) 
+  {
+    _pUserTimeSeries[i]->Initialize(Options.julian_start_day, 
+                                    Options.julian_start_year, 
+                                    Options.duration, 
+                                    Options.timestep, false, Options.calendar);
+  }
+  
   cout<<" # User decision vars: "<<_nUserDecisionVars<<endl;
   cout<<" # History Items: "<<_nHistoryItems<<endl;
   cout<<" # Slack Vars: "<<_nSlackVars<<endl;
+
   if (Options.noisy){cout<<"   ...end Post-rvm-read initialization."<<endl;}
 }
 
 
-bool CDemandOptimizer::UserTimeSeriesExists(string TSname) const
-{
-  for (int i = 0; i < _nUserTimeSeries; i++) {
-    if (_pUserTimeSeries[i]->GetName()==TSname){return true;}
-  }
-  return false;
-}
+//////////////////////////////////////////////////////////////////
+// converts string instring to tokenized array s (preallocated) with Len tokens
+//  
 void TokenizeString(string instring, char **s, int Len) 
 {
   // Returns first token 
@@ -537,7 +561,7 @@ void CDemandOptimizer::AddReservoirConstraints()
   expressionStruct *exp;
   dv_constraint    *pConst=NULL;
   string expString;
-  int Len;
+  int Len=0;
   char *s[MAXINPUTITEMS];
 
   for (int pp=0;pp<_pModel->GetNumSubBasins();pp++)
@@ -596,14 +620,39 @@ void CDemandOptimizer::AddReservoirConstraints()
         TokenizeString(expString, s, Len);
         exp = ParseExpression((const char**)(s), Len, 0, "internal");
         pConst=AddConstraint(TSname, exp, true);
-        pConst->penalty_over=4.0;
+        pConst->penalty_over=3.0;
       }
 
       // Max Q Decrease 
+      // Q^{n+1} > (-dQ/dt) * dt +Q^{n}
+      //------------------------------------------------------------------------
+      TSname="_MaxQDecrease_" + SBIDs;
+      if (UserTimeSeriesExists(TSname))
+      {  
+        expString = "!Q" + SBIDs + " > @ts(" + TSname + ",0) * -86400 +!Q"+SBIDs+"[-1]"; //TBD - check if this is !Q[0] or !Q[-1]
+        //expString = "!q" + SBIDs + " < @ts(" + TSname + ",0)"; 
+        TokenizeString(expString, s, Len);
+        exp = ParseExpression((const char**)(s), Len, 0, "internal");
+        pConst=AddConstraint(TSname, exp, true);
+        pConst->penalty_over=3.0;
+      }
 
+      // Target Stage 
+      // Q == Q_target
+      //------------------------------------------------------------------------
+      TSname="_TargetStage_" + SBIDs;
+      if (UserTimeSeriesExists(TSname))
+      {  
+        expString="!Q" + SBIDs+ " = @ts(" + TSname + ",0)"; 
+        TokenizeString(expString, s, Len);
+        exp = ParseExpression((const char**)(s), Len, 0, "internal");
+        pConst=AddConstraint(TSname, exp, true);
+        pConst->penalty_over=2.0;
+      }
     }
   }
   
+  //TO DO: Initialize all of the time series above. 
 }
 //////////////////////////////////////////////////////////////////
 // indexing for DV vector
@@ -769,7 +818,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
       if ((pSB->GetNumWaterDemands()>0) && 
           ((pSB->GetUnusableFlowPercentage()>0) || (pSB->GetEnviroMinFlow(t)>0)))  {
         col_ind[i]=GetDVColumnInd(DV_SLACK,s);
-        row_val[i]=10.0; //Is this a fair penalty?- needs to be stronger than demand penalty. make a parameter? 
+        row_val[i]=10.0; //Is this a fair penalty?- needs to be stronger than all upstream demand penaltys. make a parameter? 
         i++; s++;
       }
     }
@@ -1014,9 +1063,9 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
       if ((minQ > REAL_SMALL) || (ufp> REAL_SMALL)) //otherwise simplifies to Q>=0, already satisfied
       {
         //cout<<"ADDING ROW "<<ufp<< " "<<minQ<<endl;
-        for (int ii = 0; ii < i; ii++) {
+        /*for (int ii = 0; ii < i; ii++) {
           cout<<"col,row: "<<col_ind[ii]<<","<<row_val[ii]<<endl;
-        }
+        }*/
         retval = lp_lib::add_constraintex(pLinProg,i,row_val,col_ind,ROWTYPE_GE,RHS);
         ExitGracefullyIf(retval==0,"SolveDemandProblem::Error adding environmental flow goal",RUNTIME_ERR);
       } 
@@ -1119,7 +1168,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
       _aCumDelivery[d]+=value*Options.timestep*SEC_PER_DAY;
       if (tt.julian_day==_aCumDelDate[d]){_aCumDelivery[d]=0.0; }
       //
-      //pModel->GetSubBasin(p)->SetDelivery(d,value);  //this can be handled within CSubBasin::ApplyIrrigationDemand instead   
+      pModel->GetSubBasin(p)->AddToDeliveredDemand(value);  
     } 
     
     else if (typ == DV_SLACK) {
@@ -1205,11 +1254,14 @@ void CDemandOptimizer::WriteMinorOutput(const optStruct &Options,const time_stru
       _DEMANDOPT<<","<<_pDecisionVars[i]->value;
     }
   }
-  _DEMANDOPT<<","<<_aDelivery[0];
+  //_DEMANDOPT<<","<<_aDelivery[0];
   _DEMANDOPT<<endl;
 
   // GoalSatisfaction.csv 
   //--------------------------------------------------------
+  // All slack values reported should be positive
+  // each entry represents the magnitude of a goal violation, expressed in m3/s
+  // for environmental flow goals, for instance, this is E-Q if Q<E, 0 otherwise  
   int p;
   bool include_pen=false;
   double pen;

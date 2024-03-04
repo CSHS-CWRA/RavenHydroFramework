@@ -567,7 +567,7 @@ void MassEnergyBalance( CModel            *pModel,
       pBasin->RouteWater    (aQoutnew,res_ht,res_outflow,res_const,res_Qstruct,Options,tt);      //Where everything happens!
 
       Qwithdrawn=0;
-      irr_Q=pBasin->ApplyIrrigationDemand(t+tstep,aQoutnew[pBasin->GetNumSegments()-1]);
+      irr_Q=pBasin->ApplyIrrigationDemand(t+tstep,aQoutnew[pBasin->GetNumSegments()-1],(pModel->GetDemandOptimizer()!=NULL));
       Qwithdrawn+=irr_Q;
 
       for(int i=0; i<pBasin->GetNumDiversions();i++) {

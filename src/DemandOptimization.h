@@ -254,7 +254,7 @@ public: /*------------------------------------------------------*/
 
   int    GetDemandIndexFromName(const string dname) const;
   double GetNamedConstant      (const string s) const; 
-  double GetTotalWaterDemandDelivery(const int p) const;
+  double GetDemandDelivery     (const int p) const;
   int    GetNumUserDVs         () const;
 
   void   SetHistoryLength      (const int n);

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2024 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 #include "EnergyTransport.h"
@@ -1068,6 +1068,7 @@ force_struct CModel::GetAverageForcings() const
       Fave.SW_radia_unc   +=area_wt*pF_hru->SW_radia_unc;
       Fave.SW_radia_net   +=area_wt*pF_hru->SW_radia_net;
       Fave.SW_radia_subcan+=area_wt*pF_hru->SW_radia_subcan;
+      Fave.SW_subcan_net  +=area_wt*pF_hru->SW_subcan_net;
       Fave.LW_incoming    +=area_wt*pF_hru->LW_incoming;
       Fave.LW_radia_net   +=area_wt*pF_hru->LW_radia_net;
       Fave.day_length     +=area_wt*pF_hru->day_length;
@@ -2489,6 +2490,7 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
 	    ((tt.model_time == 0.0) && (_pClassChanges[j]->modeltime < 0.0)) )
     {//change happens this time step
 
+      //cout<<"updating classes on "<<tt.date_string<< endl;
       int kk   =_pClassChanges[j]->HRU_groupID;
       for(int k_loc = 0; k_loc <_pHRUGroups[kk]->GetNumHRUs();k_loc++)
       {
@@ -2510,9 +2512,9 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
           _pHydroUnits[k]->ChangeHRUType(typ);
         }
 
-        for(j=0; j<_nProcesses;j++)// kt
+        for(int jj=0; jj<_nProcesses;jj++)// kt
         {
-          _aShouldApplyProcess[j][k] = _pProcesses[j]->ShouldApply(_pHydroUnits[k]);
+          _aShouldApplyProcess[jj][k] = _pProcesses[jj]->ShouldApply(_pHydroUnits[k]);
         }
       }
     }

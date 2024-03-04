@@ -837,9 +837,9 @@ double CEnthalpyModel::GetEnergyLossesInTransit(const int p, double& Q_sens, dou
   const CSubBasin*  pBasin=_pModel->GetSubBasin(p);
   const CHydroUnit*   pHRU=_pModel->GetHydroUnit(pBasin->GetReachHRUIndex());
 
-  double    tstep =_pModel->GetOptStruct()->timestep;
-  int       mHypo =_mHyporheic;
-  int       iGW   =_pModel->GetStateVarIndex(SOIL,mHypo);
+  double tstep    =_pModel->GetOptStruct()->timestep;
+  int    mHypo    =_mHyporheic;
+  int    iGW      =_pModel->GetStateVarIndex(SOIL,mHypo);
 
   double temp_air =pHRU->GetForcingFunctions()->temp_ave;
   double temp_GW  =pBasin->GetAvgConcentration(iGW);

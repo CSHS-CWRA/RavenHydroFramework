@@ -42,6 +42,7 @@ void ZeroOutForcings(force_struct &F)
   F.ET_radia=0.0;
   F.SW_radia=0.0;
   F.SW_radia_subcan=0.0;
+  F.SW_subcan_net=0.0;
   F.LW_incoming=0.0;
   F.SW_radia_net=0.0;
   F.LW_radia_net=0.0;
@@ -128,6 +129,7 @@ forcing_type GetForcingTypeFromString(const string &forcing_string)
   else if (f=="SHORTWAVE"        ){return F_SW_RADIA;}//alias
   else if (f=="SW_RADIA_NET"     ){return F_SW_RADIA_NET;}
   else if (f=="SW_RADIA_SUBCAN"  ){return F_SW_RADIA_SUBCAN;}
+  else if (f=="SW_SUBCAN_NET"    ){return F_SW_SUBCAN_NET;}
   else if (f=="LW_INCOMING"      ){return F_LW_INCOMING;}
   else if (f=="LW_RADIA"         ){return F_LW_RADIA_NET;}//alias
   else if (f=="LONGWAVE"         ){return F_LW_RADIA_NET;}//alias
@@ -197,6 +199,7 @@ double GetForcingFromType(const forcing_type &ftype, const force_struct &f)
   else if (ftype==F_SW_RADIA        ){return f.SW_radia;}
   else if (ftype==F_SW_RADIA_UNC    ){return f.SW_radia_unc;}
   else if (ftype==F_SW_RADIA_SUBCAN ){return f.SW_radia_subcan;}
+  else if (ftype==F_SW_SUBCAN_NET   ){return f.SW_subcan_net;}
   else if (ftype==F_SW_RADIA_NET    ){return f.SW_radia_net;}
   else if (ftype==F_LW_INCOMING     ){return f.LW_incoming;}
   else if (ftype==F_LW_RADIA_NET    ){return f.LW_radia_net;}
@@ -264,6 +267,7 @@ void  SetForcingFromType(const forcing_type &ftype, force_struct &f, const doubl
   else if (ftype==F_SW_RADIA        ){f.SW_radia=val;}
   else if (ftype==F_SW_RADIA_UNC    ){f.SW_radia_unc=val;}
   else if (ftype==F_SW_RADIA_SUBCAN ){f.SW_radia_subcan=val;}
+  else if (ftype==F_SW_SUBCAN_NET   ){f.SW_subcan_net=val;}
   else if (ftype==F_SW_RADIA_NET    ){f.SW_radia_net=val;}
   else if (ftype==F_LW_INCOMING     ){f.LW_incoming=val;}
   else if (ftype==F_LW_RADIA_NET    ){f.LW_radia_net=val;}
@@ -345,6 +349,7 @@ string GetForcingTypeUnits(forcing_type ftype)
   case F_SW_RADIA:        {units="MJ/m2/d"; break;}
   case F_SW_RADIA_UNC:    {units="MJ/m2/d"; break;}
   case F_SW_RADIA_SUBCAN: {units="MJ/m2/d"; break;}
+  case F_SW_SUBCAN_NET:   {units="MJ/m2/d"; break;}
   case F_SW_RADIA_NET:    {units="MJ/m2/d"; break;}
   case F_LW_INCOMING:     {units="MJ/m2/d"; break;}
   case F_LW_RADIA_NET:    {units="MJ/m2/d"; break;}
@@ -410,6 +415,7 @@ string ForcingToString(const forcing_type ftype)
   case F_SW_RADIA:        {fstring="SW_RADIA"; break;}
   case F_SW_RADIA_UNC:    {fstring="SW_RADIA_UNC"; break;}
   case F_SW_RADIA_SUBCAN: {fstring="SW_RADIA_SUBCAN"; break;}
+  case F_SW_SUBCAN_NET:   {fstring="SW_SUBCAN_NET"; break;}
   case F_LW_INCOMING:     {fstring="LW_INCOMING"; break;}
   case F_SW_RADIA_NET:    {fstring="SW_RADIA_NET"; break;}
   case F_LW_RADIA_NET:    {fstring="LW_RADIA_NET"; break;}

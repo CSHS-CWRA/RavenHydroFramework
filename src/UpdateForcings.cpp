@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2024 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 #include "Radiation.h"
@@ -131,6 +131,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
     Fg[g].SW_radia        =_pGauges[g]->GetForcingValue    (F_SW_RADIA,nn);
     Fg[g].SW_radia_net    =_pGauges[g]->GetForcingValue    (F_SW_RADIA_NET,nn);
     Fg[g].SW_radia_subcan =_pGauges[g]->GetForcingValue    (F_SW_RADIA_SUBCAN,nn);
+    Fg[g].SW_subcan_net   =_pGauges[g]->GetForcingValue    (F_SW_SUBCAN_NET,nn);
     Fg[g].LW_incoming     =_pGauges[g]->GetForcingValue    (F_LW_INCOMING,nn);
     Fg[g].ET_radia        =_pGauges[g]->GetForcingValue    (F_ET_RADIA,nn);
     Fg[g].SW_radia_unc    =Fg[g].SW_radia;
@@ -217,6 +218,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
           F.SW_radia       += wt * Fg[g].SW_radia;
           F.SW_radia_net   += wt * Fg[g].SW_radia_net;
           F.SW_radia_subcan+= wt * Fg[g].SW_radia_subcan;
+          F.SW_subcan_net  += wt * Fg[g].SW_subcan_net;
           F.PET_month_ave  += wt * Fg[g].PET_month_ave;
           F.potential_melt += wt * Fg[g].potential_melt;
           F.PET            += wt * Fg[g].PET;
@@ -568,8 +570,8 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 
       if(Options.SW_radia_net == NETSWRAD_CALC) //(default)
       {
-        F.SW_radia_net        = F.SW_radia       *(1-_pHydroUnits[k]->GetTotalAlbedo());
-//      F.SW_radia_subcan_net = F.SW_radia_subcan*(1-_pHydroUnits[k]->GetLandAlbedo());
+        F.SW_radia_net  = F.SW_radia       *(1-_pHydroUnits[k]->GetTotalAlbedo(false));
+        F.SW_subcan_net = F.SW_radia_subcan*(1-_pHydroUnits[k]->GetTotalAlbedo(true ));
       }//otherwise, uses data
 
       F.LW_radia_net = CRadiation::EstimateLongwaveRadiation(GetStateVarIndex(SNOW), this, &F, _pHydroUnits[k], F.LW_incoming);
