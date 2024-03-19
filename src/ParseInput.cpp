@@ -2782,7 +2782,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(232):  //----------------------------------------------
     {/*Lateral Flush
-       :LateralFlush RAVEN_DEFAULT [FROM_HRUGroup] [FROM SV] To [TO_HRUGROUP] [TO_SV] {'INTERBASIN'} */
+       :LateralFlush RAVEN_DEFAULT [FROM_HRUGroup] [FROM_SV] To [TO_HRUGROUP] [TO_SV] {'INTERBASIN'} */
       if(Options.noisy){ cout <<"Lateral Flush Process"<<endl; }
       bool interbasin=false;
       if(Len<7){ ImproperFormatWarning(":LateralFlush",p,Options.noisy); break; }

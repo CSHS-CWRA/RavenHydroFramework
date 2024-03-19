@@ -126,9 +126,9 @@ void CmvLatFlush::Initialize()
     _kTo     [q]    =kTo[q];
     _iFromLat[q]    =_iFlushFrom;
     _iToLat  [q]    =_iFlushTo;
-    /*cout <<"latflush connections: "<<_pModel->GetHydroUnit(_kFrom[q])->GetID()<<" "<<_pModel->GetHydroUnit(_kTo[q])->GetID()<<" ";
-    cout<<CStateVariable::SVTypeToString(_pModel->GetStateVarType(_iFromLat[q]),-1)<<" ";
-    cout<<CStateVariable::SVTypeToString(_pModel->GetStateVarType(_iToLat[q]),-1)<<endl;*/
+    /*cout << "latflush connections: " << _pModel->GetHydroUnit(_kFrom[q])->GetID() << " " << _pModel->GetHydroUnit(_kTo[q])->GetID() << " ";
+    cout<<_pModel->GetStateVarInfo()->SVTypeToString(_pModel->GetStateVarType(_iFromLat[q]),-1)<<" ";
+    cout<<_pModel->GetStateVarInfo()->SVTypeToString(_pModel->GetStateVarType(_iToLat[q]),-1)<<endl;*/
   }
   delete [] kFrom;
   delete [] kTo;

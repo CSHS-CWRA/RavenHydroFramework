@@ -114,6 +114,7 @@ private:/*------------------------------------------------------*/
   double                 _Qirr;   ///< Qirr (irrigation/diversion flow) at end of timestep [m3/s] (for MB accounting)
   double             _QirrLast;   ///< Qirr (irrigation/diversion flow) at start of timestep [m3/s] (for MB accounting)
   double           _Qdelivered;   ///< delivered flow at end of time step if management optimization is used [m3/s]
+  double         *_aQdelivered;   ///< delivered flow at end of time step for each water demand [m3/s] [size: _nIrrigDemands]
 
   //Hydrograph Memory
   double            *_aQinHist;   ///< history of inflow from upstream into primary channel [m3/s][size:nQinHist] (aQinHist[n] = Qin(t-ndt))
@@ -168,6 +169,7 @@ public:/*-------------------------------------------------------*/
 
   //Accessor functions
   long                 GetID                () const;
+  int                  GetGlobalIndex       () const; //[p]
   string               GetName              () const;
   double               GetBasinArea         () const;
   double               GetDrainageArea      () const;
@@ -205,8 +207,8 @@ public:/*-------------------------------------------------------*/
   double               GetTopWidth          () const;
   bool                 UseInFlowAssimilation() const;
   int                  GetNumWaterDemands   () const;
-  int                  GetWaterDemandID     (const int i) const;
-  string               GetWaterDemandName   (const int i) const;
+  int                  GetWaterDemandID     (const int ii) const;
+  string               GetWaterDemandName   (const int ii) const;
   double               GetUnusableFlowPercentage() const;
 
   const double   *GetUnitHydrograph        () const;
@@ -240,7 +242,8 @@ public:/*-------------------------------------------------------*/
   double          GetTotalWaterDemand      (const double &t) const;    //[m3/s] total from downstream end of channel at point in time
   double          GetWaterDemand           (const int ii,const double &t) const;  //[m3/s] iith demand from downstream end of channel at point in time
   double          GetDownstreamIrrDemand   (const double &t) const;    //[m3/s] cumulative downstream irrigation demand, including from this subbasin
-  double          GetDemandDelivery        () const;                   //[m3/s] instantaneous delivery rate Qirr
+  double          GetDemandDelivery        () const;                   //[m3/s] instantaneous total delivery rate Qirr
+  double          GetDemandDelivery        (const int ii) const;       //[m3/s] instantaneous delivery rate to demand ii 
   double          GetEnviroMinFlow         (const double &t) const;    //[m3/s] environmental minimum flow target from downstream outlet
   bool            HasEnviroMinFlow         () const;                   // true if basin has enviro min flow time series 
   bool            HasIrrigationDemand      () const;                   // true if basin has specified irrigation demand
@@ -282,7 +285,7 @@ public:/*-------------------------------------------------------*/
   void            SetQinHist               (const int N, const double *aQi);
   void            SetDownstreamID          (const long down_SBID);
   void            SetDownstreamBasin       (const CSubBasin *pSB);
-  void            AddToDeliveredDemand     (const double Qdel);
+  void            AddToDeliveredDemand     (const int ii, const double Qdel);
   void            SetGauged                (const bool isgauged);
   void            Disable                  ();
   void            Enable                   ();

@@ -102,6 +102,9 @@ bool CParser::Tokenize(char **out, int &numwords){
   if (comma_only){
     delimiters[0]=delimiters[1]=',';
   }
+  if (_parsing_math_exp) {
+     delimiters[2]=' ';//don't use commas
+  }
   (*wholeline)=0;
   while ((*wholeline)==0){//while loop handles blank lines
     if (INPUT->eof()){return true;}
@@ -115,8 +118,8 @@ bool CParser::Tokenize(char **out, int &numwords){
   }                 //if line is null, break, return true
   if (_parsing_math_exp) {
     string line;
-    line=AddSpacesBeforeOps(wholeline);
-    strcpy(wholeline,line.c_str());
+   // line=AddSpacesBeforeOps(wholeline); //NOT WORKING
+    //strcpy(wholeline,line.c_str());
     _parsing_math_exp=false;
   }
 

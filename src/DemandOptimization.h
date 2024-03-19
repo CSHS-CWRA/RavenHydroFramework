@@ -98,14 +98,15 @@ struct expressionTerm
   string        nested_exp2;     //< contents of second argument to function
  
   string        origexp;         //< original string expression 
+  int           p_index;         //< subbasin index (for history variables, e.g, !Q324[-2])
 
-  expressionTerm(); 
+  expressionTerm(); //defined in DemandExpressionHandling.cpp
 };
 
 //////////////////////////////////////////////////////////////////
 /// expression structure
-///   abstraction of (A*B*C)+(D*E)+(-F)+(G*H) <= 0  
-///   parenthetical collections are groups of terms -example has 4 groups with [3,2,1,2] Terms per group
+///   abstraction of (A*B*C)+(D*E)-(F)+(G*H) <= 0  
+///   parenthetical collections are groups of terms -example has 4 groups with [3,2,1,2] terms per group
 //
 struct expressionStruct //full expression 
 { 
@@ -113,6 +114,8 @@ struct expressionStruct //full expression
   int                nGroups;     //< total number of terms groups in expression 
   int               *nTermsPerGrp;//< number of terms per group [size: nGroups]
   comparison         compare;     //< comparison operator (==, <, >)
+
+  string             origexp;     //< original string expression 
 
   expressionStruct();
   ~expressionStruct();
@@ -127,7 +130,7 @@ struct decision_var
   string  name;      //< decision variable names: Qxxxx or Dxxxx where xxxx is SBID 
   dv_type dvar_type; //< decision variable type: e.g., DV_QOUT or DV_DELIVERY
   int     p_index;   //< raw subbasin index p (not SBID) of decision variable (or DOESNT_EXIST if not linked to SB) 
-  int     dem_index; //< demand index in subbasin p (or DOESNT_EXIST if type not DV_DELIVERY) (i..nDemands in SB p_index, usually <=1)
+  int     dem_index; //< demand index in subbasin p (or DOESNT_EXIST if type not DV_DELIVERY) (ii..nDemands in SB p_index, usually <=1)
   int     loc_index; //< local index (rescount or subbasincount or demand count) 
   double  value;     //< solution value for decision variable
   double  min;       //< minimum bound (default=0) 
@@ -206,11 +209,15 @@ private: /*------------------------------------------------------*/
 
   int              _nDemands;           //< local storage of number of demand locations (:IrrigationDemand/:WaterDemand + :ReservoirExtraction time series)
   int             *_aDemandIDs;         //< local storage of demand IDs [size:_nDemands]
+  long            *_aDemandSBIDs;       //< local storage of subbasin IDs for each demand [size: _nDemands]
   string          *_aDemandAliases;     //< list of demand aliases [size: _nDemands] 
   double          *_aDemandPenalties;   //< array of priority weights [size: _nDemands]
   double          *_aDelivery;          //< array of delivered water for each demand [m3/s] [size: _nDemands]
   double          *_aCumDelivery;       //< array of cumulative deliveries of demand since _aCumDivDate of this year [m3] [size: _nDemands] 
   int             *_aCumDelDate;        //< julian date to calculate cumulative deliveries from {default: Jan 1)[size: _nDemands]
+
+  int            **_aUpstreamDemands;   //< demand indices (d) upstream (inclusive) of subbasin p [size: nSBs][size: _aUpCount] 
+  int             *_aUpCount;;          //< number of demands upstream (inclusive) of subbasin p [size: nSBs]
   
   //int            _nDemandGroups;      //< number of demand groups 
   //CDemandGroup **_pDemandGroups;      //< array of pointers to demand groups   
@@ -228,37 +235,45 @@ private: /*------------------------------------------------------*/
   CLookupTable  **_pUserLookupTables;   //< array of pointers to user variable lookup tables 
 
   int             _nHistoryItems;      //< size of flow/demand/stage history that needs to be stored (in time steps) (from :LookbackDuration)
-  double        **_aQhist;             //< history of subbasin discharge [size: nSBs * _nHistoryItems]
-  double        **_aDhist;             //< history of actual diversions [size: nSBs * _nHistoryItems]
-  double        **_ahhist;             //< history of actual reservoir stages  (or 0 for non-reservoir basins) [size: nSBs * _nHistoryItems]
+  double        **_aQhist;             //< history of subbasin discharge [size: _nEnabledSBs * _nHistoryItems]
+  double        **_aDhist;             //< history of actual diversions [size: _nEnabledSBs * _nHistoryItems]
+  double        **_ahhist;             //< history of actual reservoir stages  (or 0 for non-reservoir basins) [size: _nEnabledSBs * _nHistoryItems]
 
   ofstream        _DEMANDOPT;          //< ofstream for DemandOptimization.csv
   ofstream        _GOALSAT;            //< ofstream for GoalSatisfaction.csv
 
+  int             _do_debug_level;      //< =1 if debug info is to be printed to screen, =2 if LP matrix also printed (full debug), 0 for nothing
+
+  void         UpdateHistoryArrays();
   bool     ConvertToExpressionTerm(const string s, expressionTerm* term, const int lineno, const string filename)  const;
   int               GetDVColumnInd(const dv_type typ, const int counter) const;
 
 #ifdef _LPSOLVE_
   void           AddConstraintToLP(const int i, lp_lib::lprec *pLinProg, const time_struct &tt,int *col_ind, double *row_val) const;
 #endif 
-  double              EvaluateTerm(expressionTerm **pTerms,const int k, const int nn) const;
+  double              EvaluateTerm(expressionTerm **pTerms,const int k, const double &t) const;
 
-  void             CheckConditions(const int ii, const time_struct &tt); 
+  bool             CheckConditions(const int ii, const time_struct &tt) const; 
 
   bool        UserTimeSeriesExists(string TSname) const;
   void     AddReservoirConstraints();
+
+  void     IdentifyUpstreamDemands(); 
 
 public: /*------------------------------------------------------*/
   CDemandOptimizer(CModel *pMod);
   ~CDemandOptimizer();
 
   int    GetDemandIndexFromName(const string dname) const;
-  double GetNamedConstant      (const string s) const; 
+  double GetNamedConstant      (const string s) const;
+  int    GetUserDVIndex        (const string s) const;
   double GetDemandDelivery     (const int p) const;
   int    GetNumUserDVs         () const;
+  int    GetDebugLevel         () const; 
 
   void   SetHistoryLength      (const int n);
   void   SetCumulativeDate     (const int julian_date, const string demandID);
+  void   SetDebugLevel         (const int lev);
   
   void   AddDecisionVar        (const decision_var *pDV);
   void   SetDecisionVarBounds  (const string name, const double &min, const double &max);

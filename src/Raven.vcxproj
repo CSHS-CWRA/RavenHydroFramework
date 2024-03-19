@@ -966,6 +966,8 @@
     <ClInclude Include="EnKF.h" />
     <ClInclude Include="FrozenGround.h" />
     <ClInclude Include="FrozenLake.h" />
+    <ClInclude Include="GracefulEndBMI.h" />
+    <ClInclude Include="GracefulEndStandalone.h" />
     <ClInclude Include="GroundwaterModel.h" />
     <ClInclude Include="GWRiverConnection.h" />
     <ClInclude Include="GWSWProcesses.h" />

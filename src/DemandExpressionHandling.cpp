@@ -22,6 +22,7 @@ expressionTerm::expressionTerm()
   pTS   =NULL;
   pLT   =NULL;
   timeshift=0;
+  p_index=DOESNT_EXIST;
 
   is_nested  =false;
   nested_ind1=DOESNT_EXIST;
@@ -29,6 +30,7 @@ expressionTerm::expressionTerm()
   nested_exp1 = "";
   nested_exp2 = "";
 }
+
 //////////////////////////////////////////////////////////////////
 /// constructor and destructor of expression structure
 //
@@ -122,8 +124,42 @@ double CDemandOptimizer::GetNamedConstant(const string s) const
   }
   return RAV_BLANK_DATA;
 }
+int CDemandOptimizer::GetUserDVIndex(const string s) const {
+  int ct=0;
+  for (int i = 0; i < _nDecisionVars; i++) {
+    if (_pDecisionVars[i]->dvar_type==DV_USER){
+      if (_pDecisionVars[i]->name==s){return ct;}
+      ct++;
+    }
+  }
+  return DOESNT_EXIST;
+}
+
 int CDemandOptimizer::GetNumUserDVs() const{
   return _nUserDecisionVars;
+}
+string TermTypeToString(termtype t) 
+{
+  if (t==TERM_DV     ){return "TERM_DV"; }   
+  if (t==TERM_TS     ){return "TERM_TS"; }   
+  if (t==TERM_LT     ){return "TERM_LT"; }   
+  if (t==TERM_CONST  ){return "TERM_CONST"; }   
+  if (t==TERM_HISTORY){return "TERM_HISTORY"; }   
+  if (t==TERM_MAX    ){return "TERM_MAX"; }   
+  if (t==TERM_MIN    ){return "TERM_MIN"; }   
+  if (t==TERM_CONVERT){return "TERM_CONVERT"; }   
+  if (t==TERM_UNKNOWN){return "TERM_UNKNOWN"; }   
+  return "TERM_UNKNOWN";
+}
+string DVTypeToString(dv_type t) 
+{
+  if (t==DV_QOUT    ){return "DV_QOUT"; }    
+  if (t==DV_QOUTRES ){return "DV_QOUTRES"; }  
+  if (t==DV_STAGE   ){return "DV_STAGE"; }    
+  if (t==DV_DELIVERY){return "DV_DELIVERY"; } 
+  if (t==DV_SLACK   ){return "DV_SLACK"; }   
+  if (t==DV_USER    ){return "DV_USER"; }    
+  return "DV_UNKNOWN";
 }
 //////////////////////////////////////////////////////////////////
 /// \brief parses individual expression string and converts to expression term structure
@@ -144,31 +180,61 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
 
   string tmp(s);
   term->origexp=tmp;
+  term->p_index=DOESNT_EXIST;
 
   size_t i1=s.find("[");
   size_t i2=s.find("]");
   size_t i3=s.find("(");
   
   if ((i1 != NPOS) && (i2 != NPOS) && (i3==NPOS)) { //array NOT nested within function
-    string contents=s.substr(i1+1,i2-i1); cout<<" BRACKET CONTENTS: ["<<contents<<"]";
+    string contents=s.substr(i1+1,i2-i1); 
+    //cout<<" BRACKET CONTENTS: ["<<contents<<"]"<<endl;
     n=s_to_i(contents.c_str());
     has_brackets=true;
   }
 
   //----------------------------------------------------------------------
-  if      (s[0]=='!')  //decision variable e.g., !Q234 or !D42a 
+  if      (s[0]=='!')  //decision variable e.g., !Q234 or !D42a or historical lookup (e.g., Q102[-2])
   {
     int p=DOESNT_EXIST;
     int d=DOESNT_EXIST;
-    
-    if ((s[1] == 'Q') || (s[1] == 'h')) 
+    if (has_brackets)  // historical lookup (e.g., Q102[-2])
     {
-      string sbid=s.substr(2,s.size() - 2); cout << "EXP BASIN ID: " << sbid<<endl;
-      long SBID=s_to_l(sbid.c_str());
+      ExitGracefullyIf(n>=0,"ConvertToExpressionTerm:: term in square brackets must be <=0 for historical variables.",BAD_DATA_WARN);
+      ExitGracefullyIf(n<-_nHistoryItems, "ConvertToExpressionTerm:: term in square brackets exceeds the magnitude of the :LookbackDuration", BAD_DATA_WARN);
+
+      if (n<0)
+      {
+        string sbid=s.substr(2,i1-2); 
+        long   SBID=s_to_l(sbid.c_str()); 
+        p=_pModel->GetSubBasinIndex(SBID);
+        
+        if (p == DOESNT_EXIST) {
+          warn="ConvertToExpressionTerm: invalid subbasin ID in expression"+warnstring;
+          ExitGracefully(warn.c_str(), BAD_DATA_WARN);
+          return false;
+        }
+        if (!_pModel->GetSubBasin(p)->IsEnabled()) {
+          WriteWarning("ConvertToExpressionTerm: history expression "+warnstring+" includes reference to disabled subbasin. Expression will be ignored",true);
+          return false;
+        }
+        term->type=TERM_HISTORY;
+        term->timeshift=-n;
+        term->p_index=p;
+        return true;
+      }
+    }       
+
+    if ((s[1] == 'Q') || (s[1] == 'h') || (s[1]=='I'))
+    {
+      string sbid=s.substr(2,s.size() - 2); 
+      cout << "EXP BASIN ID: " << sbid<<endl;
+      long   SBID=s_to_l(sbid.c_str());
       p=_pModel->GetSubBasinIndex(SBID);
       if (p == DOESNT_EXIST) {
         warn="ConvertToExpressionTerm: invalid subbasin ID in expression"+warnstring;
         ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+        return false;
       }
       if (!_pModel->GetSubBasin(p)->IsEnabled()) {
         warn="ConvertToExpressionTerm: reference to disabled subbasin "+warnstring+". Constraint/goal will be disabled";
@@ -180,44 +246,48 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
         WriteWarning(warn.c_str(),true);
         return false;
       }
+      if      (s[1]=='Q')
+      {
+        if      (_aResIndices[p] != DOESNT_EXIST) {
+          term->DV_ind = GetDVColumnInd(DV_QOUTRES, _aResIndices[p]);  
+        } 
+        else if (_aSBIndices[p]  != DOESNT_EXIST) {
+          term->DV_ind=GetDVColumnInd(DV_QOUT,_aSBIndices[p]);  
+        }
+      } 
+      else if      (s[1]=='I')
+      {
+        if (_pModel->GetSubBasin(p)->GetReservoir()==NULL) {
+          warn="ConvertToExpressionTerm: reservoir inflow in expression for basin without reservoir "+warnstring+ ". Expression will be ignored";
+          WriteWarning(warn.c_str(),true);
+          return false;
+        }
+        term->DV_ind=GetDVColumnInd(DV_QOUT,_aSBIndices[p]);  
+      } 
+      else if (s[1]=='h'){
+        term->DV_ind=GetDVColumnInd(DV_STAGE,_aResIndices[p]);  
+      } 
     } 
     else if (s[1] == 'D')  { 
       string demandID;
-      if (s[1] == '.') {demandID=s.substr(2);} //!D1234
-      else             {demandID=s.substr(1);} //!D.FarmerBobsDemand
+      if (s[1] == '.') {demandID=s.substr(2);} //!D.FarmerBobsDemand
+      else             {demandID=s.substr(1);} //!D1234
       d=GetDemandIndexFromName(demandID);
       if (d == DOESNT_EXIST) {
         warn = "ConvertToExpressionTerm: invalid demand ID or demand from disabled subbasin used in expression " +
-               warnstring +" goal/constraint will be ignored";
+               warnstring +": goal/constraint will be ignored";
         WriteWarning(warn.c_str(),true);
         return false; 
       }
+      term->DV_ind=GetDVColumnInd(DV_DELIVERY,d);
     }
     else{
-      warn="ConvertToExpression:: Unparseable term in expression starting with ! - only !Q, !d, or !h currently supported. "+warnstring;
+      warn="ConvertToExpression:: Unparseable term in expression starting with ! - only !Q, !I, !D, or !h currently supported. "+warnstring;
       ExitGracefully(warn.c_str(), BAD_DATA_WARN);
     }
     
-    if      (s[1]=='Q')
-    {
-      if      (_aResIndices[p] != DOESNT_EXIST) {
-        term->DV_ind = GetDVColumnInd(DV_QOUTRES, _aResIndices[p]);  
-      } 
-      else if (_aSBIndices[p]  != DOESNT_EXIST) {
-        term->DV_ind=GetDVColumnInd(DV_QOUT,_aSBIndices[p]);  
-      }
-      else {
-        //invalid p - likely not enabled 
-      }
-    } 
-    else if (s[1]=='D')
-    {
-      term->DV_ind=GetDVColumnInd(DV_DELIVERY,d);
-    } 
-    else if (s[1]=='h'){
-      term->DV_ind=GetDVColumnInd(DV_STAGE,_aResIndices[p]);  
-    } 
     term->type=TERM_DV;
+    return true;
   } 
   //----------------------------------------------------------------------
   else if (s.find("@ts(") != NPOS) //time series (e.g., @ts(my_time_series,n)
@@ -238,11 +308,11 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     if ((is != NPOS) && (ie != NPOS)) 
     {
       bool found=false;
-      name  = s.substr(is+4,ie-is);
-      index = s_to_i(s.substr(ie+1,ip-ie).c_str());
+      name  = s.substr(is+4,ie-(is+4));
+      index = s_to_i(s.substr(ie+1,ip-(ie+1)).c_str());
       term->pTS=NULL;
       for (int i = 0; i < _nUserTimeSeries; i++) {
-        if (_pUserTimeSeries[i]->GetName() == name) {
+        if (StringToUppercase(_pUserTimeSeries[i]->GetName()) == StringToUppercase(name)) {
           term->pTS = _pUserTimeSeries[i];
           found=true;
         }
@@ -274,11 +344,13 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     if ((is != NPOS) && (ie != NPOS)) 
     {
       bool found=false;
-      name = s.substr(is+8,ie-is);
-      x_in = s.substr(ie+1,ip-ie);
+      name = s.substr(is+8,ie-(is+8));
+      x_in = s.substr(ie+1,ip-(ie+1));
+      //cout<<" LOOKUP TABLE NAME : "<<name<<endl;
+      //cout<<" INPUT PARAM : "<<x_in<<endl;
       term->pLT=NULL;
       for (int i = 0; i < _nUserLookupTables; i++) {
-        if (_pUserLookupTables[i]->GetName() == name) {
+        if (StringToUppercase(_pUserLookupTables[i]->GetName()) == StringToUppercase(name)) {
           term->pLT = _pUserLookupTables[i];
           found=true;
         }
@@ -288,6 +360,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
       if (!found) {
         warn="ConvertToExpression: unrecognized lookup table name in @lookup command"+warnstring;
         ExitGracefully(warn.c_str(), BAD_DATA_WARN);
+        return false;
       }
     }
   }
@@ -302,15 +375,17 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     if (ie == NPOS) {
       warn="ConvertToExpressionTerm: missing comma in @max expression"+warnstring;
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+      return false;
     }
     if (ip == NPOS) {
       warn="ConvertToExpressionTerm: missing end paretheses in @max expression"+warnstring;
       ExitGracefully(warn.c_str(), BAD_DATA_WARN);
+      return false;
     }
     if ((is != NPOS) && (ie != NPOS)) 
     {
-      x_in = s.substr(is+5,ie-is);
-      y_in = s.substr(ie+1,ip-ie);
+      x_in = s.substr(is+5,ie-(is+5));
+      y_in = s.substr(ie+1,ip-(ie+1));
       term->nested_exp1 =x_in;
       term->nested_exp2 =y_in;
       term->type        =TERM_MAX;
@@ -327,15 +402,17 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     if (ie == NPOS) {
       warn="ConvertToExpressionTerm: missing comma in @min expression"+warnstring;
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+      return false;
     }
     if (ip == NPOS) {
       warn="ConvertToExpressionTerm: missing end paretheses in @min expression"+warnstring;
       ExitGracefully(warn.c_str(), BAD_DATA_WARN);
+      return false;
     }
     if ((is != NPOS) && (ie != NPOS)) 
     {
-      x_in = s.substr(is+5,ie-is);
-      y_in = s.substr(ie+1,ip-ie);
+      x_in = s.substr(is+5,ie-(is+5));
+      y_in = s.substr(ie+1,ip-(ie+1));
       term->nested_exp1 =x_in;
       term->nested_exp2 =y_in;
       term->type        =TERM_MIN;
@@ -352,19 +429,21 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     if (ie == NPOS) {
       warn="ConvertToExpressionTerm: missing comma in @convert expression"+warnstring;
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+      return false;
     }
     if (ip == NPOS) {
       warn="ConvertToExpressionTerm: missing end parentheses in @convert expression"+warnstring;
       ExitGracefully(warn.c_str(), BAD_DATA_WARN);
+      return false;
     }
     if ((is != NPOS) && (ie != NPOS)) 
     {
       bool found=false;
-      x_in  = s.substr(is+8,ie-is);
-      units = s.substr(ie+1,ip-ie);
- 
-      if (units == "ACREFTD_TO_CMS") {term->value=1.0/ACREFTD_PER_CMS;     found=true;}
-      if (units == "CMS_TO_ACREFTD") {term->value=ACREFTD_PER_CMS;     found=true;}
+      x_in  = s.substr(is+9,ie-(is+9));
+      units = s.substr(ie+1,ip-(ie+1));
+
+      if (units == "ACREFTD_TO_CMS") {term->value=1.0/ACREFTD_PER_CMS;   found=true;}
+      if (units == "CMS_TO_ACREFTD") {term->value=ACREFTD_PER_CMS;       found=true;}
       if (units == "INCHES_TO_MM"  ) {term->value=MM_PER_INCH;           found=true;}
       if (units == "MM_TO_INCHES"  ) {term->value=1.0/MM_PER_INCH;       found=true;}
       term->nested_exp1 =x_in;
@@ -376,32 +455,16 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     }
   }
   //----------------------------------------------------------------------
-  else if (has_brackets) // historical lookup (e.g., Q102[-2])
-  {
-    ExitGracefullyIf(n>=0,"ConvertToExpressionTerm:: term in square brackets must be <=0 for historical variables.",BAD_DATA_WARN);
-    if (n<0)
-    {
-      term->type=TERM_HISTORY;
-      term->timeshift=-n;
-
-      string sbid=s.substr(1,i1-1); cout<<"EXP[] BASIN ID: "<<sbid<<endl;
-      long   SBID=s_to_l(sbid.c_str());
-      int       p=_pModel->GetSubBasinIndex(SBID);
-      if (p == DOESNT_EXIST) {
-        ExitGracefully("ConvertToExpressionTerm: invalid subbasin ID in expression",BAD_DATA_WARN);
-      }
-      if (!_pModel->GetSubBasin(p)->IsEnabled()) {
-        WriteWarning("ConvertToExpressionTerm: expression includes reference to disabled subbasin. Constraint/goal will be disabled",true);
-        //return false;
-      }
-      //TODO check if subbasin is enabled
-    }
-  }
-  //----------------------------------------------------------------------
   else if (GetNamedConstant(s)!=RAV_BLANK_DATA) // named constant 
   {
     term->type=TERM_CONST;
     term->value=GetNamedConstant(s);
+  }
+  //----------------------------------------------------------------------
+  else if (GetUserDVIndex(s)!=DOESNT_EXIST) // user-defined decision variable  
+  {
+    term->DV_ind=GetDVColumnInd(DV_USER, GetUserDVIndex(s));
+    term->type=TERM_DV;
   }
   //----------------------------------------------------------------------
   else if (is_numeric(s.c_str()))  // numeric value (e.g., 132.4)
@@ -411,39 +474,11 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
   }
   //----------------------------------------------------------------------
   else {
-    warn="ConvertToExpression:: Unparseable term in expression"+warnstring;
+    warn="ConvertToExpression:: Unparseable term "+ s + " in expression" + warnstring;
     ExitGracefully(warn.c_str(), BAD_DATA_WARN);
+    return false;
   }
   return true;
-}
-string expTypeToString(termtype &typ){
-  switch (typ)
-  {
-  case(TERM_DV):      return "TERM_DV"; break;
-  case(TERM_TS):      return "TERM_TS"; break;
-  case(TERM_LT):      return "TERM_LT"; break;
-  case(TERM_CONST):   return "TERM_CONST"; break;
-  case(TERM_HISTORY): return "TERM_HISTORY"; break;
-  case(TERM_MAX):     return "TERM_MAX"; break;
-  case(TERM_MIN):     return "TERM_MIN"; break;
-  case(TERM_CONVERT): return "TERM_CONVERT"; break;
-  case(TERM_UNKNOWN): return "TERM_UNKNOWN"; break;
-  }
-  return "?";
-}
-void SummarizeExpression(const char **s, const int Len, expressionStruct* exp) 
-{
-  cout<<"*"<<endl;
-  cout<<"EXPRESSION: "<<endl;
-  for (int i = 0; i < Len; i++) {cout<<s[i]<<" ";}cout<<endl;
-  cout<<"---->"<<endl;
-  for (int i = 0; i < exp->nGroups; i++) {
-    cout << "  GROUP "<<i+1<<": " << endl;
-    for (int j = 0; j < exp->nTermsPerGrp[i]; j++) {
-      cout<<"   TERM "<<j+1<<": " << exp->pTerms[i][j]->origexp<<" ("<< expTypeToString(exp->pTerms[i][j]->type) <<")" <<endl;
-    }
-  }
-  cout<<"*"<<endl;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Parses demand constraint expression of form (e.g.,) A * B(x) * C + D * E - F = G * H(t) [NO PARENTHESES!]
@@ -454,9 +489,9 @@ void SummarizeExpression(const char **s, const int Len, expressionStruct* exp)
 /// \returns expressionStruct: a 2D array of pointers to grouped terms (e.g., [0]:[A,B,C], [1]:[D,E], [2]:[F], [3]:[G,H] for above example)
 //
 expressionStruct *CDemandOptimizer::ParseExpression(const char **s, 
-                                                       const int    Len,
-                                                       const int    lineno,
-                                                       const string filename) const 
+                                                    const int    Len,
+                                                    const int    lineno,
+                                                    const string filename) const 
 {
   int rhs_ind=-1;
   exptype          type       [MAX_EXP_GROUPS];
@@ -469,7 +504,7 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
   for (int i = 1; i < Len; i++) //starts at 1 - first term is :Expression or :DefineDecisionVariable
   {
     type[i]=EXP;
-    if ((s[i][0]=='+') || (s[i][0]=='*') || (s[i][0]=='=') || (s[i][0]=='/') || (s[i][0]=='<') || (s[i][0]=='>')){
+    if ((s[i][0]=='+') || (s[i][0]=='-') || (s[i][0]=='*') || (s[i][0]=='/') || (s[i][0]=='=') || (s[i][0]=='<') || (s[i][0]=='>')){
       type[i] = EXP_OP; 
     } 
     if (s[i-1][0]=='/'){type[i]=EXP_INV; }
@@ -488,6 +523,16 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
     ExitGracefully("ParseExpression: missing comparison operator (e.g., <, >, =, in expression",BAD_DATA_WARN);
   }
 
+  //TMP DEBUG 
+  cout<<"parse expression (2) comparison type = "<<comp<<" rhs ind= "<<rhs_ind<<" types=";
+  for (int i = 1; i < Len; i++) //starts at 1 - first term is :Expression or :DefineDecisionVariable
+  {
+    if (type[i]==EXP_OP ){ cout<<" OP"; }
+    if (type[i]==EXP    ){ cout<<" EXP"; }
+    if (type[i]==EXP_INV){ cout<<" INV"; }
+  }
+  cout<<endl;
+  
   int  j=0;
   int  k=0;
   int  DVcount=0;
@@ -497,61 +542,92 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
     if (type[i] != EXP_OP) 
     {
       terms[j][k] = new expressionTerm();
+      terms[j][k]->mult=1.0;
       valid=ConvertToExpressionTerm(to_string(s[i]),terms[j][k],lineno,filename);
-      if (!valid){return NULL;}
+      if (!valid){
+        cout<<"INVALID EXPRESSION TERM! "<<endl;
+        return NULL;
+      }
+      
+      //TMP DEBUG 
+      cout<<"   TERM["<<k<<" in "<< j << "]: " << s[i] << " : type = " << TermTypeToString(terms[j][k]->type) << " index : " << terms[j][k]->DV_ind << endl;
+      
 
-      if (i>rhs_ind     ){terms[j][k]->mult*=-1; }
-      if (s[i-1][0]=='-'){terms[j][k]->mult*=-1; }
+      if ((i>rhs_ind)      && (k==0)){terms[j][k]->mult*=-1.0; } //only multiply leading term by -1 to move to LHS 
+      if ((s[i-1][0]=='-') && (k==0)){terms[j][k]->mult*=-1.0; } //and reverse if preceded with minus sign 
+
       if (terms[j][k]->type == TERM_DV) {
         DVcount++;
         if (DVcount > 1) {
           ExitGracefully("ParseExpression: more than one decision variable found in product term within constraint expression. Cannot handle non-linear expressions.",BAD_DATA_WARN);
+          return NULL;
         }
       }
-      if (type[i] == EXP_INV) {
-        terms[j][k]->reciprocal=true;
-      }
+      terms[j][k]->reciprocal=(type[i] == EXP_INV);
+      
       //Handle nested expressions 
-      if (terms[j][k]->nested_exp1 != "") 
+      if (terms[j][k]->nested_exp1 != "")
       {
-        terms[j][k] = new expressionTerm();
-        valid=ConvertToExpressionTerm(terms[j][k]->nested_exp1, terms[j][k + 1],lineno, filename);
-        if (!valid){return NULL;}
-        terms[j][k]->nested_ind1=k+1;
+        terms[j][k  ]->nested_ind1=k+1;
+
+        terms[j][k+1] = new expressionTerm();
+        terms[j][k+1]->mult=1.0;
         terms[j][k+1]->is_nested=true;
-        //TODO - THROW WARNING IF DV IS IN NESTED EXP
-        k++;
-      }
-      if (terms[j][k]->nested_exp2 != "") 
-      {
-        terms[j][k] = new expressionTerm();
-        valid=ConvertToExpressionTerm(terms[j][k]->nested_exp2, terms[j][k + 1],lineno, filename);
+        valid=ConvertToExpressionTerm(terms[j][k]->nested_exp1,terms[j][k+1],lineno, filename);
         if (!valid){return NULL;}
-        terms[j][k]->nested_ind2=k+1;
-        terms[j][k+1]->is_nested=true;
-        //TODO - THROW WARNING IF DV IS IN NESTED EXP
+
+        if (terms[j][k + 1]->type == TERM_DV) {
+          ExitGracefully("ParseExpression: decision variable found nested in functional expression (lookup, min, or max). Cannot handle non-linear expressions.",BAD_DATA_WARN);
+          return NULL;
+        }
+
+        if (terms[j][k]->nested_exp2 != "")
+        {
+          terms[j][k  ]->nested_ind2=k+2;
+          
+          terms[j][k+2] = new expressionTerm();
+          terms[j][k+2]->mult=1.0;
+          terms[j][k+2]->is_nested=true;
+          valid=ConvertToExpressionTerm(terms[j][k]->nested_exp2, terms[j][k + 2],lineno, filename);
+          if (!valid){return NULL;}
+          
+          if (terms[j][k + 2]->type == TERM_DV) {
+            ExitGracefully("ParseExpression: decision variable found nested in functional expression (min or max). Cannot handle non-linear expressions.",BAD_DATA_WARN);
+            return NULL;
+          }
+          k++;
+        }
         k++;
-      }
+      }//end nested expressions
       k++;
     }
-    else if (i!=1){ //operator - expression product term finished and expression doesn't start with + or - 
+    else if ((i != 1) && (s[i][0]!='*') && (s[i][0]!='/')) { // +, -, or = operator - expression product term finished and expression doesn't start with + or - 
       termspergrp[j]=k;
       j++; k=0; DVcount=0;
     }
   }
+  termspergrp[j]=k; //last group 
+  j++;
 
-  //copy to new structure 
+  //copy to new expressionStruct structure 
+  //---------------------------------------------------------------
   int nGroups=j;
   expressionStruct *tmp;
   tmp=new expressionStruct();
   tmp->nGroups=nGroups;
   tmp->compare=comp;
 
+  string origexp="";
+  for (int i = 1; i < Len; i++) {
+    origexp+=to_string(s[i])+" ";
+  }
+  tmp->origexp=origexp;
+
   tmp->pTerms=new expressionTerm **[nGroups];
   tmp->nTermsPerGrp=new int[nGroups];
   for (int j = 0; j < nGroups; j++) {
     tmp->pTerms[j] = new expressionTerm * [nGroups];
-    tmp->nTermsPerGrp[j]=termspergrp[k];
+    tmp->nTermsPerGrp[j]=termspergrp[j];
     for (int k = 0; k < termspergrp[j]; k++) {
       tmp->pTerms[j][k]=terms[j][k];
     }
@@ -559,13 +635,54 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
 
   return tmp;
 }
-
-void CDemandOptimizer::CheckConditions(const int ii, const time_struct &tt)
+//////////////////////////////////////////////////////////////////
+/// \brief writes expType as string
+/// called by SummarizeExpression
+//
+string expTypeToString(termtype &typ){
+  switch (typ)
+  {
+  case(TERM_DV):      return "TERM_DV"; break;
+  case(TERM_TS):      return "TERM_TS"; break;
+  case(TERM_LT):      return "TERM_LT"; break;
+  case(TERM_CONST):   return "TERM_CONST"; break;
+  case(TERM_HISTORY): return "TERM_HISTORY"; break;
+  case(TERM_MAX):     return "TERM_MAX"; break;
+  case(TERM_MIN):     return "TERM_MIN"; break;
+  case(TERM_CONVERT): return "TERM_CONVERT"; break;
+  case(TERM_UNKNOWN): return "TERM_UNKNOWN"; break;
+  }
+  return "?";
+}
+//////////////////////////////////////////////////////////////////
+/// \brief writes out explicit details about expressionStructure contents
+/// called in ParseManagementFile under Noisy mode
+//
+void SummarizeExpression(const char **s, const int Len, expressionStruct* exp) 
+{
+  if (exp==NULL){return;}
+  cout<<"*"<<endl;
+  cout<<"EXPRESSION: "<<endl;
+  for (int i = 0; i < Len; i++) {cout<<s[i]<<" ";}cout<<endl;
+  cout<<"--# groups="<<exp->nGroups<<"-->"<<endl;
+  for (int i = 0; i < exp->nGroups; i++) {
+    cout << "  GROUP "<<i+1<<"(" <<exp->nTermsPerGrp[i]<<" terms): " << endl;
+    for (int j = 0; j < exp->nTermsPerGrp[i]; j++) {
+      cout<<"   TERM "<<j+1<<": " << exp->pTerms[i][j]->origexp<<" ("<< expTypeToString(exp->pTerms[i][j]->type) <<") mult: "<<exp->pTerms[i][j]->mult<<endl;
+    }
+  }
+  cout<<"*"<<endl<<endl;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief checks if condition ii is satisfied, adjusts _pConstraints[ii]->conditions_satisfied
+/// called in ParseManagementFile under Noisy mode
+//
+bool CDemandOptimizer::CheckConditions(const int ii, const time_struct &tt) const
 { 
   double dv_value;
   int p;
   dv_constraint *pC=_pConstraints[ii];
-  _pConstraints[ii]->conditions_satisfied=false;
+
   //Check if conditionals are satisfied 
   for (int j = 0; j < pC->nConditions; j++) 
   {
@@ -592,9 +709,10 @@ void CDemandOptimizer::CheckConditions(const int ii, const time_struct &tt)
         dv_value=_aCumDelivery[p];
       }
       else if (tmp == 'D') {
-        //int d=GetDemandIndex(tmp2);
-        //int p=_aDemandBasin[d];
-        //dv_value = _pModel->GetSubBasinByID(p)->GetDemandDelivery();
+        int d=GetDemandIndexFromName(tmp2);
+        long SBID=_aDemandSBIDs[d];
+
+        //dv_value = _pModel->GetSubBasinByID(SBID)->GetDemandDelivery(iii);
         //TODO 
       }
       //TODO : handle user specified DVs
@@ -602,16 +720,16 @@ void CDemandOptimizer::CheckConditions(const int ii, const time_struct &tt)
 
     comparison comp=pC->pConditions[j]->compare;
     if (comp == COMPARE_BETWEEN) {
-      if ((dv_value > pC->pConditions[j]->value2) || (dv_value< pC->pConditions[j]->value)){return;}//don't apply condition if ANY conditionals unmet
+      if ((dv_value > pC->pConditions[j]->value2) || (dv_value< pC->pConditions[j]->value)){return false;}//don't apply condition if ANY conditionals unmet
     }
     else if (comp == COMPARE_GREATERTHAN) {
-      if (dv_value< pC->pConditions[j]->value){return;}//don't apply condition
+      if (dv_value< pC->pConditions[j]->value){return false;}//don't apply condition
     }
     else if (comp == COMPARE_LESSTHAN) {
-      if (dv_value> pC->pConditions[j]->value){return;}//don't apply condition
+      if (dv_value> pC->pConditions[j]->value){return false;}//don't apply condition
     }
   }
-  _pConstraints[ii]->conditions_satisfied=true;
+  return true;
 }
     //////////////////////////////////////////////////////////////////
 /// adds constraint ii to LP solve problem statement 
@@ -624,19 +742,17 @@ void CDemandOptimizer::CheckConditions(const int ii, const time_struct &tt)
 #ifdef _LPSOLVE_
 void CDemandOptimizer::AddConstraintToLP(const int ii, lp_lib::lprec* pLinProg, const time_struct &tt, int *col_ind, double *row_val) const 
 {
-  dv_constraint *pC=_pConstraints[ii];
-
   double coeff;
   int    i=0;
   int    retval;
-  double RHS;
+  double RHS,term;
   bool   group_has_dv;
   int    DV_ind;
-  double term;
   bool   constraint_valid=true;
 
-  int    nn=(int)((tt.model_time+TIME_CORRECTION)/1.0);//Options.timestep; //TMP DEBUG
- 
+  //int    nn=(int)((tt.model_time+TIME_CORRECTION)/1.0);//Options.timestep; //TMP DEBUG
+
+  dv_constraint    *pC=_pConstraints[ii];
   expressionStruct *pE= pC->pExpression;
   
   RHS=0.0;
@@ -645,19 +761,24 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, lp_lib::lprec* pLinProg, 
     coeff=1.0;
     group_has_dv=false;
     DV_ind=DOESNT_EXIST;
+    
     for (int k = 0; k < pE->nTermsPerGrp[j]; k++)
     {
+      //cout<<pE->pTerms[j][k]->origexp<<" ";
       if (pE->pTerms[j][k]->type == TERM_DV) {
         DV_ind=pE->pTerms[j][k]->DV_ind;
         group_has_dv=true;
+        //cout<<" has DV = "<<group_has_dv<<" ";
+        //cout<<" DV_ind = "<<DV_ind<<endl;
       }
       else if (!(pE->pTerms[j][k]->is_nested))
       {
-        term=EvaluateTerm(pE->pTerms[j], k, nn);
+        term=EvaluateTerm(pE->pTerms[j], k, tt.model_time);
+
         if (term==RAV_BLANK_DATA){constraint_valid=false;}
         if (pE->pTerms[j][k]->reciprocal == true) {
           //TODO: SHOULD CHECK FOR DIVIDE BY ZERO, BUT DO WHAT?
-          coeff /=  term/(pE->pTerms[j][k]->mult);
+          coeff /= (pE->pTerms[j][k]->mult) * term;
         } 
         else {
           coeff *= (pE->pTerms[j][k]->mult) * term;
@@ -692,7 +813,7 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, lp_lib::lprec* pLinProg, 
       i++;
     }
   }
-  if (constraint_valid){return;} //usually due to blank time series element - no constraint applied
+  if (!constraint_valid){return;} //usually due to blank time series element - no constraint applied
 
   retval = lp_lib::add_constraintex(pLinProg,i,row_val,col_ind,constr_type,RHS);
   ExitGracefullyIf(retval==0,"AddConstraintToLP::Error adding user-specified constraint/goal",RUNTIME_ERR);
@@ -702,10 +823,11 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, lp_lib::lprec* pLinProg, 
 /// evaluates term in constraint/goal expression to numerical value (unless term is DV) 
 /// \params pTerms [in] - pointer to array of terms in expression group (e.g., (A*B*C(D,E) stored as [A,B,C,D,E])
 /// \param k [in] index of term to be evaluated (e.g., 2 would correspond to C)
-/// \param nn [in] current timestep index
+/// \param t [in] current model time
 ///  this is called recursively for nested terms in expression group
+/// returns RAV_BLANK_DATA if entire term should be invalidated / not applied
 //
-double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const int nn) const
+double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const double &t) const
 {
   int nshift;
   double x,y;
@@ -713,21 +835,21 @@ double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const
   int p;
   const expressionTerm *pT=pTerms[k];
   
-  if (pT->type == TERM_DV) 
+  if      (pT->type == TERM_DV) 
   {
     //do nothing - can't evaluate
-    return -1;
+    ExitGracefully("CDemandOptimizer::EvaluateTerm: trying to expand out active decision variable",RUNTIME_ERR);
+    return -1;                  
   }
   else if (pT->type == TERM_TS)
   {
     nshift=pT->timeshift;
-    return pT->pTS->GetValue(nn+nshift);
-    //TMP DEBUG - MUST HANDLE BLANK_VALUE - Should be equivalent to expression being invalid 
+    return pT->pTS->GetValue(t +(double)(nshift));
   }
   else if (pT->type == TERM_LT) 
   {
     kk=pT->nested_ind1;
-    x=EvaluateTerm(pTerms,kk,nn);
+    x=EvaluateTerm(pTerms,kk,t);
     return pT->pLT->GetValue(x); //decision variable can't be in lookup table 
   }
   else if (pT->type == TERM_CONST) 
@@ -736,26 +858,31 @@ double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const
   }
   else if (pT->type == TERM_HISTORY) //e.g., !Q100[-3]
   { 
-    nshift=pT->timeshift;
-    char   tmp =pT->origexp[1];
-    string tmp2=pT->origexp.substr(2);
-    p=_pModel->GetSubBasinIndex(s_to_l(tmp2.c_str())); 
-    if (tmp=='Q'){return _aQhist[p][nshift]; }
-    if (tmp=='h'){return _ahhist[p][nshift]; }
-    if (tmp=='D'){return _aDhist[p][nshift]; }
+    nshift=pT->timeshift-1;
+    char   tmp =pT->origexp[1];//e.g., Q
+    
+    p=pT->p_index; 
+    
+    if      (tmp=='Q'){return _aQhist[_aSBIndices[p]][nshift]; }
+    else if (tmp=='h'){return _ahhist[_aSBIndices[p]][nshift]; }
+    else if (tmp=='D'){return _aDhist[_aSBIndices[p]][nshift]; }
+    else {
+      ExitGracefully("CDemandOptimizer::EvaluateTerm: Invalid history variable ",BAD_DATA);
+    }
+    
   }
   else if (pT->type == TERM_MAX) {
-    x=EvaluateTerm(pTerms,pT->nested_ind1,nn);
-    y=EvaluateTerm(pTerms,pT->nested_ind2,nn);
+    x=EvaluateTerm(pTerms,pT->nested_ind1,t);
+    y=EvaluateTerm(pTerms,pT->nested_ind2,t);
     return max(x,y);
   }
   else if (pT->type == TERM_MIN) {
-    x=EvaluateTerm(pTerms,pT->nested_ind1,nn);
-    y=EvaluateTerm(pTerms,pT->nested_ind2,nn);
+    x=EvaluateTerm(pTerms,pT->nested_ind1,t);
+    y=EvaluateTerm(pTerms,pT->nested_ind2,t);
     return min(x,y);
   } 
   else if (pT->type == TERM_CONVERT) {
-    x=EvaluateTerm(pTerms,pT->nested_ind1,nn);
+    x=EvaluateTerm(pTerms,pT->nested_ind1,t);
     return x*pT->value;
   } 
   return 0;

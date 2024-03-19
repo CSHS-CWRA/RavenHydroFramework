@@ -819,21 +819,24 @@ double InterpolateMo(const double       aVal[12],
       if ((IsLeapYear(year,Options.calendar)) && (month==2)){pivot+=0.5;}
     }
 
-    if (day<=pivot)
+    if (day <= pivot)
     {
       mo=month-2;
       nextmo=mo+1;
       if (mo==-1){mo=11;nextmo=0;}
       leap=0;if ((IsLeapYear(year,Options.calendar)) && (mo==1)){leap=1;}
-      wt=1.0-(double)((day+DAYS_PER_MONTH[mo]+leap-pivot)/(DAYS_PER_MONTH[mo]+leap));
+      wt=1.0-(double)(day+(DAYS_PER_MONTH[mo]+leap)-pivot)/(double)(DAYS_PER_MONTH[mo]+leap);
     }
     else{
       mo=month-1;
       nextmo=mo+1;
+      int lastmo=mo-1;
+      if (lastmo==-1){lastmo=11;}
       if (nextmo==12){nextmo=0;}
-      leap=0;if ((IsLeapYear(year,Options.calendar)) && (mo==1)){leap=1;}
-      wt=1.0-(double)((day-pivot)/(DAYS_PER_MONTH[mo]+leap));
+      leap=0;if ((IsLeapYear(year,Options.calendar)) && (lastmo==1)){leap=1;}
+      wt=1.0-(double)(day-pivot)/(double)(DAYS_PER_MONTH[lastmo]+leap);
     }
+    
     //\math \f$ wt=0.5-0.5*cos(wt*PI) \f$ ; //Useful smoothing function
 
     return wt*aVal[mo]+(1-wt)*aVal[nextmo];

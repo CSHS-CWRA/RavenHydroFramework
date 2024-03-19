@@ -789,6 +789,7 @@ enum res_constraint
   RC_MAX_FLOW,
   RC_OVERRIDE_FLOW,
   RC_DRY_RESERVOIR,
+  RC_MANAGEMENT,    //from management optimization
   RC_DZTR
 };
 

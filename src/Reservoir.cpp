@@ -36,8 +36,11 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
   _aQstruct=NULL;
   _aQstruct_last=NULL;
 
+  _pDemandTS=NULL;
+  _nDemandTS=0;
+
   _pHRU=NULL;
-  _pExtractTS=NULL;
+  
   _pWeirHeightTS=NULL;
   _pMaxStageTS=NULL;
   _pOverrideQ=NULL;
@@ -55,6 +58,9 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
   _nDemands=0;
   _aDemands=NULL;
   _demand_mult=1.0;
+
+  _Qoptimized=RAV_BLANK_DATA;
+  _aQdelivered=NULL;
 
   _pDZTR=NULL;
 
@@ -356,9 +362,10 @@ CReservoir::~CReservoir()
   delete [] _aArea;   _aArea =NULL;
   delete [] _aVolume; _aVolume=NULL;
   for (int v = 0; v<_nDates; v++){ delete[] _aQ_back[v]; } delete [] _aQ_back; _aQ_back=NULL;
-  delete[] _aDates; _aDates=NULL;
+  delete [] _aDates; _aDates=NULL;
 
-  delete _pExtractTS;_pExtractTS=NULL;
+  for (int i=0; i<_nDemandTS;i++){delete _pDemandTS[i]; } delete [] _pDemandTS; _pDemandTS=NULL;
+
   delete _pWeirHeightTS;_pWeirHeightTS=NULL;
   delete _pMaxStageTS;_pMaxStageTS=NULL;
   delete _pOverrideQ;_pOverrideQ=NULL;
@@ -372,8 +379,9 @@ CReservoir::~CReservoir()
   delete _pQmaxTS; _pQmaxTS=NULL;
   delete _pQdownTS; _pQdownTS=NULL;
 
-  delete _aQstruct; _aQstruct=NULL;
-  delete _aQstruct_last; _aQstruct_last=NULL;
+  delete [] _aQstruct;      _aQstruct=NULL;
+  delete [] _aQstruct_last; _aQstruct_last=NULL;
+  delete [] _aQdelivered;   _aQdelivered=NULL;
 
   for (int i=0;i<_nControlStructures;i++){delete _pControlStructures[i];} delete [] _pControlStructures; _pControlStructures=NULL;
 }
@@ -487,7 +495,7 @@ double  CReservoir::GetReservoirEvapLosses(const double &tstep) const
 	return _AET;
 }
 //////////////////////////////////////////////////////////////////
-/// \returns evaporative losses only integrated over previous timestep [m3]
+/// \returns precip gains integrated over previous timestep [m3]
 //
 double  CReservoir::GetReservoirPrecipGains(const double& tstep) const
 {
@@ -577,13 +585,72 @@ string CReservoir::GetControlName(const int i) const
 
 double CReservoir::GetStageDischargeDerivative(const double &stage, const int nn) const
 {
-  double dh=0.0001;
+  double dh=0.001;
   double weir_adj=0.0;
   if(_pWeirHeightTS!=NULL) {
-    weir_adj=_pWeirHeightTS->GetValue(nn);
+    weir_adj=_pWeirHeightTS->GetSampledValue(nn);
   }
 
   return (GetWeirOutflow(stage+dh,weir_adj)-GetWeirOutflow(stage,weir_adj))/dh;
+}
+double CReservoir::GetDischargeFromStage(const double &stage, const int nn) const
+{
+  double weir_adj=0.0;
+  if(_pWeirHeightTS!=NULL) {
+    weir_adj=_pWeirHeightTS->GetSampledValue(nn);
+  }
+
+  return GetWeirOutflow(stage,weir_adj);
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief number of water/irrigation demands
+/// \return number of water/irrigation demands
+//
+int    CReservoir::GetNumWaterDemands() const {
+  return _nDemandTS;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief returns water/irrigation demand integer ID
+/// \return water/irrigation demand integer ID
+//
+int    CReservoir::GetWaterDemandID(const int ii) const 
+{
+  #ifdef _STRICTCHECK_
+  ExitGracefullyIf(ii < 0 || ii >= _nDemandTS, "CReservoir::GetWaterDemandID: invalid index",RUNTIME_ERR);
+#endif
+  return _pDemandTS[ii]->GetIDTag(); //stores demand ID
+}
+//////////////////////////////////////////////////////////////////
+/// \brief returns water/irrigation demand name/alias
+/// \return water/irrigation demand name/alias
+//
+string CReservoir::GetWaterDemandName      (const int ii) const
+{
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CSubBasin::GetWaterDemandName: invalid index",RUNTIME_ERR);
+#endif
+  return _pDemandTS[ii]->GetName();
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns specified irrigation/water use demand from reservoir at time t
+/// \param &t [in] Model time at which the demand from reservoir is to be determined
+/// \return specified demand from reservoir at time t
+//
+double CReservoir::GetWaterDemand           (const int ii,const double &t) const
+{  
+  double Qirr;
+  Qirr=_pDemandTS[ii]->GetValue(t);
+  if (Qirr==RAV_BLANK_DATA){Qirr=0.0;}
+  return Qirr;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns instantaneous ACTUAL irrigation use at end of current timestep
+/// \return actual delivery from reservoir [m3/s]
+//
+double CReservoir::GetDemandDelivery(const int ii) const
+{
+  return _aQdelivered[ii];
 }
 
 //////////////////////////////////////////////////////////////////
@@ -596,9 +663,10 @@ void CReservoir::Initialize(const optStruct &Options)
   int    model_start_yr =Options.julian_start_year;
   double model_duration =Options.duration;
   double timestep       =Options.timestep;
-  if(_pExtractTS!=NULL)
+
+  for (int i=0; i<_nDemandTS; i++)
   {
-    _pExtractTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
+    _pDemandTS[i]->Initialize(model_start_day, model_start_yr, model_duration, timestep, false, Options.calendar);
   }
   if(_pWeirHeightTS!=NULL)
   {
@@ -648,7 +716,10 @@ void CReservoir::Initialize(const optStruct &Options)
   {
     _pQdownTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
   }
-
+  _aQdelivered = new double [_nDemandTS];
+  for (int ii = 0; ii < _nDemandTS; ii++) {
+    _aQdelivered[ii]=0.0;
+  }
   _aQstruct     =new double [_nControlStructures];
   _aQstruct_last=new double [_nControlStructures];
   for (int i = 0; i < _nControlStructures; i++) {
@@ -658,13 +729,12 @@ void CReservoir::Initialize(const optStruct &Options)
 
 //////////////////////////////////////////////////////////////////
 /// \brief Adds extraction history
-/// \param *pOutflow Outflow time series to be added
+/// \param *pDemand demand time series to be added
 //
-void    CReservoir::AddExtractionTimeSeries (CTimeSeries *pOutflow)
+void    CReservoir::AddDemandTimeSeries (CTimeSeries *pDemand)
 {
-  ExitGracefullyIf(_pExtractTS!=NULL,
-                   "CReservoir::AddExtractionTimeSeries: only one extraction hydrograph may be specified per reservoir",BAD_DATA_WARN);
-  _pExtractTS=pOutflow;
+  if (!DynArrayAppend((void**&)(_pDemandTS),(void*)(pDemand),_nDemandTS)){
+    ExitGracefully("CReservoir::AddDemandTimeSeries : trying to add NULL time series",BAD_DATA);}
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Adds weir height time series [m]
@@ -890,6 +960,8 @@ string CReservoir::GetCurrentConstraint() const {
   case(RC_MAX_FLOW):          {return "RC_MAX_FLOW"; }
   case(RC_OVERRIDE_FLOW):     {return "RC_OVERRIDE_FLOW"; }
   case(RC_DRY_RESERVOIR):     {return "RC_DRY_RESERVOIR"; }
+  case(RC_MANAGEMENT):        {return "RC_MANAGEMENT"; }
+  case(RC_DZTR):              {return "RC_DZTR";}
   default:                    {return ""; }
   };
 }
@@ -1083,15 +1155,13 @@ double CReservoir::GetAET() const
 /// \param tt [in] current time step information
 /// \param tstep [in] time step, in days
 //
-void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep)
+void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep, const optStruct &Options)
 {
   _MB_losses=0.0; //all losses outside the system
 
+  _AET = 0.0;
   if (_pHRU!=NULL){
     _AET = GetAET()*(_pHRU->GetArea()*M2_PER_KM2)/ MM_PER_METER * tstep; //m3;
-  }
-  else {
-    _AET = 0.0;
   }
   _MB_losses+=_AET;
 
@@ -1099,13 +1169,28 @@ void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep)
     _GW_seepage=_seepage_const*(0.5*(_stage+_stage_last)-_local_GW_head)*SEC_PER_DAY*tstep;
     _MB_losses+=_GW_seepage;
   }
-  if(_pExtractTS!=NULL){
-    int nn        =(int)((tt.model_time+TIME_CORRECTION)/tstep);//current timestep index
-    _MB_losses+=_pExtractTS->GetSampledValue(nn)*SEC_PER_DAY*tstep;
+  
+  for (int ii = 0; ii < _nDemandTS; ii++) {
+    if (Options.management_optimization) {
+      _MB_losses+=_aQdelivered[ii];
+    }
+    else{
+      int nn        =(int)((tt.model_time+TIME_CORRECTION)/tstep);//current timestep index
+      _MB_losses+=_pDemandTS[ii]->GetSampledValue(nn) * SEC_PER_DAY * tstep;
+    }
   }
+  
 
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief adds delivered demand amount to water demand ii 
+/// \param ii [in] local demand index 
+/// \param Qdel [in] delivered flow [m3/s]
+//
+void CReservoir::AddToDeliveredDemand(const int ii, const double &Qdel)
+{
+  _aQdelivered[ii]=Qdel;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief updates rating curves based upon the time and assimilates lake stage
 /// \notes can later support quite generic temporal changes to treatmetn of outflow-volume-area-stage relations
@@ -1135,10 +1220,10 @@ void CReservoir::UpdateReservoir(const time_struct &tt, const optStruct &Options
 
       double weir_adj=0.0;
       if(_pWeirHeightTS!=NULL) {
-        weir_adj=_pWeirHeightTS->GetValue(nn);
+        weir_adj=_pWeirHeightTS->GetSampledValue(nn);
       }
 
-      double obs_stage=_pObsStage->GetValue(nn);
+      double obs_stage=_pObsStage->GetSampledValue(nn);
       if(obs_stage!=RAV_BLANK_DATA) {
         _stage=obs_stage;
         _Qout =GetWeirOutflow(_stage,weir_adj);//[m3/s]
@@ -1149,6 +1234,10 @@ void CReservoir::UpdateReservoir(const time_struct &tt, const optStruct &Options
     // \todo[funct] - correct mass balance for assimlating lake stage
   }
 
+  // reboot delivered amount to zero each tstep ------------------
+  for (int ii=0; ii<_nDemandTS; ii++){
+    _aQdelivered[ii]=0.0;
+  }
   return;
 }
 //////////////////////////////////////////////////////////////////
@@ -1230,12 +1319,21 @@ void  CReservoir::SetInitialFlow(const double &initQ,const double &initQlast,con
 /// \param i [in] control structure index (assumed between 0...nControlStructures)
 /// \param Q [in] initial flow rate [m3/s]
 /// \param Qlast [in] flow rate [m3/s] at start of time step
+/// assumes we are reading from .rvc file
 //
 void CReservoir::SetControlFlow(const int i, const double& Q, const double& Qlast)
 {
-   //assumes we are reading from .rvc file
   _aQstruct[i]=Q;
   _aQstruct_last[i]=Qlast;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief sets reservoir outflow rate as generated by management optimization scheme
+/// \param Qopt [in] flow rate [m3/s] at end of time step
+//
+void CReservoir::SetOptimizedOutflow(const double& Qopt)
+{
+  _Qoptimized=Qopt;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1312,6 +1410,11 @@ double  CReservoir::RouteWater(const double &Qin_old,
   if(_pQminTS        !=NULL){ Qmin       =_pQminTS->        GetSampledValue(nn);}
   if(_pQmaxTS        !=NULL){ Qmax       =_pQmaxTS->        GetSampledValue(nn);}
 
+  //Management optimization - overrides flow 
+  if ((Options.management_optimization) && (_Qoptimized != RAV_BLANK_DATA)) {
+    Qoverride=_Qoptimized;
+  }
+
   // Downstream flow targets
   if(_pQdownTS!=NULL)
   {
@@ -1326,7 +1429,7 @@ double  CReservoir::RouteWater(const double &Qin_old,
     else                     {Qshift=0.8*((Qdown_targ+(1.0-alpha)*(_QdownRange*0.5))-Qdown_act);}
   }
 
-  // Downstream irrigation demand
+  // Downstream water demand sets minimum flow
   for(int i=0;i<_nDemands;i++) {
     if(IsInDateRange(tt.julian_day,_aDemands[i]->julian_start,_aDemands[i]->julian_end)){
       Qmin+=(_aDemands[i]->pDownSB->GetTotalWaterDemand(tt.model_time)*_aDemands[i]->percent);
@@ -1365,10 +1468,16 @@ double  CReservoir::RouteWater(const double &Qin_old,
   if(_seepage_const>0) {
     seep_old=_seepage_const*(_stage-_local_GW_head); //[m3/s]
   }
-  if(_pExtractTS!=NULL)
-  {
-    ext_old=_pExtractTS->GetSampledValue(nn);
-    ext_new=_pExtractTS->GetSampledValue(nn); //steady rate over time step
+  ext_new=ext_old=0.0;
+  for (int ii=0; ii<_nDemandTS;ii++){
+    if (Options.management_optimization){
+      ext_new+=_aQdelivered[ii];
+      ext_old+=_aQdelivered[ii];
+    }
+    else{
+      ext_old=_pDemandTS[ii]->GetSampledValue(nn);
+      ext_new=_pDemandTS[ii]->GetSampledValue(nn); //steady rate over time step
+    }
   }
 
   double gamma=V_old+((Qin_old+Qin_new)-_Qout+2.0*precip-ET*A_old-seep_old-(ext_old+ext_new))/2.0*(tstep*SEC_PER_DAY);//[m3]
@@ -1420,12 +1529,12 @@ double  CReservoir::RouteWater(const double &Qin_old,
   if(iter==RES_MAXITER) {
     string warn="CReservoir::RouteWater did not converge after "+to_string(RES_MAXITER)+"  iterations for basin "+to_string(_SBID)+" on "+tt.date_string;;
     WriteWarning(warn,false);
-    /*for(int i = 0; i < iter; i++) {
+    /*for(int i = 0; i < iter; i++) { //retain for debugging
       string warn = to_string(this->GetSubbasinID())+"["+to_string(i)+"] "+to_string(hg[i]) + " " + to_string(ff[i])+ " "+ to_string(fff[i])+ " "+to_string(gamma);WriteWarning(warn,false);
     }*/
   }
 
-  //standard case - outflow determined through stage-discharge curve
+  //standard case - outflow determined through stage-discharge curve or DZTR
   //---------------------------------------------------------------------------------------------
   if(_pDZTR==NULL) {
     res_outflow=GetWeirOutflow(stage_new,weir_adj);
@@ -1493,13 +1602,20 @@ double  CReservoir::RouteWater(const double &Qin_old,
       if((constraint!=RC_MAX_FLOW_INCREASE) &&
          (constraint!=RC_MAX_FLOW_DECREASE) &&
          (constraint!=RC_MIN_STAGE)) { constraint=RC_OVERRIDE_FLOW; } //Specified override flow
-      res_outflow=max(2*Qoverride-_Qout,Qminstage); //Qoverride is avg over dt, res_outflow is end of dt
+      if (Options.management_optimization) 
+      {
+        constraint=RC_MANAGEMENT;
+        res_outflow=Qoverride;
+      }
+      else{
+        res_outflow=max(2*Qoverride-_Qout,Qminstage); //Qoverride is avg over dt, res_outflow is end of dt
+      }
     }
 
     if((constraint==RC_MIN_STAGE) && (_minStageDominant)) {
       //In this case, min stage constraint overrides min flow constraint; nothing done
     }
-    else
+    else //default override of outflow - calculate resultant volume
     {
       if (res_outflow<Qmin){ //overwrites any other specified or target flow
         res_outflow=Qmin;
@@ -1615,7 +1731,7 @@ double     CReservoir::GetWeirOutflow(const double &ht, const double &adj) const
 //
 void CReservoir::ClearTimeSeriesData(const optStruct& Options)
 {
-  delete _pExtractTS;_pExtractTS=NULL;
+  for (int i=0; i<_nDemandTS;i++){delete _pDemandTS[i]; } delete [] _pDemandTS; _pDemandTS=NULL;
   delete _pWeirHeightTS;_pWeirHeightTS=NULL;
   delete _pMaxStageTS;_pMaxStageTS=NULL;
   delete _pOverrideQ;_pOverrideQ=NULL;

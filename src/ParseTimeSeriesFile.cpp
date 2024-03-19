@@ -128,6 +128,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":MonthlyEvapFactor"           )){code=71; }
     else if  (!strcmp(s[0],":MonthlyMinTemperature"       )){code=72; }
     else if  (!strcmp(s[0],":MonthlyMaxTemperature"       )){code=73; }
+    else if  (!strcmp(s[0],":UserTimeSeries"              )){code=74; }
     //-----------------CONTROLS ---------------------------------
     else if  (!strcmp(s[0],":OverrideStreamflow"          )){code=100;}
     else if  (!strcmp(s[0],":AssimilateStreamflow"        )){code=101;}
@@ -601,12 +602,12 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (52): //---------------------------------------------
-    {/*:ReservoirExtraction {long SBID} [int demandID] [string demandName]
+    {/*:ReservoirDemand {long SBID} [int demandID] [string demandName] (or :ReservoirExtraction)
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
        {double Qout} x nMeasurements [m3/s]
-       :EndReservoirExtraction
+       :EndReservoirDemand
      */
-      if (Options.noisy) {cout <<"Reservoir Extraction Time Series"<<endl;}
+      if (Options.noisy) {cout <<"Reservoir Water Demand Time Series"<<endl;}
       long SBID=DOESNT_EXIST;
       int  demand_ID=DOESNT_EXIST;
       string demand_name = "";
@@ -620,11 +621,11 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pTimeSer=CTimeSeries::Parse(p,true,demand_name,SBID,"none",Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
         pTimeSer->SetIDTag(demand_ID);
-        pSB->GetReservoir()->AddExtractionTimeSeries(pTimeSer);
+        pSB->GetReservoir()->AddDemandTimeSeries(pTimeSer);
       }
       else
       {
-        warn=":ReservoirExtraction Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set Reservoir Extraction";
+        warn=":ReservoirDemand Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set Reservoir Demand";
         WriteWarning(warn,Options.noisy);
       }
       break;
@@ -662,7 +663,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       CSubBasin *pSB;
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,true,"MaxStage_"+to_string(SBID),SBID,"none",Options);
+      pTimeSer=CTimeSeries::Parse(p,true,"_MaxStage_"+to_string(SBID),SBID,"none",Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
         pSB->GetReservoir()->AddMaxStageTimeSeries(pTimeSer);
       }
@@ -684,7 +685,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       CSubBasin *pSB;
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,true,"MinStage_"+to_string(SBID),SBID,"none",Options);
+      pTimeSer=CTimeSeries::Parse(p,true,"_MinStage_"+to_string(SBID),SBID,"none",Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
         pSB->GetReservoir()->AddMinStageTimeSeries(pTimeSer);
       }
@@ -1132,6 +1133,24 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Len!=13){p->ImproperFormat(s); break;}
       for (int i=0;i<12;i++){monthdata[i]=s_to_d(s[i+1]);}
       pGage->SetMonthlyMaxTemps(monthdata);
+      break;
+    }
+    case (74): //---------------------------------------------
+    {/*:UserTimeSeries {name} [units]
+        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+        {double val} x nValues 
+      :EndUserTimeSeries
+     */
+      if(Options.noisy) { cout <<"User-specified Time Series"<<endl; }
+      pTimeSer=CTimeSeries::Parse(p,false,s[2], DOESNT_EXIST, "none", Options);
+      if(pModel->GetDemandOptimizer()!=NULL) {
+        pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+      }
+      else
+      {
+        warn=":User-specified time series found without being in management optimization mode. This command will be ignored.";
+        WriteWarning(warn,Options.noisy);
+      }
       break;
     }
     case(100)://----------------------------------------------

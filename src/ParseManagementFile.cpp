@@ -31,7 +31,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
 
   int   Len,line(0),code;
   char *s[MAXINPUTITEMS];
-  CParser *pp=new CParser(RVM,Options.rve_filename,line);
+  CParser *pp=new CParser(RVM,Options.rvm_filename,line);
 
   ifstream INPUT2;           //For Secondary input
   CParser *pMainParser=NULL; //for storage of main parser while reading secondary files
@@ -77,6 +77,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
 
     //-------------------MODEL ENSEMBLE PARAMETERS----------------
     else if(!strcmp(s[0],":LookbackDuration"))            { code=1;  }
+    else if(!strcmp(s[0],":DebugLevel"))                  { code=2; }
     else if(!strcmp(s[0],":DemandGroup"))                 { code=11; }
     else if(!strcmp(s[0],":DemandMultiplier"))            { code=12; }
     else if(!strcmp(s[0],":DemandGroupMultiplier"))       { code=13; }
@@ -89,6 +90,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     else if(!strcmp(s[0],":ManagementConstraint"))        { code=23; is_goal=false; }
     else if(!strcmp(s[0],":ManagementGoal"))              { code=23; is_goal=true;}
     else if(!strcmp(s[0],":LookupTable"))                 { code=30; }
+
 
     switch(code)
     {
@@ -106,12 +108,12 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       for(i=1;i<Len;i++) { filename+=s[i]; if(i<Len-1) { filename+=' '; } }
       if(Options.noisy) { cout <<"Redirect to file: "<<filename<<endl; }
 
-      filename=CorrectForRelativePath(filename,Options.rve_filename);
+      filename=CorrectForRelativePath(filename,Options.rvm_filename);
 
       INPUT2.open(filename.c_str());
       if(INPUT2.fail()) {
         string warn;
-        warn=":RedirectToFile (from .rve): Cannot find file "+filename;
+        warn=":RedirectToFile (from .rvm): Cannot find file "+filename;
         ExitGracefully(warn.c_str(),BAD_DATA);
       }
       else {
@@ -158,6 +160,12 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       pDO->SetHistoryLength(n);
       break;
     }
+    case(2):  //----------------------------------------------
+    {/*:DebugLevel [int level]*/
+      if(Options.noisy) { cout <<":DebugLevel"<<endl; }
+      pDO->SetDebugLevel(s_to_i(s[1]));
+      break;
+    }
     case(11):  //----------------------------------------------
     {/*:DemandGroup [groupname] 
          [demand1] [demand2] ... [demandN]
@@ -183,26 +191,32 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       break;
     }
     case(14):  //----------------------------------------------
-    {/*:DemandPenalty [demand1] [penalty] */
+    {/*:DemandPenalty [demand1] [penalty] */ //demand1 is 1234 or FarmerBob, not !D1234 or !D.FarmerBob
       if(Options.noisy) { cout <<"Demand Penalty"<<endl; }
       pDO->SetDemandPenalty(s[1],s_to_d(s[2]));
       break;
     }
     case(15):  //----------------------------------------------
-    {/*:DemandResetDate [demand1] [julian day] */
+    {/*:DemandResetDate [demand1] [julian day] */ //demand1 is 1234 or FarmerBob, not !D1234 or !D.FarmerBob
       if(Options.noisy) { cout <<"Demand Reset Date"<<endl; }
       pDO->SetCumulativeDate(s_to_i(s[2]), s[1]);
       break;
     }
     case(16):  //----------------------------------------------
-    {/*:DemandPriority [demand1] [priority] */
+    {/*:DemandPriority [demand1] [priority] */ //demand1 is 1234 or FarmerBob, not !D1234 or !D.FarmerBob
+      if(Options.noisy) { cout <<"Demand Priority "<<endl; }
       //pDO->SetDemandPriority(s[1], s_to_d(s[2]));
       break;
     }
     case(20):  //----------------------------------------------
     {/*:NamedConstant [name] [value] */
-      if(Options.noisy) { cout <<"Demand Penalty"<<endl; }
-      pDO->AddUserConstant(s[1],s_to_d(s[2]));
+      if(Options.noisy) { cout <<"Named Constant "<<endl; }
+      if (Len > 3) {
+        WriteWarning("The :NamedConstant command should have only two arguments. Command will be ignored",Options.noisy);
+      }
+      else{
+        pDO->AddUserConstant(s[1],s_to_d(s[2]));
+      }
       break;
     }
     case(21):  //----------------------------------------------
@@ -215,7 +229,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       pDO->AddDecisionVar(pDV);
       pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
 
-      if (Options.noisy){
+      if (pDO->GetDebugLevel()>=1){
         SummarizeExpression((const char**)(s),Len,pExp); 
       }
 
@@ -236,13 +250,13 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     }
     case(23):  //----------------------------------------------
     {/*:ManagementConstraint [name] 
-          :Expresion [expression]
+          :Expresion   [expression]
           :Conditional [condition]
           :Conditional [condition]
        :EndManagementConstraint
        or
        :ManagementGoal [name] 
-          :Expresion [expression]
+          :Expresion   [expression]
           :Conditional [condition]
           :Conditional [condition]
           :Penalty [value] {value2} 
@@ -271,6 +285,9 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           else {
             string warn ="Invalid expression in :Expression command at line " + pp->GetLineNumber();
             WriteWarning(warn.c_str(),Options.noisy);
+          }
+          if (pDO->GetDebugLevel()>=1){
+            SummarizeExpression((const char**)(s),Len,pExp); 
           }
         }
         else if (!strcmp(s[0], ":Condition")) 
@@ -371,7 +388,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           else if(!strcmp(s[0],":SourceFile"  )) { if(Options.noisy) { cout<<"SourceFile"  <<endl; } }//do nothing
           else
           {
-            string warn ="IGNORING unrecognized command: " + string(s[0])+ " in .rve file";
+            string warn ="IGNORING unrecognized command: " + string(s[0])+ " in .rvm file";
             WriteWarning(warn,Options.noisy);
           }
         }
@@ -385,6 +402,11 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       }
     }
     }//end switch(code)
+
+    firstword=pp->Peek();
+    if (firstword == ":DefineDecisionVariable") {
+      pp->NextIsMathExp();
+    }
 
     end_of_file=pp->Tokenize(s,Len);
 

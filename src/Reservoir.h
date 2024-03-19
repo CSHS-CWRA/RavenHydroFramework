@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2024 the Raven Development Team
   ----------------------------------------------------------------
   Reservoir.h
   ------------------------------------------------------------------
@@ -61,7 +61,8 @@ private:/*-------------------------------------------------------*/
 
   const CHydroUnit  *_pHRU;          ///< (potentially zero-area) HRU used for Precip/ET calculation (or NULL for no ET)
 
-  CTimeSeries *_pExtractTS;          ///< Time Series of extraction [m3/s] (or NULL for zero extraction)
+  CTimeSeries **_pDemandTS;          ///< array of Time Series of water demand [m3/s] (or NULL for zero extraction) [size: _nDemandTS]
+  int           _nDemandTS;          ///< number of reservoir demand time series 
 
   CTimeSeries *_pWeirHeightTS;       ///< Time series of weir heights [m] (or NULL for fixed weir height)
   CTimeSeries *_pMaxStageTS;         ///< Time series of rule curve upper stage constraint [m] (or NULL for no maximum stage)
@@ -76,6 +77,8 @@ private:/*-------------------------------------------------------*/
   CTimeSeries *_pQminTS;             ///< Time series of minimum flow constraint [m3/s] (or NULL for no minimum)
   CTimeSeries *_pQdownTS;            ///< Time series of downstream flow soft target [m3/s] (or NULL for none)
   double       _QdownRange;          ///< range of acceptable target flows from Qdown [m3/s] (or zero for hard target)
+
+  double       _Qoptimized;          ///< proscribed outflow provided by management optimization routine [m3/s] (or RAV_BLANK_DATA for none)
 
   const CSubBasin *_pQdownSB;        ///< pointer to downstream SubBasin for diversions (or NULL for none)
   const CSubBasin *_pDownSB;         ///< pointer to downstream subbasin
@@ -107,6 +110,7 @@ private:/*-------------------------------------------------------*/
   double       _GW_seepage;          ///< losses to GW only [m3] (negative for GW gains)
   double      *_aQstruct;            ///< array of flows from control structures at end of time step [m3/s]
   double      *_aQstruct_last;       ///< array of flows from control structures at start of time step [m3/s]
+  double      *_aQdelivered;         ///< amount of water demand delivered for each demand [m3/s] (for management optimization)
 
   res_constraint _constraint;        ///< current constraint type
 
@@ -186,9 +190,16 @@ public:/*-------------------------------------------------------*/
   double            GetLakebedThickness      () const; //[m]
   double            GetLakebedConductivity   () const; //[MJ/m/K/d]
   double            GetLakeConvectionCoeff   () const; //[MJ/m2/d/K]
+  double            GetDischargeFromStage    (const double &stage, const int nn) const; //[m3/s]
   double            GetStageDischargeDerivative(const double &stage,const int nn) const; //[m3/s/d]
   double            GetMinStage              (const int nn) const;//[m]
   double            GetMaxStage              (const int nn) const;//[m]
+
+  int               GetNumWaterDemands       () const;
+  int               GetWaterDemandID         (const int ii) const;
+  string            GetWaterDemandName       (const int ii) const; 
+  double            GetWaterDemand           (const int ii,const double &t) const;  //[m3/s] iith demand from reservoir at point in time
+  double            GetDemandDelivery        (const int ii) const;       //[m3/s] instantaneous delivery rate to demand ii 
 
   int               GetHRUIndex              () const;
   double            GetMaxCapacity           () const; //[m3]
@@ -208,6 +219,7 @@ public:/*-------------------------------------------------------*/
   void              SetInitialFlow           (const double &Q,const double &Qlast,const time_struct &tt, const optStruct &Options);
   void              SetReservoirStage        (const double &ht, const double &ht_last);
   void              SetControlFlow           (const int i, const double &Q, const double &Qlast);
+  void              SetOptimizedOutflow      (const double &Qout);
   void              SetVolumeStageCurve      (const double *a_ht,const double *a_V,const int nPoints);
   void              SetAreaStageCurve        (const double *a_ht,const double *a_A,const int nPoints);
   void              SetGWParameters          (const double &coeff, const double &h_ref);
@@ -220,7 +232,7 @@ public:/*-------------------------------------------------------*/
   void              SetLakebedConductivity   (const double &cond);
   void              SetLakeConvectionCoeff   (const double &conv);
 
-  void              AddExtractionTimeSeries  (CTimeSeries *pOutflow);
+  void              AddDemandTimeSeries      (CTimeSeries *pOutflow);
   void              AddWeirHeightTS          (CTimeSeries *pWeirHt);
   void              AddMaxStageTimeSeries    (CTimeSeries *pMS);
   void              AddOverrideQTimeSeries   (CTimeSeries *pQ);
@@ -264,7 +276,8 @@ public:/*-------------------------------------------------------*/
                                               const time_struct &tt);
   void              WriteToSolutionFile      (ofstream &OUT) const;
   void              UpdateReservoir          (const time_struct &tt, const optStruct &Options);
-  void              UpdateMassBalance        (const time_struct &tt, const double &tstep);
+  void              UpdateMassBalance        (const time_struct &tt, const double &tstep, const optStruct &Options);
   double            ScaleFlow                (const double &scale, const bool overriding,const double &tstep,const double &t);
+  void              AddToDeliveredDemand     (const int ii, const double &Q);
 };
 #endif

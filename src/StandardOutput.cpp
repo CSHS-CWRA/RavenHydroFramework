@@ -294,16 +294,16 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         if((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->IsEnabled()) && (_pSubBasins[p]->GetReservoir()!=NULL)) {
           if(_pSubBasins[p]->GetName()=="") { _RESSTAGE<<",ID="<<_pSubBasins[p]->GetID()  <<" "; }
           else                              { _RESSTAGE<<","   <<_pSubBasins[p]->GetName()<<" "; }
-        }
+        
 
-        for(i = 0; i < _nObservedTS; i++) {
-          if(IsContinuousStageObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
-          {
-            if(_pSubBasins[p]->GetName()=="") { _RESSTAGE<<",ID="<<_pSubBasins[p]->GetID()  <<" (observed) [m]"; }
-            else                              { _RESSTAGE<<","   <<_pSubBasins[p]->GetName()<<" (observed) [m]"; }
+          for(i = 0; i < _nObservedTS; i++) {
+            if(IsContinuousStageObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
+            {
+              if(_pSubBasins[p]->GetName()=="") { _RESSTAGE<<",ID="<<_pSubBasins[p]->GetID()  <<" (observed) [m]"; }
+              else                              { _RESSTAGE<<","   <<_pSubBasins[p]->GetName()<<" (observed) [m]"; }
+            }
           }
         }
-
       }
       _RESSTAGE<<endl;
     }
@@ -377,6 +377,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
 
   //Demands.csv
   //--------------------------------------------------------------
+  CSubBasin *pSB;
   if((Options.write_demandfile) && (Options.output_format!=OUTPUT_NONE))
   {
     tmpFilename=FilenamePrepare("Demands.csv",Options);
@@ -387,14 +388,29 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
 
     _DEMANDS<<"time,date,hour";
     for(p=0;p<_nSubBasins;p++) {
-      if((_pSubBasins[p]->IsEnabled()) && (_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->HasIrrigationDemand())) {
+      pSB=_pSubBasins[p];
+      if((pSB->IsEnabled()) && (pSB->IsGauged()) && (pSB->HasIrrigationDemand())) 
+      {
         string name;
-        if(_pSubBasins[p]->GetName()=="") { name="ID="+to_string(_pSubBasins[p]->GetID()); }
-        else                              { name=_pSubBasins[p]->GetName(); }
+        if(pSB->GetName()=="") { name="ID="+to_string(pSB->GetID()); }
+        else                              { name=pSB->GetName(); }
         _DEMANDS<<","<<name<<" [m3/s]";
-        _DEMANDS<<","<<name<<" (demand) [m3/s]";
         _DEMANDS<<","<<name<<" (min.) [m3/s]";
-        _DEMANDS<<","<<name<<" (unmet) [m3/s]";
+
+        for (int ii=0;ii<pSB->GetNumWaterDemands(); ii++){
+          name=pSB->GetWaterDemandName(ii);
+          _DEMANDS<<","<<name<<" (demand) [m3/s]";
+          _DEMANDS<<","<<name<<" (unmet) [m3/s]";
+        }
+
+        if (pSB->GetReservoir()!=NULL){
+          for (int ii=0;ii<pSB->GetReservoir()->GetNumWaterDemands(); ii++){
+            name=pSB->GetReservoir()->GetWaterDemandName(ii);
+            _DEMANDS<<","<<name<<" (res. demand) [m3/s]";
+            _DEMANDS<<","<<name<<" (res. unmet) [m3/s]";
+          }
+        }
+
       }
     }
     _DEMANDS<<endl;
@@ -939,16 +955,18 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 	    for (int p=0;p<_nSubBasins;p++)
         {
           pSB=_pSubBasins[p];
-	        if ((pSB->IsGauged())  && (pSB->IsEnabled()) && (pSB->GetReservoir()!=NULL)) {
+	        if ((pSB->IsGauged())  && (pSB->IsEnabled()) && (pSB->GetReservoir()!=NULL)) 
+          {
 	          _RESSTAGE<<","<<pSB->GetReservoir()->GetResStage();
-	        }
-	        for (i = 0; i < _nObservedTS; i++){
-	          if (IsContinuousStageObs(_pObservedTS[i],pSB->GetID()))
-	          {
-                double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
-	            if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _RESSTAGE << "," << val; }
-	            else                                             { _RESSTAGE << ",";        }
-	          }
+	        
+	          for (i = 0; i < _nObservedTS; i++){
+	            if (IsContinuousStageObs(_pObservedTS[i],pSB->GetID()))
+	            {
+                  double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
+	              if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _RESSTAGE << "," << val; }
+	              else                                             { _RESSTAGE << ",";        }
+	            }
+            }
           }
         }
 	      _RESSTAGE<<endl;
@@ -967,12 +985,24 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
           pSB=_pSubBasins[p];
           if((pSB->IsEnabled()) && (pSB->IsGauged()) && (pSB->HasIrrigationDemand()))
           {
-            double irr =pSB->GetTotalWaterDemand(tt.model_time);
-            double eF  =pSB->GetEnviroMinFlow   (tt.model_time);
             double Q   =pSB->GetOutflowRate     (); //AFTER irrigation removed
-            double Qd  =pSB->GetDemandDelivery  ();
-            double unmet=max(irr-Qd,0.0);
-            _DEMANDS<<","<<Q<<","<<irr<<","<<eF<<","<<unmet;
+            double eF  =pSB->GetEnviroMinFlow   (tt.model_time);
+            _DEMANDS<<","<<Q<<","<<eF;
+            for (int ii=0;ii<pSB->GetNumWaterDemands();ii++)
+            {
+              double irr =pSB->GetWaterDemand(ii,tt.model_time);
+              double Qd  =pSB->GetDemandDelivery(ii);
+              double unmet=max(irr-Qd,0.0);
+              _DEMANDS<<","<<irr<<","<<unmet;
+            }
+            if (pSB->GetReservoir()!=NULL){
+              for (int ii=0;ii<pSB->GetReservoir()->GetNumWaterDemands(); ii++){
+                double irr =pSB->GetReservoir()->GetWaterDemand(ii,tt.model_time);
+                double Qd  =pSB->GetReservoir()->GetDemandDelivery(ii);
+                double unmet=max(irr-Qd,0.0);
+                _DEMANDS<<","<<irr<<","<<unmet;
+              }
+            }
           }
         }
         _DEMANDS<<endl;

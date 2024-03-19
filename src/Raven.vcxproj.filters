@@ -668,6 +668,12 @@
     <ClInclude Include="DemandOptimization.h">
       <Filter>Header Files\Subbasins/HRUs</Filter>
     </ClInclude>
+    <ClInclude Include="GracefulEndBMI.h">
+      <Filter>Header Files\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="GracefulEndStandalone.h">
+      <Filter>Header Files\Model</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Raven.rc">
