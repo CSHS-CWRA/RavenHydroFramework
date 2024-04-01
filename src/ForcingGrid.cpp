@@ -165,14 +165,14 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
   _CellIDToIdx = new int [_nCells];
   ExitGracefullyIf(_CellIDToIdx==NULL,"CForcingGrid::Copy Constructor(8)",OUT_OF_MEMORY);
   for(int c=0; c<_nCells; c++) {             // loop over non-zero weighted cells
-    _CellIDToIdx[c]=grid._CellIDToIdx[c];             
+    _CellIDToIdx[c]=grid._CellIDToIdx[c];
   }
 
   _IdxNonZeroGridCells = NULL;
   _IdxNonZeroGridCells = new int [_nNonZeroWeightedGridCells];
   ExitGracefullyIf(_IdxNonZeroGridCells==NULL,"CForcingGrid::Copy Constructor(3)",OUT_OF_MEMORY);
   for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++) {             // loop over non-zero weighted cells
-    _IdxNonZeroGridCells[ic]=grid._IdxNonZeroGridCells[ic];              
+    _IdxNonZeroGridCells[ic]=grid._IdxNonZeroGridCells[ic];
   }
 
   _aLatitude=NULL;_aLongitude=NULL;_aElevation=NULL;_aStationIDs=NULL;

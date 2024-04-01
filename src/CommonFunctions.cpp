@@ -836,7 +836,7 @@ double InterpolateMo(const double       aVal[12],
       leap=0;if ((IsLeapYear(year,Options.calendar)) && (lastmo==1)){leap=1;}
       wt=1.0-(double)(day-pivot)/(double)(DAYS_PER_MONTH[lastmo]+leap);
     }
-    
+
     //\math \f$ wt=0.5-0.5*cos(wt*PI) \f$ ; //Useful smoothing function
 
     return wt*aVal[mo]+(1-wt)*aVal[nextmo];

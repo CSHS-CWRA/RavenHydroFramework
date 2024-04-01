@@ -111,7 +111,7 @@ private:/*------------------------------------------------------*/
   CGroundwaterModel  *_pGWModel;  ///< pointer to corresponding groundwater model
   CTransportModel *_pTransModel;  ///< pointer to corresponding transport model
   CEnsemble         *_pEnsemble;  ///< pointer to model ensemble
-  CDemandOptimizer        *_pDO;  ///< pointer to demand optimizer (NULL w/o optimization)  
+  CDemandOptimizer        *_pDO;  ///< pointer to demand optimizer (NULL w/o optimization)
 
   //For Diagnostics Calculation
   CTimeSeriesABC **_pObservedTS;  ///< array of pointers of observation time series [size: _nObservedTS]

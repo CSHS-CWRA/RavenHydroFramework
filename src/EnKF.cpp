@@ -219,7 +219,7 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
   // should closely echo contents of AddToStateMatrix/UpdateFromStateMatrix
   //-----------------------------------------------
   int kk;
-  
+
   _nStateVars=0;
   int ii=0;
   for(int i=0;i<_nAssimStates;i++)
