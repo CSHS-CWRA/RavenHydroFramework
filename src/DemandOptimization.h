@@ -51,14 +51,17 @@ enum exptype
 //
 enum termtype
 {
-  TERM_DV,        //< decision variable
+  TERM_DV,        //< decision variable !Q123 or named 
   TERM_TS,        //< time series @ts(name,n)  
   TERM_LT,        //< lookup table @lookup(x)
+  TERM_HRU,       //< state variable @HRU_var(SNOW,2345)
+  TERM_SB,        //< state variable @SB_var(SNOW,234)
   TERM_CONST,     //< constant 
   TERM_HISTORY,   //< bracketed - !Q123[-2] 
   TERM_MAX,       //< @max(x,y) 
   TERM_MIN,       //< @min(x,y)
   TERM_CONVERT,   //< @convert(x,units)
+  TERM_CUMUL,     //< cumulative delivery !C123
   TERM_UNKNOWN    //< unknown 
 };
 ///////////////////////////////////////////////////////////////////
@@ -98,8 +101,10 @@ struct expressionTerm
   string        nested_exp2;     //< contents of second argument to function
  
   string        origexp;         //< original string expression 
-  int           p_index;         //< subbasin index (for history variables, e.g, !Q324[-2])
-
+  int           p_index;         //< subbasin index p (for history variables, e.g, !Q324[-2] or @SB_var() command )
+  int           HRU_index;       //< HRU index k (for @HRU_var command)
+  int           SV_index;        //< state variable index i (for @SB_var or @HRU_var command)
+  
   expressionTerm(); //defined in DemandExpressionHandling.cpp
 };
 
@@ -145,16 +150,16 @@ struct decision_var
   }
 };
 //////////////////////////////////////////////////////////////////
-// decision variable constraint condition 
+// goal/constraint condition 
 //
-struct dv_condition
+struct exp_condition
 {
-  string      dv_name; //< decision variable name (e.g., Q1023) or "MONTH"
-  double      value;   //< conditional value 
-  double      value2;  //< second conditional (if COMPARE_BETWEEN)
-  comparison  compare; //> comparison operator, e.g., COMPARE_IS_EQUAL
+  string      dv_name;   //< decision variable name (e.g., Q1023) or "MONTH"
+  double      value;     //< conditional value 
+  double      value2;    //< second conditional (if COMPARE_BETWEEN)
+  comparison  compare;   //> comparison operator, e.g., COMPARE_IS_EQUAL
 
-  dv_condition(){
+  exp_condition(){
     dv_name="";
     value=0.0;
     value2=0.0;
@@ -162,9 +167,9 @@ struct dv_condition
   }
 };
 //////////////////////////////////////////////////////////////////
-// decision variable constraint or goal (soft constraint)
+// management constraint or goal (soft constraint) or DV definition (a special constraint defining a user specified DV)
 //
-struct dv_constraint
+struct manConstraint
 {
   string            name;          //< constraint name 
   expressionStruct *pExpression;   //< constraint expression 
@@ -179,12 +184,13 @@ struct dv_constraint
   double            penalty_value; //< (from solution) penalty incurred by not satisfying goal (or zero for constraint) 
 
   int               nConditions;   //< number of conditional statments 
-  dv_condition    **pConditions;   //< array of pointers to conditional statements 
-  bool              conditions_satisfied; 
+  exp_condition   **pConditions;   //< array of pointers to conditional statements 
+  bool              conditions_satisfied; //< true if satisfied during current timestep
+  bool              ever_satisfied;//< true if ever satisfied during simulation (for warning at end of sim)
 
-  dv_constraint();
-  ~dv_constraint();
-  void AddCondition(dv_condition *pCondition);
+  manConstraint();
+  ~manConstraint();
+  void AddCondition(exp_condition *pCondition);
 };
 ///////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for demand optimization 
@@ -199,7 +205,7 @@ private: /*------------------------------------------------------*/
   decision_var   **_pDecisionVars;      //< array of pointers to decision variable structures [size:_nDecisionVars]
 
   int              _nConstraints;       //< number of user-defined enforced constraints/goals in management model 
-  dv_constraint  **_pConstraints;       //< array of pointers to user-defined enforced constraints/goals in management model
+  manConstraint  **_pConstraints;       //< array of pointers to user-defined enforced constraints/goals in management model
 
   int              _nEnabledSubBasins;  //< number of enabled subbasins in model 
   int             *_aSBIndices;         //< local index of enabled subbasins (0:_nEnabledSubBasins) [size: _nSubBasins]
@@ -207,16 +213,19 @@ private: /*------------------------------------------------------*/
   int              _nReservoirs;        //< local storage of number of simulated lakes/reservoirs 
   int             *_aResIndices;        //< storage of enabled reservoir indices (0:_nReservoirs or DOESNT_EXIST) [size:_nSubBasins] 
 
+  //Should probably convert this to a demand class?
   int              _nDemands;           //< local storage of number of demand locations (:IrrigationDemand/:WaterDemand + :ReservoirExtraction time series)
   int             *_aDemandIDs;         //< local storage of demand IDs [size:_nDemands]
   long            *_aDemandSBIDs;       //< local storage of subbasin IDs for each demand [size: _nDemands]
+  int             *_aDemandIndices;     //< local storage of demand index ii (counter in each subbasin) [size: _nDemands]
   string          *_aDemandAliases;     //< list of demand aliases [size: _nDemands] 
   double          *_aDemandPenalties;   //< array of priority weights [size: _nDemands]
+  bool            *_aDemandUnrestrict;  //< array of restriction status for demands - true if unrestricted, false otherwise [size: _nDemands]
   double          *_aDelivery;          //< array of delivered water for each demand [m3/s] [size: _nDemands]
   double          *_aCumDelivery;       //< array of cumulative deliveries of demand since _aCumDivDate of this year [m3] [size: _nDemands] 
   int             *_aCumDelDate;        //< julian date to calculate cumulative deliveries from {default: Jan 1)[size: _nDemands]
 
-  int            **_aUpstreamDemands;   //< demand indices (d) upstream (inclusive) of subbasin p [size: nSBs][size: _aUpCount] 
+  int            **_aUpstreamDemands;   //< demand indices (d) upstream (inclusive) of subbasin p [size: nSBs][size: _aUpCount] (only restricted demands)
   int             *_aUpCount;;          //< number of demands upstream (inclusive) of subbasin p [size: nSBs]
   
   //int            _nDemandGroups;      //< number of demand groups 
@@ -274,10 +283,12 @@ public: /*------------------------------------------------------*/
   void   SetHistoryLength      (const int n);
   void   SetCumulativeDate     (const int julian_date, const string demandID);
   void   SetDebugLevel         (const int lev);
+  void   SetDemandAsUnrestricted(const string dname); 
+  
+  manConstraint *AddConstraint (const string name, expressionStruct *exp, const bool soft_constraint);
   
   void   AddDecisionVar        (const decision_var *pDV);
   void   SetDecisionVarBounds  (const string name, const double &min, const double &max);
-  dv_constraint *AddConstraint (const string name, expressionStruct *exp, const bool soft_constraint);
   void   AddUserConstant       (const string name, const double &val);
   void   AddUserTimeSeries     (const CTimeSeries *pTS);
   void   AddUserLookupTable    (const CLookupTable *pLUT);
@@ -296,5 +307,7 @@ public: /*------------------------------------------------------*/
   void   WriteOutputFileHeaders(const optStruct &Options);
   void   WriteMinorOutput      (const optStruct &Options,const time_struct &tt);
   void   CloseOutputStreams    ();
+
+  void   Closure               (const optStruct &Options);
 };
 #endif

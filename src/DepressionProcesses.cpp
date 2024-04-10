@@ -55,7 +55,7 @@ void CmvDepressionOverflow::GetParticipatingParamList(string  *aP , class_type *
   if (_type==DFLOW_THRESHPOW)
   {
     nP=4;
-    aP[0]="DEP_THRESHHOLD";     aPC[0]=CLASS_LANDUSE;
+    aP[0]="DEP_THRESHOLD";      aPC[0]=CLASS_LANDUSE;
     aP[1]="DEP_N";              aPC[1]=CLASS_LANDUSE;
     aP[2]="DEP_MAX_FLOW";       aPC[2]=CLASS_LANDUSE;
     aP[3]="DEP_MAX";            aPC[3]=CLASS_LANDUSE;
@@ -64,13 +64,13 @@ void CmvDepressionOverflow::GetParticipatingParamList(string  *aP , class_type *
   else if (_type==DFLOW_LINEAR)
   {
     nP=2;
-    aP[0]="DEP_THRESHHOLD";     aPC[0]=CLASS_LANDUSE;
+    aP[0]="DEP_THRESHOLD";      aPC[0]=CLASS_LANDUSE;
     aP[1]="DEP_K";              aPC[1]=CLASS_LANDUSE;
   }
   else if (_type==DFLOW_WEIR)
   {
     nP=2;
-    aP[0]="DEP_THRESHHOLD";     aPC[0]=CLASS_LANDUSE;
+    aP[0]="DEP_THRESHOLD";      aPC[0]=CLASS_LANDUSE;
     aP[1]="DEP_CRESTRATIO";     aPC[1]=CLASS_LANDUSE;
   }
   else
@@ -117,7 +117,7 @@ void   CmvDepressionOverflow::GetRatesOfChange( const double      *state_vars,
   {
     double max_flow   =pHRU->GetSurfaceProps()->dep_max_flow;
     double n          =pHRU->GetSurfaceProps()->dep_n;
-    double thresh_stor=pHRU->GetSurfaceProps()->dep_threshhold;
+    double thresh_stor=pHRU->GetSurfaceProps()->dep_threshold;
     double max_stor   =pHRU->GetSurfaceProps()->dep_max;
 
     if (max_stor<thresh_stor){
@@ -130,7 +130,7 @@ void   CmvDepressionOverflow::GetRatesOfChange( const double      *state_vars,
   //----------------------------------------------------------------------------
   else if(_type==DFLOW_LINEAR)
   {
-    double thresh_stor=pHRU->GetSurfaceProps()->dep_threshhold;
+    double thresh_stor=pHRU->GetSurfaceProps()->dep_threshold;
     double dep_k      =pHRU->GetSurfaceProps()->dep_k;
 
     //rates[0] = dep_k* max(stor-thresh_stor,0.0); //discrete
@@ -139,7 +139,7 @@ void   CmvDepressionOverflow::GetRatesOfChange( const double      *state_vars,
   //----------------------------------------------------------------------------
   else if(_type==DFLOW_WEIR)
   {
-    double thresh_stor=pHRU->GetSurfaceProps()->dep_threshhold;
+    double thresh_stor=pHRU->GetSurfaceProps()->dep_threshold;
     double dep_rat    =pHRU->GetSurfaceProps()->dep_crestratio;
     double area = pHRU->GetArea();
     double c=dep_rat*sqrt(area); //crest length * weir coeff (C_d*L)

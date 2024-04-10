@@ -1042,7 +1042,7 @@ double CModel::EstimateSnowFraction(const rainsnow_method method,
 	}
 	//-----------------------------------------------------------
 	else if (method == RAINSNOW_THRESHOLD)
-	{ //abrupt threshhold temperature (e.g., HYMOD)
+	{ //abrupt threshold temperature (e.g., HYMOD)
 	  double temp = this->_pGlobalParams->GetParams()->rainsnow_temp;
 	  if (F->temp_ave <= temp) { return 1.0; }
 	  else                     { return 0.0; }

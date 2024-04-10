@@ -21,7 +21,9 @@ CDemandOptimizer::CDemandOptimizer(CModel *pMod)
   _aDemandPenalties=NULL;
   _aDemandIDs=NULL;
   _aDemandSBIDs=NULL;
+  _aDemandIndices=NULL;
   _aDemandAliases=NULL;
+  _aDemandUnrestrict=NULL;
   _aDelivery=NULL;
   _nReservoirs=0;
   _nEnabledSubBasins=0;
@@ -90,6 +92,7 @@ CDemandOptimizer::~CDemandOptimizer()
   delete [] _aDelivery;
   delete [] _aDemandIDs;
   delete [] _aDemandSBIDs;
+  delete [] _aDemandIndices;
   delete [] _aDemandAliases;
   delete [] _aSlackValues;
   delete [] _aSBIndices;
@@ -143,6 +146,20 @@ void CDemandOptimizer::SetHistoryLength(const int n)
 void CDemandOptimizer::SetDebugLevel(const int val)
 {
   _do_debug_level=val;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief assigns a demand 'unrestricted' status, meaning it wont be considered when applying environmental min flow constraints
+/// \params dname [in] - name of demand  
+//
+void   CDemandOptimizer::SetDemandAsUnrestricted(const string dname) {
+  int d = GetDemandIndexFromName(dname);
+  if (d==DOESNT_EXIST){
+    string warn =
+        "CDemandOptimizer::SetDemandAsUnrestricted: invalid demand name " + dname +" provided in : DemandIsUnrestricted command.This will be ignored ";
+    WriteWarning(warn,true);
+    return;
+  }
+  _aDemandUnrestrict[d]=true;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief date at which cumulative delivery is rebooted to zero (usually winter date) 
@@ -246,9 +263,9 @@ void CDemandOptimizer::SetDemandPenalty(const string dname, const double& pen) {
 /// \params exp [in] - expression structure
 /// \param soft_constraint [in] - true if this is a goal, not a constraint
 /// 
-dv_constraint *CDemandOptimizer::AddConstraint(string name, expressionStruct *exp, bool soft_constraint) 
+manConstraint *CDemandOptimizer::AddConstraint(string name, expressionStruct *exp, bool soft_constraint) 
 {
-  dv_constraint *pC=new dv_constraint();
+  manConstraint *pC=new manConstraint();
   pC->name=name;
   pC->is_goal=soft_constraint;
   pC->pExpression=exp;
@@ -369,6 +386,7 @@ void CDemandOptimizer::Initialize(CModel* pModel, const optStruct& Options)
   _aDemandIDs     = new int   [_nDemands];
   _aDemandAliases = new string[_nDemands];
   _aDemandSBIDs   = new long  [_nDemands];
+  _aDemandIndices = new int   [_nDemands];
   int d=0;
   int ID;
   for (int pp=0;pp<pModel->GetNumSubBasins();pp++)
@@ -387,6 +405,7 @@ void CDemandOptimizer::Initialize(CModel* pModel, const optStruct& Options)
         _aDemandIDs    [d]=ID;
         _aDemandAliases[d]=name;
         _aDemandSBIDs  [d]=pSB->GetID();
+        _aDemandIndices[d]=ii;
         d++;
       }
     }
@@ -407,6 +426,7 @@ void CDemandOptimizer::Initialize(CModel* pModel, const optStruct& Options)
           _aDemandIDs    [d]=ID;
           _aDemandAliases[d]=name;
           _aDemandSBIDs  [d]=pSB->GetID();
+          _aDemandIndices[d]=100+ii;
           d++;
         }
       }
@@ -415,11 +435,13 @@ void CDemandOptimizer::Initialize(CModel* pModel, const optStruct& Options)
 
   _aDelivery        = new double[_nDemands];
   _aDemandPenalties = new double[_nDemands];
+  _aDemandUnrestrict= new bool  [_nDemands];
   _aCumDelivery     = new double[_nDemands];
   _aCumDelDate      = new int   [_nDemands];
   for (int d=0;d<_nDemands;d++){
     _aDelivery       [d]=0;
     _aDemandPenalties[d]=1.0;  //Default demand penalty (make accessible parameter?)
+    _aDemandUnrestrict[d]=false; //Default restricted status
     _aCumDelivery    [d]=0.0;
     _aCumDelDate     [d]=0; //Jan 1 
   }
@@ -455,16 +477,18 @@ void  CDemandOptimizer::IdentifyUpstreamDemands()
 
   for (int d = 0; d < _nDemands; d++) 
   {
-    SBID=_aDemandSBIDs[d];
-    while (SBID >= 0) {
-      int p=_pModel->GetSubBasinByID(SBID)->GetGlobalIndex();
+    if (!_aDemandUnrestrict[d]){ //only restricted demands are considered
+      SBID=_aDemandSBIDs[d];
+      while (SBID >= 0) {
+        int p=_pModel->GetSubBasinByID(SBID)->GetGlobalIndex();
 
-      if (_pModel->GetSubBasin(p)->IsEnabled()){
-        push(_aUpstreamDemands[p],d,_aUpCount[p]);
-        SBID=_pModel->GetSubBasin(p)->GetDownstreamID();
-      }
-      else {
-        SBID=DOESNT_EXIST;
+        if (_pModel->GetSubBasin(p)->IsEnabled()){
+          push(_aUpstreamDemands[p],d,_aUpCount[p]);
+          SBID=_pModel->GetSubBasin(p)->GetDownstreamID();
+        }
+        else {
+          SBID=DOESNT_EXIST;
+        }
       }
     }
   }
@@ -531,10 +555,10 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
     p=pModel->GetOrderedSubBasinIndex(pp);
     pSB=pModel->GetSubBasin(p);
     if ((pSB->IsEnabled()) && (pSB->GetReservoir()!=NULL)){
-      pDV =  new decision_var("ResSlackUp" + to_string(pModel->GetSubBasin(p)->GetID()), p, DV_SLACK,_nSlackVars); 
+      pDV =  new decision_var("SR+" + to_string(pModel->GetSubBasin(p)->GetID()), p, DV_SLACK,_nSlackVars); 
       AddDecisionVar(pDV);
       _nSlackVars++;
-      pDV =  new decision_var("ResSlackDn" + to_string(pModel->GetSubBasin(p)->GetID()), p, DV_SLACK,_nSlackVars); 
+      pDV =  new decision_var("SR-" + to_string(pModel->GetSubBasin(p)->GetID()), p, DV_SLACK,_nSlackVars); 
       AddDecisionVar(pDV);
       _nSlackVars++;
     }
@@ -550,12 +574,12 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
     if (pSB->IsEnabled()){
       //created for all basins with environmental min flow or non-zero unusable flow pct 
       if (pSB->HasEnviroMinFlow()){
-        pDV =  new decision_var("E" + to_string(pModel->GetSubBasin(p)->GetID()), p, DV_SLACK,_nSlackVars); 
+        pDV =  new decision_var("E+" + to_string(pModel->GetSubBasin(p)->GetID()), p, DV_SLACK,_nSlackVars); 
         AddDecisionVar(pDV);
         _nSlackVars++;
       }
       /*if (pSB->GetUnusableFlowPercentage()>0) {
-        pDV =  new decision_var("U" + to_string(pModel->GetSubBasin(p)->GetID()), p, DV_SLACK,_nSlackVars); 
+        pDV =  new decision_var("U+" + to_string(pModel->GetSubBasin(p)->GetID()), p, DV_SLACK,_nSlackVars); 
         AddDecisionVar(pDV);
         _nSlackVars++;
       }*/
@@ -570,19 +594,29 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
   //------------------------------------------------------------------
   // ISSUE : THIS IS TOTAL POSSIBLE NUMBER OF SLACK VARIABLES; MAY NOT BE IN PLAY DUE TO CONDITIONALS - for disabled constraints, just set penalty to zero>??
   //
+  string nm;
   for (int j = 0; j < _nConstraints; j++) 
   {
     if (_pConstraints[j]->is_goal) {
       if (_pConstraints[j]->pExpression->compare == COMPARE_IS_EQUAL) {
         _pConstraints[j]->slack_ind1=_nSlackVars;
         _pConstraints[j]->slack_ind2=_nSlackVars+1;
+        pDV =  new decision_var("SL+" + to_string(j), p, DV_SLACK,_nSlackVars); 
+        AddDecisionVar(pDV);
+        pDV =  new decision_var("SL-" + to_string(j), p, DV_SLACK,_nSlackVars+1); 
+        AddDecisionVar(pDV);
         _nSlackVars+=2;
       } 
       else {
         _pConstraints[j]->slack_ind1=_nSlackVars;
+        if (_pConstraints[j]->pExpression->compare ==COMPARE_LESSTHAN){nm="-";}
+        else                                                          {nm="+";}
+        pDV =  new decision_var("SL"+ nm + to_string(j), p, DV_SLACK,_nSlackVars); 
+        AddDecisionVar(pDV);
         _nSlackVars++;
       }
     }
+    _pConstraints[j]->ever_satisfied=false;
   }
 
   _aSlackValues = new double[_nSlackVars];
@@ -635,11 +669,14 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
       }
     }
 
+    string tmpstr;
     cout<<" # History Items: "     <<_nHistoryItems<<endl;
     cout<<" # Slack Vars: "        <<_nSlackVars<<endl;
     cout<<" # Constraints/Goals: " <<_nConstraints<<endl;
     for (int i = 0; i < _nConstraints; i++) {
-      cout<<"    "<<i<<" : "<<_pConstraints[i]->name<<" "<<_pConstraints[i]->pExpression->origexp<<endl;
+      if (_pConstraints[i]->is_goal){tmpstr="[GOAL]      "; }
+      else                          {tmpstr="[CONSTRAINT]"; }
+      cout<<"    "<<i<<" "<<tmpstr<<": "<<_pConstraints[i]->name<<" "<<_pConstraints[i]->pExpression->origexp<<endl;
     }
     cout<<" -----------------------------------------------------------------"<<endl;
     cout<<" -----------------------------------------------------------------"<<endl;
@@ -680,7 +717,7 @@ void CDemandOptimizer::AddReservoirConstraints()
   string TSname,SBIDs;
   long SBID;
   expressionStruct *exp;
-  dv_constraint    *pConst=NULL;
+  manConstraint    *pConst=NULL;
   string expString;
   string advice;
   double stage_units_adjustment;
@@ -819,11 +856,8 @@ void CDemandOptimizer::AddReservoirConstraints()
       if (UserTimeSeriesExists(TSname))
       {  
         expString=":Expression !h" + SBIDs+ " = @ts(" + TSname + ",0)"; 
-        cout<<"TOKENIZING: "<<expString << endl;
         TokenizeString(expString, s, Len);
-        cout<<"PARSING: "<<expString << endl;
         exp = ParseExpression((const char**)(s), Len, 0, "internal");
-        cout<<"ADDING CONSTRAINT: "<<expString << endl;
         pConst=AddConstraint(TSname, exp, true);
         pConst->penalty_over=2.0*stage_units_adjustment;
         advice = "An :ReservoirTargetStage time series for subbasin " + SBIDs + " has been added to the management optimization formulation";
@@ -909,6 +943,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
   double *row_val=new double [_nDecisionVars]; //values of row[col_ind] 
 
   double *h_iter=new double [_pModel->GetNumSubBasins()];
+  double *Q_iter=new double [_pModel->GetNumSubBasins()];
   int    *lprow =new int    [_pModel->GetNumSubBasins()]; //index of goal equation for non-linear reservoir stage discharge curve in subbasin p 
 
   // update history arrays from previous timestep
@@ -980,6 +1015,35 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
     }
   }
 
+  // Prepare flow diversion estimates 
+  // ----------------------------------------------------------------
+  int pDivert;
+  double div_Q=0;
+  double sum_diverted=0;
+  double *aDivert  =new double [pModel->GetNumSubBasins()]; //< diversion TO basin p (from prev timestep)
+  double *aDivGuess=new double [pModel->GetNumSubBasins()]; //< diversion FROM basin p (non-linear)
+  for (int p = 0; p<pModel->GetNumSubBasins(); p++)
+  {
+    aDivert  [p]=0;
+    aDivGuess[p]=0;
+  }
+  for (int pp = 0; pp<pModel->GetNumSubBasins(); pp++)
+  {
+    p  =pModel->GetOrderedSubBasinIndex(pp);
+    pSB=pModel->GetSubBasin(p);
+    sum_diverted=0;
+    for(int i=0;i<pSB->GetNumDiversions();i++)
+    {
+      div_Q=pSB->GetDiversionFlow(i,pSB->GetLastOutflowRate(),Options,tt,pDivert);//[m3/s]
+      if(pDivert!=DOESNT_EXIST)
+      {
+        aDivert[pDivert]+=div_Q;
+      }
+      sum_diverted+=div_Q;
+    }
+    aDivGuess[p]=sum_diverted; // a guess because GetDiversionFlow may be non-linear
+  }
+
   lp_lib::set_add_rowmode(pLinProg, TRUE); //readies lp_lib to add rows and objective function
 
   // ----------------------------------------------------------------
@@ -1013,7 +1077,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
       }
     }
   }
-  //ADD RESERVOIR EXTRACTION DEMAND HERE 
+  //TODO: ADD RESERVOIR EXTRACTION DEMAND HERE 
   
   s=0;
   // reservoir discharge curve goal penalties 
@@ -1063,6 +1127,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
   for (int j = 0; j < _nConstraints; j++) 
   {
     _pConstraints[j]->conditions_satisfied=CheckConditions(j,tt);
+    if (_pConstraints[j]->conditions_satisfied){_pConstraints[j]->ever_satisfied=true; }
 
     if ((_pConstraints[j]->is_goal) && (_pConstraints[j]->conditions_satisfied))
     {
@@ -1108,8 +1173,8 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
     p  =pModel->GetOrderedSubBasinIndex(pp);
     pSB=pModel->GetSubBasin(p);
 
-    //Q_p = (Qin +Qin )*U0 + sum(Ui*Qn-i) + Runoff - Div - Dem + Qadded + U_0*Qadded2
-    //Q_p-U_0*Qin-U_0*Qin2...+Div +Dem = sum(Ui*Qn-i) + Runoff + Qadded + U_0*Qadded2
+    //Q_p = (Qin +Qin )*U0 + sum(Ui*Qn-i) + Runoff - Div_out(Q) + Div_in - Dem + Qadded + U_0*Qadded2
+    //Q_p-U_0*Qin-U_0*Qin2... +Dem = sum(Ui*Qn-i) + Runoff - Div_out(Q) + Div_in + Qadded + U_0*Qadded2
     if (pSB->IsEnabled())
     {
       U_0 =pSB->GetRoutingHydrograph()[0];
@@ -1155,11 +1220,12 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
           d++;
         }
       }
-      // \todo[funct]: add flow diversions
 
       RHS=0;
       RHS+=pSB->GetSpecifiedInflow (t)*U_0;
       RHS+=pSB->GetDownstreamInflow(t);
+      RHS-=aDivGuess[p]; //diverted from (guess based upon last Q)
+      RHS+=aDivert[p];   //diverted to (delayed by one day, based upon yesterday's Q)
       for (int n = 1; n < pSB->GetInflowHistorySize(); n++) {
         RHS+=pSB->GetRoutingHydrograph()[n]*pSB->GetInflowHistory()[n-1]; // [n-1] is because this inflow history has not yet been updated
       }
@@ -1339,9 +1405,11 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
       //TODO - figure out how to extend this to an unusable flow percentage
       // Q + e* >= (ufp)*[sum(D)+Q] <-term in brackets is inflow upstream of demands 
       ufp =pSB->GetUnusableFlowPercentage();
-
-      // e* <= 10^6 * all upstream D
-    
+      if (ufp != 0.0) {
+        // e* <= 10^6 * all upstream D
+      
+      
+      }
     }
   }
 
@@ -1379,8 +1447,8 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
     //ExitGracefully("Checking matrix",RUNTIME_ERR); //TMP DEBUG 
 
     retval = lp_lib::solve(pLinProg);
-    if (retval!=OPTIMAL){cout<<"code: "<<retval<<endl; }
 
+    if (retval!=OPTIMAL){cout<<"code: "<<retval<<endl; }
     ExitGracefullyIf(retval!=OPTIMAL,"SolveDemandProblem: non-optimal solution found. Problem is over-constrained. Remove or adjust management constraints.",RUNTIME_ERR);
   
     //This will be sum of penalties*violations
@@ -1401,6 +1469,10 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
     for (int i=0;i<_nDecisionVars;i++){
       _pDecisionVars[i]->value=soln[i];
     }
+    
+    //TMP DEBUG : Not currently using residual information - should be part of GoalSatisfaction.csv??  
+    // how does residual report goals? With slack variables, residual should be 0 everywhere? 
+    // Perhaps this can track down source of problems if not converged. 
     for (int j=0;j<nrows;j++){
       resid[j]=constr[j]-lp_lib::get_rh(pLinProg,j+1); // LHS-RHS for each goal/constraint 
       ctyp=lp_lib::get_constr_type(pLinProg,j+1);
@@ -1412,7 +1484,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
     delete [] constr; 
     delete [] resid;
 
-    // grab and store improved estimate of reservoir stage 
+    // grab and store improved estimate of reservoir stage + flow diversion
     // ----------------------------------------------------------------
     double  value;
     dv_type typ;
@@ -1425,9 +1497,12 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
       if (typ == DV_STAGE) {
         h_iter[p]=value;
       }
+      else if (typ == DV_QOUT) {
+        Q_iter[p]=value; 
+      }
     }
 
-    // update lp matrix for iterative solution of stage-discharge curve 
+    // update lp matrix for iterative solution of stage-discharge curve and flow diversions 
     // ----------------------------------------------------------------
     for (int pp = 0; pp<pModel->GetNumSubBasins(); pp++)
     {
@@ -1455,6 +1530,32 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
       }
     }
 
+    // update lp matrix for iterative solution of flow diversions 
+    // ----------------------------------------------------------------
+    for (int pp = 0; pp<pModel->GetNumSubBasins(); pp++)
+    {
+      p   =pModel->GetOrderedSubBasinIndex(pp);
+      pSB =pModel->GetSubBasin(p);
+      if (pSB->GetNumDiversions()>0)
+      { 
+        int    junk;
+        double div_Q=0;
+        double sum_diverted=0;
+        double Q_guess=Q_iter[p];
+        for(int i=0;i<pSB->GetNumDiversions();i++)
+        {
+          div_Q=pSB->GetDiversionFlow(i,Q_guess,Options,tt,junk); 
+          sum_diverted+=div_Q;
+        }
+        
+        RHS=lp_lib::get_rh(pLinProg,lprow[p]);
+
+        RHS+=(sum_diverted-aDivGuess[p]);
+        aDivGuess[p]=sum_diverted;
+
+        lp_lib::set_rh (pLinProg,lprow[p],RHS); 
+      }
+    }
     //cout<<"iteration: "<<iter<<endl;
 
   }/*end iteration loop*/
@@ -1463,8 +1564,10 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
   delete [] col_ind;
   delete [] row_val;
   delete [] h_iter;
+  delete [] Q_iter;
   delete [] lprow; 
-
+  delete [] aDivert;
+  delete [] aDivGuess;
 
   //set state variables corresponding to decision variables 
   // SHOULD REALLY ONLY UPDATE DELIVERY, RES_EXTRACT, AND RESERVOIR OUTFLOW - ADD SWITCH TO HAVE OPT MODEL GENERATE STATE VARS OR REGULAR RAVEN SETUP 
@@ -1543,7 +1646,8 @@ void CDemandOptimizer::WriteOutputFileHeaders(const optStruct &Options)
 
   _DEMANDOPT<<"time [d],date,hour";
   for (int i=0;i<_nDecisionVars;i++){
-    if (_pDecisionVars[i]->p_index == DOESNT_EXIST) { //user specified variable
+    if ((_pDecisionVars[i]->p_index == DOESNT_EXIST) && 
+        (_pDecisionVars[i]->dvar_type!=DV_SLACK))  { //user specified non-slack variable
        _DEMANDOPT<<","<<_pDecisionVars[i]->name;
     }
     else{
@@ -1590,7 +1694,8 @@ void CDemandOptimizer::WriteMinorOutput(const optStruct &Options,const time_stru
   //--------------------------------------------------------
   _DEMANDOPT<<tt.model_time <<","<<usedate<<","<<usehour; 
   for (int i=0;i<_nDecisionVars;i++){
-    if (_pDecisionVars[i]->p_index == DOESNT_EXIST) { //user specified variable
+    if ((_pDecisionVars[i]->p_index == DOESNT_EXIST) && 
+        (_pDecisionVars[i]->dvar_type!=DV_SLACK)) { //user specified non-slack variable
        _DEMANDOPT<<","<<_pDecisionVars[i]->value;
     }
     else{
@@ -1625,11 +1730,12 @@ void CDemandOptimizer::WriteMinorOutput(const optStruct &Options,const time_stru
       d++;
     }
   }
-  int k=_nDemands; //first goals are due to environmental flow constraints 
+  int k=_nDemands+2*_nReservoirs; //first goals are due to environmental flow constraints 
   for (int i = 0; i < _nConstraints; i++) {
     if (_pConstraints[i]->is_goal) {
       if (_pConstraints[i]->pExpression->compare != COMPARE_IS_EQUAL) {
         if (include_pen){mult=_pConstraints[i]->penalty_over;}
+
         pen = mult*_aSlackValues[k];
         _GOALSAT<<","<<pen;
         k++;
@@ -1655,4 +1761,19 @@ void CDemandOptimizer::CloseOutputStreams()
 {
   if (_DEMANDOPT.is_open()){_DEMANDOPT.close();}
   if (  _GOALSAT.is_open()){  _GOALSAT.close();}
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Provides end warnings
+/// \details after end of simulation from Main()
+//
+void CDemandOptimizer::Closure(const optStruct &Options) 
+{
+  string warn;
+  for (int j = 0; j < _nConstraints; j++) {
+    if (!(_pConstraints[j]->ever_satisfied) && (_pConstraints[j]->nConditions>0)) {
+      warn="CDemandOptimizer::Closure: constraint/goal ["+to_string(j)+"] "+_pConstraints[j]->name+" was never activated during simulation, as none of its conditions were ever met.";
+      WriteWarning(warn,Options.noisy);
+    }
+  }
+
 }

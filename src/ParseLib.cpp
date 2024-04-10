@@ -1,10 +1,11 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2024 the Raven Development Team
   ----------------------------------------------------------------*/
 
 #include "ParseLib.h"
 #include "RavenInclude.h"
+
 inline int      s_to_i (char *s1)            {return (int)atof(s1);   }
 inline double   s_to_d (char *s1)            {return atof(s1);        }
 inline bool     s_to_b (char *s1)            {return ((int)atof(s1)!=0);   }
@@ -14,47 +15,49 @@ inline bool     s_to_b (char *s1)            {return ((int)atof(s1)!=0);   }
   -----------------------------------------------------------------------*/
 CParser::CParser(ifstream &FILE, const int i)
 {
-  filename="";
-  INPUT =&FILE;
-  l=i;
-  comma_only=false;
+  _filename="";
+  _INPUT =&FILE;
+  _lineno=i;
+  _comma_only=false;
   _parsing_math_exp=false;
 }
 //-----------------------------------------------------------------------
-CParser::CParser(ifstream &FILE, string _filename, const int i)
+CParser::CParser(ifstream &FILE, string filename, const int i)
 {
-  filename=_filename;
-  INPUT =&FILE;
-  l=i;
-  comma_only=false;
+  _filename=filename;
+  _INPUT =&FILE;
+  _lineno=i;
+  _comma_only=false;
   _parsing_math_exp=false;
 }
 /*----------------------------------------------------------------
   Basic Member Functions
   -----------------------------------------------------------------------*/
-void   CParser::SetLineCounter(int i)    {l=i;}
+void   CParser::SetLineCounter(int i)    {_lineno=i;}
 //-----------------------------------------------------------------------
-int    CParser::GetLineNumber ()         {return l;}
+int    CParser::GetLineNumber ()         {return _lineno;}
 //-----------------------------------------------------------------------
-string CParser::GetFilename() {return filename;}
+string CParser::GetFilename   ()         {return _filename;}
 //-----------------------------------------------------------------------
-void CParser::NextIsMathExp() {_parsing_math_exp=true;}
+void   CParser::NextIsMathExp ()         {_parsing_math_exp=true;}
 //-----------------------------------------------------------------------
 string CParser::Peek()
 {
+
 // return first word of current line in INPUT without proceeding forward in the file
     std::streampos place;
     int Len;
     bool eof;
     char *s[MAXINPUTITEMS];
 
-    place=INPUT->tellg(); // Get current position
-
-    eof=Tokenize(s,Len); //read and parse whole line
+    place=_INPUT->tellg(); // Get current position
+    eof=Tokenize(s,Len);   //read and parse whole line
+    _lineno--;             //otherwise line number incremented upon peeking
+    
     string firstword = "";
     if (Len > 0) {firstword=s[0];}
     if (!eof){
-      INPUT->seekg(place ,std::ios_base::beg);    // Return to position before peeked line 
+      _INPUT->seekg(place ,std::ios_base::beg);    // Return to position before peeked line 
     }
     return firstword;
 }
@@ -68,10 +71,12 @@ string CParser::AddSpacesBeforeOps(string line) const
   string tmp;
   for (int i = 0; i < line.size(); i++) {
     char o=line[i];//).c_str();
-    if      (o == '/' || o == '*' || o == '+' || o == '-'){tmp+=" "+to_string(line[i])+" ";}
-    else if (o == '=')                                    {tmp+=line[i]+" ";               }
-    else if (o == '~' || o == '<' || o == '>')            {tmp+=" "+line[i];               }
-    else                                                  {tmp+=line[i];                   }
+    if      ((o == '/') || (o == '*') || (o == '+') || (o == '-') || (o == '=') || (o == '~') || (o == '<') || (o == '>')){
+      tmp+=" "+to_string(line[i])+" ";
+    }
+    else {
+      tmp+=to_string(line[i]);
+    }
   }
   return tmp;
 }
@@ -90,7 +95,6 @@ bool CParser::Tokenize(char **out, int &numwords){
   static char wholeline     [MAXCHARINLINE];
   static char *tempwordarray[MAXINPUTITEMS];
   char *p;
-  //char *junk=NULL;
   int ct(0),w;
   char delimiters[6];
   delimiters[0]=' '; //space
@@ -99,27 +103,33 @@ bool CParser::Tokenize(char **out, int &numwords){
   delimiters[3]='\r';//carriage return (ignored in visual c++)
   delimiters[4]='\n';//newline -necc?
   delimiters[5]='\0';//last delimiter
-  if (comma_only){
+  if (_comma_only){
     delimiters[0]=delimiters[1]=',';
   }
   if (_parsing_math_exp) {
      delimiters[2]=' ';//don't use commas
   }
   (*wholeline)=0;
-  while ((*wholeline)==0){//while loop handles blank lines
-    if (INPUT->eof()){return true;}
-    INPUT->getline(wholeline,MAXCHARINLINE);            //get entire line as 1 string
-    if (INPUT->fail()){
-      //cout<<"failed: "<<filename<<" line "<<l<<"|"<<wholeline<<"|"<<INPUT->ios::eofbit<<endl;
-      //ExitGracefully("Too many characters in line or (maybe) using Mac-style carriage return line endings.",BAD_DATA);
-    }
-    l++;
-    if ((parserdebug) && ((*wholeline)!=0)){cout <<wholeline<<endl;}
-  }                 //if line is null, break, return true
+  if (_INPUT->eof()){return true;}
+  _INPUT->getline(wholeline,MAXCHARINLINE);            //get entire line as 1 string
+  if (_INPUT->fail()){
+    //cout<<"failed: "<<filename<<" line "<<l<<"|"<<wholeline<<"|"<<INPUT->ios::eofbit<<endl;
+    //ExitGracefully("Too many characters in line or (maybe) using Mac-style carriage return line endings.",BAD_DATA);
+  }
+ 
+  _lineno++;
+  if ((parserdebug) && ((*wholeline)!=0)){cout <<wholeline<<endl;}
+ 
+  if ((*wholeline) == 0) {
+    numwords=0;
+    out[0]="";
+    return false;
+  }
+   
   if (_parsing_math_exp) {
     string line;
-   // line=AddSpacesBeforeOps(wholeline); //NOT WORKING
-    //strcpy(wholeline,line.c_str());
+    line=AddSpacesBeforeOps(wholeline); //NOT WORKING
+    strcpy(wholeline,line.c_str());
     _parsing_math_exp=false;
   }
 
@@ -133,7 +143,7 @@ bool CParser::Tokenize(char **out, int &numwords){
   }
   for (w=0; w<ct; w++){                              //copy temp array of words into out[]
     if (w>MAXINPUTITEMS){numwords=ct;
-      string warn="Tokenizeline:: exceeded maximum number of items in single line in file "+filename;
+      string warn="Tokenizeline:: exceeded maximum number of items in single line in file "+_filename;
       ExitGracefully(warn.c_str(),BAD_DATA);
       return true;
     }
@@ -147,8 +157,8 @@ bool CParser::Tokenize(char **out, int &numwords){
 /*----------------------------------------------------------------*/
 void   CParser::ImproperFormat(char **s)
 {
-  cout <<"line "<< l << " in file "<<filename<< " is wrong length"<<endl; //FOR NOW
-  cout <<"line "<< l << ": "<<s[0]<<endl;
+  cout <<"line "<< _lineno << " in file "<<_filename<< " is wrong length"<<endl; //FOR NOW
+  cout <<"line "<< _lineno << ": "<<s[0]<<endl;
 }
 /*----------------------------------------------------------------*/
 void CParser::SkipLine()

@@ -94,7 +94,7 @@ struct soil_struct
   double max_baseflow_rate; ///< [mm/d]    max baseflow rate (e.g., VIC_ARNO)- user defined between 0.001 - 10000.00
   double baseflow_n;        ///< [-]       VIC/ARNO baseflow exponent - user defined between 1.0 - 10.0
   double baseflow_coeff;    ///< [1/d]     Linear Baseflow storage coefficient [Q_base=K*S]
-  double baseflow_coeff2;   ///< [1/d]     Linear baseflow storage coefficient [threshhold]
+  double baseflow_coeff2;   ///< [1/d]     Linear baseflow storage coefficient [threshold]
   double baseflow_thresh;   ///< [0..1]    threshold saturation for onset of baseflow
   double storage_threshold; ///< [mm]      threshold storage for onset of baseflow
 
@@ -278,8 +278,8 @@ struct surface_struct
   double abst_percent;      ///< [0..1]    percentage of rainfall/melt which is abstracted to depression storage
   double dep_max_flow;      ///< [mm/d]    outflow rate with full depression storage (dep_stor=dep_max)
   double dep_n;             ///< [-]       power law coefficient for depression outflow
-  double dep_threshhold;    ///< [mm]      threshold storage at which flow commences
-  double dep_k;             ///< [1/d]     linear overflow coefficient Q=k*(h-dep_threshhold)
+  double dep_threshold;     ///< [mm]      threshold storage at which flow commences
+  double dep_k;             ///< [1/d]     linear overflow coefficient Q=k*(h-dep_threshold)
   double dep_seep_k;        ///< [1/d]     linear seepage coefficient Q=k*h
   double dep_crestratio;    ///<-[m/m]     ratio of crest width to square root of HRU area (0-5) ~1.5
   double PDMROF_b;          ///< [-]       PDMROF Pareto distribution function exponent

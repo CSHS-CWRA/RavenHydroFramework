@@ -84,11 +84,13 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     else if(!strcmp(s[0],":DemandPenalty"))               { code=14; }
     else if(!strcmp(s[0],":DemandResetDate"))             { code=15; }
     else if(!strcmp(s[0],":DemandPriority"))              { code=16; }
+    else if(!strcmp(s[0],":DemandIsUnrestricted"))        { code=17; }
     else if(!strcmp(s[0],":NamedConstant"))               { code=20; }
     else if(!strcmp(s[0],":DefineDecisionVariable"))      { code=21; }
     else if(!strcmp(s[0],":DecisionVariableBounds"))      { code=22; }
     else if(!strcmp(s[0],":ManagementConstraint"))        { code=23; is_goal=false; }
     else if(!strcmp(s[0],":ManagementGoal"))              { code=23; is_goal=true;}
+    else if(!strcmp(s[0],":DeclareDecisionVariable"))     { code=24; }
     else if(!strcmp(s[0],":LookupTable"))                 { code=30; }
 
 
@@ -208,6 +210,12 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       //pDO->SetDemandPriority(s[1], s_to_d(s[2]));
       break;
     }
+    case(17):  //----------------------------------------------
+    {/*:DemandIsUnrestricted [demand1] */ //demand1 is 1234 or FarmerBob, not !D1234 or !D.FarmerBob
+      if(Options.noisy) { cout <<"Unrestricted Demand"<<endl; }
+      pDO->SetDemandAsUnrestricted(s[1]);
+      break;
+    }
     case(20):  //----------------------------------------------
     {/*:NamedConstant [name] [value] */
       if(Options.noisy) { cout <<"Named Constant "<<endl; }
@@ -223,7 +231,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     { /*:DefineDecisionVariable [name] = [expressionRHS] */
       if(Options.noisy) { cout <<"Define Decision Variable"<<endl; }
       expressionStruct *pExp;      
-      dv_constraint    *pConst=NULL;
+      manConstraint    *pConst=NULL;
       decision_var     *pDV = new decision_var(s[1],DOESNT_EXIST,DV_USER,pDO->GetNumUserDVs());
       
       pDO->AddDecisionVar(pDV);
@@ -251,21 +259,21 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     case(23):  //----------------------------------------------
     {/*:ManagementConstraint [name] 
           :Expresion   [expression]
-          :Conditional [condition]
-          :Conditional [condition]
+          :Condition [condition]
+          :Condition [condition]
        :EndManagementConstraint
        or
        :ManagementGoal [name] 
           :Expresion   [expression]
-          :Conditional [condition]
-          :Conditional [condition]
+          :Condition [condition]
+          :Condition [condition]
           :Penalty [value] {value2} 
        :EndManagementGoal
      */
       if(Options.noisy) { cout <<"Management Constraint or Management Goal"<<endl; }
       string name=s[1];
       expressionStruct *pExp;      
-      dv_constraint    *pConst=NULL;
+      manConstraint    *pConst=NULL;
       firstword=pp->Peek();
       if (firstword == ":Expression") {
         pp->NextIsMathExp();
@@ -294,16 +302,47 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         {
           //TODO: handle more complex, expression-based conditions 
           if (pConst!=NULL){
-            dv_condition *pCond = new dv_condition();
+            bool badcond=false;
+            exp_condition *pCond = new exp_condition();
             pCond->dv_name=s[1];
             if      (!strcmp(s[2],"IS_BETWEEN"     )){pCond->compare=COMPARE_BETWEEN;}
             else if (!strcmp(s[2],"IS_GREATER_THAN")){pCond->compare=COMPARE_GREATERTHAN;}
             else if (!strcmp(s[2],"IS_LESS_THAN"   )){pCond->compare=COMPARE_LESSTHAN;}
+            else if (!strcmp(s[2],"IS_EQUAL_TO"    )){pCond->compare=COMPARE_IS_EQUAL;}
+            else if (!strcmp(s[2],"IS_NOT_EQUAL_TO")){pCond->compare=COMPARE_NOT_EQUAL;}
             pCond->value=s_to_d(s[3]);
             if (Len>=5){
               pCond->value2 = s_to_d(s[4]);
             }
-            pConst->AddCondition(pCond);
+            if (pCond->dv_name[0] == '!') { //decision variable 
+              char   tmp =pCond->dv_name[1];
+              string tmp2=pCond->dv_name.substr(2);
+              char code=pCond->dv_name[1];
+              if ((code=='Q') || (code=='h') || (code=='I')){
+                long SBID=s_to_l(tmp2.c_str());
+                if (pModel->GetSubBasinByID(SBID) == NULL) {
+                  ExitGracefully("ParseManagementFile: Subbasin ID in :Condition statement is invalid.",BAD_DATA_WARN);
+                }
+                else if (!pModel->GetSubBasinByID(SBID)->IsEnabled()) {
+                  WriteWarning("ParseManagementFile: Subbasin in :Condition statement is disabled in this model configuration. Conditional will be assumed true.",Options.noisy);
+                  badcond=true;
+                }
+                else if ((code == 'h') || (code == 'I')) {
+                  if (pModel->GetSubBasinByID(SBID)->GetReservoir() == NULL) {
+                    ExitGracefully("ParseManagementFile: !h or !I used in :Condition statement for subbasin without lake or reservoir",BAD_DATA_WARN);
+                  }
+                }
+              }
+              else { //demand 
+                int d=pDO->GetDemandIndexFromName(tmp2);
+                if (d == DOESNT_EXIST) {
+                  ExitGracefully("ParseManagementFile: !D or !C used in :Condition statement has invalid demand ID",BAD_DATA_WARN);
+                }
+              }
+            }
+            if (!badcond){
+              pConst->AddCondition(pCond);
+            }
           } 
           else{
             ExitGracefully("ParseManagementFile: :Condition statement must appear after valid :Expression in :ManagementConstraint command",BAD_DATA_WARN);
@@ -311,7 +350,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         } 
         else if (!strcmp(s[0], ":Penalty")) {
           pConst->penalty_under = s_to_d(s[1]);
-          pConst->penalty_over = s_to_d(s[1]);
+          pConst->penalty_over  = s_to_d(s[1]);
           if (Len >= 3) {
             pConst->penalty_over = s_to_d(s[2]);
           }
@@ -333,6 +372,13 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           pp->NextIsMathExp();
         }
       }
+      break;
+    }
+    case(24):  //----------------------------------------------
+    { /*:DeclareDecisionVariable [name]  */
+      if(Options.noisy) { cout <<"Declare Decision Variable"<<endl; }      
+      decision_var     *pDV = new decision_var(s[1],DOESNT_EXIST,DV_USER,pDO->GetNumUserDVs());
+      pDO->AddDecisionVar(pDV);
       break;
     }
     case(30):  //----------------------------------------------
@@ -391,14 +437,14 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
             string warn ="IGNORING unrecognized command: " + string(s[0])+ " in .rvm file";
             WriteWarning(warn,Options.noisy);
           }
+          break;
         }
-        break;
         default:
         {
           string errString = "Unrecognized command in .rvm file:\n   " + string(s[0]);
           ExitGracefully(errString.c_str(),BAD_DATA_WARN);//STRICT
+          break;
         }
-        break;
       }
     }
     }//end switch(code)

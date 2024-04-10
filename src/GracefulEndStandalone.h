@@ -47,7 +47,7 @@ inline void FinalizeGracefully(const char *statement, exitcode code)
       string message="Unable to open errors file ("+Options->main_output_dir+"Raven_errors.txt)";
       ExitGracefully(message.c_str(),RAVEN_OPEN_ERR);
     }
-    if (code!=SIMULATION_DONE) {WARNINGS<<"ERROR : "<<statement<<endl;}
+    if (code!=SIMULATION_DONE) {WARNINGS<<"ERROR    : "<<statement<<endl;}
     else                       {WARNINGS<<"SIMULATION COMPLETE :)"<<endl;}
     WARNINGS.close();
   }
@@ -75,8 +75,8 @@ inline void FinalizeGracefully(const char *statement, exitcode code)
 /// \param statement [in] String to print to user upon exit
 /// \param code [in] Code to determine why the system is exiting
 //
-inline void ExitGracefully(const char *statement, exitcode code)
+ void ExitGracefully(const char *statement, exitcode code)
 {
   FinalizeGracefully(statement, code);
-  exit(0);
+  if (code!=BAD_DATA_WARN){exit(0);}
 }
