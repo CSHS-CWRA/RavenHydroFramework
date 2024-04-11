@@ -255,7 +255,7 @@ void CEnthalpyModel::SetHyporheicLayer(const int m)
 /// \param Q_rain [out] energy gain from precip inputs [MJ/d]
 /// \returns total energy lost from reach over current time step [MJ]
 //
-double CEnthalpyModel::GetEnergyLossesFromLake(const int p, double &Q_sens, double &Q_cond, double &Q_lat, double &Q_rad_in, double &Q_lw_out, double &Q_rain) const
+double CEnthalpyModel::GetEnergyLossesFromLake(const int p, double &Q_sens, double &Q_cond, double &Q_lat, double &Q_sw_in, double &Q_lw_in, double &Q_lw_out, double &Q_rain) const
 {
   double tstep = _pModel->GetOptStruct()->timestep;
 
@@ -298,12 +298,13 @@ double CEnthalpyModel::GetEnergyLossesFromLake(const int p, double &Q_sens, doub
 
   Q_sens  =hstar* A_avg * (temp_air -0.5*(T_new+T_old));
   Q_cond  =ksed * A_avg * (0.5*(Ts_new+Ts_old)- 0.5*(T_new+T_old));
-  Q_rad_in=(SW+LW_in)*A_avg;
+  Q_sw_in =(SW      )*A_avg;
+  Q_lw_in =(LW_in   )*A_avg;
   Q_lw_out=(LW      )*A_avg;
   Q_lat   =-(AET * DENSITY_WATER * LH_VAPOR)*A_avg;
   Q_rain  =_aMresRain[p];
 
-  return -(Q_sens + Q_cond  + Q_rad_in + Q_lw_out +  Q_lat + Q_rain) * tstep; //[MJ]
+  return -(Q_sens + Q_cond  + Q_sw_in + Q_lw_in + Q_lw_out +  Q_lat + Q_rain) * tstep; //[MJ]
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates Res_mass (total reservoir energ) and ResSedMass (total sediment energy) in basin with reservoir at end of time step
@@ -455,10 +456,10 @@ void   CEnthalpyModel::RouteMassInReservoir   (const int          p,          //
 //
 double CEnthalpyModel::GetNetReachLosses(const int p)
 {
-  double Q_sens,Q_cond,Q_lat,Q_GW,Q_rad_in,Q_lw_out, Q_fric,Qtot,Tave;
+  double Q_sens,Q_cond,Q_lat,Q_GW,Q_rad_in,Q_lw_in,Q_lw_out, Q_fric,Qtot,Tave;
   double Q=_pModel->GetSubBasin(p)->GetOutflowRate();
   if (Q<REAL_SMALL){return 0;}
-  Qtot=GetEnergyLossesFromReach(p,Q_sens,Q_cond,Q_lat,Q_GW,Q_rad_in,Q_lw_out,Q_fric,Tave);
+  Qtot=GetEnergyLossesFromReach(p,Q_sens,Q_cond,Q_lat,Q_GW,Q_rad_in,Q_lw_in,Q_lw_out,Q_fric,Tave);
   _aTave_reach[p]=Tave;
   return Qtot;
 }
@@ -732,7 +733,7 @@ double CEnthalpyModel::FunkyTemperatureIntegral(const int k, const int m, const 
 /// \param Q_fric   [out] energy gain from friction [MJ/d]
 /// \returns total energy lost from reach over current time step [MJ]
 //
-double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,double &Q_cond,double &Q_lat,double &Q_GW,double &Q_rad_in,double &Q_lw_out, double &Q_fric, double &Tave) const
+double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,double &Q_cond,double &Q_lat,double &Q_GW,double &Q_rad_in,double &Q_lw_in,double &Q_lw_out, double &Q_fric, double &Tave) const
 {
   double tstep=_pModel->GetOptStruct()->timestep;
 
@@ -740,7 +741,7 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
 
   if(pBasin->IsHeadwater())
   {
-    Q_sens=Q_lat=Q_GW=Q_rad_in=Q_lw_out=Q_fric=0.0;
+    Q_sens=Q_lat=Q_GW=Q_rad_in=Q_lw_in=Q_lw_out=Q_fric=0.0;
     return 0.0;
   }
 
@@ -814,7 +815,8 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
     }
   }
   //Eulerian terms:
-  Q_rad_in=(SW+LW_in)*As;   //[MJ/d]
+  Q_rad_in=SW*As;   //[MJ/d]
+  Q_lw_in =LW_in*As; //[MJ/d]
   Q_lat   =-AET*DENSITY_WATER*LH_VAPOR*As; //[MJ/d]
   Q_fric  =Qf*As; //[MJ/d]
 
@@ -822,7 +824,7 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
 
   delete[] hin_hist;
 
-  return -(Q_sens+Q_cond+Q_GW+Q_rad_in+Q_lw_out+Q_lat+Q_fric)*tstep;
+  return -(Q_sens+Q_cond+Q_GW+Q_rad_in+Q_lw_in+Q_lw_out+Q_lat+Q_fric)*tstep;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates individual energy gain terms during in-catchment transit over current time step
@@ -1024,7 +1026,8 @@ void CEnthalpyModel::WriteOutputFileHeaders(const optStruct& Options)
       _STREAMOUT<<name<<" Q_cond[MJ/m2/d],";
       _STREAMOUT<<name<<" Q_lat[MJ/m2/d],";
       _STREAMOUT<<name<<" Q_GW[MJ/m2/d],";
-      _STREAMOUT<<name<<" Q_rad_in[MJ/m2/d],";
+      _STREAMOUT<<name<<" Q_sw_in[MJ/m2/d],";
+      _STREAMOUT<<name<<" Q_lw_in[MJ/m2/d],";
       _STREAMOUT<<name<<" Q_lw_out[MJ/m2/d],";
       _STREAMOUT<<name<<" Q_fric[MJ/m2/d],";
       _STREAMOUT<<name<<" channel storage[MJ/m2],";
@@ -1071,7 +1074,8 @@ void CEnthalpyModel::WriteOutputFileHeaders(const optStruct& Options)
           _LAKEOUT << name << " Q_sens [MJ/m2/d],";
           _LAKEOUT << name << " Q_cond [MJ/m2/d],";
           _LAKEOUT << name << " Q_lat [MJ/m2/d],";
-          _LAKEOUT << name << " Q_rad_in [MJ/m2/d],";
+          _LAKEOUT << name << " Q_sw_in [MJ/m2/d],";
+          _LAKEOUT << name << " Q_lw_in [MJ/m2/d],";
           _LAKEOUT << name << " Q_lw_out [MJ/m2/d],";
           _LAKEOUT << name << " lake storage [MJ/m2],";
           _LAKEOUT << name << " lake temp [C],";
@@ -1101,7 +1105,7 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
   // StreamReachEnergyBalances.csv
   //--------------------------------------------------------------------
   int    p;
-  double Q_sens,Q_cond,Q_lat,Q_GW,Q_rad_in,Q_lw_out,Q_fric,Q_rain,Tave;
+  double Q_sens,Q_cond,Q_lat,Q_GW,Q_sw_in,Q_lw_in,Q_lw_out,Q_fric,Q_rain,Tave;
   double Ein,Eout,mult;
   CSubBasin *pSB;
 
@@ -1121,15 +1125,15 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
 
       Ein  = 0.5 * (_aMinHist  [p][0] + _aMinHist[p][1]);
       Eout = 0.5 * (_aMout_last[p]    + _aMout   [p][pSB->GetNumSegments() - 1]);
-      GetEnergyLossesFromReach(p, Q_sens, Q_cond, Q_lat, Q_GW, Q_rad_in,Q_lw_out, Q_fric, Tave);
+      GetEnergyLossesFromReach(p, Q_sens, Q_cond, Q_lat, Q_GW, Q_sw_in,Q_lw_in,Q_lw_out, Q_fric, Tave);
 
       if (pSB->GetTopWidth() < REAL_SMALL) {//running dry
         _STREAMOUT << ",,,,,,,,,,";
       }
       else {
         _STREAMOUT << mult * Ein    << "," << mult * Eout     << ",";
-        _STREAMOUT << mult * Q_sens << "," << mult * Q_cond   << "," << mult * Q_lat << ",";
-        _STREAMOUT << mult * Q_GW   << "," << mult * Q_rad_in << "," << mult * Q_lw_out << ",";
+        _STREAMOUT << mult * Q_sens << "," << mult * Q_cond   << "," << mult * Q_lat   << ",";
+        _STREAMOUT << mult * Q_GW   << "," << mult * Q_sw_in  << "," << mult * Q_lw_in << "," << mult * Q_lw_out << ",";
         _STREAMOUT << mult * Q_fric << "," << mult * _channel_storage[p] << ",";
       }
     }
@@ -1163,7 +1167,7 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
 
           double Qin=_pModel->GetSubBasin(p)->GetOutflowRate()*SEC_PER_DAY; //[m3/d]
 
-          GetEnergyLossesFromLake(p,Q_sens,Q_cond,Q_lat,Q_rad_in,Q_lw_out,Q_rain);
+          GetEnergyLossesFromLake(p,Q_sens,Q_cond,Q_lat,Q_sw_in,Q_lw_in,Q_lw_out,Q_rain);
 
           double lakeTemp  =ConvertVolumetricEnthalpyToTemperature(_aMres[p] / V_new);
           double sedTemp   =ConvertVolumetricEnthalpyToTemperature(_aMsed[p] / V_sed);
@@ -1173,7 +1177,7 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
           _LAKEOUT << mult * Ein       << "," << mult * Eout      << ",";
           _LAKEOUT << mult * Q_rain    << "," << mult * Q_sens    << ",";
           _LAKEOUT << mult * Q_cond    << "," << mult * Q_lat     << ",";
-          _LAKEOUT << mult * Q_rad_in  << "," << mult * Q_lw_out  << ",";
+          _LAKEOUT << mult * Q_sw_in   << "," << mult * Q_lw_in   << "," << mult * Q_lw_out  << ",";
           _LAKEOUT << mult * _aMres[p] << ",";
           if (V_new!=0){_LAKEOUT << lakeTemp         << ",";}else{_LAKEOUT<<",";}
           if (V_sed!=0){_LAKEOUT << sedTemp          << ",";}else{_LAKEOUT<<",";}

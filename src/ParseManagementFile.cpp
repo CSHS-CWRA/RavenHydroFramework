@@ -85,11 +85,12 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     else if(!strcmp(s[0],":DemandResetDate"))             { code=15; }
     else if(!strcmp(s[0],":DemandPriority"))              { code=16; }
     else if(!strcmp(s[0],":DemandIsUnrestricted"))        { code=17; }
+
     else if(!strcmp(s[0],":NamedConstant"))               { code=20; }
     else if(!strcmp(s[0],":DefineDecisionVariable"))      { code=21; }
     else if(!strcmp(s[0],":DecisionVariableBounds"))      { code=22; }
     else if(!strcmp(s[0],":ManagementConstraint"))        { code=23; is_goal=false; }
-    else if(!strcmp(s[0],":ManagementGoal"))              { code=23; is_goal=true;}
+    else if(!strcmp(s[0],":ManagementGoal"))              { code=23; is_goal=true;  }
     else if(!strcmp(s[0],":DeclareDecisionVariable"))     { code=24; }
     else if(!strcmp(s[0],":LookupTable"))                 { code=30; }
 
@@ -349,6 +350,9 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           }
         } 
         else if (!strcmp(s[0], ":Penalty")) {
+          if (!pConst->is_goal) {
+            ExitGracefully("ParseManagementFile: :Penalty found within :ManagementConstraint command. It will be ignored, as all constraints have infinite penalty.",BAD_DATA_WARN);
+          }
           pConst->penalty_under = s_to_d(s[1]);
           pConst->penalty_over  = s_to_d(s[1]);
           if (Len >= 3) {

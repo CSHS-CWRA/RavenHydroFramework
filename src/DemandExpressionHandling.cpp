@@ -793,6 +793,11 @@ bool CDemandOptimizer::CheckConditions(const int ii, const time_struct &tt) cons
     else if (pC->pConditions[j]->dv_name == "MONTH") {
       dv_value=(double)(tt.month);
     }
+    else if (pC->pConditions[j]->dv_name == "DATE") {
+      //TODO
+      ExitGracefully(":Condition DATE not yet supported",STUB);
+      //dv_value=(double)(tt.month);
+    }
     else if (pC->pConditions[j]->dv_name[0] == '!') { //decision variable 
       char   tmp =pC->pConditions[j]->dv_name[1];
       string tmp2=pC->pConditions[j]->dv_name.substr(2);
@@ -804,6 +809,9 @@ bool CDemandOptimizer::CheckConditions(const int ii, const time_struct &tt) cons
       else if (tmp == 'h') {
         dv_value=_pModel->GetSubBasinByID(ind)->GetReservoir()->GetResStage();
       }
+      else if (tmp == 'I') {
+        dv_value=_pModel->GetSubBasinByID(ind)->GetOutflowArray()[0];
+      }
       else if (tmp == 'C') {
         int d=GetDemandIndexFromName(tmp2);
         dv_value=_aCumDelivery[d];
@@ -814,6 +822,8 @@ bool CDemandOptimizer::CheckConditions(const int ii, const time_struct &tt) cons
         int iii=_aDemandIndices[d];
         dv_value = _pModel->GetSubBasinByID(SBID)->GetDemandDelivery(iii);
       }
+      //todo: support !q, !d, !B, !E, !F, !T 
+      //todo: sipport !Q.NicoleRiver
     }
     else {//handle user specified DVs
       for (int i = 0; i < _nDecisionVars; i++) {

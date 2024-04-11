@@ -24,7 +24,7 @@ struct RegimeCondition
   double     compare_val2; ///< secondary comparison value (used for between)
 };
 //example :Condition DATE IS_BETWEEN 2010-07-01 2012-06-31 (converted to model time in compare_vals)
-//example :Condition DOY IS_BETWEEN 213 320
+//example :Condition DAY_OF_YEAR IS_BETWEEN 213 320
 //example :Condition STAGE IS_GREATER_THAN 340
 
 /*****************************************************************
