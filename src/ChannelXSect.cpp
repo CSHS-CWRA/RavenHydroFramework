@@ -434,8 +434,8 @@ void CChannelXSect::GetPropsFromProfile(const double &elev,
   double zl,zu; //upper and lower bottom elevation for surveyed channel segment
   double dx;    //length of surveyed channel segment
   double Ai,Pi,wi;
-
-  A=0;P=0;Q=0;w=0;
+  double n_eff;
+  A=0;P=0;Q=0;w=0;n_eff=0;
   for (int i=0;i<_nSurveyPts-1;i++)
   {
     zl=min(_aElev[i],_aElev[i+1]);
@@ -480,7 +480,11 @@ void CChannelXSect::GetPropsFromProfile(const double &elev,
     if (Ai>0){
       Q+=pow(_bedslope,0.5)*Ai*pow(Ai/Pi,2.0/3.0)/_aMann[i];
     }
+    n_eff+=Ai/_aMann[i]; //area weighted 1/n 
   }
+  //proper conveyance approach
+  //using Mannings equation to calculate Q
+  //Q=pow(_bedslope,0.5)*pow(A/P,2.0/3.0)*n_eff;
 }
 
 //////////////////////////////////////////////////////////////////

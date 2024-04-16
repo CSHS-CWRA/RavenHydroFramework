@@ -32,8 +32,12 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
   //----------------------------------------------------------
   else if (method==POTMELT_DEGREE_DAY)
   {
-    double Ma=pHRU->GetSurfaceProps()->melt_factor;
+    double Ma       =pHRU->GetSurfaceProps()->melt_factor;
     double melt_temp=pHRU->GetSurfaceProps()->DD_melt_temp;
+    /*double Mf       =pHRU->GetSurfaceProps()->refreeze_factor;
+    if ((Mf > 0) && (F->temp_daily_ave-melt_temp)<0.0){
+       return Mf*(F->temp_daily_ave-melt_temp)*F->subdaily_corr;
+    }*/
     return Ma*(F->temp_daily_ave-melt_temp)*F->subdaily_corr;
   }
   //----------------------------------------------------------

@@ -99,6 +99,8 @@ private:/*-------------------------------------------------------*/
   double        _DAscale;            //< outflow scale factor - used for reporting overriden flows
   double        _DAscale_last;       //< outflow scale factor for previous time step
 
+  int           _dry_timesteps;      //< number of time steps this reservoir dried out  during simulation 
+
   //state variables :
   double       _stage;               ///< current stage [m] (actual state variable)
   double       _stage_last;          ///< stage at beginning of current time step [m]
@@ -211,6 +213,8 @@ public:/*-------------------------------------------------------*/
   string            GetRegimeName            (const int i, const time_struct &tt) const;
   long              GetControlFlowTarget     (const int i) const;
   string            GetControlName           (const int i) const;
+
+  int               GetNumDryTimesteps       () const;
 
   //Manipulators
   void              SetMinStage              (const double &min_z);

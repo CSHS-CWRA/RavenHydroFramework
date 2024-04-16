@@ -969,6 +969,9 @@ enum process_type
   //in GWSWProcesses.h
   DRAIN, GWRECHARGE,
 
+  //in CustomHydProcess.h
+  RF_PROCESS,
+
   //..
   NULL_PROCESS_TYPE
 };

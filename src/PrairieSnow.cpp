@@ -225,7 +225,7 @@ double CmvPrairieBlowingSnow::ProbabilityThreshold( const double &snow_depth, //
 // Equation numbers refer to JW Pomeroy thesis (1988).
 ///
 /// \param E_StubHt [in] [m] stubble height
-/// \param Uthr [in] [m/s] threshhold wind speed
+/// \param Uthr [in] [m/s] threshold wind speed
 /// \param T [in] air temperature
 /// \param u [in] [-] wind speed
 /// \param rel_hum [in] [-] relative humidity

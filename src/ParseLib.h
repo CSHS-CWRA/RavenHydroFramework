@@ -49,13 +49,12 @@ class CParser
 {
 private:
 
-  ifstream *INPUT;      ///current input file
-  int      l;                     ///current line in input file
-  string   filename;///current input filename
+  ifstream *_INPUT;            //< current input file
+  int       _lineno;           //< current line in input file
+  string    _filename;         //< current input filename
 
-  bool     comma_only;//true if spaces & tabs ignored in tokenization
-
-  bool    _parsing_math_exp;
+  bool      _comma_only;       //< true if spaces & tabs ignored in tokenization
+  bool      _parsing_math_exp; //< true if currently parsing math exp (commas not ignored)
 
   string AddSpacesBeforeOps(string line) const;
 
@@ -69,7 +68,7 @@ public:
   int    GetLineNumber ();
   string GetFilename();
   void   ImproperFormat(char **s);
-  void   IgnoreSpaces  (bool ignore_it){comma_only=ignore_it;}
+  void   IgnoreSpaces  (bool ignore_it){_comma_only=ignore_it;}
 
   bool   Tokenize(char **tokens, int &numwords);
 

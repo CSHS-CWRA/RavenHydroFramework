@@ -1214,16 +1214,18 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
       }
       while ((n<nMeasurements) && (!p->Tokenize(s,Len)))
       {
-        if (Len!=nTS){
-          cout<<"measurement " <<n << " of "<<nMeasurements<<endl;
-          ExitGracefully("CTimeSeries:ParseMultiple: wrong number of columns in Ensim tb0 data",BAD_DATA);
+        if (Len!=0){
+          if (Len!=nTS){
+            cout<<"measurement " <<n << " of "<<nMeasurements<<endl;
+            ExitGracefully("CTimeSeries:ParseMultiple: wrong number of columns in Ensim tb0 data",BAD_DATA);
+          }
+          for(i=0;i<Len;i++){
+            aVal [i][n]=s_to_d(s[i]);
+            //cout<<  aVal [i][n]<<" | ";
+          }
+          //cout<<endl;
+          n++;
         }
-        for(i=0;i<Len;i++){
-          aVal [i][n]=s_to_d(s[i]);
-          //cout<<  aVal [i][n]<<" | ";
-        }
-        //cout<<endl;
-        n++;
       }
 
       // Make sure that the nMeasurements is actually equal to the number of valid records found (for n<nMeasurements)

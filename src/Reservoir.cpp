@@ -93,6 +93,8 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
   _pObsStage=NULL;
   _DAscale=1.0;
   _DAscale_last=1.0;
+
+  _dry_timesteps=0;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -603,6 +605,8 @@ double CReservoir::GetDischargeFromStage(const double &stage, const int nn) cons
   return GetWeirOutflow(stage,weir_adj);
 }
 
+ int  CReservoir::GetNumDryTimesteps    () const{return _dry_timesteps;}
+
 //////////////////////////////////////////////////////////////////
 /// \brief number of water/irrigation demands
 /// \return number of water/irrigation demands
@@ -725,6 +729,7 @@ void CReservoir::Initialize(const optStruct &Options)
   for (int i = 0; i < _nControlStructures; i++) {
     _aQstruct[i]=_aQstruct_last[i]=0.0;
   }
+  _dry_timesteps=0;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1126,6 +1131,8 @@ void  CReservoir::UpdateStage(const double &new_stage,const double &res_outflow,
 
   _constraint=constr;
 
+  if (_constraint==RC_DRY_RESERVOIR){_dry_timesteps++;}
+
   _Qout_last =_Qout;
   _Qout      =res_outflow;
   for (int i = 0; i < _nControlStructures; i++) {
@@ -1484,8 +1491,9 @@ double  CReservoir::RouteWater(const double &Qin_old,
   if(gamma<0)
   {//reservoir dried out; no solution available. (f is always >0, so gamma must be as well)
    //only remaining filling action is via seepage, which is likely not enough, and Q_out_new can't be negative
-    string warn="CReservoir::RouteWater: basin "+to_string(_SBID)+ " dried out on " +tt.date_string;
-    WriteWarning(warn,false);
+   // string warn="CReservoir::RouteWater: basin "+to_string(_SBID)+ " dried out on " +tt.date_string;
+   //WriteWarning(warn,false);
+    
     constraint=RC_DRY_RESERVOIR;
     res_outflow=0.0;
     return _min_stage;

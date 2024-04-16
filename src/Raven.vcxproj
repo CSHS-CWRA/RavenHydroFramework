@@ -650,6 +650,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DisableSpecificWarnings>4996; 26812; 26451</DisableSpecificWarnings>
       <UseMSVC>true</UseMSVC>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>

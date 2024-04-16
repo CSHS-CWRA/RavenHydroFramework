@@ -1261,15 +1261,15 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
 
   double latent_flux=0;
   double Q_sens(0.0),Q_cond(0.0),Q_lat(0.0),Q_GW(0.0),Q_rad(0.0),Q_fric(0.0);
-  double Qs,Qc,Ql,Qg,Qr,Qlw,Qf,Tave;
+  double Qs,Qc,Ql,Qg,Qr,Qlw,Qlw_in,Qf,Tave;
   if(_type==ENTHALPY)
   {
     pEnthalpyModel=(CEnthalpyModel*)(this);
     latent_flux =pEnthalpyModel->GetAvgLatentHeatFlux()*(area*M2_PER_KM2)*Options.timestep; // [MJ] (loss term)t)
 
     for(int p=0;p<_pModel->GetNumSubBasins();p++) {
-      pEnthalpyModel->GetEnergyLossesFromReach(p,Qs,Qc,Ql,Qg,Qr,Qlw,Qf,Tave);
-      Q_sens+=Qs;Q_cond+=Qc;Q_lat+=Ql;Q_GW+=Qg;Q_rad+=Qr+Qlw; Q_fric+=Qf;
+      pEnthalpyModel->GetEnergyLossesFromReach(p,Qs,Qc,Ql,Qg,Qr,Qlw_in,Qlw,Qf,Tave);
+      Q_sens+=Qs;Q_cond+=Qc;Q_lat+=Ql;Q_GW+=Qg;Q_rad+=Qr+Qlw+Qlw_in; Q_fric+=Qf;
     }
   }
   double channel_stor=GetTotalChannelConstituentStorage();//[mg] or [MJ]

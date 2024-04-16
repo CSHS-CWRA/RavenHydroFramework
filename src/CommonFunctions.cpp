@@ -1324,7 +1324,7 @@ void WriteWarning(const string warn, bool noisy)
     ofstream WARNINGS;
     WARNINGS.open((g_output_directory+"Raven_errors.txt").c_str(),ios::app);
     if (noisy){cout<<"WARNING!: "<<warn<<endl;}
-    WARNINGS<<"WARNING : "<<warn<<endl;
+    WARNINGS<<"WARNING  : "<<warn<<endl;
     WARNINGS.close();
   }
 }

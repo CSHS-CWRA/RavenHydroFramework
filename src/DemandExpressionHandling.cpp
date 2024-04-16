@@ -22,8 +22,10 @@ expressionTerm::expressionTerm()
   pTS   =NULL;
   pLT   =NULL;
   timeshift=0;
-  p_index=DOESNT_EXIST;
-
+  p_index  =DOESNT_EXIST;
+  HRU_index=DOESNT_EXIST;
+  SV_index =DOESNT_EXIST;
+  
   is_nested  =false;
   nested_ind1=DOESNT_EXIST;
   nested_ind2=DOESNT_EXIST;
@@ -52,9 +54,9 @@ expressionStruct::~expressionStruct()
   delete [] pTerms; pTerms=NULL;
 }
 //////////////////////////////////////////////////////////////////
-/// constructor, destructor, and member functions of dv_constraint structure
+/// constructor, destructor, and member functions of manConstraint structure
 //
-dv_constraint::dv_constraint()
+manConstraint::manConstraint()
 {
   name="";
   pExpression=NULL;
@@ -69,16 +71,18 @@ dv_constraint::dv_constraint()
 
   nConditions=0;
   pConditions=NULL;
+  ever_satisfied=false;
+  conditions_satisfied=false;
 }
-dv_constraint::~dv_constraint()
+manConstraint::~manConstraint()
 {
   delete pExpression;
   delete [] pConditions; nConditions=0;
 }
-void dv_constraint::AddCondition(dv_condition* pCond)
+void manConstraint::AddCondition(exp_condition* pCond)
 {
   if(!DynArrayAppend((void**&)(pConditions),(void*)(pCond),nConditions)) {
-    ExitGracefully("dv_constraint::AddCondition: adding NULL condition",BAD_DATA_WARN);
+    ExitGracefully("management_constraint::AddCondition: adding NULL condition",BAD_DATA_WARN);
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -140,15 +144,17 @@ int CDemandOptimizer::GetNumUserDVs() const{
 }
 string TermTypeToString(termtype t)
 {
-  if (t==TERM_DV     ){return "TERM_DV"; }
-  if (t==TERM_TS     ){return "TERM_TS"; }
-  if (t==TERM_LT     ){return "TERM_LT"; }
-  if (t==TERM_CONST  ){return "TERM_CONST"; }
-  if (t==TERM_HISTORY){return "TERM_HISTORY"; }
-  if (t==TERM_MAX    ){return "TERM_MAX"; }
-  if (t==TERM_MIN    ){return "TERM_MIN"; }
-  if (t==TERM_CONVERT){return "TERM_CONVERT"; }
-  if (t==TERM_UNKNOWN){return "TERM_UNKNOWN"; }
+  if (t==TERM_DV     ){return "TERM_DV"; }   
+  if (t==TERM_TS     ){return "TERM_TS"; }   
+  if (t==TERM_LT     ){return "TERM_LT"; }   
+  if (t==TERM_HRU    ){return "TERM_HRU";}   
+  if (t==TERM_SB     ){return "TERM_SB"; }
+  if (t==TERM_CONST  ){return "TERM_CONST"; }   
+  if (t==TERM_HISTORY){return "TERM_HISTORY"; }   
+  if (t==TERM_MAX    ){return "TERM_MAX"; }   
+  if (t==TERM_MIN    ){return "TERM_MIN"; }   
+  if (t==TERM_CONVERT){return "TERM_CONVERT"; }   
+  if (t==TERM_UNKNOWN){return "TERM_UNKNOWN"; }   
   return "TERM_UNKNOWN";
 }
 string DVTypeToString(dv_type t)
@@ -215,7 +221,8 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
           return false;
         }
         if (!_pModel->GetSubBasin(p)->IsEnabled()) {
-          WriteWarning("ConvertToExpressionTerm: history expression "+warnstring+" includes reference to disabled subbasin. Expression will be ignored",true);
+          warn="ConvertToExpressionTerm: history expression "+warnstring+" includes reference to disabled subbasin. Expression will be ignored";
+          WriteWarning(warn,true);
           return false;
         }
         term->type=TERM_HISTORY;
@@ -225,7 +232,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
       }
     }
 
-    if ((s[1] == 'Q') || (s[1] == 'h') || (s[1]=='I'))
+    if ((s[1] == 'Q') || (s[1] == 'h') || (s[1]=='I')) //Subbasin-indexed 
     {
       string sbid=s.substr(2,s.size() - 2);
       cout << "EXP BASIN ID: " << sbid<<endl;
@@ -252,9 +259,9 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
           term->DV_ind = GetDVColumnInd(DV_QOUTRES, _aResIndices[p]);
         }
         else if (_aSBIndices[p]  != DOESNT_EXIST) {
-          term->DV_ind=GetDVColumnInd(DV_QOUT,_aSBIndices[p]);
-        }
-      }
+          term->DV_ind=GetDVColumnInd(DV_QOUT,_aSBIndices[p]);  
+        } 
+      } 
       else if      (s[1]=='I')
       {
         if (_pModel->GetSubBasin(p)->GetReservoir()==NULL) {
@@ -265,13 +272,13 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
         term->DV_ind=GetDVColumnInd(DV_QOUT,_aSBIndices[p]);
       }
       else if (s[1]=='h'){
-        term->DV_ind=GetDVColumnInd(DV_STAGE,_aResIndices[p]);
-      }
-    }
-    else if (s[1] == 'D')  {
+        term->DV_ind=GetDVColumnInd(DV_STAGE,_aResIndices[p]);  
+      } 
+    } 
+    else if ((s[1] == 'D') || (s[1]=='C'))  { //demand indexed 
       string demandID;
-      if (s[1] == '.') {demandID=s.substr(2);} //!D.FarmerBobsDemand
-      else             {demandID=s.substr(1);} //!D1234
+      if (s[2] == '.') {demandID=s.substr(3);} //!D.FarmerBobsDemand
+      else             {demandID=s.substr(2);} //!D1234
       d=GetDemandIndexFromName(demandID);
       if (d == DOESNT_EXIST) {
         warn = "ConvertToExpressionTerm: invalid demand ID or demand from disabled subbasin used in expression " +
@@ -279,7 +286,14 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
         WriteWarning(warn.c_str(),true);
         return false;
       }
-      term->DV_ind=GetDVColumnInd(DV_DELIVERY,d);
+      if (s[1]=='D'){
+        term->DV_ind=GetDVColumnInd(DV_DELIVERY,d);
+      }
+      else if (s[1] == 'C') {
+        term->type=TERM_CUMUL;
+        term->p_index=d;
+        return true;
+      }
     }
     else{
       warn="ConvertToExpression:: Unparseable term in expression starting with ! - only !Q, !I, !D, or !h currently supported. "+warnstring;
@@ -362,6 +376,88 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
         ExitGracefully(warn.c_str(), BAD_DATA_WARN);
         return false;
       }
+    }
+  }
+ //----------------------------------------------------------------------
+  else if (s.find("@HRU_var(") != NPOS) // HRU state var (e.g., @HRU_var(SNOW,[id])
+  {
+    string sv_name;
+    int    HRUID;
+    size_t is = s.find("@HRU_var(");
+    size_t ie = s.find(",",is);
+    size_t ip = s.find(")",ie);
+    if (ie == NPOS) {
+      warn="ConvertToExpressionTerm: missing comma in @HRU_var expression"+warnstring;
+      ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+    }
+    if (ip == NPOS) {
+      warn="ConvertToExpressionTerm: missing end paretheses in @HRU_var expression"+warnstring;
+      ExitGracefully(warn.c_str(), BAD_DATA_WARN);
+    }
+    if ((is != NPOS) && (ie != NPOS)) 
+    {
+      bool found=false;
+      sv_name = s.substr(is+9,ie-(is+9));
+      HRUID   = s_to_i(s.substr(ie+1,ip-(ie+1)).c_str());
+      //cout<<" HRU STATE VAR NAME : "<<sv_name<<endl;
+      //cout<<" INPUT HRUID : "<<HRUID<<endl;
+      int lay=DOESNT_EXIST;
+      sv_type sv=_pModel->GetStateVarInfo()->StringToSVType(sv_name,lay,false);
+      if (sv== UNRECOGNIZED_SVTYPE)  {
+        warn="ConvertToExpression: requested state variable in in @HRU_var command"+warnstring;
+        ExitGracefully(warn.c_str(), BAD_DATA_WARN);
+        return false;
+      }
+      if (_pModel->GetHRUByID(HRUID) == NULL) {
+        warn="ConvertToExpression: requested state variable in in @HRU_var command"+warnstring;
+        ExitGracefully(warn.c_str(), BAD_DATA_WARN);
+        return false;
+      }
+
+      term->SV_index=_pModel->GetStateVarIndex(sv,lay);   
+      term->HRU_index=_pModel->GetHRUByID(HRUID)->GetGlobalIndex();
+      term->type=TERM_HRU;
+    }
+  }
+ //----------------------------------------------------------------------
+  else if (s.find("@SB_var(") != NPOS) // SubBasin state var (e.g., @SB_var(SNOW,[id])
+  {
+    string sv_name;
+    long   SBID;
+    size_t is = s.find("@SB_var(");
+    size_t ie = s.find(",",is);
+    size_t ip = s.find(")",ie);
+    if (ie == NPOS) {
+      warn="ConvertToExpressionTerm: missing comma in @SB_var expression"+warnstring;
+      ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+    }
+    if (ip == NPOS) {
+      warn="ConvertToExpressionTerm: missing end paretheses in @SB_var expression"+warnstring;
+      ExitGracefully(warn.c_str(), BAD_DATA_WARN);
+    }
+    if ((is != NPOS) && (ie != NPOS)) 
+    {
+      bool found=false;
+      sv_name = s.substr(is+8,ie-(is+8));
+      SBID    = s_to_l(s.substr(ie+1,ip-(ie+1)).c_str());
+      //cout<<" SB STATE VAR NAME : "<<sv_name<<endl;
+      //cout<<" INPUT SBID : "<<SBID<<endl;
+      int lay=DOESNT_EXIST;
+      sv_type sv=_pModel->GetStateVarInfo()->StringToSVType(sv_name,lay,false);
+      
+      if (sv== UNRECOGNIZED_SVTYPE) {
+        warn="ConvertToExpression: requested state variable in in @SB_var command "+warnstring;
+        ExitGracefully(warn.c_str(), BAD_DATA_WARN);
+        return false;
+      }
+      if (_pModel->GetSubBasinByID(SBID) == NULL) {
+        warn="ConvertToExpression: requested state variable in in @SB_var command "+warnstring;
+        ExitGracefully(warn.c_str(), BAD_DATA_WARN);
+        return false;
+      }
+      term->SV_index=_pModel->GetStateVarIndex(sv,lay);   
+      term->p_index=_pModel->GetSubBasinByID(SBID)->GetGlobalIndex();
+      term->type=TERM_SB;
     }
   }
   //----------------------------------------------------------------------
@@ -498,6 +594,7 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
   expressionTerm  *terms      [MAX_EXP_GROUPS][MAX_TERMS_PER_GROUP];
   int              termspergrp[MAX_EXP_GROUPS];
   comparison       comp=COMPARE_BETWEEN;
+  int              nComps=0;
 
   //identify all strings as either operators or terms
   //determine nature of comparison =,<,>
@@ -510,17 +607,20 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
     if (s[i-1][0]=='/'){type[i]=EXP_INV; }
 
     if ((s[i][0]=='=') || (s[i][0]=='~')){
-      comp=COMPARE_IS_EQUAL;    rhs_ind=i;
+      comp=COMPARE_IS_EQUAL;    rhs_ind=i; nComps++;
     }
-    if (s[i][0]=='<'){//works for <=, too
-      comp=COMPARE_LESSTHAN;    rhs_ind=i;
+    else if (s[i][0]=='<'){//works for <=, too 
+      comp=COMPARE_LESSTHAN;    rhs_ind=i; nComps++;
     }
-    if (s[i][0]=='>'){ //works for >=, too
-      comp=COMPARE_GREATERTHAN; rhs_ind=i;
+    else if (s[i][0]=='>'){ //works for >=, too
+      comp=COMPARE_GREATERTHAN; rhs_ind=i; nComps++;
     }
   }
-  if (comp == COMPARE_BETWEEN) {
-    ExitGracefully("ParseExpression: missing comparison operator (e.g., <, >, =, in expression",BAD_DATA_WARN);
+  if (nComps > 1) {
+    ExitGracefully("ParseExpression: more than one comparison operator (e.g., <, >, =) in expression",BAD_DATA_WARN);
+  }
+  if (nComps==0) {
+    ExitGracefully("ParseExpression: missing comparison operator (e.g., <, >, =) in expression",BAD_DATA_WARN);
   }
 
   //TMP DEBUG
@@ -533,6 +633,8 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
   }
   cout<<endl;
 
+  //END TMP DEBUG 
+  
   int  j=0;
   int  k=0;
   int  DVcount=0;
@@ -545,7 +647,6 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
       terms[j][k]->mult=1.0;
       valid=ConvertToExpressionTerm(to_string(s[i]),terms[j][k],lineno,filename);
       if (!valid){
-        cout<<"INVALID EXPRESSION TERM! "<<endl;
         return NULL;
       }
 
@@ -650,6 +751,7 @@ string expTypeToString(termtype &typ){
   case(TERM_MAX):     return "TERM_MAX"; break;
   case(TERM_MIN):     return "TERM_MIN"; break;
   case(TERM_CONVERT): return "TERM_CONVERT"; break;
+  case(TERM_CUMUL):   return "TERM_CUMUL"; break;
   case(TERM_UNKNOWN): return "TERM_UNKNOWN"; break;
   }
   return "?";
@@ -680,8 +782,7 @@ void SummarizeExpression(const char **s, const int Len, expressionStruct* exp)
 bool CDemandOptimizer::CheckConditions(const int ii, const time_struct &tt) const
 {
   double dv_value;
-  int p;
-  dv_constraint *pC=_pConstraints[ii];
+  manConstraint *pC=_pConstraints[ii];
 
   //Check if conditionals are satisfied
   for (int j = 0; j < pC->nConditions; j++)
@@ -693,7 +794,12 @@ bool CDemandOptimizer::CheckConditions(const int ii, const time_struct &tt) cons
     else if (pC->pConditions[j]->dv_name == "MONTH") {
       dv_value=(double)(tt.month);
     }
-    else if (pC->pConditions[j]->dv_name[0] == '!') { //decision variable
+    else if (pC->pConditions[j]->dv_name == "DATE") {
+      //TODO
+      ExitGracefully(":Condition DATE not yet supported",STUB);
+      //dv_value=(double)(tt.month);
+    }
+    else if (pC->pConditions[j]->dv_name[0] == '!') { //decision variable 
       char   tmp =pC->pConditions[j]->dv_name[1];
       string tmp2=pC->pConditions[j]->dv_name.substr(2);
       long ind=s_to_l(tmp2.c_str());
@@ -704,18 +810,28 @@ bool CDemandOptimizer::CheckConditions(const int ii, const time_struct &tt) cons
       else if (tmp == 'h') {
         dv_value=_pModel->GetSubBasinByID(ind)->GetReservoir()->GetResStage();
       }
+      else if (tmp == 'I') {
+        dv_value=_pModel->GetSubBasinByID(ind)->GetOutflowArray()[0];
+      }
       else if (tmp == 'C') {
-        p=_pModel->GetSubBasinIndex(ind);
-        dv_value=_aCumDelivery[p];
+        int d=GetDemandIndexFromName(tmp2);
+        dv_value=_aCumDelivery[d];
       }
       else if (tmp == 'D') {
         int d=GetDemandIndexFromName(tmp2);
         long SBID=_aDemandSBIDs[d];
-
-        //dv_value = _pModel->GetSubBasinByID(SBID)->GetDemandDelivery(iii);
-        //TODO
+        int iii=_aDemandIndices[d];
+        dv_value = _pModel->GetSubBasinByID(SBID)->GetDemandDelivery(iii);
       }
-      //TODO : handle user specified DVs
+      //todo: support !q, !d, !B, !E, !F, !T 
+      //todo: sipport !Q.NicoleRiver
+    }
+    else {//handle user specified DVs
+      for (int i = 0; i < _nDecisionVars; i++) {
+        if (pC->pConditions[j]->dv_name == _pDecisionVars[i]->name) {
+          dv_value =_pDecisionVars[i]->value;
+        }
+      }
     }
 
     comparison comp=pC->pConditions[j]->compare;
@@ -727,6 +843,12 @@ bool CDemandOptimizer::CheckConditions(const int ii, const time_struct &tt) cons
     }
     else if (comp == COMPARE_LESSTHAN) {
       if (dv_value> pC->pConditions[j]->value){return false;}//don't apply condition
+    }
+    else if (comp == COMPARE_IS_EQUAL) {
+      if (fabs(dv_value -pC->pConditions[j]->value)>REAL_SMALL){return false;}//usually integer value (e.g., month)
+    }
+    else if (comp == COMPARE_NOT_EQUAL) {
+      if (fabs(dv_value - pC->pConditions[j]->value) < REAL_SMALL) { return false; }
     }
   }
   return true;
@@ -752,7 +874,7 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, lp_lib::lprec* pLinProg, 
 
   //int    nn=(int)((tt.model_time+TIME_CORRECTION)/1.0);//Options.timestep; //TMP DEBUG
 
-  dv_constraint    *pC=_pConstraints[ii];
+  manConstraint    *pC=_pConstraints[ii];
   expressionStruct *pE= pC->pExpression;
 
   RHS=0.0;
@@ -764,12 +886,11 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, lp_lib::lprec* pLinProg, 
 
     for (int k = 0; k < pE->nTermsPerGrp[j]; k++)
     {
-      //cout<<pE->pTerms[j][k]->origexp<<" ";
+
       if (pE->pTerms[j][k]->type == TERM_DV) {
         DV_ind=pE->pTerms[j][k]->DV_ind;
         group_has_dv=true;
-        //cout<<" has DV = "<<group_has_dv<<" ";
-        //cout<<" DV_ind = "<<DV_ind<<endl;
+        coeff *= (pE->pTerms[j][k]->mult);
       }
       else if (!(pE->pTerms[j][k]->is_nested))
       {
@@ -804,11 +925,11 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, lp_lib::lprec* pLinProg, 
 
   //Add slack variables to goals
   if (pC->is_goal) {
-    col_ind[i]=pC->slack_ind1;
+    col_ind[i]=GetDVColumnInd(DV_SLACK, pC->slack_ind1);
     row_val[i]=coeff;
     i++;
     if (nSlack == 2) {
-      col_ind[i]=pC->slack_ind2;
+      col_ind[i]=GetDVColumnInd(DV_SLACK, pC->slack_ind2);
       row_val[i]=-coeff;
       i++;
     }
@@ -852,9 +973,26 @@ double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const
     x=EvaluateTerm(pTerms,kk,t);
     return pT->pLT->GetValue(x); //decision variable can't be in lookup table
   }
-  else if (pT->type == TERM_CONST)
+  else if (pT->type == TERM_HRU)
+  {
+    int i=pT->SV_index;
+    int k=pT->HRU_index;
+    return _pModel->GetHydroUnit(k)->GetStateVarValue(i); //This will be start of timestep value 
+  }
+  else if (pT->type == TERM_SB)
+  {
+    int i=pT->SV_index;
+    int p=pT->p_index;
+    return _pModel->GetSubBasin(p)->GetAvgStateVar(i);
+  }
+  else if (pT->type == TERM_CONST) 
   {
     return pT->value;
+  }
+  else if (pT->type == TERM_CUMUL)  //!C123 
+  {
+    int d=pT->p_index; //todo - should probably use something else here - misleading code 
+    return _aCumDelivery[d];
   }
   else if (pT->type == TERM_HISTORY) //e.g., !Q100[-3]
   {

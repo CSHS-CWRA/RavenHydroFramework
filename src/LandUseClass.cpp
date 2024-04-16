@@ -273,7 +273,7 @@ void CLandUseClass::AutoCalculateLandUseProps(surface_struct &Stmp,
   SetSpecifiedValue(S.dep_max,Stmp.dep_max,Sdefault.dep_max,needed,"DEP_MAX");
   SetSpecifiedValue(S.dep_max_flow,Stmp.dep_max_flow,Sdefault.dep_max_flow,needed,"DEP_MAX_FLOW");
   SetSpecifiedValue(S.dep_n,Stmp.dep_n,Sdefault.dep_n,needed,"DEP_N");
-  SetSpecifiedValue(S.dep_threshhold,Stmp.dep_threshhold,Sdefault.dep_threshhold,needed,"DEP_THRESHHOLD");
+  SetSpecifiedValue(S.dep_threshold,Stmp.dep_threshold,Sdefault.dep_threshold,needed,"DEP_THRESHOLD");
   SetSpecifiedValue(S.dep_k,Stmp.dep_k,Sdefault.dep_k,needed,"DEP_K");
   SetSpecifiedValue(S.dep_seep_k,Stmp.dep_seep_k,Sdefault.dep_seep_k,needed,"DEP_SEEP_K");
   SetSpecifiedValue(S.dep_crestratio,Stmp.dep_crestratio,Sdefault.dep_crestratio,needed,"DEP_CRESTRATIO");
@@ -395,7 +395,7 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
   S.AWBM_areafrac2    =DefaultParameterValue(is_template,false);//0.433     //[0..1]
   S.AWBM_bflow_index  =DefaultParameterValue(is_template,false);//0.3       //[0..1]
 
-  S.dep_threshhold    =DefaultParameterValue(is_template,false);//1.5;      //[mm]
+  S.dep_threshold     =DefaultParameterValue(is_template,false);//1.5;      //[mm]
   S.lake_rel_coeff    =DefaultParameterValue(is_template,false);//0.3;      //[1/d]
   S.dep_k             =DefaultParameterValue(is_template,false);//0.1;      //[1/d]
   S.dep_seep_k        =DefaultParameterValue(is_template,false);//0.1;      //[1/d]
@@ -481,7 +481,8 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
   else if (!name.compare("DEP_MAX"                )){S.dep_max =value;}
   else if (!name.compare("DEP_MAX_FLOW"           )){S.dep_max_flow =value;}
   else if (!name.compare("DEP_N"                  )){S.dep_n =value;}
-  else if (!name.compare("DEP_THRESHHOLD"         )){S.dep_threshhold =value;}
+  else if (!name.compare("DEP_THRESHHOLD"         )){S.dep_threshold =value;}/*old typo-backward compat*/
+  else if (!name.compare("DEP_THRESHOLD"          )){S.dep_threshold =value;}
   else if (!name.compare("DEP_CRESTRATIO"         )){S.dep_crestratio =value;}
   else if (!name.compare("PDMROF_B"               )){S.PDMROF_b =value; }
   else if (!name.compare("PDM_B"                  )){S.PDM_b =value; }
@@ -586,7 +587,8 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("DEP_MAX"                )){return S.dep_max ;}
   else if (!name.compare("DEP_MAX_FLOW"           )){return S.dep_max_flow;}
   else if (!name.compare("DEP_N"                  )){return S.dep_n;}
-  else if (!name.compare("DEP_THRESHHOLD"         )){return S.dep_threshhold;}
+  else if (!name.compare("DEP_THRESHHOLD"         )){return S.dep_threshold;}/*old typo*/
+  else if (!name.compare("DEP_THRESHOLD"          )){return S.dep_threshold;}
   else if (!name.compare("DEP_K"                  )){return S.dep_k;}
   else if (!name.compare("DEP_SEEP_K"             )){return S.dep_seep_k;}
   else if (!name.compare("DEP_CRESTRATIO"         )){return S.dep_crestratio;}

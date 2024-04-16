@@ -794,7 +794,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
                 pSBGroup->AddSubbasin(pModel->GetSubBasin(p));
                 advice=advice+to_string(pModel->GetSubBasin(p)->GetID())+" ";
                 iter++;
-                if(iter%40==0) { advice=advice+"\n"; }
+                if(iter%40==0) { advice=advice+"\n     "; }
               }
             }
           }
@@ -814,7 +814,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
                         pSBGroup->AddSubbasin(pModel->GetSubBasin(p));
                         advice=advice+to_string(pModel->GetSubBasin(p)->GetID())+" ";
                         iter++;
-                        if(iter%40==0) { advice=advice+"\n"; }
+                        if(iter%40==0) { advice=advice+"\n     "; }
                     }
                 }
             }
@@ -829,7 +829,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
               pSBGroup->AddSubbasin(pModel->GetSubBasin(p));
               advice=advice+to_string(pModel->GetSubBasin(p)->GetID())+" ";
               iter++;
-              if(iter%40==0) { advice=advice+"\n"; }
+              if(iter%40==0) { advice=advice+"\n      "; }
             }
           }
         }
@@ -844,7 +844,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
               pSBGroup->AddSubbasin(pModel->GetSubBasin(p));
               advice=advice+to_string(pModel->GetSubBasin(p)->GetID())+" ";
               iter++;
-              if(iter%40==0) { advice=advice+"\n"; }
+              if(iter%40==0) { advice=advice+"\n     "; }
             }
           }
         }
@@ -861,7 +861,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
               pSBGroup->AddSubbasin(pBasin);
               advice=advice+to_string(pBasin->GetID())+" ";
               iter++;
-              if(iter%40==0){advice=advice+"\n"; }
+              if(iter%40==0){advice=advice+"\n     "; }
             }
             if(iter==1000) {
               ExitGracefully(":PopulateSubBasinGroup: cyclical downstream references in :SubBasins list",BAD_DATA_WARN);
