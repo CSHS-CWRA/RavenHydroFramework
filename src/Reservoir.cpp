@@ -40,7 +40,7 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
   _nDemandTS=0;
 
   _pHRU=NULL;
-  
+
   _pWeirHeightTS=NULL;
   _pMaxStageTS=NULL;
   _pOverrideQ=NULL;
@@ -411,14 +411,14 @@ double  CReservoir::GetOldStage          () const { return _stage_last; }
 //////////////////////////////////////////////////////////////////
 /// \returns min stage [m]
 //
-double  CReservoir::GetMinStage          (const int nn) const { 
+double  CReservoir::GetMinStage          (const int nn) const {
   if(_pMinStageTS    !=NULL){ return _pMinStageTS->GetSampledValue(nn);}
   return _min_stage;
 }
 //////////////////////////////////////////////////////////////////
 /// \returns max stage [m]
 //
-double  CReservoir::GetMaxStage          (const int nn) const { 
+double  CReservoir::GetMaxStage          (const int nn) const {
   if(_pMaxStageTS    !=NULL){ return _pMaxStageTS->GetSampledValue(nn);}
   return ALMOST_INF;
 }
@@ -618,7 +618,7 @@ int    CReservoir::GetNumWaterDemands() const {
 /// \brief returns water/irrigation demand integer ID
 /// \return water/irrigation demand integer ID
 //
-int    CReservoir::GetWaterDemandID(const int ii) const 
+int    CReservoir::GetWaterDemandID(const int ii) const
 {
   #ifdef _STRICTCHECK_
   ExitGracefullyIf(ii < 0 || ii >= _nDemandTS, "CReservoir::GetWaterDemandID: invalid index",RUNTIME_ERR);
@@ -642,7 +642,7 @@ string CReservoir::GetWaterDemandName      (const int ii) const
 /// \return specified demand from reservoir at time t
 //
 double CReservoir::GetWaterDemand           (const int ii,const double &t) const
-{  
+{
   double Qirr;
   Qirr=_pDemandTS[ii]->GetValue(t);
   if (Qirr==RAV_BLANK_DATA){Qirr=0.0;}
@@ -1176,7 +1176,7 @@ void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep, co
     _GW_seepage=_seepage_const*(0.5*(_stage+_stage_last)-_local_GW_head)*SEC_PER_DAY*tstep;
     _MB_losses+=_GW_seepage;
   }
-  
+
   for (int ii = 0; ii < _nDemandTS; ii++) {
     if (Options.management_optimization) {
       _MB_losses+=_aQdelivered[ii];
@@ -1186,12 +1186,12 @@ void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep, co
       _MB_losses+=_pDemandTS[ii]->GetSampledValue(nn) * SEC_PER_DAY * tstep;
     }
   }
-  
+
 
 }
 //////////////////////////////////////////////////////////////////
-/// \brief adds delivered demand amount to water demand ii 
-/// \param ii [in] local demand index 
+/// \brief adds delivered demand amount to water demand ii
+/// \param ii [in] local demand index
 /// \param Qdel [in] delivered flow [m3/s]
 //
 void CReservoir::AddToDeliveredDemand(const int ii, const double &Qdel)
@@ -1417,7 +1417,7 @@ double  CReservoir::RouteWater(const double &Qin_old,
   if(_pQminTS        !=NULL){ Qmin       =_pQminTS->        GetSampledValue(nn);}
   if(_pQmaxTS        !=NULL){ Qmax       =_pQmaxTS->        GetSampledValue(nn);}
 
-  //Management optimization - overrides flow 
+  //Management optimization - overrides flow
   if ((Options.management_optimization) && (_Qoptimized != RAV_BLANK_DATA)) {
     Qoverride=_Qoptimized;
   }
@@ -1493,7 +1493,7 @@ double  CReservoir::RouteWater(const double &Qin_old,
    //only remaining filling action is via seepage, which is likely not enough, and Q_out_new can't be negative
    // string warn="CReservoir::RouteWater: basin "+to_string(_SBID)+ " dried out on " +tt.date_string;
    //WriteWarning(warn,false);
-    
+
     constraint=RC_DRY_RESERVOIR;
     res_outflow=0.0;
     return _min_stage;
@@ -1610,7 +1610,7 @@ double  CReservoir::RouteWater(const double &Qin_old,
       if((constraint!=RC_MAX_FLOW_INCREASE) &&
          (constraint!=RC_MAX_FLOW_DECREASE) &&
          (constraint!=RC_MIN_STAGE)) { constraint=RC_OVERRIDE_FLOW; } //Specified override flow
-      if (Options.management_optimization) 
+      if (Options.management_optimization)
       {
         constraint=RC_MANAGEMENT;
         res_outflow=Qoverride;

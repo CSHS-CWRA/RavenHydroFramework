@@ -140,7 +140,7 @@ void CModel::CloseOutputStreams()
   if (  _LEVELS.is_open()){  _LEVELS.close();}
 
   if (_pDO!=NULL){_pDO->CloseOutputStreams();}
-   
+
 #ifdef _RVNETCDF_
 
   int    retval;      // error value for NetCDF routines
@@ -294,7 +294,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         if((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->IsEnabled()) && (_pSubBasins[p]->GetReservoir()!=NULL)) {
           if(_pSubBasins[p]->GetName()=="") { _RESSTAGE<<",ID="<<_pSubBasins[p]->GetID()  <<" "; }
           else                              { _RESSTAGE<<","   <<_pSubBasins[p]->GetName()<<" "; }
-        
+
 
           for(i = 0; i < _nObservedTS; i++) {
             if(IsContinuousStageObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
@@ -389,7 +389,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     _DEMANDS<<"time,date,hour";
     for(p=0;p<_nSubBasins;p++) {
       pSB=_pSubBasins[p];
-      if((pSB->IsEnabled()) && (pSB->IsGauged()) && (pSB->HasIrrigationDemand())) 
+      if((pSB->IsEnabled()) && (pSB->IsGauged()) && (pSB->HasIrrigationDemand()))
       {
         string name;
         if(pSB->GetName()=="") { name="ID="+to_string(pSB->GetID()); }
@@ -955,10 +955,10 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 	    for (int p=0;p<_nSubBasins;p++)
         {
           pSB=_pSubBasins[p];
-	        if ((pSB->IsGauged())  && (pSB->IsEnabled()) && (pSB->GetReservoir()!=NULL)) 
+	        if ((pSB->IsGauged())  && (pSB->IsEnabled()) && (pSB->GetReservoir()!=NULL))
           {
 	          _RESSTAGE<<","<<pSB->GetReservoir()->GetResStage();
-	        
+
 	          for (i = 0; i < _nObservedTS; i++){
 	            if (IsContinuousStageObs(_pObservedTS[i],pSB->GetID()))
 	            {
@@ -1619,7 +1619,7 @@ void CModel::RunDiagnostics(const optStruct &Options)
     if (_pSubBasins[p]->GetReservoir()!=NULL){
       int N=_pSubBasins[p]->GetReservoir()->GetNumDryTimesteps();
       if (N>0)
-      {  
+      {
         string warn="CModel::RunDiagnostics: basin "+to_string(_pSubBasins[p]->GetID())+ " was dried out "+to_string(N) + " time steps during the course of the simulation";
         WriteWarning(warn,Options.noisy);
       }

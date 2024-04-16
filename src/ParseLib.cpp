@@ -53,11 +53,11 @@ string CParser::Peek()
     place=_INPUT->tellg(); // Get current position
     eof=Tokenize(s,Len);   //read and parse whole line
     _lineno--;             //otherwise line number incremented upon peeking
-    
+
     string firstword = "";
     if (Len > 0) {firstword=s[0];}
     if (!eof){
-      _INPUT->seekg(place ,std::ios_base::beg);    // Return to position before peeked line 
+      _INPUT->seekg(place ,std::ios_base::beg);    // Return to position before peeked line
     }
     return firstword;
 }
@@ -116,16 +116,16 @@ bool CParser::Tokenize(char **out, int &numwords){
     //cout<<"failed: "<<filename<<" line "<<l<<"|"<<wholeline<<"|"<<INPUT->ios::eofbit<<endl;
     //ExitGracefully("Too many characters in line or (maybe) using Mac-style carriage return line endings.",BAD_DATA);
   }
- 
+
   _lineno++;
   if ((parserdebug) && ((*wholeline)!=0)){cout <<wholeline<<endl;}
- 
+
   if ((*wholeline) == 0) {
     numwords=0;
     out[0]="";
     return false;
   }
-   
+
   if (_parsing_math_exp) {
     string line;
     line=AddSpacesBeforeOps(wholeline); //NOT WORKING

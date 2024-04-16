@@ -740,7 +740,7 @@ double  CHydroUnit::GetTotalAlbedo(const bool subcanopy) const
     if (subcanopy) {
        return land_albedo;
     }
-    else // above canopy - handles 
+    else // above canopy - handles
     {
       veg_albedo    =_pVeg->albedo; //correction for wetness?
 
