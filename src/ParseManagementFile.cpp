@@ -231,7 +231,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     case(21):  //----------------------------------------------
     { /*:DefineDecisionVariable [name] = [expressionRHS] */
       if(Options.noisy) { cout <<"Define Decision Variable"<<endl; }
-      expressionStruct *pExp;      
+      expressionStruct *pExp;
       manConstraint    *pConst=NULL;
       decision_var     *pDV = new decision_var(s[1],DOESNT_EXIST,DV_USER,pDO->GetNumUserDVs());
 
@@ -268,12 +268,12 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           :Expresion   [expression]
           :Condition [condition]
           :Condition [condition]
-          :Penalty [value] {value2} 
+          :Penalty [value] {value2}
        :EndManagementGoal
      */
       if(Options.noisy) { cout <<"Management Constraint or Management Goal"<<endl; }
       string name=s[1];
-      expressionStruct *pExp;      
+      expressionStruct *pExp;
       manConstraint    *pConst=NULL;
       firstword=pp->Peek();
       if (firstword == ":Expression") {
@@ -315,7 +315,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
             if (Len>=5){
               pCond->value2 = s_to_d(s[4]);
             }
-            if (pCond->dv_name[0] == '!') { //decision variable 
+            if (pCond->dv_name[0] == '!') { //decision variable
               char   tmp =pCond->dv_name[1];
               string tmp2=pCond->dv_name.substr(2);
               char code=pCond->dv_name[1];
@@ -334,7 +334,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
                   }
                 }
               }
-              else { //demand 
+              else { //demand
                 int d=pDO->GetDemandIndexFromName(tmp2);
                 if (d == DOESNT_EXIST) {
                   ExitGracefully("ParseManagementFile: !D or !C used in :Condition statement has invalid demand ID",BAD_DATA_WARN);
@@ -344,7 +344,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
             if (!badcond){
               pConst->AddCondition(pCond);
             }
-          } 
+          }
           else{
             ExitGracefully("ParseManagementFile: :Condition statement must appear after valid :Expression in :ManagementConstraint command",BAD_DATA_WARN);
           }
@@ -380,7 +380,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     }
     case(24):  //----------------------------------------------
     { /*:DeclareDecisionVariable [name]  */
-      if(Options.noisy) { cout <<"Declare Decision Variable"<<endl; }      
+      if(Options.noisy) { cout <<"Declare Decision Variable"<<endl; }
       decision_var     *pDV = new decision_var(s[1],DOESNT_EXIST,DV_USER,pDO->GetNumUserDVs());
       pDO->AddDecisionVar(pDV);
       break;

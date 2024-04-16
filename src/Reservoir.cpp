@@ -1493,7 +1493,7 @@ double  CReservoir::RouteWater(const double &Qin_old,
    //only remaining filling action is via seepage, which is likely not enough, and Q_out_new can't be negative
    // string warn="CReservoir::RouteWater: basin "+to_string(_SBID)+ " dried out on " +tt.date_string;
    //WriteWarning(warn,false);
-    
+
     constraint=RC_DRY_RESERVOIR;
     res_outflow=0.0;
     return _min_stage;

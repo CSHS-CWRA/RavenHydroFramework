@@ -51,18 +51,18 @@ enum exptype
 //
 enum termtype
 {
-  TERM_DV,        //< decision variable !Q123 or named 
-  TERM_TS,        //< time series @ts(name,n)  
+  TERM_DV,        //< decision variable !Q123 or named
+  TERM_TS,        //< time series @ts(name,n)
   TERM_LT,        //< lookup table @lookup(x)
   TERM_HRU,       //< state variable @HRU_var(SNOW,2345)
   TERM_SB,        //< state variable @SB_var(SNOW,234)
-  TERM_CONST,     //< constant 
-  TERM_HISTORY,   //< bracketed - !Q123[-2] 
-  TERM_MAX,       //< @max(x,y) 
+  TERM_CONST,     //< constant
+  TERM_HISTORY,   //< bracketed - !Q123[-2]
+  TERM_MAX,       //< @max(x,y)
   TERM_MIN,       //< @min(x,y)
   TERM_CONVERT,   //< @convert(x,units)
   TERM_CUMUL,     //< cumulative delivery !C123
-  TERM_UNKNOWN    //< unknown 
+  TERM_UNKNOWN    //< unknown
 };
 ///////////////////////////////////////////////////////////////////
 /// \brief decision variable types
@@ -99,12 +99,12 @@ struct expressionTerm
   int           nested_ind2;     //< index k of second argument (e.g., for min/max functions)
   string        nested_exp1;     //< contents of first argument to function - can be expression
   string        nested_exp2;     //< contents of second argument to function
- 
-  string        origexp;         //< original string expression 
+
+  string        origexp;         //< original string expression
   int           p_index;         //< subbasin index p (for history variables, e.g, !Q324[-2] or @SB_var() command )
   int           HRU_index;       //< HRU index k (for @HRU_var command)
   int           SV_index;        //< state variable index i (for @SB_var or @HRU_var command)
-  
+
   expressionTerm(); //defined in DemandExpressionHandling.cpp
 };
 
@@ -150,12 +150,12 @@ struct decision_var
   }
 };
 //////////////////////////////////////////////////////////////////
-// goal/constraint condition 
+// goal/constraint condition
 //
 struct exp_condition
 {
   string      dv_name;   //< decision variable name (e.g., Q1023) or "MONTH"
-  double      value;     //< conditional value 
+  double      value;     //< conditional value
   double      value2;    //< second conditional (if COMPARE_BETWEEN)
   comparison  compare;   //> comparison operator, e.g., COMPARE_IS_EQUAL
 
@@ -183,8 +183,8 @@ struct manConstraint
 
   double            penalty_value; //< (from solution) penalty incurred by not satisfying goal (or zero for constraint)
 
-  int               nConditions;   //< number of conditional statments 
-  exp_condition   **pConditions;   //< array of pointers to conditional statements 
+  int               nConditions;   //< number of conditional statments
+  exp_condition   **pConditions;   //< array of pointers to conditional statements
   bool              conditions_satisfied; //< true if satisfied during current timestep
   bool              ever_satisfied;//< true if ever satisfied during simulation (for warning at end of sim)
 
@@ -204,7 +204,7 @@ private: /*------------------------------------------------------*/
   int              _nDecisionVars;      //< total number of decision variables considered
   decision_var   **_pDecisionVars;      //< array of pointers to decision variable structures [size:_nDecisionVars]
 
-  int              _nConstraints;       //< number of user-defined enforced constraints/goals in management model 
+  int              _nConstraints;       //< number of user-defined enforced constraints/goals in management model
   manConstraint  **_pConstraints;       //< array of pointers to user-defined enforced constraints/goals in management model
 
   int              _nEnabledSubBasins;  //< number of enabled subbasins in model
@@ -218,7 +218,7 @@ private: /*------------------------------------------------------*/
   int             *_aDemandIDs;         //< local storage of demand IDs [size:_nDemands]
   long            *_aDemandSBIDs;       //< local storage of subbasin IDs for each demand [size: _nDemands]
   int             *_aDemandIndices;     //< local storage of demand index ii (counter in each subbasin) [size: _nDemands]
-  string          *_aDemandAliases;     //< list of demand aliases [size: _nDemands] 
+  string          *_aDemandAliases;     //< list of demand aliases [size: _nDemands]
   double          *_aDemandPenalties;   //< array of priority weights [size: _nDemands]
   bool            *_aDemandUnrestrict;  //< array of restriction status for demands - true if unrestricted, false otherwise [size: _nDemands]
   double          *_aDelivery;          //< array of delivered water for each demand [m3/s] [size: _nDemands]
@@ -283,10 +283,10 @@ public: /*------------------------------------------------------*/
   void   SetHistoryLength      (const int n);
   void   SetCumulativeDate     (const int julian_date, const string demandID);
   void   SetDebugLevel         (const int lev);
-  void   SetDemandAsUnrestricted(const string dname); 
-  
+  void   SetDemandAsUnrestricted(const string dname);
+
   manConstraint *AddConstraint (const string name, expressionStruct *exp, const bool soft_constraint);
-  
+
   void   AddDecisionVar        (const decision_var *pDV);
   void   SetDecisionVarBounds  (const string name, const double &min, const double &max);
   void   AddUserConstant       (const string name, const double &val);

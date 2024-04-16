@@ -99,7 +99,7 @@ private:/*-------------------------------------------------------*/
   double        _DAscale;            //< outflow scale factor - used for reporting overriden flows
   double        _DAscale_last;       //< outflow scale factor for previous time step
 
-  int           _dry_timesteps;      //< number of time steps this reservoir dried out  during simulation 
+  int           _dry_timesteps;      //< number of time steps this reservoir dried out  during simulation
 
   //state variables :
   double       _stage;               ///< current stage [m] (actual state variable)

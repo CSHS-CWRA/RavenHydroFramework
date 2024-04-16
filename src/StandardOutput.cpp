@@ -1619,7 +1619,7 @@ void CModel::RunDiagnostics(const optStruct &Options)
     if (_pSubBasins[p]->GetReservoir()!=NULL){
       int N=_pSubBasins[p]->GetReservoir()->GetNumDryTimesteps();
       if (N>0)
-      {  
+      {
         string warn="CModel::RunDiagnostics: basin "+to_string(_pSubBasins[p]->GetID())+ " was dried out "+to_string(N) + " time steps during the course of the simulation";
         WriteWarning(warn,Options.noisy);
       }
