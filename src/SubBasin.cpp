@@ -580,7 +580,7 @@ double CSubBasin::ApplyIrrigationDemand(const double &t,const double &Q,const bo
   if (optimized) {
     return _Qdelivered; //total delivered as calculated from management optimization
   }
-    
+
   double Qdelivered;
   double Qdemand=GetTotalWaterDemand(t);
   double Qmin   =GetEnviroMinFlow(t);
@@ -1040,7 +1040,7 @@ void CSubBasin::AddReservoir(CReservoir *pRes)
   _pReservoir=pRes;
 }
 
-void CSubBasin::SetGlobalIndex(const int p) 
+void CSubBasin::SetGlobalIndex(const int p)
 {
   _global_p=p;
 }
@@ -1369,19 +1369,19 @@ void CSubBasin::SetDownstreamID(const long down_SBID)
 /// \brief Sets Downstream subbasin (performed by model during routing initialization)
 /// \param pSB [in] pointer to downstream subbasin
 //
-void CSubBasin::SetDownstreamBasin(const CSubBasin* pSB) 
+void CSubBasin::SetDownstreamBasin(const CSubBasin* pSB)
 {
   _pDownSB=pSB;
   if (_pReservoir!=NULL){_pReservoir->SetDownstreamBasin(pSB); }
 }
 /////////////////////////////////////////////////////////////////
-/// \brief increment quantity of total delivered demand from management 
-/// *called by DemandOptimization routines only* 
+/// \brief increment quantity of total delivered demand from management
+/// *called by DemandOptimization routines only*
 /// this is zeroed out in UpdateSubBasin() every time step prior to management optimization call
-/// \param ii [in] demand index 
+/// \param ii [in] demand index
 /// \param Qdel [in] demand delivery [m3/s]
 //
-void CSubBasin::AddToDeliveredDemand(const int ii, const double Qdel) 
+void CSubBasin::AddToDeliveredDemand(const int ii, const double Qdel)
 {
   _aQdelivered[ii]=Qdel;
   _Qdelivered+=Qdel;
@@ -1576,7 +1576,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     _pIrrigDemands[ii]->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,false,Options.calendar);
   }
   _aQdelivered=new double [_nIrrigDemands];
-  
+
 
   //QA/QC check of Muskingum parameters, if necessary
   //------------------------------------------------------------------------
@@ -1909,7 +1909,7 @@ void CSubBasin::GenerateCatchmentHydrograph(const double    &Qlat_avg,
 //
 void  CSubBasin::UpdateSubBasin(const time_struct &tt, const optStruct &Options)
 {
-  _Qdelivered=0; //reset each time step before demand optmization applied 
+  _Qdelivered=0; //reset each time step before demand optmization applied
   for (int ii = 0; ii < _nIrrigDemands; ii++) {
     _aQdelivered[ii]=0.0;
   }
@@ -1961,7 +1961,7 @@ void CSubBasin::UpdateOutflows   (const double *aQo,   //[m3/s]
   _QirrLast=_Qirr;
   _Qirr    =irr_Q;
 
-  if (!Options.management_optimization){ 
+  if (!Options.management_optimization){
     if (_nIrrigDemands>1){ //distribute delivery based upon percentage of total demand, otherwise this is provided by AddToDeliveredDemand()
       for (int ii = 0; ii < _nIrrigDemands; ii++) {
           double demand=_pIrrigDemands[ii]->GetValue(tt.model_time);

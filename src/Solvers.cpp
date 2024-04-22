@@ -541,11 +541,11 @@ void MassEnergyBalance( CModel            *pModel,
     pBasin->UpdateSubBasin(tt,Options);
   }
 
-  // Management optimization - determines optimal demand delivery/reservoir outflows 
+  // Management optimization - determines optimal demand delivery/reservoir outflows
   // ----------------------------------------------------------------------------------------
   if (Options.management_optimization)
-  { 
-    pModel->GetDemandOptimizer()->SolveDemandProblem(pModel, Options, aRouted, tt); 
+  {
+    pModel->GetDemandOptimizer()->SolveDemandProblem(pModel, Options, aRouted, tt);
   }
 
   // Route water over timestep

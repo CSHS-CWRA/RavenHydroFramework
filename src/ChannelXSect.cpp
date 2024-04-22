@@ -480,7 +480,7 @@ void CChannelXSect::GetPropsFromProfile(const double &elev,
     if (Ai>0){
       Q+=pow(_bedslope,0.5)*Ai*pow(Ai/Pi,2.0/3.0)/_aMann[i];
     }
-    n_eff+=Ai/_aMann[i]; //area weighted 1/n 
+    n_eff+=Ai/_aMann[i]; //area weighted 1/n
   }
   //proper conveyance approach
   //using Mannings equation to calculate Q

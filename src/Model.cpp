@@ -1616,7 +1616,7 @@ void CModel::SetEnsembleMode(CEnsemble *pEnsemble) {
   _pEnsemble=pEnsemble;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Sets demand optimizer 
+/// \brief Sets demand optimizer
 ///
 /// \param *pDO [in] (assumed valid) pointer to optimizer instance
 //

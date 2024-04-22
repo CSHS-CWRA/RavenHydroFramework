@@ -1138,7 +1138,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     case (74): //---------------------------------------------
     {/*:UserTimeSeries {name} [units]
         {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
-        {double val} x nValues 
+        {double val} x nValues
       :EndUserTimeSeries
      */
       if(Options.noisy) { cout <<"User-specified Time Series"<<endl; }

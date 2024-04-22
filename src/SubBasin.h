@@ -45,7 +45,7 @@ private:/*------------------------------------------------------*/
   long                     _ID;   ///< unique ID of subbasin (must be positive)
   string                 _name;   ///< name
   bool               _disabled;   ///< true if disabled
-  int                _global_p;   ///< p index in _pModel subbasin array 
+  int                _global_p;   ///< p index in _pModel subbasin array
 
   const CModelABC     *_pModel;   ///< Pointer to model
 
@@ -243,9 +243,9 @@ public:/*-------------------------------------------------------*/
   double          GetWaterDemand           (const int ii,const double &t) const;  //[m3/s] iith demand from downstream end of channel at point in time
   double          GetDownstreamIrrDemand   (const double &t) const;    //[m3/s] cumulative downstream irrigation demand, including from this subbasin
   double          GetDemandDelivery        () const;                   //[m3/s] instantaneous total delivery rate Qirr
-  double          GetDemandDelivery        (const int ii) const;       //[m3/s] instantaneous delivery rate to demand ii 
+  double          GetDemandDelivery        (const int ii) const;       //[m3/s] instantaneous delivery rate to demand ii
   double          GetEnviroMinFlow         (const double &t) const;    //[m3/s] environmental minimum flow target from downstream outlet
-  bool            HasEnviroMinFlow         () const;                   // true if basin has enviro min flow time series 
+  bool            HasEnviroMinFlow         () const;                   // true if basin has enviro min flow time series
   bool            HasIrrigationDemand      () const;                   // true if basin has specified irrigation demand
   int             GetDiversionTargetIndex  (const int i) const;        // returns subbasin index p of diversion i
 

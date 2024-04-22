@@ -62,7 +62,7 @@ private:/*-------------------------------------------------------*/
   const CHydroUnit  *_pHRU;          ///< (potentially zero-area) HRU used for Precip/ET calculation (or NULL for no ET)
 
   CTimeSeries **_pDemandTS;          ///< array of Time Series of water demand [m3/s] (or NULL for zero extraction) [size: _nDemandTS]
-  int           _nDemandTS;          ///< number of reservoir demand time series 
+  int           _nDemandTS;          ///< number of reservoir demand time series
 
   CTimeSeries *_pWeirHeightTS;       ///< Time series of weir heights [m] (or NULL for fixed weir height)
   CTimeSeries *_pMaxStageTS;         ///< Time series of rule curve upper stage constraint [m] (or NULL for no maximum stage)
@@ -99,7 +99,7 @@ private:/*-------------------------------------------------------*/
   double        _DAscale;            //< outflow scale factor - used for reporting overriden flows
   double        _DAscale_last;       //< outflow scale factor for previous time step
 
-  int           _dry_timesteps;      //< number of time steps this reservoir dried out  during simulation 
+  int           _dry_timesteps;      //< number of time steps this reservoir dried out  during simulation
 
   //state variables :
   double       _stage;               ///< current stage [m] (actual state variable)
@@ -199,9 +199,9 @@ public:/*-------------------------------------------------------*/
 
   int               GetNumWaterDemands       () const;
   int               GetWaterDemandID         (const int ii) const;
-  string            GetWaterDemandName       (const int ii) const; 
+  string            GetWaterDemandName       (const int ii) const;
   double            GetWaterDemand           (const int ii,const double &t) const;  //[m3/s] iith demand from reservoir at point in time
-  double            GetDemandDelivery        (const int ii) const;       //[m3/s] instantaneous delivery rate to demand ii 
+  double            GetDemandDelivery        (const int ii) const;       //[m3/s] instantaneous delivery rate to demand ii
 
   int               GetHRUIndex              () const;
   double            GetMaxCapacity           () const; //[m3]
