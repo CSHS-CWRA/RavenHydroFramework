@@ -342,12 +342,12 @@ void CCustomOutput::WriteCSVFileHeader(void)
   {
     string title;
     ostrstream  TMP;
-    if      (_spaceAgg==BY_HRU        ){TMP<<pModel->GetHydroUnit(k)->GetID() <<ends;}
+    if      (_spaceAgg==BY_HRU        ){TMP<<pModel->GetHydroUnit(k)->GetHRUID() <<ends;}
     else if (_spaceAgg==BY_HRU_GROUP  ){TMP<<pModel->GetHRUGroup(k)->GetName()<<ends;}
     else if (_spaceAgg==BY_SB_GROUP   ){TMP<<pModel->GetSubBasinGroup(k)->GetName()<<ends;}
     else if (_spaceAgg==BY_WSHED      ){TMP<<"Watershed"                      <<ends;}
     else if (_spaceAgg==BY_BASIN      ){TMP<<pModel->GetSubBasin(k)->GetID()  <<ends;}
-    else if (_spaceAgg==BY_SELECT_HRUS){TMP<<pModel->GetHRUGroup(kk_only)->GetHRU(k)->GetID()<<ends;}
+    else if (_spaceAgg==BY_SELECT_HRUS){TMP<<pModel->GetHRUGroup(kk_only)->GetHRU(k)->GetHRUID()<<ends;}
 
     title=TMP.str();
 
@@ -451,12 +451,12 @@ void CCustomOutput::WriteEnSimFileHeader(const optStruct &Options)
     ostrstream  curSpaceIdentifier;
     switch(_spaceAgg)
     {
-    case BY_HRU:                    curSpaceIdentifier<<"HRU_"           <<pModel->GetHydroUnit(k)->GetID() <<ends; break;
+    case BY_HRU:                    curSpaceIdentifier<<"HRU_"           <<pModel->GetHydroUnit(k)->GetHRUID() <<ends; break;
     case BY_HRU_GROUP:              curSpaceIdentifier<<"HRUGroup_"      <<pModel->GetHRUGroup(k)->GetName()<<ends; break;
     case BY_SB_GROUP:               curSpaceIdentifier<<"SubbasinGroup_" <<pModel->GetSubBasinGroup(k)->GetName()<<ends; break;
     case BY_WSHED:                  curSpaceIdentifier<<"Watershed_"     <<"Watershed"                      <<ends; break;
     case BY_BASIN:                  curSpaceIdentifier<<"SubBasin_"      <<pModel->GetSubBasin(k)->GetID()  <<ends; break;
-    case BY_SELECT_HRUS:            curSpaceIdentifier<<"HRU_"           <<pModel->GetHRUGroup(kk_only)->GetHRU(k)->GetID()  <<ends; break;
+    case BY_SELECT_HRUS:            curSpaceIdentifier<<"HRU_"           <<pModel->GetHRUGroup(kk_only)->GetHRU(k)->GetHRUID()  <<ends; break;
     }
     string title=curSpaceIdentifier.str();
 
@@ -630,12 +630,12 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   {
     ostrstream  TMP;
     string temp;
-    if      (_spaceAgg==BY_HRU        ){TMP<<pModel->GetHydroUnit(k)->GetID()      <<ends;}
+    if      (_spaceAgg==BY_HRU        ){TMP<<pModel->GetHydroUnit(k)->GetHRUID()      <<ends;}
     else if (_spaceAgg==BY_HRU_GROUP  ){TMP<<pModel->GetHRUGroup(k)->GetName()     <<ends;}
     else if (_spaceAgg==BY_SB_GROUP   ){TMP<<pModel->GetSubBasinGroup(k)->GetName()<<ends;}
     else if (_spaceAgg==BY_WSHED      ){TMP<<"Watershed"                           <<ends;}
     else if (_spaceAgg==BY_BASIN      ){TMP<<pModel->GetSubBasin(k)->GetID()       <<ends;}
-    else if (_spaceAgg==BY_SELECT_HRUS){TMP<<pModel->GetHRUGroup(kk_only)->GetHRU(k)->GetID()<<ends;}
+    else if (_spaceAgg==BY_SELECT_HRUS){TMP<<pModel->GetHRUGroup(kk_only)->GetHRU(k)->GetHRUID()<<ends;}
     temp=TMP.str();
     strcpy(group_name[0],temp.c_str());
 

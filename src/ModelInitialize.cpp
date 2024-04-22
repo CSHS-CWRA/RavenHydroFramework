@@ -49,7 +49,7 @@ void CModel::Initialize(const optStruct &Options)
 
   for (k=0;k<_nHydroUnits;k++){
     for (kk=0;kk<p;kk++){
-      if ((k!=kk) && (_pHydroUnits[k]->GetID()==_pHydroUnits[kk]->GetID())){
+      if ((k!=kk) && (_pHydroUnits[k]->GetHRUID()==_pHydroUnits[kk]->GetHRUID())){
         ExitGracefully("CModel::Initialize: non-unique (repeated) HRU identifier found",BAD_DATA);}}}
 
   // initialize process algorithms, initialize water/energy balance arrays to zero
@@ -1024,7 +1024,7 @@ void CModel::GenerateGaugeWeights(double **&aWts, const forcing_type forcing, co
     for(g=0; g<_nGauges;g++) { WTS<<","<<_pGauges[g]->GetName(); }
     WTS<<endl;
     for(k=0;k<_nHydroUnits;k++) {
-      WTS<<k<<","<<_pHydroUnits[k]->GetID();
+      WTS<<k<<","<<_pHydroUnits[k]->GetHRUID();
 
       for(g=0;g<_nGauges;g++) {WTS<<","<<aWts[k][g]; }
       WTS<<endl;

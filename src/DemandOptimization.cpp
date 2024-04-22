@@ -1126,7 +1126,8 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
   // ----------------------------------------------------------------
   for (int j = 0; j < _nConstraints; j++) 
   {
-    _pConstraints[j]->conditions_satisfied=CheckConditions(j,tt);
+    _pConstraints[j]->conditions_satisfied=CheckGoalConditions(j,tt,Options);
+
     if (_pConstraints[j]->conditions_satisfied){_pConstraints[j]->ever_satisfied=true; }
 
     if ((_pConstraints[j]->is_goal) && (_pConstraints[j]->conditions_satisfied))

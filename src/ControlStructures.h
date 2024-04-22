@@ -22,6 +22,7 @@ struct RegimeCondition
   comparison compare;      ///< e.g., greater than, between, etc.
   double     compare_val1; ///< primary comparison value
   double     compare_val2; ///< secondary comparison value (used for between)
+  RegimeCondition() { variable = "DATE";  basinID=DOESNT_EXIST; compare=COMPARE_BETWEEN;compare_val1=compare_val2=0.0;}
 };
 //example :Condition DATE IS_BETWEEN 2010-07-01 2012-06-31 (converted to model time in compare_vals)
 //example :Condition DAY_OF_YEAR IS_BETWEEN 213 320

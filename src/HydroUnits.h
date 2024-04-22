@@ -24,7 +24,7 @@ private:/*------------------------------------------------------*/
 
   const CModelABC            *_pModel;  ///< Pointer to model
 
-  int                             _ID;  ///< Unique HRU identifier
+  long long int                   _ID;  ///< Unique HRU identifier
   int                       _global_k;  ///< Global model index as stored in CModel array (can/will be different from ID)
   double                        _Area;  ///< contributing drainage area for HydroUnit [km^2]
   int                    _SubbasinInd;  ///< global index p (not ID!) of subbasin this HRU is in
@@ -68,7 +68,7 @@ public:/*-------------------------------------------------------*/
   //Constructors:
 
   CHydroUnit(const CModelABC        *pMod,
-             const int               ID,
+             const long long int     ID,
              const int               global_ind,
              const double            drainage_area,    //land surface area, km^2
              const int               basin_index,      //index of parent watershed
@@ -87,7 +87,7 @@ public:/*-------------------------------------------------------*/
   ~CHydroUnit();
 
   //Accessor functions (some inlined for speed)
-  inline int             GetID           () const { return _ID;          }
+  inline long long int   GetHRUID        () const { return _ID;          }
   inline int             GetGlobalIndex  () const { return _global_k;    }
   inline bool            IsEnabled       () const { return !_Disabled;   }
   inline location        GetCentroid     () const { return _Centroid;    }

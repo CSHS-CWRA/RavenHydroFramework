@@ -116,12 +116,12 @@ void CGWDrain::GetRatesOfChange (const double		   *state_vars,
   double   drain_flow, AMAT_change, RHS_change;
 
   //-- Drainage is any amount of head over drain elevation controlled by conductance layer
-  int HRUid = pHRU->GetID();
+  long long int HRUid = pHRU->GetHRUID();
   rates[0] = 0.0;
 
 
   //-- Loop over drain nodes in HRU
-  HRU_nodes = getHRUnodes(HRUid);
+  HRU_nodes = getHRUnodes((int)(HRUid));
 
   for (int n=0; n< HRU_nodes.size(); n++)
   {
@@ -231,11 +231,11 @@ void CGWDrain::UpdateRatesOfChange(const double      *state_vars,
   set<int> HRU_nodes;
   int      index;
   double   old_head, area, weight, flow_change;
-  int      HRUid = pHRU->GetID();
+  long long int  HRUid = pHRU->GetHRUID();
   rates[0] = 0.0;
 
   //-- Loop over drain nodes in HRU
-  HRU_nodes = getHRUnodes(HRUid);
+  HRU_nodes = getHRUnodes((int)(HRUid)); //todo[funct] - support long long int 
 
   for (unsigned int n=0; n< HRU_nodes.size(); n++)
   {

@@ -1421,6 +1421,13 @@ inline double        exp    (int i1)              {return exp((double)(i1));}
 inline int           s_to_i (const char *s1)            {return (int)atof(s1);   }
 
 ///////////////////////////////////////////////////////////////////
+/// \brief Converts string parameter to long long integer type
+/// \param *s1 [in] String to be converted to long long integer
+/// \return Integer format of passed string
+//
+inline long long int s_to_ll (const char *s1)            {return atoll(s1);   }
+
+///////////////////////////////////////////////////////////////////
 /// \brief Converts string parameter to double type
 /// \param *s1 [in] String to be converted to double
 /// \return Double format of passed string
@@ -1434,7 +1441,7 @@ inline double        s_to_d (const char *s1)            {return atof(s1);       
 inline bool StringIsLong(const char *s1)
 {
   char *p;
-  strtol(s1,&p,10);
+  strtoll(s1,&p,10);
   return !(*p);
 }
 ///////////////////////////////////////////////////////////////////
@@ -1455,19 +1462,19 @@ inline bool          s_to_b (const char *s1)            {return ((int)atof(s1)!=
 inline long          s_to_l (const char *s1)            {return (long)atof(s1);   }
 
 ///////////////////////////////////////////////////////////////////
-/// \brief Extracts integer start and endpoints from string range of integers (i.e., string of the form "4-10")
+/// \brief Extracts long integer start and endpoints from string range of integers (i.e., string of the form "4-10")
 /// \param *s1 [in] String range to be parsed
 /// \param &v1 [out] Start point of range
 /// \param &v2 [out] End point of range
 //
-inline void      s_to_range (const char *s1, int &v1, int &v2)
+inline void      s_to_range (const char *s1, long long int &v1, long long int &v2)
 {
   string s=s1;
   int p=(int)(s.find_last_of("-"));
-  if (p==-1){v1=v2=s_to_i(s1);return;}
+  if (p==-1){v1=v2=s_to_ll(s1);return;}
   else{
-    v1=atoi(s.substr(0,(unsigned int)(p)).c_str());
-    v2=atoi(s.substr((unsigned int)(p)+1,1000).c_str());
+    v1=atoll(s.substr(0,(unsigned int)(p)).c_str());
+    v2=atoll(s.substr((unsigned int)(p)+1,1000).c_str());
   };
 }
 #ifndef _WIN32

@@ -1191,7 +1191,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     case(102)://----------------------------------------------
     {/*:SpecifyGaugeForHRU [HRUID] [GaugeName]*/
       if (Options.noisy){cout <<"Specify gauge for HRU"<<endl;}
-      int HRUID=s_to_i(s[1]);
+      long long int HRUID=s_to_ll(s[1]);
       if (pModel->GetHRUByID(HRUID)==NULL){
         WriteWarning("ParseTimeSeries::invalid HRU ID in :SpecifyGaugeForHRU command: "+to_string(HRUID),Options.noisy);
         break;
@@ -1598,7 +1598,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         {
           if (nHydroUnitsGiven && nGridCellsGiven) {
             pHRU=NULL;
-            pHRU = pModel->GetHRUByID(atoi(s[0]));
+            pHRU = pModel->GetHRUByID(atoll(s[0]));
             if (pHRU == NULL) {
               printf("\n\n");
               printf("Wrong HRU ID in :GridWeights: HRU_ID = %s\n",s[0]);
@@ -1767,7 +1767,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         {
           if(nHydroUnitsGiven && nGridCellsGiven && attributeGiven) {
             CHydroUnit *pHRU=NULL;
-            pHRU = pModel->GetHRUByID(atoi(s[0]));
+            pHRU = pModel->GetHRUByID(atoll(s[0]));
             if(pHRU == NULL) {
               printf("\n\n");
               printf("Wrong HRU ID in :StationWeightsByAttribute: HRU_ID = %s\n",s[0]);
@@ -1877,6 +1877,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       int   StatVecID;         // attribute ID of station vector
       int   StatDimID;         // nstations dimension ID
       long* StatIDs    =NULL;  // vector of Subbasin or HRU IDs (allocated in GetNetCDFStationArray)
+                               //\todo[funct]: fix so StatIDs supports long long int
       string *junk=NULL;
       int   nStations=0;       // size of station Vector
       if (ncid == -9) {
@@ -1920,7 +1921,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         else { //HRUS
           StationID=DOESNT_EXIST;
           for (int i=0;i<nStations;i++){
-            if (pModel->GetHydroUnit(k)->GetID()==StatIDs[i]){
+            if (pModel->GetHydroUnit(k)->GetHRUID()==StatIDs[i]){
               StationID=i; break;
             }
           }

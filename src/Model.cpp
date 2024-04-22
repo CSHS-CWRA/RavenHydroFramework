@@ -408,14 +408,14 @@ CHydroUnit *CModel::GetHydroUnit(const int k) const
 /// \param HRUID [in] HRU identifier
 /// \return pointer to HRU corresponding to passed ID HRUID, NULL if no such HRU exists
 //
-CHydroUnit *CModel::GetHRUByID(const int HRUID) const
+CHydroUnit *CModel::GetHRUByID(const long long int HRUID) const
 {
   static int last_k=0;
   //smart find
   int k;
   for (int i=0;i<_nHydroUnits;i++){
     k=NearSearchIndex(i,last_k,_nHydroUnits);
-    if (HRUID==_pHydroUnits[k]->GetID()){ last_k=k; return _pHydroUnits[k];}
+    if (HRUID==_pHydroUnits[k]->GetHRUID()){ last_k=k; return _pHydroUnits[k];}
   }
   return NULL;
 }
@@ -2849,7 +2849,7 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
     else if (svtyp!=UNRECOGNIZED_SVTYPE)//==========================================
     { //State variable
       CHydroUnit *pHRU=NULL;
-      pHRU=GetHRUByID((int)(_pObservedTS[i]->GetLocID()));
+      pHRU=GetHRUByID((long long int)(_pObservedTS[i]->GetLocID()));
       string error="CModel::UpdateDiagnostics: Invalid HRU ID specified in observed state variable time series "+_pObservedTS[i]->GetName();
       ExitGracefullyIf(pHRU==NULL,error.c_str(),BAD_DATA);
       int sv_index=this->GetStateVarIndex(svtyp,layer_ind);

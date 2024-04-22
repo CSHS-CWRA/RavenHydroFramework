@@ -128,11 +128,11 @@ void CGWRecharge::GetRatesOfChange(const double		   *state_vars,
     double   AMAT_change=0.0, RHS_change=0.0;
 
     //-- Initialize
-    int HRUid = pHRU->GetID();
+    long long int HRUid = pHRU->GetHRUID();
     rates[0]  = 0.0;
 
     // Loop over nodes with recharge in HRU
-    HRU_nodes = getHRUnodes(HRUid);
+    HRU_nodes = getHRUnodes((int)(HRUid)); //todo[funct] - support long long int
 
     //-- Recharge as a forcing
     if (_recharge_type == RECHARGE_HRU_DATA) {

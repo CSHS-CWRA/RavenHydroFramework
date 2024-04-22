@@ -284,7 +284,7 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
     else { //HRU state variable
       for (int n=0;n<pModel->GetHRUGroup(kk)->GetNumHRUs();n++)
       {
-        int k=pModel->GetHRUGroup(kk)->GetHRU(n)->GetID();
+        long long int k=pModel->GetHRUGroup(kk)->GetHRU(n)->GetHRUID();
         string svname = pModel->GetStateVarInfo()->SVTypeToString(_aAssimStates[i], _aAssimLayers[i]);
         _state_names[ii]=svname+"_" +to_string(k); ii++;
       }

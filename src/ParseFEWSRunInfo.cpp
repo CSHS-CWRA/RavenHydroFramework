@@ -356,7 +356,7 @@ bool ParseNetCDFStateFile(CModel *&pModel,const optStruct &Options)
   //====================================================================
   int   HRUvecID;         //attribute ID of HRU vector
   int   HRUdimID;         // nstations dimension ID
-  long* HRUIDs    =NULL;  // vector of HRUIDs
+  long * HRUIDs    =NULL;  // vector of HRUIDs //\todo[funct]: support long long int
   string *junk=NULL;
   int   nHRUsLocal=0;     // size of HRU Vector
 
@@ -372,7 +372,7 @@ bool ParseNetCDFStateFile(CModel *&pModel,const optStruct &Options)
   //check that valid (integer) HRUIDs exist in Raven Model
   // ===============================================================================
   for (int k = 0; k < nHRUsLocal; k++) {
-    if ((HRUIDs[k]!=DOESNT_EXIST) && (pModel->GetHRUByID((int)(HRUIDs[k])) == NULL)) {
+    if ((HRUIDs[k]!=DOESNT_EXIST) && (pModel->GetHRUByID((long long int)(HRUIDs[k])) == NULL)) {
       ExitGracefully("ParseNetCDFStateFile: invalid HRU ID found in FEWS state update file. ", BAD_DATA);
     }
   }
@@ -468,7 +468,7 @@ bool ParseNetCDFStateFile(CModel *&pModel,const optStruct &Options)
       if ((v[i] - maxv) > PRETTY_SMALL)// check for capacity
       {
         string name = pModel->GetStateVarInfo()->GetStateVarLongName(pModel->GetStateVarType(i), pModel->GetStateVarLayer(i),pModel->GetTransportModel());
-        string warn = "maximum state variable limit exceeded in initial conditions for " + name + " (in HRU " + to_string(pHRU->GetID()) + ") in FEWS state update file";
+        string warn = "maximum state variable limit exceeded in initial conditions for " + name + " (in HRU " + to_string(pHRU->GetHRUID()) + ") in FEWS state update file";
         WriteWarning(warn, Options.noisy);
 
         if (!Options.keepUBCWMbugs) {

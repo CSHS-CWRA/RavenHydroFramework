@@ -576,7 +576,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     for (int kk=0; kk<_pOutputGroup->GetNumHRUs();kk++)
     {
       ofstream HRUSTOR;
-      tmpFilename="HRUStorage_"+to_string(_pOutputGroup->GetHRU(kk)->GetID())+".csv";
+      tmpFilename="HRUStorage_"+to_string(_pOutputGroup->GetHRU(kk)->GetHRUID())+".csv";
       tmpFilename=FilenamePrepare(tmpFilename,Options);
       HRUSTOR.open(tmpFilename.c_str());
       if (HRUSTOR.fail()){
@@ -1216,7 +1216,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       for (int kk=0;kk<_pOutputGroup->GetNumHRUs();kk++)
       {
         ofstream HRUSTOR;
-        tmpFilename="HRUStorage_"+to_string(_pOutputGroup->GetHRU(kk)->GetID())+".csv";
+        tmpFilename="HRUStorage_"+to_string(_pOutputGroup->GetHRU(kk)->GetHRUID())+".csv";
         tmpFilename=FilenamePrepare(tmpFilename,Options);
         HRUSTOR.open(tmpFilename.c_str(),ios::app);
 
@@ -1314,7 +1314,7 @@ void CModel::WriteMajorOutput(const time_struct &tt, string solfile, bool final)
     for (k=0;k<_nHydroUnits;k++)
     {
       RVC<<std::fixed; RVC.precision(5);
-      RVC<<"  "<<_pHydroUnits[k]->GetID()<<",";
+      RVC<<"  "<<_pHydroUnits[k]->GetHRUID()<<",";
       for (i=mini;i<maxi;i++)
       {
         RVC<<_pHydroUnits[k]->GetStateVarValue(i);

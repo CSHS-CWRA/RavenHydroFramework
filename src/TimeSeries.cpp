@@ -259,8 +259,8 @@ void CTimeSeries::Initialize( const double model_start_day,   //julian day
       ExitGracefully(
         "CTimeSeries::Initialize: time series forcing data not available for entire model simulation duration", BAD_DATA);
     }
-    if (duration + timestep < local_simulation_end)    //run out of data before simulation finishes
-    {                                                  //+timesteps is for coincdent duration & data
+    if (duration + 0.0*timestep + TIME_CORRECTION < local_simulation_end)    //run out of data before simulation finishes
+    {                                                                       //+timesteps is for coincdent duration & data (and wrong? JRC: 2024-04-18)
       cout << " Time series " << GetName() << endl;
       cout << "  time series start day, year, duration :" << _start_day << "," << _start_year << " " << duration << endl;
       cout << "  model start day, year, duration :" << model_start_day << "," << model_start_year << " " << model_duration << endl;

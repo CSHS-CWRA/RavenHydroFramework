@@ -210,8 +210,8 @@ bool ParseGWFile(CModel*& pModel, const optStruct& Options)
           2       3       0.6
           3       5       1.0*/
         // \todo check for GW Model setup
-        int     HRUid;
-        int     nodeid;
+        long long int HRUid;
+        int           nodeid;
         int nNodesLayOne = pGWModel->GetNumNodesByLay(1);
         double  wnode;
 
@@ -230,7 +230,7 @@ bool ParseGWFile(CModel*& pModel, const optStruct& Options)
           else if (!strcmp(s[0],":EndOverlapWeights")){}//done
           else if (Len >= 3) {
             //-- Assume line of data - HRUID NODE WEIGHT
-            HRUid = s_to_i(s[0]);
+            HRUid = s_to_ll(s[0]);
             nodeid = s_to_i(s[1]);
             wnode = s_to_d(s[2]);
 

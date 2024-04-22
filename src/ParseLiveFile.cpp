@@ -87,7 +87,7 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
     }
     case(1):  //----------------------------------------------
     {/*:VegetationChange [HRU ID] [new vegetation tag] */
-      pHRU=pModel->GetHRUByID(s_to_i(s[1]));
+      pHRU=pModel->GetHRUByID(s_to_ll(s[1]));
       if(pHRU!=NULL) {
         CVegetationClass *veg_class = pModel->StringToVegClass(s[2]);
         if(veg_class!=NULL) {
@@ -104,7 +104,7 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
     }
     case(2):  //----------------------------------------------
     {/*:LandUseChange [HRU ID] [new LULT tag]*/
-      pHRU=pModel->GetHRUByID(s_to_i(s[1]));
+      pHRU=pModel->GetHRUByID(s_to_ll(s[1]));
       if(pHRU!=NULL) {
         CLandUseClass *lult_class= pModel->StringToLUClass(s[2]);
         if(lult_class!=NULL) {
@@ -159,7 +159,7 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
     }
     case(5):  //----------------------------------------------
     {/*:HRUTypeChange [HRU ID] [new HRU Type]*/
-      pHRU=pModel->GetHRUByID(s_to_i(s[1]));
+      pHRU=pModel->GetHRUByID(s_to_ll(s[1]));
       if(pHRU!=NULL) {
         HRU_type hru_type=StringToHRUType(s[2]);
         if(hru_type!=HRU_INVALID_TYPE) {
@@ -255,17 +255,17 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
           int nHRUs=pModel->GetNumHRUs();
           for (int i=0;i<Len;i++)
           {
-            int ind1,ind2;
+            long long int ind1,ind2;
             s_to_range(s[i],ind1,ind2);
             bool found=false;
             ExitGracefullyIf((ind2-ind1)>10000,"Parsing :RepopulateHRUGroup command: invalid range of HRU indices",BAD_DATA);
             bool gaps(false);
-            for (int ii=ind1;ii<=ind2;ii++)
+            for (long long int ii=ind1;ii<=ind2;ii++)
             {
               found=false;
               for (k=0;k<nHRUs;k++)
               {
-                if (pModel->GetHydroUnit(k)->GetID()==ii)
+                if (pModel->GetHydroUnit(k)->GetHRUID()==ii)
                 {
                   pHRUGrp->AddHRU(pModel->GetHydroUnit(k));found=true; break;
                 }

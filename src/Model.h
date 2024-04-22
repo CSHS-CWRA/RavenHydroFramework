@@ -393,7 +393,7 @@ public:/*-------------------------------------------------------*/
   int               GetNumSubBasins                   () const;
   int               GetNumSubBasinGroups              () const;
   CHydroUnit       *GetHydroUnit                      (const int k ) const;
-  CHydroUnit       *GetHRUByID                        (const int HRUID) const;
+  CHydroUnit       *GetHRUByID                        (const long long int HRUID) const;
   CHRUGroup        *GetHRUGroup                       (const int kk) const;
   CHRUGroup        *GetHRUGroup                       (const string name) const;
   CSubBasin        *GetSubBasin                       (const int p ) const;

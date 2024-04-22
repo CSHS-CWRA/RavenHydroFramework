@@ -9,7 +9,7 @@
 #include "ParseLib.h"
 #include "ControlStructures.h"
 
-CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUID,const optStruct &Options);
+CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long int &HRUID,const optStruct &Options);
 
 //////////////////////////////////////////////////////////////////
 /// \brief Parses HRU properties file
@@ -298,7 +298,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
           if (!pSoilProfile->GetTag().substr(0,8).compare("PAVEMENT")){HRUtype=HRU_ROCK;   }
           if (!pSoilProfile->GetTag().substr(0,7).compare("WETLAND" )){HRUtype=HRU_WETLAND;}
           pHRU=new CHydroUnit( pModel,
-                               s_to_i(s[0]),//ID
+                               s_to_ll(s[0]),//ID
                                pModel->GetNumHRUs(),//k - global model index
                                s_to_d(s[1]),//area
                                pModel->GetSubBasinIndex(SBID),
@@ -341,7 +341,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
       */
       if (Options.noisy) {cout <<":Reservoir"<<endl;}
       CReservoir *pRes;
-      int HRUID;
+      long long int HRUID;
       pRes=ReservoirParse(pp,s[1],pModel,HRUID,Options);
       pSB=pModel->GetSubBasinByID(pRes->GetSubbasinID());
       if (HRUID!=DOESNT_EXIST){
@@ -415,8 +415,8 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
                 in *= pModel->GetGlobalParams()->GetParameter("GAMMA_SCALE_MULTIPLIER");
               }
               if(!aParamStrings[i].compare("REACH_HRU_ID")) {
-                if(pModel->GetHRUByID((int)in)!=NULL) {
-                  in=pModel->GetHRUByID((int)in)->GetGlobalIndex(); //Convert ID to index
+                if(pModel->GetHRUByID((long long int)in)!=NULL) {
+                  in=pModel->GetHRUByID((long long int)in)->GetGlobalIndex(); //Convert ID to index
                 }
                 else {
                   ExitGracefully("ParseHRUPropsFile::invalid REACH_HRU_ID in :SubBasinProperties command",BAD_DATA_WARN);
@@ -472,7 +472,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
           int nHRUs=pModel->GetNumHRUs();
           for (i=0;i<Len;i++)
           {
-            int ind1,ind2;
+            long long int ind1,ind2;
             s_to_range(s[i],ind1,ind2);
             bool found=false;
             ExitGracefullyIf((ind2-ind1)>10000,"Parsing :HRUGroup command: invalid range of HRU indices",BAD_DATA);
@@ -482,7 +482,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
               found=false;
               for (k=0;k<nHRUs;k++)
               {
-                if (pModel->GetHydroUnit(k)->GetID()==ii)
+                if (pModel->GetHydroUnit(k)->GetHRUID()==ii)
                 {
                   pHRUGrp->AddHRU(pModel->GetHydroUnit(k));found=true; break;
                 }
@@ -553,7 +553,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             {
               for(k=0;k<pSBGrp->GetSubBasin(p)->GetNumHRUs();k++)
               {
-                pHRU=pModel->GetHRUByID(pSBGrp->GetSubBasin(p)->GetHRU(k)->GetID());
+                pHRU=pModel->GetHRUByID(pSBGrp->GetSubBasin(p)->GetHRU(k)->GetHRUID());
                 pHRUGrp->AddHRU(pHRU);
               }
             }
@@ -900,7 +900,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
       }
       for(int k=0;k<pHRUGrp1->GetNumHRUs();k++){
         for (int k2 = 0; k2 < pHRUGrp2->GetNumHRUs(); k2++) {
-          if (pHRUGrp1->GetHRU(k)->GetID() == pHRUGrp2->GetHRU(k2)->GetID()) {
+          if (pHRUGrp1->GetHRU(k)->GetHRUID() == pHRUGrp2->GetHRU(k2)->GetHRUID()) {
             pHRUGrp->AddHRU(pHRUGrp1->GetHRU(k));
             break;
           }
@@ -1034,7 +1034,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
                 for (int p = 0; p < pModel->GetNumSubBasins(); p++) {
                     // if (pSBGroup2->IsInGroup(pModel->GetSubBasin(p)->GetID())) {
                     // account for possibility of duplication in subbasins in each group being merged
-                    if (pSBGroup1->IsInGroup(pModel->GetSubBasin(p)->GetID()) & !pSBGroup->IsInGroup(pModel->GetSubBasin(p)->GetID())) {
+                    if (pSBGroup1->IsInGroup(pModel->GetSubBasin(p)->GetID()) && !pSBGroup->IsInGroup(pModel->GetSubBasin(p)->GetID())) {
                         pSBGroup->AddSubbasin(pModel->GetSubBasin(p));
                     }
                 }
@@ -1162,7 +1162,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
 /// \param pModel [in] pointer to model
 /// \param Options [in] model options structure
 //
-CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUID,const optStruct &Options)
+CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long int &HRUID,const optStruct &Options)
 {
 
   /*Examples:
@@ -1324,7 +1324,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
     else if(!strcmp(s[0],":HRUID"))
     {
       if(Options.noisy) { cout << ":HRUID" << endl; }
-      HRUID = s_to_i(s[1]);
+      HRUID = s_to_ll(s[1]);
     }
     else if(!strcmp(s[0],":Type"))
     {

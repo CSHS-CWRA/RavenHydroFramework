@@ -287,6 +287,10 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         else if(IsComment(s[0],Len)) { if(Options.noisy) { cout << "#" << endl; } }
         else if(!strcmp(s[0], ":Expression")) 
         {
+          if ((pConst!=NULL) && (pConst->pExpression != NULL)) {
+            ExitGracefully("ParseManagementFile: only one :Expression allowed in a :ManagementGoal or :ManagementConstraint command block.",BAD_DATA_WARN);
+            break;
+          }
           pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
           if (pExp!=NULL){
             pConst=pDO->AddConstraint(name,pExp,is_goal);
@@ -301,7 +305,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         }
         else if (!strcmp(s[0], ":Condition")) 
         {
-          //TODO: handle more complex, expression-based conditions 
+          //TODO: handle more complex, expression-based conditions - should replace with !Q32 > @max(!Q43,200) +3 ?? - no the rh
           if (pConst!=NULL){
             bool badcond=false;
             exp_condition *pCond = new exp_condition();
@@ -310,11 +314,23 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
             else if (!strcmp(s[2],"IS_GREATER_THAN")){pCond->compare=COMPARE_GREATERTHAN;}
             else if (!strcmp(s[2],"IS_LESS_THAN"   )){pCond->compare=COMPARE_LESSTHAN;}
             else if (!strcmp(s[2],"IS_EQUAL_TO"    )){pCond->compare=COMPARE_IS_EQUAL;}
-            else if (!strcmp(s[2],"IS_NOT_EQUAL_TO")){pCond->compare=COMPARE_NOT_EQUAL;}
+            else if (!strcmp(s[2],"IS_NOT_EQUAL_TO")){pCond->compare=COMPARE_NOT_EQUAL;} 
+            else {
+              ExitGracefully("ParseManagementFile: unrecognized comparison operator in :Condition statement",BAD_DATA_WARN);
+              break;
+            }
             pCond->value=s_to_d(s[3]);
             if (Len>=5){
               pCond->value2 = s_to_d(s[4]);
             }
+            if      (!strcmp(s[1],"DATE"     )){
+              pCond->date_string=s[3];
+              if (Len>=5){
+                pCond->date_string2 = s[4];
+              }
+            }
+
+
             if (pCond->dv_name[0] == '!') { //decision variable 
               char   tmp =pCond->dv_name[1];
               string tmp2=pCond->dv_name.substr(2);
@@ -342,6 +358,8 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
               }
             }
             if (!badcond){
+
+              pCond->p_index=pDO->GetIndexFromDVString(pCond->dv_name); 
               pConst->AddCondition(pCond);
             }
           } 

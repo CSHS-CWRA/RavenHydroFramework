@@ -545,7 +545,12 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
     printf("ForcingGrid: Interval:        %f\n",_interval);
     printf("ForcingGrid: _start_day:      %f\n",_start_day);
     printf("ForcingGrid: _start_year:     %i\n",_start_year);
-    printf("ForcingGrid: duration:        %f\n",(double)(_nPulses)*_interval);
+    printf("ForcingGrid: duration [d]:    %f\n",(double)(_nPulses)*_interval);
+    printf("ForcingGrid: ntime:           %i\n",_nPulses);
+    int yr;double day;
+    AddTime(_start_day,_start_year,(double)(_nPulses)*_interval,Options.calendar,day,yr);
+    printf("ForcingGrid: end day:         %f\n",day);
+    printf("ForcingGrid: end year:        %i\n",yr);
     printf("\n");
   }
 #endif   // ends #ifdef _RVNETCDF_
@@ -675,6 +680,11 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     // determine chunk size
     // -------------------------------
     iChunkSize = min(_ChunkSize,int((Options.duration - global_model_time) / _interval));
+
+    cout << "CALCULATED CHUNKSIZE = " << iChunkSize << " " << _ChunkSize << " "
+         << Options.duration << " " << global_model_time << " "<<_interval<< endl;
+
+
 
     // Open NetCDF file, Get the id of the forcing data, varid_f
     // -------------------------------
@@ -1078,6 +1088,9 @@ void CForcingGrid::Initialize( const optStruct &Options )
   double local_simulation_start = _t_corr;
   double local_simulation_end   = _t_corr + model_duration;
 
+  //cout << "CHECKING OVERLAP" <<endl;
+  //cout << " sim start: "<<_t_corr<<" end: "<<local_simulation_end<<endl;
+
   if(Options.deltaresFEWS) { local_simulation_start-=_interval; }//first timestep in FEWS netCDF output is noise
   if ((local_simulation_start<0) && (local_simulation_start>-TIME_CORRECTION)){ local_simulation_start=0.0; }//correct for floating point errors
 
@@ -1090,8 +1103,8 @@ void CForcingGrid::Initialize( const optStruct &Options )
 
     ExitGracefully("CForcingGrid::Initialize: gridded forcing data not available for entire model simulation duration", BAD_DATA);
   }
-  if (duration + model_timestep < local_simulation_end)    //run out of data before simulation finishes
-  {                                                        // +model_timestep is for coincdent duration & data
+  if (duration + 0.0*model_timestep +TIME_CORRECTION < local_simulation_end)    //run out of data before simulation finishes
+  {                                                        // +model_timestep is for coincdent duration & data (and, I think was wrong JRC 2024-04-18)
     cout << "Initialize forcing grid  '" << _varname.c_str() << "'" << endl;
     cout << "  time series start day, year, duration :" << _start_day      << "," << _start_year      << " " << duration       << endl;
     cout << "  model start day, year, duration :"       << model_start_day << "," << model_start_year << " " << model_duration << endl;
@@ -1701,7 +1714,7 @@ bool   CForcingGrid::CheckWeightArray(const int nHydroUnits, const int nGridCell
       }
       bool enabled=pModel->GetHydroUnit(k)->IsEnabled();
       if ((fabs(sum_HRU - 1.0) > 0.0001) && (enabled)) {
-        cout<<"HRU ID = "<<pModel->GetHydroUnit(k)->GetID()<<" Sum Forcing Weights = "<<sum_HRU<<endl;
+        cout<<"HRU ID = "<<pModel->GetHydroUnit(k)->GetHRUID()<<" Sum Forcing Weights = "<<sum_HRU<<endl;
         for(int i=0; i<_nWeights[k]; i++) { cout<< _GridWeight[k][i]<<" ";} cout<<endl;
         check = false;
       }

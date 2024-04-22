@@ -26,7 +26,7 @@
 /// \param *lult_class [in] Dominant land use class
 //
 CHydroUnit::CHydroUnit(const CModelABC        *pMod,
-                       const int               identifier,
+                       const long long int     identifier,
                        const int               global_ind,
                        const double            drainage_area,
                        const int               basin_ind,

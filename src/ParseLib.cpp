@@ -9,6 +9,7 @@
 inline int      s_to_i (char *s1)            {return (int)atof(s1);   }
 inline double   s_to_d (char *s1)            {return atof(s1);        }
 inline bool     s_to_b (char *s1)            {return ((int)atof(s1)!=0);   }
+inline long long int s_to_ll(char *s1){return (long long int)atoll(s1);}
 
 /*----------------------------------------------------------------
   Constructor
@@ -56,9 +57,9 @@ string CParser::Peek()
     
     string firstword = "";
     if (Len > 0) {firstword=s[0];}
-    if (!eof){
+    //if (!eof){
       _INPUT->seekg(place ,std::ios_base::beg);    // Return to position before peeked line 
-    }
+    //}
     return firstword;
 }
 //////////////////////////////////////////////////////////////////
@@ -113,6 +114,7 @@ bool CParser::Tokenize(char **out, int &numwords){
   if (_INPUT->eof()){return true;}
   _INPUT->getline(wholeline,MAXCHARINLINE);            //get entire line as 1 string
   if (_INPUT->fail()){
+    return true; //handles blank line peeked at end of file (for some reason)
     //cout<<"failed: "<<filename<<" line "<<l<<"|"<<wholeline<<"|"<<INPUT->ios::eofbit<<endl;
     //ExitGracefully("Too many characters in line or (maybe) using Mac-style carriage return line endings.",BAD_DATA);
   }

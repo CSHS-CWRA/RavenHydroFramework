@@ -154,16 +154,21 @@ struct decision_var
 //
 struct exp_condition
 {
-  string      dv_name;   //< decision variable name (e.g., Q1023) or "MONTH"
+  string      dv_name;   //< decision variable name (e.g., Q1023) or "MONTH" or "DATE" or "DAY_OF_YEAR"
   double      value;     //< conditional value 
   double      value2;    //< second conditional (if COMPARE_BETWEEN)
+  string      date_string;  //< conditional value (if date)
+  string      date_string2; //< second conditional (if DATE COMPARE_BETWEEN)
+
   comparison  compare;   //> comparison operator, e.g., COMPARE_IS_EQUAL
+  long        p_index;     //> subbasin or demand index of LHS of condition expression (or DOESNT_EXIST)
 
   exp_condition(){
     dv_name="";
     value=0.0;
     value2=0.0;
     compare=COMPARE_IS_EQUAL;
+    p_index=DOESNT_EXIST;
   }
 };
 //////////////////////////////////////////////////////////////////
@@ -262,7 +267,7 @@ private: /*------------------------------------------------------*/
 #endif 
   double              EvaluateTerm(expressionTerm **pTerms,const int k, const double &t) const;
 
-  bool             CheckConditions(const int ii, const time_struct &tt) const; 
+  bool             CheckGoalConditions(const int ii, const time_struct &tt,const optStruct &Options) const; 
 
   bool        UserTimeSeriesExists(string TSname) const;
   void     AddReservoirConstraints();
@@ -279,6 +284,7 @@ public: /*------------------------------------------------------*/
   double GetDemandDelivery     (const int p) const;
   int    GetNumUserDVs         () const;
   int    GetDebugLevel         () const; 
+  int    GetIndexFromDVString  (string s) const;
 
   void   SetHistoryLength      (const int n);
   void   SetCumulativeDate     (const int julian_date, const string demandID);

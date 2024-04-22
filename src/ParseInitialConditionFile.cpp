@@ -385,7 +385,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       }
 
       // Read body of Table -----------------------------------------------------
-      int HRUID;
+      long long int HRUID;
       CHydroUnit *pHRU;
       CHRUGroup *pHRUGrp;
       while ( (Len==0) ||
@@ -407,7 +407,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
 
           pHRUGrp=pModel->GetHRUGroup(s[0]);
 
-          HRUID=s_to_i(s[0]);
+          HRUID=s_to_ll(s[0]);
           pHRU=pModel->GetHRUByID(HRUID);
 
           if((pHRU==NULL) && (pHRUGrp==NULL)){
@@ -917,7 +917,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         string name = CStateVariable::GetStateVarLongName(pModel->GetStateVarType(i),
                                                           pModel->GetStateVarLayer(i),
                                                           pModel->GetTransportModel());
-        string warn ="maximum state variable limit exceeded in initial conditions for " + name+ " (in HRU "+to_string(pHRU->GetID())+") in .rvc file";
+        string warn ="maximum state variable limit exceeded in initial conditions for " + name+ " (in HRU "+to_string(pHRU->GetHRUID())+") in .rvc file";
         WriteWarning(warn,Options.noisy);
 
         if (!Options.keepUBCWMbugs){
