@@ -696,6 +696,7 @@
     <ClCompile Include="ControlStructures.cpp" />
     <ClCompile Include="Convolution.cpp" />
     <ClCompile Include="CropGrowth.cpp" />
+    <ClCompile Include="CustomTable.cpp" />
     <ClCompile Include="DDS.cpp" />
     <ClCompile Include="Decay.cpp" />
     <ClCompile Include="DemandExpressionHandling.cpp" />

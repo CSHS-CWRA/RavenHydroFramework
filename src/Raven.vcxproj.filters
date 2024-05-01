@@ -468,6 +468,9 @@
     <ClCompile Include="ParseManagementFile.cpp">
       <Filter>Source Files\_Driver\Input Parsing</Filter>
     </ClCompile>
+    <ClCompile Include="CustomTable.cpp">
+      <Filter>Source Files\_Driver</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Properties.h">

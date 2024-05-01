@@ -253,7 +253,7 @@ void CGWDrain::UpdateRatesOfChange(const double      *state_vars,
       if (old_head < _aElevations[index]) { old_head = _aElevations[index]; }
 
       //-- Get HRU-node overlap weight & node area
-      weight = pGWModel->GetOverlapWeight(HRUid, n);
+      weight = pGWModel->GetOverlapWeight((int)(HRUid), n);
       area = pGWModel->GetNodeArea(n);
 
       //-- Calc drain flow change

@@ -1304,6 +1304,11 @@ case(DIAG_DAILY_KGE)://----------------------------------------------------
     {
       spearman=0;
     }
+
+    delete[] rank1;
+    delete[] rank2;
+    delete[] mvals;
+    delete[] ovals;
     if(N>0)
     {
       return spearman;
@@ -1314,11 +1319,6 @@ case(DIAG_DAILY_KGE)://----------------------------------------------------
       WriteWarning(warn,Options.noisy);
       return -ALMOST_INF;
     }
-
-    delete[] rank1;
-    delete[] rank2;
-    delete[] mvals;
-    delete[] ovals;
   }
   default:
   {
@@ -1326,7 +1326,8 @@ case(DIAG_DAILY_KGE)://----------------------------------------------------
   }
   }//end switch
 
-  delete [] baseweight;
+  delete [] baseweight; //\todo: fix! This never gets called!!
+  return 0;
 }
 /*****************************************************************
 Constructor/Destructor

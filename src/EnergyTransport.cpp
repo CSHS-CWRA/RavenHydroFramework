@@ -653,9 +653,9 @@ void   CEnthalpyModel::UpdateReachEnergySourceTerms(const int p)
   double hstar    =pBasin->GetConvectionCoeff(); //[MJ/m2/d/K]
   double qmix     =pBasin->GetHyporheicFlux();   //[m/d]
   double bed_ratio=pBasin->GetTopWidth()/max(pBasin->GetWettedPerimeter(),0.001);
-  double dbar     =pBasin->GetRiverDepth();
-  double Ax       =pBasin->GetXSectArea();
-  double L        =pBasin->GetReachLength();
+  double dbar     =pBasin->GetRiverDepth(); //ensured to be >0
+  double Ax       =pBasin->GetXSectArea();  //ensured to be >0
+  double L        =max(pBasin->GetReachLength(),1.0);
   double qlat     =pBasin->GetIntegratedLocalOutflow(tstep)/L; //total
   double qhlat     =0.5*(_aMlocal[p] + _aMlocLast[p]) / L; //q_lat*h_lat
 
@@ -677,6 +677,7 @@ void   CEnthalpyModel::UpdateReachEnergySourceTerms(const int p)
 
   S/=dbar;
 
+  //cout<<S<<" Qf:"<<Qf<<" h*:"<<hstar<<" Tlin:"<<temp_lin<<" qhlat:"<<qhlat<<" radin:"<<(SW+LW_in)<<" AET: "<<AET<<" kprime:"<<kprime<<" TGW:"<<temp_GW<<" Tbed:"<<temp_bed<<" Tai:"<<temp_air<<" dAx:"<<(dbar/Ax)<<endl;
   _aEnthalpyBeta[p]=(hstar + kbed + klin + qlat*dbar/Ax*HCP_WATER + kprime)/dbar/HCP_WATER;
 
   for(int n=_nMinHist[p] - 1; n>0; n--) {
@@ -741,7 +742,8 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
 
   if(pBasin->IsHeadwater())
   {
-    Q_sens=Q_lat=Q_GW=Q_rad_in=Q_lw_in=Q_lw_out=Q_fric=0.0;
+    Q_sens=Q_cond=Q_lat=Q_GW=Q_rad_in=Q_lw_in=Q_lw_out=Q_fric=0.0;
+    Tave=0.0;
     return 0.0;
   }
 
@@ -765,7 +767,7 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
   double bed_ratio=pBasin->GetTopWidth()/max(pBasin->GetWettedPerimeter(),0.001);
   double dbar     =pBasin->GetRiverDepth();        //averaged depth [m]
   double Ax       =pBasin->GetXSectArea();         //[m2]
-  double As       =pBasin->GetTopWidth()*pBasin->GetReachLength(); //[m2]
+  double As       =pBasin->GetTopWidth()*max(pBasin->GetReachLength(),1.0); //[m2]
 
   double kbed     =_aKbed[p];                                      //[MJ/m2/d/K]
   double klin     =4.0*STEFAN_BOLTZ*EMISS_WATER*pow(temp_lin,3.0); //[MJ/m2/d/K]
@@ -806,14 +808,17 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
                                          hin_hist[m+2-1],
                                          beta, dt);
       dA=(aRouteHydro[k]/m)*As;
-      dA/=(1-aRouteHydro[0]);//TMP DEBUG - Until I figure out how to handle zeroth segment
-
+      if (aRouteHydro[0]!=1.0){ //otherwise, dA will be zero anyhow -avoids divide by zero error
+        dA/=(1.0-aRouteHydro[0]);//TMP DEBUG - Until I figure out how to handle zeroth segment
+      }
       Q_sens   +=dA*hstar *(temp_air-Tbar_km);   //[m2]*[MJ/m2/d/K]*[K]=[MJ/d]
       Q_cond   +=dA*kbed  *(temp_bed-Tbar_km);
       Q_lw_out +=dA*klin  *(0.75*temp_lin-(Tbar_km+ZERO_CELSIUS)); //linearized - works except at T~0
       temp_average+=dA/As*Tbar_km;
+      if (As == 0.0) {temp_average=0.0;}
     }
   }
+  
   //Eulerian terms:
   Q_rad_in=SW*As;   //[MJ/d]
   Q_lw_in =LW_in*As; //[MJ/d]
@@ -961,10 +966,11 @@ void    CEnthalpyModel::ApplyConvolutionRouting(const int p,const double *aRoute
   }
 
   double dbed = _pModel->GetSubBasin(p)->GetRiverbedThickness();
+
   if (dbed != 0) {
     double ee=exp(-(_aKbed[p]/HCP_WATER/dbed)*tstep);
     //_aBedTemp[p] +=k*(_aTave_reach[p] - _aBedTemp[p]) * tstep;
-    _aBedTemp[p] = _aBedTemp[p]*(ee)+_aTave_reach[p]*(1-ee);
+    _aBedTemp[p] = _aBedTemp[p]*(ee)+_aTave_reach[p]*(1.0-ee);
   }
 }
 
@@ -1122,12 +1128,13 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
     if ((pSB->IsGauged()) && (pSB->IsEnabled()))
     {
       mult = 1.0 / pSB->GetReachLength() / pSB->GetTopWidth();//convert everything to MJ/m2/d
+      if ((pSB->GetReachLength()==0) || (pSB->GetTopWidth()==0)){mult=0.0;}
 
       Ein  = 0.5 * (_aMinHist  [p][0] + _aMinHist[p][1]);
       Eout = 0.5 * (_aMout_last[p]    + _aMout   [p][pSB->GetNumSegments() - 1]);
       GetEnergyLossesFromReach(p, Q_sens, Q_cond, Q_lat, Q_GW, Q_sw_in,Q_lw_in,Q_lw_out, Q_fric, Tave);
 
-      if (pSB->GetTopWidth() < REAL_SMALL) {//running dry
+      if ((pSB->GetTopWidth() < REAL_SMALL) || ( pSB->IsHeadwater())){//running dry or no reach
         _STREAMOUT << ",,,,,,,,,,";
       }
       else {

@@ -477,7 +477,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             bool found=false;
             ExitGracefullyIf((ind2-ind1)>10000,"Parsing :HRUGroup command: invalid range of HRU indices",BAD_DATA);
             bool gaps(false);
-            for (int ii=ind1;ii<=ind2;ii++)
+            for (long long int ii=ind1;ii<=ind2;ii++)
             {
               found=false;
               for (k=0;k<nHRUs;k++)

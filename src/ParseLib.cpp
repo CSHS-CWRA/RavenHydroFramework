@@ -124,7 +124,6 @@ bool CParser::Tokenize(char **out, int &numwords){
  
   if ((*wholeline) == 0) {
     numwords=0;
-    out[0]="";
     return false;
   }
    

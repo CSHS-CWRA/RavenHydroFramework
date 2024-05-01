@@ -770,7 +770,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
                                            name,                 // ForcingType
                                            loc_ID,               // critical information about timeseries, e.g. subbasin ID or HRU ID
                                            gauge_name,
-                                           shift_to_per_ending,  // true if data are period ending rtaher than period ending
+                                           shift_to_per_ending,  // true if data are period ending rather than period ending
                                            shift_from_per_ending,
                                            FileNameNC,           // file name of NetCDF
                                            VarNameNC,            // name of variable in NetCDF

@@ -466,6 +466,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":Alias"                     )){code=98; }
     else if  (!strcmp(s[0],":CustomOutput"              )){code=99; }
     else if  (!strcmp(s[0],":CustomOutputInterval"      )){code=100;}
+    else if  (!strcmp(s[0],":CustomTable"               )){code=101;}
     else if  (!strcmp(s[0],":CallExternalScript"        )){code=102;}
     else if  (!strcmp(s[0],":ReadLiveFile"              )){code=104;}
     else if  (!strcmp(s[0],":RandomSeed"                )){code=105;}
@@ -1788,6 +1789,45 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:CustomOutputInterval [interval, in days]*/
       if(Options.noisy) { cout <<"Custom output interval "<<endl; }
       if(Len<2) { ImproperFormatWarning(":CustomOutputInterval",p,Options.noisy); break; }
+      Options.custom_interval=s_to_d(s[1]);
+      if(Options.custom_interval==1.0) {
+        WriteWarning("CustomOutputInterval: using interval of 1 day is equivalent to use the DAILY aggregation of custom output, which is preferred",Options.noisy);
+      }
+      if((Options.custom_interval<1.0) || (floor(Options.custom_interval)!=Options.custom_interval)) {
+        ExitGracefully(":CustomOutputInterval: improper interval specified. Must be >0 and integer",BAD_DATA_WARN);
+      }
+      break;
+    }
+    case(101):  //--------------------------------------------
+    {/*:CustomTable [SBGroup] [filename]
+       [variable/forcing] x ncols
+     :EndCustomTable
+     */
+      if(Options.noisy) { cout <<"Custom tabular output "<<endl; }
+      if(Len<3) { ImproperFormatWarning(":CustomTable",p,Options.noisy); break; }
+      int pp=pModel->GetSubBasinGroup(s[1])->GetGlobalIndex();
+      CCustomTable *pTab=new CCustomTable(s[2],pp,pModel);
+      
+      while ((Len==0) || (strcmp(s[0],":EndHRUGroup")))
+      {
+        p->Tokenize(s,Len);
+        if      (IsComment(s[0], Len)){}//comment or blank line
+        else if (!strcmp(s[0],":EndCustomTable")){}//done
+        else {
+          int lay=DOESNT_EXIST;
+          sv_type sv=pStateVar->StringToSVType(s[0],lay,false); 
+          if (sv != UNRECOGNIZED_SVTYPE) {
+            pTab->AddStateVariable(sv,lay);
+          }
+          else {
+            forcing_type ft =GetForcingTypeFromString(s[0]);
+            if (ft != F_UNRECOGNIZED) {
+              pTab->AddForcing(ft);
+            }
+          }
+          pModel->AddCustomTable(pTab);
+        }
+      }
       Options.custom_interval=s_to_d(s[1]);
       if(Options.custom_interval==1.0) {
         WriteWarning("CustomOutputInterval: using interval of 1 day is equivalent to use the DAILY aggregation of custom output, which is preferred",Options.noisy);

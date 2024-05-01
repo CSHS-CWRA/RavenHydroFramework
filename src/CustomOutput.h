@@ -136,4 +136,37 @@ private:
   void   WriteEnSimFileHeader(const optStruct &Options);
   void  WriteNetCDFFileHeader(const optStruct &Options);
 };
+
+///////////////////////////////////////////////////////////////////
+/// \brief Data abstraction for custom table output generator
+class CCustomTable {
+
+private:
+
+  ofstream      _CUSTTAB;      ///< output file stream
+  string        _filename; 
+
+  int           _sb_grp_ind;   ///<index of subbasin group 
+
+  const CModel *_pModel;       ///< pointer to model
+  
+  forcing_type *_aForcings;
+  sv_type      *_aSVtypes;
+  int          *_aLayers; 
+  int           _nCols; 
+
+  void      ExpandArrays();
+
+public:
+  CCustomTable(string filename, int kk, const CModel *pMod);
+  ~CCustomTable();
+
+  void      AddStateVariable (const sv_type &sv, const int lay);
+  void      AddForcing       (const forcing_type &ff);
+
+  void      WriteFileHeader  (const optStruct &Options);
+  void      WriteCustomTable (const time_struct &tt, const optStruct &Options);
+
+  void      CloseFile        (const optStruct &Options);
+};
 #endif

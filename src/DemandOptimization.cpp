@@ -74,7 +74,7 @@ CDemandOptimizer::~CDemandOptimizer()
   for (int i=0;i<_nUserTimeSeries;  i++){delete _pUserTimeSeries[i];  }delete [] _pUserTimeSeries;
   for (int i=0;i<_nUserLookupTables;i++){delete _pUserLookupTables[i];}delete [] _pUserLookupTables;
 
-  for (int p=0;p<_nEnabledSubBasins; p++){delete [] _aUpstreamDemands[p]; } delete [] _aUpstreamDemands;
+  for (int p=0;p<_pModel->GetNumSubBasins(); p++){delete [] _aUpstreamDemands[p]; } delete [] _aUpstreamDemands;
   delete [] _aUpCount;
 
   for (int p = 0; p < _nEnabledSubBasins;p++){
@@ -456,8 +456,8 @@ void push(int*&a, const int &v, int &n)
   int *tmp=new int [n+1];
   for (int i = 0; i < n; i++) { tmp[i]=a[i];}
   tmp[n]=v;
-  a=tmp;
   if (n>0){delete [] a;}
+  a=tmp;
   n++;
 }
 //////////////////////////////////////////////////////////////////
@@ -1212,7 +1212,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
       for (int dd = 0; dd<pSB->GetNumWaterDemands();dd++)
       {
         col_ind[i]=GetDVColumnInd(DV_DELIVERY,d);
-        row_val[i]=+1.0;
+        row_val[i]=1.0;
         i++; d++;
       }
       if (pSB->GetReservoir() != NULL) {
@@ -1229,6 +1229,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
       RHS+=aDivert[p];   //diverted to (delayed by one day, based upon yesterday's Q)
       for (int n = 1; n < pSB->GetInflowHistorySize(); n++) {
         RHS+=pSB->GetRoutingHydrograph()[n]*pSB->GetInflowHistory()[n-1]; // [n-1] is because this inflow history has not yet been updated
+        RHS+=pSB->GetRoutingHydrograph()[n]*pSB->GetSpecifiedInflow(t-n*Options.timestep);
       }
       for (int n = 1; n < pSB->GetInflowHistorySize(); n++) {
         RHS += pSB->GetUnitHydrograph()[n] * pSB->GetLatHistory()[n-1];   // [n-1] is because this inflow history has not yet been updated
@@ -1273,7 +1274,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
       Adt      =pRes->GetSurfaceArea()/Options.timestep/SEC_PER_DAY;
       k        =pRes->GetHRUIndex();
 
-      if (pRes->GetHRUIndex() != NULL) {
+      if (pRes->GetHRUIndex() != DOESNT_EXIST) {
         ET   =pModel->GetHydroUnit(k)->GetForcingFunctions()->OW_PET / SEC_PER_DAY / MM_PER_METER; //average for timestep, in m/s
         ET  *=pModel->GetHydroUnit(k)->GetSurfaceProps()->lake_PET_corr;
         ET  *=pRes->GetSurfaceArea(); //m3/s

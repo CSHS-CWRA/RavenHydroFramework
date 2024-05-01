@@ -257,7 +257,7 @@ bool ParseGWFile(CModel*& pModel, const optStruct& Options)
                 ExitGracefully("ParseGWFile: :OverlapWeights cell weights add to above 1.0",BAD_DATA);
               }
               //-- All good? Set the weight in the sparse "matrix"
-              pGWModel->SetOverlapWeight(HRUid, nodeid, wnode, Options);
+              pGWModel->SetOverlapWeight((int)(HRUid), nodeid, wnode, Options);
             }
           }
           else {

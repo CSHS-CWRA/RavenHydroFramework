@@ -1549,6 +1549,16 @@ void CModel::AddCustomOutput(CCustomOutput *pCO)
 }
 
 //////////////////////////////////////////////////////////////////
+/// \brief Adds custom table object
+///
+/// \param *pTab [in] (valid) pointer to Custom table object to be added
+//
+void CModel::AddCustomTable(CCustomTable *pTab)
+{
+  if (!DynArrayAppend((void**&)(_pCustomTables),(void*)(pTab),_nCustomTables)){
+    ExitGracefully("CModel::AddCustomTable: adding NULL custom table",BAD_DATA);}
+}
+//////////////////////////////////////////////////////////////////
 /// \brief adds additional forcing perturbation
 /// \param type [in] forcing type to be perturbed
 /// \param distrib [in] sampling distribution type

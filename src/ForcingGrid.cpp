@@ -681,11 +681,6 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     // -------------------------------
     iChunkSize = min(_ChunkSize,int((Options.duration - global_model_time) / _interval));
 
-    cout << "CALCULATED CHUNKSIZE = " << iChunkSize << " " << _ChunkSize << " "
-         << Options.duration << " " << global_model_time << " "<<_interval<< endl;
-
-
-
     // Open NetCDF file, Get the id of the forcing data, varid_f
     // -------------------------------
     string filename_e=_filename;
