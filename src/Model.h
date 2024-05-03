@@ -156,7 +156,7 @@ private:/*------------------------------------------------------*/
   CCustomOutput**_pCustomOutputs; ///< Array of pointers to custom output objects [size:_nCustomOutputs]
   int            _nCustomOutputs; ///< Nuber of custom output objects
   CCustomTable  **_pCustomTables; ///< Array of pointers to custom table objects [size:_nCustomTables]
-  int             _nCustomTables; ///< Number of custom tables 
+  int             _nCustomTables; ///< Number of custom tables
   ofstream                _HYDRO; ///< output file stream for Hydrographs.csv
   ofstream              _STORAGE; ///< output file stream for WatershedStorage.csv
   ofstream             _FORCINGS; ///< output file stream for ForcingFunctions.csv

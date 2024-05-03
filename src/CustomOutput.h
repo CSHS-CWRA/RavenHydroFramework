@@ -144,16 +144,16 @@ class CCustomTable {
 private:
 
   ofstream      _CUSTTAB;      ///< output file stream
-  string        _filename; 
+  string        _filename;
 
-  int           _sb_grp_ind;   ///<index of subbasin group 
+  int           _sb_grp_ind;   ///<index of subbasin group
 
   const CModel *_pModel;       ///< pointer to model
-  
+
   forcing_type *_aForcings;
   sv_type      *_aSVtypes;
-  int          *_aLayers; 
-  int           _nCols; 
+  int          *_aLayers;
+  int           _nCols;
 
   void      ExpandArrays();
 
