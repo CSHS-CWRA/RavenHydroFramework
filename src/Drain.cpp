@@ -235,7 +235,7 @@ void CGWDrain::UpdateRatesOfChange(const double      *state_vars,
   rates[0] = 0.0;
 
   //-- Loop over drain nodes in HRU
-  HRU_nodes = getHRUnodes((int)(HRUid)); //todo[funct] - support long long int 
+  HRU_nodes = getHRUnodes((int)(HRUid)); //todo[funct] - support long long int
 
   for (unsigned int n=0; n< HRU_nodes.size(); n++)
   {

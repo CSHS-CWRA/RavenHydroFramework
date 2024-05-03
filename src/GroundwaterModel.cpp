@@ -715,7 +715,7 @@ void CGroundwaterModel::AddFlux(const int k, const double moved)
 ///
 void CGroundwaterModel::FluxToGWEquation(const CHydroUnit *pHRU, double GWVal)
 {
-  long long int HRUID; 
+  long long int HRUID;
   int k;
   double      flux, weight, area, node_rech;
   int         n,active_node;
@@ -723,7 +723,7 @@ void CGroundwaterModel::FluxToGWEquation(const CHydroUnit *pHRU, double GWVal)
 
   k               = pHRU->GetGlobalIndex();
   HRUID           = pHRU->GetHRUID();
-  HRUnodes        = GetNodesByHRU((int)(HRUID)); //\todo[funct] - support long 
+  HRUnodes        = GetNodesByHRU((int)(HRUID)); //\todo[funct] - support long
 
   //-- Calc Non-GWSW Process contribution    //testing flux = 9.027605E-04;
   flux = (GWVal - _aGWSWFluxes[k]) / MM_PER_METER; // [mm/T] to [m/T]
@@ -735,7 +735,7 @@ void CGroundwaterModel::FluxToGWEquation(const CHydroUnit *pHRU, double GWVal)
     // Correct to topmost active node
     n           = HRUnodes[j];
     active_node = GetTopActiveNode(n);
-    weight      = GetOverlapWeight((int)(HRUID), n); //todo[funct] - support long long int 
+    weight      = GetOverlapWeight((int)(HRUID), n); //todo[funct] - support long long int
     area        = GetNodeArea(n);
     node_rech   = flux * area * weight; // [m3/d] * overlap weight-corrected
     // GW Rate
