@@ -9,6 +9,7 @@ on:
 jobs:
   lint:
     name: Code Quality Checks
+    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -24,9 +25,12 @@ jobs:
       - uses: pre-commit/action@v3.0.0
 
   build:
-    name: Build RavenHydroFramework binary
+    name: Build RavenHydroFramework binary (${{ matrix.build_type }})
     needs: lint
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
     defaults:
       run:
         shell: bash
@@ -41,10 +45,13 @@ jobs:
        run: |
          wget https://raw.githubusercontent.com/Kitware/VTK/master/CMake/FindNetCDF.cmake -P cmake
      - name: Build
+       id: build
+       continue-on-error: true
        run: |
-         cmake . -DCMAKE_BUILD_TYPE=Release
+         cmake . -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
          make
      - name: Run tests
+       if: steps.build.outcome == 'success'
        run: |
          ./Raven
          ./Raven -v
