@@ -53,7 +53,7 @@ jobs:
        id: build
        continue-on-error: true
        run: |
-         cmake . -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+         cmake --build . --config ${{ matrix.build_type }}
          make
      - name: Run tests
        if: steps.build.outcome == 'success'
