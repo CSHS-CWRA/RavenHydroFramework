@@ -26,7 +26,6 @@ jobs:
 
   build:
     name: Build RavenHydroFramework binary (${{ matrix.build_type }})
-    needs: lint
     runs-on: ubuntu-latest
     strategy:
       matrix:
