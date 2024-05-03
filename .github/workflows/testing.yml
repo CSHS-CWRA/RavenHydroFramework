@@ -22,7 +22,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install uncrustify cppcheck iwyu
       - uses: actions/setup-python@v4
-      - uses: pre-commit/action@v3.0.0
+      - name: Install pre-commit
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pre-commit
+      - name: Run pre-commit
+        run: |
+          pre-commit run --all-files
 
   build:
     name: Build RavenHydroFramework binary (${{ matrix.build_type }})
@@ -48,7 +54,7 @@ jobs:
        continue-on-error: true
        run: |
          cmake . -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-         make
+         make -j4
      - name: Run tests
        if: steps.build.outcome == 'success'
        run: |
