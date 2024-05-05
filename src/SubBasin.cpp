@@ -118,6 +118,8 @@ CSubBasin::CSubBasin( const long           Identifier,
   _Qirr=0.0;
   _QirrLast=0.0;
   _Qdelivered=0.0;
+  _QdivLast=0.0;
+  _Qdiverted=0;
   _aQdelivered=NULL;
 
   //Below are initialized in GenerateCatchmentHydrograph, GenerateRoutingHydrograph
@@ -578,6 +580,8 @@ double CSubBasin::ApplyIrrigationDemand(const double &t,const double &Q,const bo
 
   //if using Management optimization, delivery determined by optimizer
   if (optimized) {
+    //cout<<setprecision(5)<< _Qdelivered<<" of "<<GetTotalWaterDemand(t)<<" applied ("<<setprecision(3)<<_Qdelivered/GetTotalWaterDemand(t)*100<<"%) ("<<_Qdelivered/Q*100<<"% of flow)" << endl;
+    return min(Q,_Qdelivered); //\todo[fix] - this min shouldnt be required.
     return _Qdelivered; //total delivered as calculated from management optimization
   }
 
@@ -797,7 +801,7 @@ string CSubBasin::GetWaterDemandName   (const int ii) const
   return _pIrrigDemands[ii]->GetName();
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Returns Outflow at start of current timestep (during solution) or end of completed timestep [m^3/s]
+/// \brief Returns Outflow from subbasin at start of current timestep (during solution) or end of completed timestep [m^3/s]
 /// \return Outflow at start of current timestep (during solution) or end of completed timestep [m^3/s]
 //
 double    CSubBasin::GetOutflowRate   () const
@@ -807,7 +811,28 @@ double    CSubBasin::GetOutflowRate   () const
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Returns Outflow at start of previous timestep (during solution) or start of completed timestep [m^3/s]
+/// \brief Returns Outflow from channel reach (even if reservoir present) before diversions at start of current timestep (during solution) or end of completed timestep [m^3/s]
+/// \note used for calculating flow diversions 
+/// \return Channel outflow at start of current timestep (during solution) or end of completed timestep [m^3/s]
+//
+double    CSubBasin::GetChannelOutflowRate   () const
+{
+  return _aQout[_nSegments-1]+_Qdiverted; //[m3/s](from start of time step until after solver is called)
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns Outflow from channel reach (even if reservoir present) before diversions at start of current timestep (during solution) or end of completed timestep [m^3/s]
+/// \note used for calculating flow diversions 
+/// \return Channel outflow at start of current timestep (during solution) or end of completed timestep [m^3/s]
+//
+double    CSubBasin::GetLastChannelOutflowRate   () const
+{
+  return _QoutLast+_QdivLast; //[m3/s](from start of time step until after solver is called)
+}
+
+
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns Outflow *from channel* at start of previous timestep (during solution) or start of completed timestep [m^3/s]
 /// \return Outflow at start of previous timestep (during solution) or start of completed timestep [m^3/s]
 //
 double    CSubBasin::GetLastOutflowRate() const
@@ -849,6 +874,14 @@ double CSubBasin::GetReservoirLosses(const double &tstep) const
 double CSubBasin::GetIrrigationLosses(const double &tstep) const
 {
   return 0.5*(_QirrLast+_Qirr)*tstep*SEC_PER_DAY;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns Irrigation losses integrated over specified timestep [m^3]
+/// \return Irrigation losses over specified timestep  [m^3]
+//
+double CSubBasin::GetDiversionLosses(const double &tstep) const
+{
+  return 0.5*(_Qdiverted+_QdivLast)*tstep*SEC_PER_DAY;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns total volume lost from main reach over timestep [m^3]
@@ -1740,9 +1773,9 @@ void CSubBasin::GenerateRoutingHydrograph(const double &Qin_avg,
     ExitGracefullyIf(_nSegments>1,
                      "ROUTE_DIFFUSIVE_WAVE only valid for single-segment rivers",BAD_DATA);
     sum=0.0;
-    double cc=_c_ref*SEC_PER_DAY; //[m/day]
-    double diffusivity=_pChannel->GetDiffusivity(_Q_ref,_slope,_mannings_n);
-    diffusivity*=SEC_PER_DAY;//convert to m2/d
+    double cc         =_c_ref*SEC_PER_DAY; //[m/day]
+	double diffusivity=_diffusivity*SEC_PER_DAY; //[m2/d]
+
     for (n=0;n<_nQinHist;n++)
     {
       _aRouteHydro[n  ]=max(ADRCumDist(n*tstep,_reach_length,cc,diffusivity)-sum,0.0);
@@ -1926,6 +1959,7 @@ void  CSubBasin::UpdateSubBasin(const time_struct &tt, const optStruct &Options)
 ///
 /// \param *aQo [in] Array of new outflows [m3/s]
 /// \param irr_Q [in] actual delivered water demand [m3/s]
+/// \param Qdiv [in] diverted flow [m3/s]
 /// \param &res_ht [in] new reservoir stage [m]
 /// \param res_outflow [in] reservoir outflow [m3/s]
 /// \param constraint [in] current constraint applied to reservoir flow [-]
@@ -1934,21 +1968,18 @@ void  CSubBasin::UpdateSubBasin(const time_struct &tt, const optStruct &Options)
 /// \param &tt [in] time structure at start of current time step
 /// \param initialize [in] Flag to indicate if flows are to only be initialized
 //
-void CSubBasin::UpdateOutflows   (const double *aQo,   //[m3/s]
-                                  const double &irr_Q,  //[m3/s]
-                                  const double &res_ht, //[m]
-                                  const double &res_outflow, //[m3/s]
+void CSubBasin::UpdateOutflows   (const double         *aQo,    //[m3/s]
+                                  const double         &irr_Q,  //[m3/s]
+                                  const double         &Qdiv,   //[m3/s]
+                                  const double         &res_ht, //[m]
+                                  const double         &res_outflow, //[m3/s]
                                   const res_constraint &constraint,
-                                  const double *res_Qstruct,
-                                  const optStruct &Options,
-                                  const time_struct &tt,
-                                  const bool    initialize)
+                                  const double         *res_Qstruct,
+                                  const optStruct      &Options,
+                                  const time_struct    &tt,
+                                  const bool            initialize)
 {
   double tstep=Options.timestep;
-
-  /*if(aQo[_nSegments-1]<0.0) {
-    WriteWarning("CSubBasin::UpdateOutflows: negative flow calculated. Excess diversion from subbasin "+to_string(GetID())+" on "+tt.date_string,Options.noisy+"?");
-  }*/
 
   //Update flows
   //------------------------------------------------------
@@ -1956,10 +1987,18 @@ void CSubBasin::UpdateOutflows   (const double *aQo,   //[m3/s]
   for (int seg=0;seg<_nSegments;seg++){
     _aQout[seg]=aQo[seg];
   }
-  //_aQout[num_segments-1] is now the new outflow from the channel
+  double irrQ_act = min(irr_Q, _aQout[_nSegments-1]);
+  _aQout[_nSegments-1]-=irrQ_act;
+  
+  double divQ_act = min(Qdiv, _aQout[_nSegments-1]);
+  _aQout[_nSegments-1]-=divQ_act;
 
-  _QirrLast=_Qirr;
-  _Qirr    =irr_Q;
+   //_aQout[num_segments-1] is now the new outflow from the channel
+
+  _QdivLast=_Qdiverted;
+  _Qdiverted=divQ_act;
+  _QirrLast =_Qirr;
+  _Qirr     =irrQ_act;
 
   if (!Options.management_optimization){
     if (_nIrrigDemands>1){ //distribute delivery based upon percentage of total demand, otherwise this is provided by AddToDeliveredDemand()
@@ -2002,6 +2041,12 @@ void CSubBasin::UpdateOutflows   (const double *aQo,   //[m3/s]
   //volume change from lateral inflows over previous time step (corrects for the fact that _aQout is channel flow plus that added from lateral inflow)
   dV+=0.5*(Qlat_new+_QlatLast)*dt;
 
+  //volume change from irrigation
+  dV-=0.5*(_Qirr+_QirrLast)*dt;
+
+  //volume change from diversion 
+  dV-=0.5*(_Qdiverted+_QdivLast)*dt;
+  
   _channel_storage+=dV;//[m3]
 
   //Update rivulet storage
@@ -2181,18 +2226,10 @@ void CSubBasin::UpdateRoutingHydro(const double &tstep)
 /// lateral flow is all routed to most downstream outflow segment . Assumes uniform time step
 ///
 /// \param [out] *aQout_new Array of outflows at downstream end of each segment at end of current timestep [m^3/s]
-/// \param [out] res_ht - reservoir stage at end of timestep
-/// \param [out] res_outflow - reservoir outflow at end of timestep
-/// \param [out] res_const - current reservoir constraint over timestep
-/// \param [out] aResQstruct - reservoir outflows from various control structures
 /// \param &Options [in] Global model options information
 /// \param tt [in] - time structure
 //
 void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
-                           double &res_ht, //[m]
-                           double &res_outflow, //[m3/s]
-                           res_constraint &res_const,
-                           double *aResQstruct, //[m3/s]
                            const optStruct &Options,
                            const time_struct &tt) const
 {
@@ -2463,18 +2500,6 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
   //all fluxes from catchment are routed directly to basin outlet
   aQout_new[_nSegments-1]+=Qlat_new;
 
-  //Reservoir Routing
-  //-----------------------------------------------------------------
-  if (_pReservoir!=NULL)
-  {
-    res_ht=_pReservoir->RouteWater(_aQout[_nSegments-1],aQout_new[_nSegments-1],_pModel,Options,tt,res_outflow,res_const,aResQstruct);
-  }
-  else
-  {
-    res_ht=0.0;
-    res_outflow=0.0;
-    res_const=RC_NATURAL;
-  }
 
   /*if (aQout_new[_nSegments-1]<-REAL_SMALL){
     cout<<"Lateral inflow:" <<Qlat_new<<endl;

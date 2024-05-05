@@ -108,11 +108,14 @@ private:/*------------------------------------------------------*/
   double      _rivulet_storage;   ///< water storage in rivulets [m3]
   double             _QoutLast;   ///< Qout from downstream channel segment [m3/s] at start of previous timestep- needed for reporting integrated outflow
   double             _QlatLast;   ///< Qlat (after convolution) at start of previous timestep [m3/s]
+  //double           _aQchanLast;   ///< channel outflow 
   double               _Qlocal;   ///< local contribution to current subbasin outflow [m3/s] (just from in-catchment routing)
   double             _QlocLast;   ///< last local contribution [m3/s]
 
-  double                 _Qirr;   ///< Qirr (irrigation/diversion flow) at end of timestep [m3/s] (for MB accounting)
-  double             _QirrLast;   ///< Qirr (irrigation/diversion flow) at start of timestep [m3/s] (for MB accounting)
+  double                 _Qirr;   ///< Qirr (delivered water demand) at end of timestep [m3/s] (for MB accounting)
+  double             _QirrLast;   ///< Qirr (delivered water demand) at start of timestep [m3/s] (for MB accounting)
+  double             _QdivLast;   ///< diverted flow at start of timestep [m3/s] (for MB accounting)
+  double            _Qdiverted;   ///< diverted flow at end of timestep [m3/s] (for MB accounting)
   double           _Qdelivered;   ///< delivered flow at end of time step if management optimization is used [m3/s]
   double         *_aQdelivered;   ///< delivered flow at end of time step for each water demand [m3/s] [size: _nIrrigDemands]
 
@@ -221,7 +224,9 @@ public:/*-------------------------------------------------------*/
   int             GetOutflowArraySize      () const;
   int             GetNumDiversions         () const;
 
-  double          GetOutflowRate           () const;                   //[m3/s] from final segment, point in time
+  double          GetOutflowRate           () const;                   //[m3/s] from final reach segment OR reservoir, point in time
+  double          GetChannelOutflowRate    () const;                   //[m3/s] from final reach segment (NOT reservoir), point in time, BEFORE diversions included 
+  double          GetLastChannelOutflowRate() const;                   //[m3/s] from final reach segment (NOT reservoir), point in time, BEFORE diversions included
   double          GetLastOutflowRate       () const;                   //[m3/s] from final segment, previous timestep
   double          GetLocalOutflowRate      () const;                   //[m3/s] local contribution to outflow
   double          GetIntegratedOutflow     (const double &tstep) const;//[m3] from final segment integrated over timestep
@@ -232,6 +237,7 @@ public:/*-------------------------------------------------------*/
   double          GetReservoirLosses       (const double &tstep) const;//[m3] from reservoir integrated over timestep
   double      GetIntegratedReservoirInflow (const double &tstep) const;//[m3] from final segment upstream of reservoir integrated over timestep
   double          GetIrrigationLosses      (const double &tstep) const;//[m3] from actual irrigation (not just demand)
+  double          GetDiversionLosses       (const double &tstep) const;//[m3] from flow diversions 
 
   double          GetRivuletStorage        () const;                   //[m3] volume en route to outflow
   double          GetChannelStorage        () const;                   //[m3] volume in channel
@@ -299,6 +305,7 @@ public:/*-------------------------------------------------------*/
   void            UpdateSubBasin           (const time_struct &tt, const optStruct &Options);
   void            UpdateOutflows           (const double *Qout_new,
                                             const double &Qirr,
+                                            const double &Qdiv,
                                             const double &res_ht,
                                             const double &res_outflow,
                                             const res_constraint &constraint,
@@ -311,10 +318,6 @@ public:/*-------------------------------------------------------*/
   double          GetDiversionFlow         (const int i, const double &Q, const optStruct &Options, const time_struct &tt, int &pDivert) const;
 
   void            RouteWater               (      double      *Qout_new,
-                                                  double      &res_ht,
-                                                  double      &res_outflow,
-                                               res_constraint &constraint,
-                                                  double      *res_Qstruct,
                                             const optStruct   &Options,
                                             const time_struct &tt) const;
 

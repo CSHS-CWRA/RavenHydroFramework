@@ -471,6 +471,9 @@
     <ClCompile Include="CustomTable.cpp">
       <Filter>Source Files\_Driver</Filter>
     </ClCompile>
+    <ClCompile Include="DemandGroups.cpp">
+      <Filter>Source Files\Water Demand</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Properties.h">
@@ -676,6 +679,9 @@
     </ClInclude>
     <ClInclude Include="GracefulEndStandalone.h">
       <Filter>Header Files\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Demands.h">
+      <Filter>Header Files\Subbasins/HRUs</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

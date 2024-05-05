@@ -6,8 +6,24 @@ Copyright (c) 2008-2024 the Raven Development Team
 #include "Model.h"
 #include "ParseLib.h"
 #include "DemandOptimization.h"
+#include "SubBasin.h"
+#include "Demands.h"
 
 void SummarizeExpression(const char **s, const int Len, expressionStruct* exp); //defined in DemandExpressionHandling.cpp 
+
+void swapWildcards(const char **s,const int Len, string **aWildcards,const int &nWildcards)
+{
+  if (nWildcards==0){return;}
+  for (int i=0;i<Len;i++){
+    string tmp = s[i];
+    for (int j=0;j<nWildcards;j++){
+      size_t ind = tmp.find(aWildcards[j][0]);
+      if (ind!=string::npos){
+        s[i] = (tmp.substr(ind, aWildcards[j][0].length())+aWildcards[j][1]+tmp.substr(aWildcards[j][0].length())).c_str();
+      }
+    }
+  }
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Parses Demand Management file
@@ -36,6 +52,17 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
   ifstream INPUT2;           //For Secondary input
   CParser *pMainParser=NULL; //for storage of main parser while reading secondary files
 
+  int loopCount=0;
+  CSubbasinGroup *pLoopSBGroup=NULL;
+  CDemandGroup   *pLoopDemandGroup=NULL;
+  string **aWildcards = new string *[3];
+  for (int i = 0; i < 3; i++) {
+    aWildcards[i]=new string [2];
+    aWildcards[i][0] = "";
+    aWildcards[i][1] = "";
+  }
+  int    nWildcards=0;
+
   CDemandOptimizer *pDO=pModel->GetDemandOptimizer();
 
   pDO->Initialize(pModel,Options); //only requires rvh read
@@ -55,6 +82,8 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
 
   while(!end_of_file)
   {
+    swapWildcards((const char**)(s),Len,aWildcards,nWildcards);
+
     if(ended) { break; }
     if(Options.noisy) { cout << "reading line " << pp->GetLineNumber() << ": "; }
 
@@ -94,6 +123,8 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     else if(!strcmp(s[0],":DeclareDecisionVariable"))     { code=24; }
     else if(!strcmp(s[0],":LookupTable"))                 { code=30; }
 
+    else if(!strcmp(s[0],":LoopThrough"))                 { code=40; }
+    else if(!strcmp(s[0],":EndLoopThrough"))              { code=41; }
 
     switch(code)
     {
@@ -276,12 +307,13 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       expressionStruct *pExp;      
       manConstraint    *pConst=NULL;
       firstword=pp->Peek();
-      if (firstword == ":Expression") {
-        pp->NextIsMathExp();
-      }
+      if (firstword == ":Expression") {pp->NextIsMathExp();}
+      if (firstword == ":Condition")  {pp->NextIsMathExp();}
 
       while(!pp->Tokenize(s,Len))
       {
+        swapWildcards((const char**)(s),Len,aWildcards,nWildcards);
+
         if(Options.noisy) { cout << "-->reading line " << pp->GetLineNumber() << ": "; }
         if     (Len == 0)            { if(Options.noisy) { cout << "#" << endl; } }//Do nothing
         else if(IsComment(s[0],Len)) { if(Options.noisy) { cout << "#" << endl; } }
@@ -305,62 +337,84 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         }
         else if (!strcmp(s[0], ":Condition")) 
         {
-          //TODO: handle more complex, expression-based conditions - should replace with !Q32 > @max(!Q43,200) +3 ?? - no the rh
+          //TODO: Would it be better to support @date(), @between, @day_of_year() in general expression??
+          //:Condition !Q32[0] < 300 + @ts(myTs,0)
+          //:Condition DATE IS_BETWEEN 1975-01-02 and 2010-01-02
+          //:Condition DATE > @date(1975-01-02) 
+          //:Condition DATE < @date(2010-01-02)
+          //:Condition MONTH = @month(Feb) or _MONTH = 2
+          //:Condition DAY_OF_YEAR IS_BETWEEN 173 and 210
+          //:Condition DAY_OF_YEAR > 174
+          //:Condition DAY_OF_YEAR < 210
+          //what about wraparound?
+          //:Condition DAY_OF_YEAR IS_BETWEEN 300 20
+          //:Condition @is_between(DAY_OF_YEAR,300,20) = 1 
           if (pConst!=NULL){
             bool badcond=false;
             exp_condition *pCond = new exp_condition();
             pCond->dv_name=s[1];
-            if      (!strcmp(s[2],"IS_BETWEEN"     )){pCond->compare=COMPARE_BETWEEN;}
-            else if (!strcmp(s[2],"IS_GREATER_THAN")){pCond->compare=COMPARE_GREATERTHAN;}
-            else if (!strcmp(s[2],"IS_LESS_THAN"   )){pCond->compare=COMPARE_LESSTHAN;}
-            else if (!strcmp(s[2],"IS_EQUAL_TO"    )){pCond->compare=COMPARE_IS_EQUAL;}
-            else if (!strcmp(s[2],"IS_NOT_EQUAL_TO")){pCond->compare=COMPARE_NOT_EQUAL;} 
-            else {
-              ExitGracefully("ParseManagementFile: unrecognized comparison operator in :Condition statement",BAD_DATA_WARN);
-              break;
-            }
-            pCond->value=s_to_d(s[3]);
-            if (Len>=5){
-              pCond->value2 = s_to_d(s[4]);
-            }
-            if      (!strcmp(s[1],"DATE"     )){
-              pCond->date_string=s[3];
-              if (Len>=5){
-                pCond->date_string2 = s[4];
+            bool is_exp=false;
+            for (int i = 0; i < Len; i++) {
+              if ((s[i][0]=='+') || (s[i][0]=='-') || (s[i][0]=='*') || (s[i][0]=='/') || (s[i][0]=='=') || (s[i][0]=='<') || (s[i][0]=='>')){
+                is_exp=true;
               }
             }
-
-
-            if (pCond->dv_name[0] == '!') { //decision variable 
-              char   tmp =pCond->dv_name[1];
-              string tmp2=pCond->dv_name.substr(2);
-              char code=pCond->dv_name[1];
-              if ((code=='Q') || (code=='h') || (code=='I')){
-                long SBID=s_to_l(tmp2.c_str());
-                if (pModel->GetSubBasinByID(SBID) == NULL) {
-                  ExitGracefully("ParseManagementFile: Subbasin ID in :Condition statement is invalid.",BAD_DATA_WARN);
+            if (is_exp) {
+              pCond->pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
+              pConst->AddCondition(pCond);
+            }
+            else{
+              if      (!strcmp(s[2],"IS_BETWEEN"     )){pCond->compare=COMPARE_BETWEEN;}
+              else if (!strcmp(s[2],"IS_GREATER_THAN")){pCond->compare=COMPARE_GREATERTHAN;}
+              else if (!strcmp(s[2],"IS_LESS_THAN"   )){pCond->compare=COMPARE_LESSTHAN;}
+              else if (!strcmp(s[2],"IS_EQUAL_TO"    )){pCond->compare=COMPARE_IS_EQUAL;}
+              else if (!strcmp(s[2],"IS_NOT_EQUAL_TO")){pCond->compare=COMPARE_NOT_EQUAL;} 
+              else {
+                ExitGracefully("ParseManagementFile: unrecognized comparison operator in :Condition statement",BAD_DATA_WARN);
+                break;
+              }
+              pCond->value=s_to_d(s[3]);
+              if (Len>=5){
+                pCond->value2 = s_to_d(s[4]);
+              }
+              if      (!strcmp(s[1],"DATE"     )){
+                pCond->date_string=s[3];
+                if (Len>=5){
+                  pCond->date_string2 = s[4];
                 }
-                else if (!pModel->GetSubBasinByID(SBID)->IsEnabled()) {
-                  WriteWarning("ParseManagementFile: Subbasin in :Condition statement is disabled in this model configuration. Conditional will be assumed true.",Options.noisy);
-                  badcond=true;
+              }
+
+              if (pCond->dv_name[0] == '!') { //decision variable 
+                char   tmp =pCond->dv_name[1];
+                string tmp2=pCond->dv_name.substr(2);
+                char code=pCond->dv_name[1];
+                if ((code=='Q') || (code=='h') || (code=='I')){
+                  long SBID=s_to_l(tmp2.c_str());
+                  if (pModel->GetSubBasinByID(SBID) == NULL) {
+                    ExitGracefully("ParseManagementFile: Subbasin ID in :Condition statement is invalid.",BAD_DATA_WARN);
+                  }
+                  else if (!pModel->GetSubBasinByID(SBID)->IsEnabled()) {
+                    WriteWarning("ParseManagementFile: Subbasin in :Condition statement is disabled in this model configuration. Conditional will be assumed true.",Options.noisy);
+                    badcond=true;
+                  }
+                  else if ((code == 'h') || (code == 'I')) {
+                    if (pModel->GetSubBasinByID(SBID)->GetReservoir() == NULL) {
+                      ExitGracefully("ParseManagementFile: !h or !I used in :Condition statement for subbasin without lake or reservoir",BAD_DATA_WARN);
+                    }
+                  }
                 }
-                else if ((code == 'h') || (code == 'I')) {
-                  if (pModel->GetSubBasinByID(SBID)->GetReservoir() == NULL) {
-                    ExitGracefully("ParseManagementFile: !h or !I used in :Condition statement for subbasin without lake or reservoir",BAD_DATA_WARN);
+                else { //demand 
+                  int d=pDO->GetDemandIndexFromName(tmp2);
+                  if (d == DOESNT_EXIST) {
+                    ExitGracefully("ParseManagementFile: !D or !C used in :Condition statement has invalid demand ID",BAD_DATA_WARN);
                   }
                 }
               }
-              else { //demand 
-                int d=pDO->GetDemandIndexFromName(tmp2);
-                if (d == DOESNT_EXIST) {
-                  ExitGracefully("ParseManagementFile: !D or !C used in :Condition statement has invalid demand ID",BAD_DATA_WARN);
-                }
-              }
-            }
-            if (!badcond){
+              if (!badcond){
 
-              pCond->p_index=pDO->GetIndexFromDVString(pCond->dv_name); 
-              pConst->AddCondition(pCond);
+                pCond->p_index=pDO->GetIndexFromDVString(pCond->dv_name); 
+                pConst->AddCondition(pCond);
+              }
             }
           } 
           else{
@@ -441,6 +495,52 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       pDO->AddUserLookupTable(pLUT);
       break;
     }
+    case(40):  //----------------------------------------------
+    { /*:LoopThrough [SB_GROUP or DEMAND_GROUP] [group name]  */
+      if(Options.noisy) { cout <<"Start Loop"<<endl; }      
+      //if (Len<2){ImproperFormatWarning(":NumericalMethod",p,Options.noisy); break;}
+      if       (!strcmp(s[1],"SB_GROUP"    )){
+        
+        
+        if ((pLoopSBGroup != NULL) || (pLoopDemandGroup !=NULL)){
+          ExitGracefully("ParseManagementFile: Cannot have nested :LoopThrough statements",BAD_DATA);
+        }
+        pLoopSBGroup=pModel->GetSubBasinGroup(s[2]);
+        if (pLoopSBGroup == NULL) {
+          ExitGracefully("ParseManagementFile: bad subbasin group name in :LoopThrough command",BAD_DATA_WARN);
+          break;
+        } 
+        else {
+          loopCount=0;
+          long     SBID = pLoopSBGroup->GetSubBasin(loopCount)->GetID();
+          string SBName = pLoopSBGroup->GetSubBasin(loopCount)->GetName();
+          
+          aWildcards[0][0] = "$ID$";   aWildcards[0][1]= to_string(SBID);
+          aWildcards[1][0] = "$NAME$"; aWildcards[1][1] = SBName;
+          //look for $SBID$ 
+        }
+      }
+      else if  (!strcmp(s[1],"DEMAND_GROUP")){
+        //\todo[funct]
+        ExitGracefully("Loop through demand group not yet supported",STUB);
+        break;
+      }
+    }
+    case(41):  //----------------------------------------------
+    { /*:EndLoopThrough   */
+      if(Options.noisy) { cout <<"End Loop"<<endl; } 
+      if (pLoopSBGroup!=NULL){ //Ending subbasin loop 
+        loopCount++;
+        long loopSBID = pLoopSBGroup->GetSubBasin(loopCount)->GetID();
+
+        if (loopCount == pLoopSBGroup->GetNumSubbasins()){
+          pLoopSBGroup=NULL;
+          loopCount=0;
+        }
+      }
+
+      break;
+    }
     default://------------------------------------------------
     {
       char firstChar = *(s[0]);
@@ -477,6 +577,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     }
 
     end_of_file=pp->Tokenize(s,Len);
+    swapWildcards((const char**)(s),Len,aWildcards,nWildcards);
 
     //return after file redirect, if in secondary file
     if((end_of_file) && (pMainParser!=NULL))
@@ -487,6 +588,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       pp=pMainParser;
       pMainParser=NULL;
       end_of_file=pp->Tokenize(s,Len);
+      swapWildcards((const char**)(s),Len,aWildcards,nWildcards);
     }
   } //end while !end_of_file
   RVM.close();

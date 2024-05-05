@@ -332,7 +332,7 @@ void   CConstituentModel::RouteMassInReservoir(const int          p,          //
   tmp/=(1.0+0.5*Options.timestep*(Q_new/V_new+decay_coeff));
   Res_mass=tmp;
 
-  if((V_old<=0.0) || (V_new<=0.0)) { Res_mass= ResSedMass = 0.0; } //handles dried out reservoir/lake
+  if((V_old< REAL_SMALL) || (V_new< REAL_SMALL)) { Res_mass= ResSedMass = 0.0; } //handles dried out reservoir/lake
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Sets mass outflow from primary channel and updates flow history

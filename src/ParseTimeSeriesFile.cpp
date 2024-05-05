@@ -665,7 +665,12 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,true,"_MaxStage_"+to_string(SBID),SBID,"none",Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
-        pSB->GetReservoir()->AddMaxStageTimeSeries(pTimeSer);
+        if (pModel->GetDemandOptimizer() != NULL) {
+          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        }
+        else {
+          pSB->GetReservoir()->AddMaxStageTimeSeries(pTimeSer);
+        }
       }
       else
       {
@@ -687,7 +692,12 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,true,"_MinStage_"+to_string(SBID),SBID,"none",Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
-        pSB->GetReservoir()->AddMinStageTimeSeries(pTimeSer);
+        if (pModel->GetDemandOptimizer() != NULL) {
+          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        }
+        else {
+          pSB->GetReservoir()->AddMinStageTimeSeries(pTimeSer);
+        }
       }
       else
       {
@@ -707,9 +717,14 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       CSubBasin *pSB;
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,true,"MinStageFlow_"+to_string(SBID),SBID,"none",Options);
+      pTimeSer=CTimeSeries::Parse(p,true,"_MinStageFlow_"+to_string(SBID),SBID,"none",Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
-        pSB->GetReservoir()->AddMinStageFlowTimeSeries(pTimeSer);
+        if (pModel->GetDemandOptimizer() != NULL) {
+          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        }
+        else {
+          pSB->GetReservoir()->AddMinStageFlowTimeSeries(pTimeSer);
+        }
       }
       else
       {

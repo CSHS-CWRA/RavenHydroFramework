@@ -154,14 +154,16 @@ struct decision_var
 //
 struct exp_condition
 {
-  string      dv_name;   //< decision variable name (e.g., Q1023) or "MONTH" or "DATE" or "DAY_OF_YEAR"
-  double      value;     //< conditional value 
-  double      value2;    //< second conditional (if COMPARE_BETWEEN)
+  string      dv_name;      //< decision variable name (e.g., Q1023) or "MONTH" or "DATE" or "DAY_OF_YEAR"
+  double      value;        //< conditional value 
+  double      value2;       //< second conditional (if COMPARE_BETWEEN)
   string      date_string;  //< conditional value (if date)
   string      date_string2; //< second conditional (if DATE COMPARE_BETWEEN)
 
-  comparison  compare;   //> comparison operator, e.g., COMPARE_IS_EQUAL
-  long        p_index;     //> subbasin or demand index of LHS of condition expression (or DOESNT_EXIST)
+  expressionStruct *pExp;   //< condition expression (or NULL if not used)
+
+  comparison  compare;      //> comparison operator, e.g., COMPARE_IS_EQUAL
+  long        p_index;      //> subbasin or demand index of LHS of condition expression (or DOESNT_EXIST)
 
   exp_condition(){
     dv_name="";
@@ -169,6 +171,7 @@ struct exp_condition
     value2=0.0;
     compare=COMPARE_IS_EQUAL;
     p_index=DOESNT_EXIST;
+    pExp=NULL;
   }
 };
 //////////////////////////////////////////////////////////////////
@@ -197,6 +200,7 @@ struct manConstraint
   ~manConstraint();
   void AddCondition(exp_condition *pCondition);
 };
+
 ///////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for demand optimization 
 //
@@ -266,8 +270,9 @@ private: /*------------------------------------------------------*/
   void           AddConstraintToLP(const int i, lp_lib::lprec *pLinProg, const time_struct &tt,int *col_ind, double *row_val) const;
 #endif 
   double              EvaluateTerm(expressionTerm **pTerms,const int k, const double &t) const;
+  bool        EvaluateConditionExp(expressionStruct* pE,const double &t) const;
 
-  bool             CheckGoalConditions(const int ii, const time_struct &tt,const optStruct &Options) const; 
+  bool         CheckGoalConditions(const int ii, const time_struct &tt,const optStruct &Options) const; 
 
   bool        UserTimeSeriesExists(string TSname) const;
   void     AddReservoirConstraints();

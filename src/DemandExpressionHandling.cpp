@@ -640,6 +640,9 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
     type[i]=EXP;
     if ((s[i][0]=='+') || (s[i][0]=='-') || (s[i][0]=='*') || (s[i][0]=='/') || (s[i][0]=='=') || (s[i][0]=='<') || (s[i][0]=='>')){
       type[i] = EXP_OP; 
+      if ((i > 1) && (type[i - 1] == EXP_OP)) {
+        ExitGracefully("ParseExpression: cannot have consecutive math operators in an expression.",BAD_DATA_WARN);
+      }
     } 
     if (s[i-1][0]=='/'){type[i]=EXP_INV; }
 
@@ -821,98 +824,106 @@ bool CDemandOptimizer::CheckGoalConditions(const int ii, const time_struct &tt, 
   //Check if conditionals are satisfied 
   for (int j = 0; j < pC->nConditions; j++) 
   {
-    dv_value=0.0;
-    if      (pC->pConditions[j]->dv_name == "DAY_OF_YEAR") 
-    {
-      dv_value=tt.julian_day;
+    if (pC->pConditions[j]->pExp != NULL) {
+      if(!EvaluateConditionExp(pC->pConditions[j]->pExp,tt.model_time))
+      {
+        return false;
+      }
     }
-    else if (pC->pConditions[j]->dv_name == "MONTH")
-    {
-      dv_value=(double)(tt.month);
-    }
-    else if (pC->pConditions[j]->dv_name == "DATE") 
-    {
-      dv_value=0;
-      //handled below
-    }
-    else if (pC->pConditions[j]->dv_name[0] == '!') //decision variable 
-    { 
-      char   tmp =pC->pConditions[j]->dv_name[1];
+    else{
+      dv_value=0.0;
+      if      (pC->pConditions[j]->dv_name == "DAY_OF_YEAR") 
+      {
+        dv_value=tt.julian_day;
+      }
+      else if (pC->pConditions[j]->dv_name == "MONTH")
+      {
+        dv_value=(double)(tt.month);
+      }
+      else if (pC->pConditions[j]->dv_name == "DATE") 
+      {
+        dv_value=0;
+        //handled below
+      }
+      else if (pC->pConditions[j]->dv_name[0] == '!') //decision variable 
+      { 
+        char   tmp =pC->pConditions[j]->dv_name[1];
 
-      long   ind=pC->pConditions[j]->p_index; 
+        long   ind=pC->pConditions[j]->p_index; 
       
-      if      (tmp == 'Q') {
-        dv_value=_pModel->GetSubBasinByID(ind)->GetOutflowRate();
-      }
-      else if (tmp == 'h') {
-        dv_value=_pModel->GetSubBasinByID(ind)->GetReservoir()->GetResStage();
-      }
-      else if (tmp == 'I') {
-        dv_value=_pModel->GetSubBasinByID(ind)->GetOutflowArray()[0];
-      }
-      else if (tmp == 'C') {
-        dv_value=_aCumDelivery[ind];
-      }
-      else if (tmp == 'D') {
-        dv_value = _pModel->GetSubBasinByID(_aDemandSBIDs[ind])->GetDemandDelivery(_aDemandIndices[ind]);
-      }
-      //todo: support !q, !d, !B, !E, !F, !T 
-    } 
-    else {//handle user specified DVs
-      bool found=false;
-      for (int i = 0; i < _nDecisionVars; i++) {
-        if (pC->pConditions[j]->dv_name == _pDecisionVars[i]->name) {
-          dv_value =_pDecisionVars[i]->value;
-          found=true;
+        if      (tmp == 'Q') {
+          dv_value=_pModel->GetSubBasinByID(ind)->GetOutflowRate();
+        }
+        else if (tmp == 'h') {
+          dv_value=_pModel->GetSubBasinByID(ind)->GetReservoir()->GetResStage();
+        }
+        else if (tmp == 'I') {
+          dv_value=_pModel->GetSubBasinByID(ind)->GetOutflowArray()[0];
+        }
+        else if (tmp == 'C') {
+          dv_value=_aCumDelivery[ind];
+        }
+        else if (tmp == 'D') {
+          dv_value = _pModel->GetSubBasinByID(_aDemandSBIDs[ind])->GetDemandDelivery(_aDemandIndices[ind]);
+        }
+        //todo: support !q, !d, !B, !E, !F, !T 
+      } 
+      else {//handle user specified DVs
+        bool found=false;
+        for (int i = 0; i < _nDecisionVars; i++) {
+          if (pC->pConditions[j]->dv_name == _pDecisionVars[i]->name) {
+            dv_value =_pDecisionVars[i]->value;
+            found=true;
+          }
+        }
+        if (!found){
+          ExitGracefully("CheckGoalConditions: Unrecognized varible on left hand side of :Condition statement ",BAD_DATA_WARN); return false;
         }
       }
-      if (!found){
-        ExitGracefully("CheckGoalConditions: Unrecognized varible on left hand side of :Condition statement ",BAD_DATA_WARN); return false;
+
+      comparison comp=pC->pConditions[j]->compare;
+      double        v=pC->pConditions[j]->value;
+      double       v2=pC->pConditions[j]->value2;
+
+      if (pC->pConditions[j]->dv_name == "DATE") //dates require special handling; remainder of values are just doubles
+      {
+        dv_value=0;
+
+        time_struct time1=DateStringToTimeStruct(pC->pConditions[j]->date_string ,"00:00:00",Options.calendar);
+        v=-TimeDifference(time1.julian_day,time1.year,tt.julian_day,tt.year,Options.calendar);//v negative if day is after day1
+
+        if (comp == COMPARE_BETWEEN) {
+          time_struct time2=DateStringToTimeStruct(pC->pConditions[j]->date_string2,"00:00:00",Options.calendar);
+          v2=-TimeDifference(time2.julian_day,time2.year,tt.julian_day,tt.year,Options.calendar);//v2 negative if day is after day2
+        }
       }
-    }
 
-    comparison comp=pC->pConditions[j]->compare;
-    double        v=pC->pConditions[j]->value;
-    double       v2=pC->pConditions[j]->value2;
-
-    if (pC->pConditions[j]->dv_name == "DATE") //dates require special handling; remainder of values are just doubles
-    {
-      dv_value=0;
-
-      time_struct time1=DateStringToTimeStruct(pC->pConditions[j]->date_string ,"00:00:00",Options.calendar);
-      v=-TimeDifference(time1.julian_day,time1.year,tt.julian_day,tt.year,Options.calendar);//v negative if day is after day1
-
-      if (comp == COMPARE_BETWEEN) {
-        time_struct time2=DateStringToTimeStruct(pC->pConditions[j]->date_string2,"00:00:00",Options.calendar);
-        v2=-TimeDifference(time2.julian_day,time2.year,tt.julian_day,tt.year,Options.calendar);//v2 negative if day is after day2
-      }
-    }
-
-    if (comp == COMPARE_BETWEEN) 
-    {
-      if (pC->pConditions[j]->dv_name == "DAY_OF_YEAR") { //handles wraparound 
-        if ( v2 < v ){
-          if ((dv_value > v ) && (dv_value < v2)){return false;}
+      if (comp == COMPARE_BETWEEN) 
+      {
+        if (pC->pConditions[j]->dv_name == "DAY_OF_YEAR") { //handles wraparound 
+          if ( v2 < v ){
+            if ((dv_value > v ) && (dv_value < v2)){return false;}
+          }
+          else {
+            if ((dv_value > v2) || (dv_value < v )){return false;}
+          }
         }
         else {
-          if ((dv_value > v2) || (dv_value < v )){return false;}
+          if ((dv_value > v2) || (dv_value< v)){return false;}//don't apply condition if ANY conditionals unmet
         }
       }
-      else {
-        if ((dv_value > v2) || (dv_value< v)){return false;}//don't apply condition if ANY conditionals unmet
+      else if (comp == COMPARE_GREATERTHAN) {
+        if (dv_value < v){return false;}//don't apply condition
       }
-    }
-    else if (comp == COMPARE_GREATERTHAN) {
-      if (dv_value < v){return false;}//don't apply condition
-    }
-    else if (comp == COMPARE_LESSTHAN) {
-      if (dv_value > v){return false;}//don't apply condition
-    }
-    else if (comp == COMPARE_IS_EQUAL) {
-      if (fabs(dv_value - v) > REAL_SMALL){return false;}//usually integer value (e.g., month)
-    }
-    else if (comp == COMPARE_NOT_EQUAL) {
-      if (fabs(dv_value - v) < REAL_SMALL){return false;}
+      else if (comp == COMPARE_LESSTHAN) {
+        if (dv_value > v){return false;}//don't apply condition
+      }
+      else if (comp == COMPARE_IS_EQUAL) {
+        if (fabs(dv_value - v) > REAL_SMALL){return false;}//usually integer value (e.g., month)
+      }
+      else if (comp == COMPARE_NOT_EQUAL) {
+        if (fabs(dv_value - v) < REAL_SMALL){return false;}
+      }
     }
   }
   return true; //all conditionals satisfied 
@@ -1005,6 +1016,45 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, lp_lib::lprec* pLinProg, 
   ExitGracefullyIf(retval==0,"AddConstraintToLP::Error adding user-specified constraint/goal",RUNTIME_ERR);
 }
 #endif 
+bool CDemandOptimizer::EvaluateConditionExp(expressionStruct* pE,const double &t) const
+{
+  double coeff;
+  double term;
+  double RHS=0.0;
+  bool constraint_valid=true;
+  for (int j = 0; j < pE->nGroups; j++)
+  {
+    coeff=1.0;
+    
+    for (int k = 0; k < pE->nTermsPerGrp[j]; k++)
+    {
+      if (pE->pTerms[j][k]->type == TERM_DV) 
+      {
+        ExitGracefully("EvaluateConditionalExp: conditional expressions cannot contain decision variables",BAD_DATA);
+      }
+      else if (!(pE->pTerms[j][k]->is_nested))
+      {
+        term=EvaluateTerm(pE->pTerms[j], k, t);
+
+        if (term==RAV_BLANK_DATA){return true;} //condition assumed satisfied if no data in conditional
+        if (pE->pTerms[j][k]->reciprocal == true) 
+        {
+          coeff /= (pE->pTerms[j][k]->mult) * term;
+          ExitGracefullyIf(term==0.0, "EvaluateConditionExp: Divide by zero error in evaluating :Condition expression with division term",BAD_DATA);
+        } 
+        else {
+          coeff *= (pE->pTerms[j][k]->mult) * term;
+        }
+      }
+    }
+    RHS-=coeff; //term group goes on right hand side
+  }
+
+  if      (pE->compare==COMPARE_IS_EQUAL)   {return (fabs(RHS)<REAL_SMALL);}
+  else if (pE->compare==COMPARE_LESSTHAN)   {return (RHS>0);}
+  else if (pE->compare==COMPARE_GREATERTHAN){return (RHS<0);}
+  return false;
+}
 //////////////////////////////////////////////////////////////////
 /// evaluates term in constraint/goal expression to numerical value (unless term is DV) 
 /// \params pTerms [in] - pointer to array of terms in expression group (e.g., (A*B*C(D,E) stored as [A,B,C,D,E])

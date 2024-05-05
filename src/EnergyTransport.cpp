@@ -284,7 +284,7 @@ double CEnthalpyModel::GetEnergyLossesFromLake(const int p, double &Q_sens, doub
 
   if(pHRU!=NULL) { //otherwise only simulate advective mixing+ rain input
     temp_air =pHRU->GetForcingFunctions()->temp_ave;           //[C]
-    SW       =pHRU->GetForcingFunctions()->SW_radia_net;       //[MJ/m2/d]
+    SW       =pHRU->GetForcingFunctions()->SW_radia_net;       //[MJ/m2/d] - not using canopy correction!
     LW_in    =pHRU->GetForcingFunctions()->LW_incoming;        //[MJ/m2/d]
 
     LW       =-STEFAN_BOLTZ*EMISS_WATER*0.5*(pow(T_new+ZERO_CELSIUS,4)+pow(T_old+ZERO_CELSIUS,4));
@@ -457,7 +457,7 @@ void   CEnthalpyModel::RouteMassInReservoir   (const int          p,          //
 double CEnthalpyModel::GetNetReachLosses(const int p)
 {
   double Q_sens,Q_cond,Q_lat,Q_GW,Q_rad_in,Q_lw_in,Q_lw_out, Q_fric,Qtot,Tave;
-  double Q=_pModel->GetSubBasin(p)->GetOutflowRate();
+  double Q=_pModel->GetSubBasin(p)->GetOutflowArray()[0];
   if (Q<REAL_SMALL){return 0;}
   Qtot=GetEnergyLossesFromReach(p,Q_sens,Q_cond,Q_lat,Q_GW,Q_rad_in,Q_lw_in,Q_lw_out,Q_fric,Tave);
   _aTave_reach[p]=Tave;
@@ -542,7 +542,7 @@ void CEnthalpyModel::Initialize(const optStruct& Options)
       const double *aQin=pBasin->GetInflowHistory();
       for(int i=0; i<pBasin->GetNumSegments(); i++)
       {
-        _aMout[p][i]=pBasin->GetOutflowRate()*SEC_PER_DAY*hv; //not really - requires outflow rate from all segments. Don't have access to this. assumes nSegs=1
+        _aMout[p][i]=pBasin->GetOutflowArray()[0] * SEC_PER_DAY * hv; //not really - requires outflow rate from all segments in general case. Don't have access to this. assumes nSegs=1
       }
       _aMout_last[p]=_aMout[p][0];
       for(int i=0; i<_nMinHist[p]; i++)
@@ -642,10 +642,10 @@ void   CEnthalpyModel::UpdateReachEnergySourceTerms(const int p)
   int    iGW   =_pModel->GetStateVarIndex(SOIL,_mHyporheic);
 
   double temp_air =pHRU->GetForcingFunctions()->temp_ave;           //[C]
-  double SW       =pHRU->GetForcingFunctions()->SW_radia_net;       //[MJ/m2/d]
+  double SW       =pHRU->GetForcingFunctions()->SW_subcan_net;       //[MJ/m2/d]
   double LW_in    =pHRU->GetForcingFunctions()->LW_incoming;        //[MJ/m2/d]
   double AET      =pHRU->GetStateVarValue(iAET)/MM_PER_METER/tstep; //[m/d]
-
+  
   double temp_bed =_aBedTemp[p];
   double temp_lin =GetOutflowConcentration(p)+ZERO_CELSIUS; //[K]
 
@@ -663,7 +663,7 @@ void   CEnthalpyModel::UpdateReachEnergySourceTerms(const int p)
   double klin     =4.0*STEFAN_BOLTZ*EMISS_WATER*pow(temp_lin,3.0);
   double kprime   =qmix*bed_ratio*HCP_WATER;                  //[MJ/m2/d/K]
 
-  double Qf       =GetReachFrictionHeat(pBasin->GetOutflowRate(),pBasin->GetBedslope(),pBasin->GetTopWidth());//[MJ/m2/d]
+  double Qf       =GetReachFrictionHeat(pBasin->GetOutflowArray()[0],pBasin->GetBedslope(),pBasin->GetTopWidth());//[MJ/m2/d]
 
   double S(0.0);                          //source term [MJ/m3/d]
   S+=(SW+LW_in);                          //net incoming energy term
@@ -754,7 +754,7 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
   int    iGW      =_pModel->GetStateVarIndex(SOIL,mHypo);
 
   double temp_air =pHRU->GetForcingFunctions()->temp_ave;           //[C]
-  double SW       =pHRU->GetForcingFunctions()->SW_radia_net;       //[MJ/m2/d]
+  double SW       =pHRU->GetForcingFunctions()->SW_subcan_net;      //[MJ/m2/d]
   double LW_in    =pHRU->GetForcingFunctions()->LW_incoming;        //[MJ/m2/d]
   double AET      =pHRU->GetStateVarValue(iAET)/MM_PER_METER/tstep; //[m/d]
 
@@ -773,7 +773,7 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
   double klin     =4.0*STEFAN_BOLTZ*EMISS_WATER*pow(temp_lin,3.0); //[MJ/m2/d/K]
   double kprime   =qmix*HCP_WATER*bed_ratio;                       //[MJ/m2/d/K]
 
-  double Qf       =GetReachFrictionHeat(pBasin->GetOutflowRate(),pBasin->GetBedslope(),pBasin->GetTopWidth());//[MJ/m2/d]
+  double Qf       =GetReachFrictionHeat(pBasin->GetOutflowArray()[0],pBasin->GetBedslope(),pBasin->GetTopWidth());//[MJ/m2/d]
 
   const double * aRouteHydro=pBasin->GetRoutingHydrograph();
   const double * aQin       =pBasin->GetInflowHistory();
@@ -842,13 +842,12 @@ double CEnthalpyModel::GetEnergyLossesInTransit(const int p, double& Q_sens, dou
 {
 
   const CSubBasin*  pBasin=_pModel->GetSubBasin(p);
-  const CHydroUnit*   pHRU=_pModel->GetHydroUnit(pBasin->GetReachHRUIndex());
 
   double tstep    =_pModel->GetOptStruct()->timestep;
   int    mHypo    =_mHyporheic;
   int    iGW      =_pModel->GetStateVarIndex(SOIL,mHypo);
 
-  double temp_air =pHRU->GetForcingFunctions()->temp_ave;
+  double temp_air =pBasin->GetAvgForcing(F_TEMP_AVE);
   double temp_GW  =pBasin->GetAvgConcentration(iGW);
 
   const double *aQlat      = pBasin->GetLatHistory();
@@ -909,6 +908,8 @@ double CEnthalpyModel::ApplyInCatchmentRouting (const int     p,
   double beta=_aInCatch_a[p]+_aInCatch_b[p];
   beta=max(beta,1e-9); //to avoid divide by zero error
 
+  double Mout_new_test=0;
+  
   double Mout_new=0.0;
   double dt=tstep;
   double term1,term2,term3;
@@ -922,7 +923,10 @@ double CEnthalpyModel::ApplyInCatchmentRouting (const int     p,
     }
     term2*=(aQlatHist[i]*SEC_PER_DAY);
     Mout_new+=aUnitHydro[i]*(term1+term2);
+    Mout_new_test+=aUnitHydro[i]*aMlatHist[i];
   }
+  //cout<<"IN CATCHMENT: "<<_aInCatch_b[p]<<" "<<Mout_new<<" "<<Mout_new_test<<" "<<(Mout_new-Mout_new_test)/Mout_new_test*100<<"%"<<endl;
+
   return Mout_new;
 }
 
@@ -1120,7 +1124,7 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
 
   _STREAMOUT<<tt.model_time <<","<<thisdate<<","<<thishour<<",";
   _STREAMOUT << _pModel->GetAvgForcing(F_TEMP_AVE    ) << ",";
-  _STREAMOUT << _pModel->GetAvgForcing(F_SW_RADIA_NET) + _pModel->GetAvgForcing(F_LW_INCOMING) << ",";
+  _STREAMOUT << _pModel->GetAvgForcing(F_SW_SUBCAN_NET) + _pModel->GetAvgForcing(F_LW_INCOMING) << ",";
 
   for(p=0;p<_pModel->GetNumSubBasins();p++)
   {
@@ -1153,7 +1157,7 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
   {
     _LAKEOUT << tt.model_time << "," << thisdate << "," << thishour << ",";
     _LAKEOUT << _pModel->GetAvgForcing(F_TEMP_AVE    ) << ",";
-    _LAKEOUT << _pModel->GetAvgForcing(F_SW_RADIA_NET) + _pModel->GetAvgForcing(F_LW_INCOMING) << ",";
+    _LAKEOUT << _pModel->GetAvgForcing(F_SW_SUBCAN_NET) + _pModel->GetAvgForcing(F_LW_INCOMING) << ",";
 
     for (p = 0; p < _pModel->GetNumSubBasins(); p++)
     {
@@ -1172,7 +1176,7 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
           Ein  = 0.5 * (_aMout_last[p] + _aMout[p][_pModel->GetSubBasin(p)->GetNumSegments() - 1]);
           Eout = 0.5 * (_aMout_res [p] + _aMout_res_last[p]);
 
-          double Qin=_pModel->GetSubBasin(p)->GetOutflowRate()*SEC_PER_DAY; //[m3/d]
+          double Qin=_pModel->GetSubBasin(p)->GetOutflowArray()[0]*SEC_PER_DAY; //[m3/d]
 
           GetEnergyLossesFromLake(p,Q_sens,Q_cond,Q_lat,Q_sw_in,Q_lw_in,Q_lw_out,Q_rain);
 

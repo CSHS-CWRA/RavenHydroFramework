@@ -8,7 +8,7 @@
     under GNU Public License
   ----------------------------------------------------------------*/
 #include "DemandOptimization.h"
-
+void SummarizeExpression(const char **s, const int Len, expressionStruct* exp); //defined in DemandExpressionHandling.cpp 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the Demand optimization constructor
 /// \details Creates empty instance of the demand optimization class
@@ -669,7 +669,7 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
       }
     }
 
-    string tmpstr;
+    string tmpstr,tmpstr2;
     cout<<" # History Items: "     <<_nHistoryItems<<endl;
     cout<<" # Slack Vars: "        <<_nSlackVars<<endl;
     cout<<" # Constraints/Goals: " <<_nConstraints<<endl;
@@ -677,6 +677,12 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
       if (_pConstraints[i]->is_goal){tmpstr="[GOAL]      "; }
       else                          {tmpstr="[CONSTRAINT]"; }
       cout<<"    "<<i<<" "<<tmpstr<<": "<<_pConstraints[i]->name<<" "<<_pConstraints[i]->pExpression->origexp<<endl;
+      for (int j = 0; j < _pConstraints[i]->nConditions; j++) {
+        if (_pConstraints[i]->pConditions[j]->pExp!=NULL){tmpstr2=_pConstraints[i]->pConditions[j]->pExp->origexp;}
+        else                                             {tmpstr2=_pConstraints[i]->pConditions[j]->dv_name;}
+        cout<<"      +condition: "<<tmpstr2<<endl;
+      }
+
     }
     cout<<" -----------------------------------------------------------------"<<endl;
     cout<<" -----------------------------------------------------------------"<<endl;
@@ -758,16 +764,35 @@ void CDemandOptimizer::AddReservoirConstraints()
       }
 
       //Min Stage constraints
-      // h >= h_min
+      // Q = Q_min (or zero) if h < h_min
       //------------------------------------------------------------------------
       TSname="_MinStage_" + SBIDs;
+      string TSname2="_MinStageFlow_" + SBIDs;
       if (UserTimeSeriesExists(TSname))
       {
-        expString=":Expression !h" + SBIDs+ " > @ts(" + TSname + ",0)";
+        if (UserTimeSeriesExists(TSname2)) {
+          expString=":Expression !Q" + SBIDs+ " = @ts(" + TSname2 + ",0)";
+        }
+        else {
+          expString=":Expression !Q" + SBIDs+ " = 0.0";
+        }
+        
         TokenizeString(expString, s, Len);
         exp = ParseExpression((const char**)(s), Len, 0, "internal");
         pConst=AddConstraint(TSname, exp, true);
         pConst->penalty_over=6.0*stage_units_adjustment;
+
+        exp_condition *pCond = new exp_condition();
+
+        expString = ":Condition !h" + SBIDs + "[-1] < @ts(" + TSname + ",0)";
+        TokenizeString(expString, s, Len);
+        pCond->pExp=ParseExpression((const char**)(s), Len, 0, "internal");
+        pConst->AddCondition(pCond);
+
+          if (GetDebugLevel()>=1){
+            SummarizeExpression((const char**)(s),Len,pCond->pExp); 
+          }
+
         advice="A :ReservoirMinStage time series for subbasin "+SBIDs+" has been added to the management optimization formulation";
         WriteAdvisory(advice,false);
       }
@@ -937,8 +962,8 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
 
   double t=tt.model_time;
   //int nn=tt.nn+1;//end of timestep
-  int nn=static_cast<int>((t+TIME_CORRECTION)/Options.timestep)+1;//end-of timestep index
-
+  int nn=static_cast<int>((t+TIME_CORRECTION)/Options.timestep);//+1;//end-of timestep index
+  
   int    *col_ind=new int    [_nDecisionVars]; //index of column to insert value in current row (1:nDV, not zero-indexed)
   double *row_val=new double [_nDecisionVars]; //values of row[col_ind]
 
@@ -1174,8 +1199,8 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
     p  =pModel->GetOrderedSubBasinIndex(pp);
     pSB=pModel->GetSubBasin(p);
 
-    //Q_p = (Qin +Qin )*U0 + sum(Ui*Qn-i) + Runoff - Div_out(Q) + Div_in - Dem + Qadded + U_0*Qadded2
-    //Q_p-U_0*Qin-U_0*Qin2... +Dem = sum(Ui*Qn-i) + Runoff - Div_out(Q) + Div_in + Qadded + U_0*Qadded2
+    //Q_p = (Qin +Qin2 )*U0 + sum(Ui*Qn-i) + Runoff - Div_out(Q) + Div_in - Delivered + Qadded + U_0*Qadded2
+    //Q_p-U_0*Qin-U_0*Qin2... +Delivered = sum(Ui*Qn-i) + Runoff - Div_out(Q) + Div_in + Qadded + U_0*Qadded2
     if (pSB->IsEnabled())
     {
       U_0 =pSB->GetRoutingHydrograph()[0];
@@ -1427,7 +1452,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
 
   lp_lib::set_add_rowmode(pLinProg, FALSE); //turn off once model constraints and obj function are added
 
-  for (int iter=0; iter<3; iter++)
+  for (int iter=0; iter<4; iter++)
   {
     // ----------------------------------------------------------------
     // SOLVE OPTIMIZATION PROBLEM WITH LP_SOLVE
@@ -1609,6 +1634,8 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
 
       if (ii<100){//not a reservoir
         pModel->GetSubBasin(p)->AddToDeliveredDemand(ii,value);
+
+        //cout<<" Adding to delivered demand "<<std::setprecision(5)<<value<<" of "<<pSB->GetWaterDemand(ii,t)<<std::setprecision(2)<< " ("<<value/pSB->GetWaterDemand(ii,t)*100 <<"%)" << endl;
       }
       else {
         pModel->GetSubBasin(p)->GetReservoir()->AddToDeliveredDemand(ii-100, value);

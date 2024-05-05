@@ -105,8 +105,8 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     double roughness = pHRU->GetSurfaceProps()->roughness;
     double surf_temp = pHRU->GetSnowTemperature();
 
-    double K = F->SW_radia_net;   //net short wave radiation to snowpack [MJ/m2/d]
-    double L = F->LW_radia_net;   //net long wave radiation [MJ/m2/d]
+    double K = F->SW_subcan_net;   //net short wave radiation to snowpack [MJ/m2/d]
+    double L = F->LW_radia_net;    //net long wave radiation [MJ/m2/d]
     double H = GetSensibleHeatSnow(air_temp,surf_temp,wind_vel,ref_ht,roughness); //[MJ/m2/d]
     double LH= GetLatentHeatSnow  (air_pres,air_temp,surf_temp,rel_humid,wind_vel,ref_ht,roughness); //[MJ/m2/d]
     double R = GetRainHeatInput   (surf_temp,air_temp,rainfall ,rel_humid); //[MJ/m2/d]
@@ -123,7 +123,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     double Ma       =pHRU->GetSurfaceProps()->melt_factor;
     double tmp_rate=threshPositive(Ma*(F->temp_daily_ave-melt_temp));
 
-    rad     = (F->SW_radia_net+F->LW_radia_net);//[MJ/m2/d]
+    rad     = (F->SW_subcan_net+F->LW_radia_net);//[MJ/m2/d]
     convert = MM_PER_METER/DENSITY_WATER/LH_FUSION;//for converting radiation to mm/d [mm/m]/[kg/m3]/[MJ/kg] = [mm-m2/MJ]
 
     return tmp_rate*F->subdaily_corr+ threshPositive(rad*convert);
@@ -160,7 +160,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     // parameters for snowmelt without rain
     double kP = 1.1; // basin shortwave radiation melt factor
     double SF = pHRU->GetSurfaceProps()->forest_coverage;
-    double I  = F->SW_radia / kP;
+    double I  = F->SW_subcan_net / kP;
     double a  = pHRU->GetSnowAlbedo(); // Average snow surface albedo
     double TaP = Ta; // Difference between air temp measured at 3 m and snow surface
     double k2  = k1; // Convection-condensation melt factor
@@ -191,7 +191,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
   //----------------------------------------------------------
   else if(method == POTMELT_CRHM_EBSM)
   {
-    double Qn_ebsm=(F->SW_radia_net+F->LW_radia_net);
+    double Qn_ebsm=(F->SW_subcan_net+F->LW_radia_net);
     double Qh_ebsm=(-0.92+0.076*F->wind_vel+0.19*F->temp_daily_max);
     double Qp_ebsm=(F->precip*(1.0-F->snow_frac))*max(F->temp_ave,0.0)*SPH_WATER*DENSITY_WATER/MM_PER_METER;
 

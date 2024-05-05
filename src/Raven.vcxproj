@@ -700,6 +700,7 @@
     <ClCompile Include="DDS.cpp" />
     <ClCompile Include="Decay.cpp" />
     <ClCompile Include="DemandExpressionHandling.cpp" />
+    <ClCompile Include="DemandGroups.cpp" />
     <ClCompile Include="DemandOptimization.cpp" />
     <ClCompile Include="DepressionProcesses.cpp" />
     <ClCompile Include="Diagnostics.cpp" />
@@ -962,6 +963,7 @@
     <ClInclude Include="CropGrowth.h" />
     <ClInclude Include="Decay.h" />
     <ClInclude Include="DemandOptimization.h" />
+    <ClInclude Include="Demands.h" />
     <ClInclude Include="DepressionProcesses.h" />
     <ClInclude Include="Diagnostics.h" />
     <ClInclude Include="EnergyTransport.h" />

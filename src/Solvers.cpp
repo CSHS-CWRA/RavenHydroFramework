@@ -467,7 +467,7 @@ void MassEnergyBalance( CModel            *pModel,
   //      ROUTING
   //-----------------------------------------------------------------
   double res_ht,res_outflow;
-  double down_Q,irr_Q,div_Q, Qwithdrawn, SWvol;
+  double down_Q,irr_Q,div_Q, SWvol,div_Q_total;
   int    pDivert;
   res_constraint res_const;
   const int MAX_CONTROL_STRUCTURES=10;
@@ -502,14 +502,10 @@ void MassEnergyBalance( CModel            *pModel,
     //Regular Diversions
     pBasin=pModel->GetSubBasin(p);
     for(int i=0; i<pBasin->GetNumDiversions();i++) {
-      div_Q=pBasin->GetDiversionFlow(i,pBasin->GetOutflowRate(),Options,tt,pDivert); //diversions based upon flows at start of timestep
+      div_Q=pBasin->GetDiversionFlow(i,pBasin->GetChannelOutflowRate(),Options,tt,pDivert); //diversions based upon flows at start of timestep
       if(pDivert!=DOESNT_EXIST)
       {
         aQinnew[pDivert]+=div_Q;
-      }
-      else {
-        // \todo[funct] - must handle this in mass balance - should go to cumulative output
-	      //Qdivloss+=div_Q;
       }
     }
     //Diversions from reservoir control structures
@@ -520,10 +516,6 @@ void MassEnergyBalance( CModel            *pModel,
           pDivert=pModel->GetSubBasinIndex(pRes->GetControlFlowTarget(i)); //p, not SBID
           if (pDivert!=DOESNT_EXIST){
             aQinnew[pDivert]+=pRes->GetControlOutflow(i);
-          }
-          else {
-            //\todo[funct] - must handle this in mass balance - should go to cumulative output
-	          //Qdivloss+=pRes->GetControlOutflow(i);
           }
         }
       }
@@ -564,29 +556,32 @@ void MassEnergyBalance( CModel            *pModel,
 
       pBasin->UpdateLateralInflow(aRouted[p]/(tstep*SEC_PER_DAY)+down_Q);//[m3/d]->[m3/s]
 
-      pBasin->RouteWater    (aQoutnew,res_ht,res_outflow,res_const,res_Qstruct,Options,tt);      //Where everything happens!
+      pBasin->RouteWater    (aQoutnew,Options,tt);   
 
-      Qwithdrawn=0;
       irr_Q=pBasin->ApplyIrrigationDemand(t+tstep,aQoutnew[pBasin->GetNumSegments()-1],Options.management_optimization);
-      Qwithdrawn+=irr_Q;
 
-      for(int i=0; i<pBasin->GetNumDiversions();i++) {
-        div_Q=pBasin->GetDiversionFlow(i,pBasin->GetOutflowRate(),Options,tt,pDivert); //diversions based upon flows at start of timestep
-        Qwithdrawn+=div_Q;
+      div_Q_total=0;
+      for(int i=0; i<pBasin->GetNumDiversions();i++) { //downstream of reservoir!
+        div_Q=pBasin->GetDiversionFlow(i,pBasin->GetChannelOutflowRate(),Options,tt,pDivert); //diversions based upon flows at start of timestep (without diversions)
+        div_Q_total+=div_Q; 
       }
 
-      pBasin->UpdateOutflows(aQoutnew,irr_Q,res_ht,res_outflow,res_const,res_Qstruct,Options,tt,false);//actually updates flow values here
+      res_ht=res_outflow=0.0; res_const=RC_NATURAL;
+      if (pBasin->GetReservoir()!=NULL)
+      {
+        double res_inflow_last = pBasin->GetOutflowArray()[pBasin->GetNumSegments()-1];
+        double res_inflow =max((aQoutnew[pBasin->GetNumSegments()-1]-div_Q_total-irr_Q),0.0);
+        res_ht=pBasin->GetReservoir()->RouteWater(res_inflow_last,res_inflow,pModel,Options,tt,res_outflow,res_const,res_Qstruct);
+      }
+
+      pBasin->UpdateOutflows(aQoutnew,irr_Q,div_Q_total,res_ht,res_outflow,res_const,res_Qstruct,Options,tt,false);//actually updates flow values here
 
       pModel->AssimilationOverride(p,Options,tt); //modifies flows using assimilation, if needed
 
       pTo   =pModel->GetDownstreamBasin(p);
       if(pTo!=DOESNT_EXIST)//update downstream inflows
       {
-        aQinnew[pTo]+=pBasin->GetOutflowRate()-Qwithdrawn;
-      }
-      else {
-        //still need to remove Qwithdrawn from somewhere if downstream outflow doesn't exist!
-        //Qdivloss+=Qwithdrawn;
+        aQinnew[pTo]+=pBasin->GetOutflowRate();
       }
 
       if(pBasin->GetReservoir()!=NULL) {//update AET for reservoir-linked HRUs
