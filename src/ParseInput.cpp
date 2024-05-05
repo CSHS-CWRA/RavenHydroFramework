@@ -1807,7 +1807,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if(Len<3) { ImproperFormatWarning(":CustomTable",p,Options.noisy); break; }
       int pp=pModel->GetSubBasinGroup(s[1])->GetGlobalIndex();
       CCustomTable *pTab=new CCustomTable(s[2],pp,pModel);
-      
+
       while ((Len==0) || (strcmp(s[0],":EndHRUGroup")))
       {
         p->Tokenize(s,Len);
@@ -1815,7 +1815,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         else if (!strcmp(s[0],":EndCustomTable")){}//done
         else {
           int lay=DOESNT_EXIST;
-          sv_type sv=pStateVar->StringToSVType(s[0],lay,false); 
+          sv_type sv=pStateVar->StringToSVType(s[0],lay,false);
           if (sv != UNRECOGNIZED_SVTYPE) {
             pTab->AddStateVariable(sv,lay);
           }

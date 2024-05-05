@@ -818,7 +818,7 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
       if (As == 0.0) {temp_average=0.0;}
     }
   }
-  
+
   //Eulerian terms:
   Q_rad_in=SW*As;   //[MJ/d]
   Q_lw_in =LW_in*As; //[MJ/d]

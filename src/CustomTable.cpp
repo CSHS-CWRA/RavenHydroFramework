@@ -12,11 +12,11 @@
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the CCustomTable constructor
-/// \param filename          [in] specified filename 
-/// \param pp                [in] Subbasin group index 
+/// \param filename          [in] specified filename
+/// \param pp                [in] Subbasin group index
 /// \param *pMod             [in] Pointer to model
 //
-CCustomTable::CCustomTable(string filename, int pp, const CModel* pMod) 
+CCustomTable::CCustomTable(string filename, int pp, const CModel* pMod)
 {
   _filename=filename;
   _sb_grp_ind=pp;
@@ -26,22 +26,22 @@ CCustomTable::CCustomTable(string filename, int pp, const CModel* pMod)
   _nCols=NULL;
 
 }
-CCustomTable::~CCustomTable() 
+CCustomTable::~CCustomTable()
 {
   delete [] _aForcings;
   delete [] _aSVtypes;
   delete [] _aLayers;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief adds column to table 
+/// \brief adds column to table
 //
-void  CCustomTable::ExpandArrays() 
+void  CCustomTable::ExpandArrays()
 {
   sv_type       *tmp=new sv_type      [_nCols+1];
   forcing_type *tmp2=new forcing_type [_nCols+1];
   int          *tmp3=new int          [_nCols+1];
 
-  for (int i = 0; i < _nCols; i++) { 
+  for (int i = 0; i < _nCols; i++) {
     tmp [i]=_aSVtypes[i];
     tmp2[i]=_aForcings[i];
     tmp3[i]=_aLayers[i];
@@ -56,7 +56,7 @@ void  CCustomTable::ExpandArrays()
   _nCols++;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief adds state variable column to table 
+/// \brief adds state variable column to table
 //
 void  CCustomTable::AddStateVariable(const sv_type& sv, const int lay) {
   ExpandArrays();
@@ -64,9 +64,9 @@ void  CCustomTable::AddStateVariable(const sv_type& sv, const int lay) {
   _aLayers [_nCols-1]=lay;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief adds forcing column to table 
+/// \brief adds forcing column to table
 //
-void   CCustomTable::AddForcing(const forcing_type& ff) 
+void   CCustomTable::AddForcing(const forcing_type& ff)
 {
   ExpandArrays();
   _aForcings[_nCols-1]=ff;
@@ -74,7 +74,7 @@ void   CCustomTable::AddForcing(const forcing_type& ff)
 //////////////////////////////////////////////////////////////////
 /// \brief Open a stream to the file and write header info
 //
-void  CCustomTable::WriteFileHeader(const optStruct& Options) 
+void  CCustomTable::WriteFileHeader(const optStruct& Options)
 {
   _CUSTTAB.open(_filename.c_str());
   if (_CUSTTAB.fail()){
@@ -92,11 +92,11 @@ void  CCustomTable::WriteFileHeader(const optStruct& Options)
   _CUSTTAB<<endl;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Write custom table to file by querying the model 
+/// \brief Write custom table to file by querying the model
 /// \param &tt [in] Current model time
 /// \param &Options [in] Global model options information
 //
-void  CCustomTable::WriteCustomTable(const time_struct& tt, const optStruct& Options) 
+void  CCustomTable::WriteCustomTable(const time_struct& tt, const optStruct& Options)
 {
   int pp=_sb_grp_ind;
   _CUSTTAB<<tt.model_time<<","<<tt.date_string; //TODO - fix Date String
@@ -105,7 +105,7 @@ void  CCustomTable::WriteCustomTable(const time_struct& tt, const optStruct& Opt
       _CUSTTAB<<","<<_pModel->GetSubBasinGroup(pp)->GetAvgStateVar(_pModel->GetStateVarIndex(_aSVtypes[i],_aLayers[i]));
     }
     else {
-      
+
       _CUSTTAB<<","<<_pModel->GetSubBasinGroup(pp)->GetAvgForcing(_aForcings[i]);
     }
   }
@@ -113,7 +113,7 @@ void  CCustomTable::WriteCustomTable(const time_struct& tt, const optStruct& Opt
 //////////////////////////////////////////////////////////////////
 /// \brief Closes output stream after all information written to file
 //
-void  CCustomTable::CloseFile(const optStruct& Options) 
+void  CCustomTable::CloseFile(const optStruct& Options)
 {
   _CUSTTAB.close();
 }
