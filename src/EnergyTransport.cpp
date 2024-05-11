@@ -457,7 +457,7 @@ void   CEnthalpyModel::RouteMassInReservoir   (const int          p,          //
 double CEnthalpyModel::GetNetReachLosses(const int p)
 {
   double Q_sens,Q_cond,Q_lat,Q_GW,Q_rad_in,Q_lw_in,Q_lw_out, Q_fric,Qtot,Tave;
-  double Q=_pModel->GetSubBasin(p)->GetOutflowArray()[0];
+  double Q=_pModel->GetSubBasin(p)->GetOutflowArray()[_pModel->GetSubBasin(p)->GetNumSegments()-1];
   if (Q<REAL_SMALL){return 0;}
   Qtot=GetEnergyLossesFromReach(p,Q_sens,Q_cond,Q_lat,Q_GW,Q_rad_in,Q_lw_in,Q_lw_out,Q_fric,Tave);
   _aTave_reach[p]=Tave;
@@ -542,7 +542,7 @@ void CEnthalpyModel::Initialize(const optStruct& Options)
       const double *aQin=pBasin->GetInflowHistory();
       for(int i=0; i<pBasin->GetNumSegments(); i++)
       {
-        _aMout[p][i]=pBasin->GetOutflowArray()[0] * SEC_PER_DAY * hv; //not really - requires outflow rate from all segments in general case. Don't have access to this. assumes nSegs=1
+        _aMout[p][i]=pBasin->GetOutflowArray()[_pModel->GetSubBasin(p)->GetNumSegments()-1] * SEC_PER_DAY * hv; //not really - requires outflow rate from all segments in general case. Don't have access to this. assumes nSegs=1
       }
       _aMout_last[p]=_aMout[p][0];
       for(int i=0; i<_nMinHist[p]; i++)
@@ -663,7 +663,7 @@ void   CEnthalpyModel::UpdateReachEnergySourceTerms(const int p)
   double klin     =4.0*STEFAN_BOLTZ*EMISS_WATER*pow(temp_lin,3.0);
   double kprime   =qmix*bed_ratio*HCP_WATER;                  //[MJ/m2/d/K]
 
-  double Qf       =GetReachFrictionHeat(pBasin->GetOutflowArray()[0],pBasin->GetBedslope(),pBasin->GetTopWidth());//[MJ/m2/d]
+  double Qf       =GetReachFrictionHeat(pBasin->GetOutflowArray()[pBasin->GetNumSegments()-1],pBasin->GetBedslope(),pBasin->GetTopWidth());//[MJ/m2/d]
 
   double S(0.0);                          //source term [MJ/m3/d]
   S+=(SW+LW_in);                          //net incoming energy term
@@ -773,7 +773,7 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
   double klin     =4.0*STEFAN_BOLTZ*EMISS_WATER*pow(temp_lin,3.0); //[MJ/m2/d/K]
   double kprime   =qmix*HCP_WATER*bed_ratio;                       //[MJ/m2/d/K]
 
-  double Qf       =GetReachFrictionHeat(pBasin->GetOutflowArray()[0],pBasin->GetBedslope(),pBasin->GetTopWidth());//[MJ/m2/d]
+  double Qf       =GetReachFrictionHeat(pBasin->GetOutflowArray()[pBasin->GetNumSegments()-1], pBasin->GetBedslope(), pBasin->GetTopWidth());//[MJ/m2/d]
 
   const double * aRouteHydro=pBasin->GetRoutingHydrograph();
   const double * aQin       =pBasin->GetInflowHistory();
@@ -1132,14 +1132,14 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
     if ((pSB->IsGauged()) && (pSB->IsEnabled()))
     {
       mult = 1.0 / pSB->GetReachLength() / pSB->GetTopWidth();//convert everything to MJ/m2/d
-      if ((pSB->GetReachLength()==0) || (pSB->GetTopWidth()==0)){mult=0.0;}
+      if ((pSB->GetReachLength()<REAL_SMALL) || (pSB->GetTopWidth()<REAL_SMALL)){mult=0.0;}
 
       Ein  = 0.5 * (_aMinHist  [p][0] + _aMinHist[p][1]);
       Eout = 0.5 * (_aMout_last[p]    + _aMout   [p][pSB->GetNumSegments() - 1]);
       GetEnergyLossesFromReach(p, Q_sens, Q_cond, Q_lat, Q_GW, Q_sw_in,Q_lw_in,Q_lw_out, Q_fric, Tave);
 
       if ((pSB->GetTopWidth() < REAL_SMALL) || ( pSB->IsHeadwater())){//running dry or no reach
-        _STREAMOUT << ",,,,,,,,,,";
+        _STREAMOUT << ",,,,,,,,,,,";
       }
       else {
         _STREAMOUT << mult * Ein    << "," << mult * Eout     << ",";
@@ -1176,7 +1176,7 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
           Ein  = 0.5 * (_aMout_last[p] + _aMout[p][_pModel->GetSubBasin(p)->GetNumSegments() - 1]);
           Eout = 0.5 * (_aMout_res [p] + _aMout_res_last[p]);
 
-          double Qin=_pModel->GetSubBasin(p)->GetOutflowArray()[0]*SEC_PER_DAY; //[m3/d]
+          double Qin=_pModel->GetSubBasin(p)->GetOutflowArray()[_pModel->GetSubBasin(p)->GetNumSegments()-1]*SEC_PER_DAY; //[m3/d]
 
           GetEnergyLossesFromLake(p,Q_sens,Q_cond,Q_lat,Q_sw_in,Q_lw_in,Q_lw_out,Q_rain);
 

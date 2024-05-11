@@ -858,7 +858,7 @@ bool CDemandOptimizer::CheckGoalConditions(const int ii, const time_struct &tt, 
           dv_value=_pModel->GetSubBasinByID(ind)->GetReservoir()->GetResStage();
         }
         else if (tmp == 'I') {
-          dv_value=_pModel->GetSubBasinByID(ind)->GetOutflowArray()[0];
+          dv_value=_pModel->GetSubBasinByID(ind)->GetOutflowArray()[_pModel->GetSubBasinByID(ind)->GetNumSegments()-1];
         }
         else if (tmp == 'C') {
           dv_value=_aCumDelivery[ind];

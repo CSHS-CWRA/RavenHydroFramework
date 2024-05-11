@@ -1888,8 +1888,9 @@ void CSubBasin::GenerateCatchmentHydrograph(const double    &Qlat_avg,
       t=n*tstep-_t_lag;
       _aUnitHydro[n]=GammaCumDist(t+tstep,alpha, beta)-sum;
 
-      ExitGracefullyIf(!_finite(_aUnitHydro[n]),
-                       "GenerateCatchmentHydrograph: issues with gamma distribution. Time to peak may be too small relative to timestep",RUNTIME_ERR);
+      //ExitGracefullyIf(!_finite(_aUnitHydro[n]),
+      ExitGracefullyIf(_aUnitHydro[n]>ALMOST_INF,
+        "GenerateCatchmentHydrograph: issues with gamma distribution. Time to peak may be too small relative to timestep",RUNTIME_ERR);
 
       sum+=_aUnitHydro[n];
     }

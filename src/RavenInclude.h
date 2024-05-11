@@ -1477,9 +1477,11 @@ inline void      s_to_range (const char *s1, long long int &v1, long long int &v
     v2=atoll(s.substr((unsigned int)(p)+1,1000).c_str());
   };
 }
+/* //_finite causes all sorts of issues on multi-platform compilation
 #ifndef _WIN32
 #define _finite(v) finite(v)
 #endif
+*/
 
 ///////////////////////////////////////////////////////////////////
 /// \brief converts any input to string
