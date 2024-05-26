@@ -1543,6 +1543,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
 
   delete [] indices;
   for (int i=0;i<MAX_NUM_IN_CLASS;i++){delete [] properties[i];}delete [] properties;
+  delete p;
 
   return true;
 }
@@ -1698,7 +1699,7 @@ void  AddToMasterParamList   (string        *&aPm, class_type       *&aPCm, int 
     aPCm_new[nPm+i]=aPC[i];
   }
   if (aPm!=NULL){delete [] aPm; aPm=NULL;}
-  if (aPm!=NULL){delete [] aPCm;aPCm=NULL;}
+  if (aPCm!=NULL){delete [] aPCm;aPCm=NULL;}
   aPm =aPm_new;
   aPCm=aPCm_new;
   nPm=nPm+nP;
