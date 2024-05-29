@@ -1352,7 +1352,12 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
       if(pBasin->IsGauged() && (pBasin->IsEnabled()))
       {
         Q=pBasin->GetOutflowRate();
-        if (Q<REAL_SMALL){_POLLUT<<",,";}
+        if (Q<REAL_SMALL){
+          _POLLUT<<",";
+          if(_type==ENTHALPY) {
+            _POLLUT<<",";
+          }
+        }
         else             {
           _POLLUT<<","<<GetOutflowConcentration(p);
           if(_type==ENTHALPY) {
