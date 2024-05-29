@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team, Ayman Khedr, Konhee Lee
+  Copyright (c) 2008-2024 the Raven Development Team, Ayman Khedr, Konhee Lee
   ----------------------------------------------------------------*/
 
 #include "TimeSeriesABC.h"
@@ -41,6 +41,7 @@ string CDiagnostic::GetName() const
   {
   case(DIAG_NASH_SUTCLIFFE):    {return "DIAG_NASH_SUTCLIFFE"; }
   case(DIAG_DAILY_NSE):         {return "DIAG_DAILY_NSE"; }
+  case(DIAG_FUZZY_NASH):        {return "DIAG_FUZZY_NASH"; }
   case(DIAG_RMSE):              {return "DIAG_RMSE";}
   case(DIAG_PCT_BIAS):          {return "DIAG_PCT_BIAS";}
   case(DIAG_ABS_PCT_BIAS):      {return "DIAG_ABS_PCT_BIAS"; }
@@ -368,6 +369,45 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     else
     {
       string warn = "DIAG_DAILY_NSE not calculated. Missing non-zero weighted observations during simulation duration.";
+      WriteWarning(warn,Options.noisy);
+      return -ALMOST_INF;
+    }
+  }
+  case(DIAG_FUZZY_NASH)://----------------------------------------------------
+  {
+    double avgobs=0.0;
+    N=0;
+    double pct=_width/100; //"width" is actually percentage. If ==0, reverts to NSE 
+    for(nn=nnstart;nn<nnend;nn++)
+    {
+      weight=baseweight[nn];
+      obsval =pTSObs->GetSampledValue(nn);
+      avgobs+=weight*obsval;
+      N     +=weight;
+    }
+    if(N>0.0) { avgobs/=N; }
+
+    double sum1(0.0),sum2(0.0);
+    double eps,eps2;
+    for(nn=nnstart;nn<nnend;nn++)
+    {
+      weight=baseweight[nn];
+      obsval = pTSObs->GetSampledValue(nn);
+      modval = pTSMod->GetSampledValue(nn);
+
+      eps = max(modval - obsval * (1.0 + pct), 0.0) + max(obsval*(1.0 - pct)-modval,0.0);
+      eps2= max(avgobs - obsval * (1.0 + pct), 0.0) + max(avgobs*(1.0 - pct)-modval,0.0);
+      sum1 += weight*pow(eps ,2);
+      sum2 += weight*pow(eps2,2);
+    }
+
+    if ((N > 0) && (sum2>0))
+    {
+      return 1.0 - (sum1 / sum2);
+    }
+    else
+    {
+      string warn = "DIAG_NASH_SUTCLIFFE not calculated. Missing non-zero weighted observations during simulation duration.";
       WriteWarning(warn,Options.noisy);
       return -ALMOST_INF;
     }
@@ -1410,5 +1450,6 @@ diag_type StringToDiagnostic(string distring)
   else if (!distring.compare("YEARS_OF_RECORD"      )){return DIAG_YEARS_OF_RECORD; }
   else if (!distring.compare("SPEARMAN"             )){return DIAG_SPEARMAN; }
   else if (!distring.compare("NASH_SUTCLIFFE_RUN"   )){return DIAG_NASH_SUTCLIFFE_RUN; }
-  else                                                {return DIAG_UNRECOGNIZED;}
+  else if (!distring.compare("FUZZY_NASH"           )){return DIAG_FUZZY_NASH; }
+  else                                                {return DIAG_UNRECOGNIZED;} 
 }

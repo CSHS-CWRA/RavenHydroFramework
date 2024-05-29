@@ -384,7 +384,6 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         pGrid_pet   = GetForcingGrid(F_PET);
         pGrid_pet-> ReadData(Options,tt.model_time);
         F.PET   = pGrid_pet->GetWeightedValue(k,tt.model_time,Options.timestep);
-        cout<<"reading gridded PET"<<endl;
       }
       if(owpet_gridded) {
         pGrid_owpet   = GetForcingGrid(F_OW_PET);

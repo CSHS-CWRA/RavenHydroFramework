@@ -561,6 +561,7 @@ enum HRU_type
 {
   HRU_STANDARD,             ///< Standard HRU
   HRU_LAKE,                 ///< Lake HRU
+  HRU_WATER,                ///< Non-lake Waterbody HRU (streams)
   HRU_GLACIER,              ///< Glacier HRU
   HRU_WETLAND,              ///< Wetland HRU
   HRU_ROCK,                 ///< Open Rock or Pavement (impermeable) HRUs

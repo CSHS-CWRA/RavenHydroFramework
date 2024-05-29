@@ -878,14 +878,14 @@ double CEnthalpyModel::GetEnergyLossesInTransit(const int p, double& Q_sens, dou
                                         hin_hist[m+2-1],
                                         beta, tstep);
       dA=1.0/k*aUnitHydro[k];
-      Q_sens   +=dA*_aInCatch_a[p]*(temp_air-Tbar_km);   //[MJ/d/K]*[K]=[MJ/d]
-      Q_GW     +=dA*_aInCatch_b[p]*(temp_GW -Tbar_km);
+      Q_sens   +=dA*_aInCatch_a[p]*HCP_WATER*(temp_air-Tbar_km);   //[MJ/m3/K]*[1/d]*[K]=[MJ/m3/d]
+      Q_GW     +=dA*_aInCatch_b[p]*HCP_WATER*(temp_GW -Tbar_km);
     }
   }
 
   delete[] hin_hist;
 
-  return -(Q_sens+Q_GW)*tstep;
+  return -(Q_sens+Q_GW)*tstep; //[MJ]
 
 }
 //////////////////////////////////////////////////////////////////

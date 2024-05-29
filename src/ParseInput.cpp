@@ -1037,6 +1037,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"UBC"                )){Options.wind_velocity=WINDVEL_UBCWM;}
       else if (!strcmp(s[1],"WINDVEL_CONSTANT"   )){Options.wind_velocity=WINDVEL_CONSTANT;}
       else if (!strcmp(s[1],"WINDVEL_DATA"       )){Options.wind_velocity=WINDVEL_DATA;}
+      else if (!strcmp(s[1],"WINDVEL_UBC"        )){Options.wind_velocity=WINDVEL_UBCWM;}
       else if (!strcmp(s[1],"WINDVEL_UBCWM"      )){Options.wind_velocity=WINDVEL_UBCWM;}
       else if (!strcmp(s[1],"WINDVEL_UBC_MOD"    )){Options.wind_velocity=WINDVEL_UBC_MOD;}
       else if (!strcmp(s[1],"WINDVEL_SQRT"       )){Options.wind_velocity=WINDVEL_SQRT;}
@@ -1564,7 +1565,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       {
         invalid=false;pDiag=NULL;
         int width = DOESNT_EXIST;
-        string tmp = CStateVariable::SVStringBreak(s[i], width); //using other routine to grab width
+        string tmp = CStateVariable::SVStringBreak(s[i], width); //using other routine to grab width in brackets
         diag_type diag=StringToDiagnostic(tmp);
         if (diag != DIAG_UNRECOGNIZED) {
           pDiag=new CDiagnostic(diag,width);

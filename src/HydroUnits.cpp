@@ -728,6 +728,9 @@ double  CHydroUnit::GetTotalAlbedo(const bool subcanopy) const
     else if (_HRUType==HRU_LAKE){
       land_albedo=0.1;//WATER_ALBEDO;
     }
+    else if (_HRUType==HRU_WATER){
+      land_albedo=0.1;//WATER_ALBEDO;
+    }
     else if (_HRUType==HRU_ROCK){
       land_albedo=0.35;//ROCK_ALBEDO;
     }

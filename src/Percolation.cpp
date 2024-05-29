@@ -187,6 +187,7 @@ void   CmvPercolation::GetRatesOfChange( const double                   *state_v
                                          double     *rates) const
 {
   if (pHRU->GetHRUType()==HRU_LAKE){return;}//Lakes  (but allowed beneath some glaciers?)
+  if (pHRU->GetHRUType()==HRU_WATER){return;}//other water bodies
 
   double stor,max_stor;
 
@@ -342,6 +343,7 @@ void   CmvPercolation::ApplyConstraints(const double             *state_vars,
                                         double     *rates) const
 {
   if (pHRU->GetHRUType()==HRU_LAKE){return;}//Lakes
+  if (pHRU->GetHRUType()==HRU_WATER){return;}//other water bodies
 
   double min_stor=g_min_storage;
 

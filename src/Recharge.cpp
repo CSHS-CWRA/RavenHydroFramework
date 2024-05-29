@@ -32,7 +32,7 @@ CmvRecharge::CmvRecharge(recharge_type rech_type,
 
   CHydroProcessABC::DynamicSpecifyConnections(1);
   iFrom[0]=pModel->GetStateVarIndex(ATMOS_PRECIP);
-  iTo[0]=to_index;
+  iTo  [0]=to_index;
   _type = rech_type;
 }
 
