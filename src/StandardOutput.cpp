@@ -233,6 +233,11 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         {
           if (pSB->GetName()=="")    {_HYDRO<<",ID="<<pSB->GetID()  <<" (res. inflow) [m3/s]";}
           else                       {_HYDRO<<","   <<pSB->GetName()<<" (res. inflow) [m3/s]";}
+          if (Options.write_netresinflow){
+            if (pSB->GetName()=="")    {_HYDRO<<",ID="<<pSB->GetID()  <<" (res. net inflow) [m3/s]";}
+            else                       {_HYDRO<<","   <<pSB->GetName()<<" (res. net inflow) [m3/s]";}
+          }
+
           for(i = 0; i < _nObservedTS; i++){
             if(IsContinuousInflowObs(_pObservedTS[i],pSB->GetID()))
             {
@@ -783,6 +788,13 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
             }
             if (pSB->GetReservoir() != NULL){
               _HYDRO<<","<<pSB->GetIntegratedReservoirInflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
+                if (Options.write_netresinflow){
+                  double Qin=pSB->GetIntegratedReservoirInflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
+                  double P  =pSB->GetReservoir()->GetReservoirPrecipGains(Options.timestep)/(Options.timestep*SEC_PER_DAY);
+                  double E  =pSB->GetReservoir()->GetReservoirEvapLosses (Options.timestep)/(Options.timestep*SEC_PER_DAY);
+                  double GW =pSB->GetReservoir()->GetReservoirGWLosses   (Options.timestep)/(Options.timestep*SEC_PER_DAY);
+                  _HYDRO<<","<<Qin+P-E-GW;
+                }
               for(i = 0; i < _nObservedTS; i++)
               {
                 if(IsContinuousInflowObs(_pObservedTS[i],pSB->GetID()))
@@ -824,6 +836,13 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
               }
               if(pSB->GetReservoir() != NULL){
                 _HYDRO<<","<<pSB->GetReservoirInflow();
+                if (Options.write_netresinflow){
+                  double Qin=pSB->GetReservoirInflow();
+                  double P  =pSB->GetReservoir()->GetReservoirPrecipGains(Options.timestep)/(Options.timestep*SEC_PER_DAY);
+                  double E  =pSB->GetReservoir()->GetReservoirEvapLosses (Options.timestep)/(Options.timestep*SEC_PER_DAY);
+                  double GW =pSB->GetReservoir()->GetReservoirGWLosses   (Options.timestep)/(Options.timestep*SEC_PER_DAY);
+                  _HYDRO<<","<<Qin+P-E-GW;
+                }
                 for(i = 0; i < _nObservedTS; i++)
                 {
                   if(IsContinuousInflowObs(_pObservedTS[i],pSB->GetID()))
@@ -1850,6 +1869,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   int         varid_qobs;                            // variable ID for observed outflows
   int         varid_qin;                             // variable ID for observed inflows
   int         varid_qloc;
+  int         varid_qnet_in;                         // variable ID for reservoir net inflows 
 
   int         retval;                                // error value for NetCDF routines
   string      tmpFilename;
@@ -1930,6 +1950,9 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     varid_qin = NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_in" ,"Simulated reservoir inflows"  ,"m**3 s**-1");
     if (Options.write_localflow){
     varid_qloc= NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_loc" ,"Local inflow contribution"  ,"m**3 s**-1");
+    }
+    if (Options.write_netresinflow){
+    varid_qnet_in=NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"qnet_in" ,"Simulated reservoir net inflows"  ,"m**3 s**-1");
     }
   }// end if nSim>0
 
@@ -2300,6 +2323,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
   int    qsim_id;               // variable id in NetCDF for simulated outflow
   int    qobs_id;               // variable id in NetCDF for observed outflow
   int    qin_id;                // variable id in NetCDF for observed inflow
+  int    qin_net_id;            // variable id in NetCDF for simulated net res inflow 
 
   // (a) count how many values need to be written for q_obs, q_sim, q_in
   int iSim, nSim; // current and total # of sub-basins with simulated outflows
@@ -2313,11 +2337,13 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
   double *outflow_sim=NULL;   // q_sim
   double *inflow_obs =NULL;   // q_in
   double *outflow_loc=NULL;   // q_loc
+  double *inflow_net =NULL;   // q_net_res
   if(nSim>0){
     outflow_sim=new double[nSim];
     outflow_obs=new double[nSim];
     inflow_obs =new double[nSim];
     outflow_loc=new double[nSim];
+    inflow_net =new double[nSim];
   }
 
   // (c) obtain data
@@ -2341,9 +2367,17 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
         }
         outflow_loc[iSim] =_pSubBasins[p]->GetIntegratedLocalOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
 
-        inflow_obs[iSim] =NETCDF_BLANK_VALUE;
+        inflow_obs[iSim]=NETCDF_BLANK_VALUE;
+        inflow_net[iSim]=NETCDF_BLANK_VALUE;
         if (_pSubBasins[p]->GetReservoir() != NULL){
           inflow_obs[iSim] = _pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
+          if (Options.write_netresinflow){
+              double Qin=inflow_obs[iSim];
+              double P  =_pSubBasins[p]->GetReservoir()->GetReservoirPrecipGains(Options.timestep)/(Options.timestep*SEC_PER_DAY);
+              double E  =_pSubBasins[p]->GetReservoir()->GetReservoirEvapLosses (Options.timestep)/(Options.timestep*SEC_PER_DAY);
+              double GW =_pSubBasins[p]->GetReservoir()->GetReservoirGWLosses   (Options.timestep)/(Options.timestep*SEC_PER_DAY);
+              inflow_net[iSim]=Qin+P-E-GW;
+          }
         }
         iSim++;
       }
@@ -2366,9 +2400,17 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
         }
         outflow_loc[iSim] =_pSubBasins[p]->GetLocalOutflowRate();
 
-        inflow_obs[iSim] =NETCDF_BLANK_VALUE;
+        inflow_obs[iSim]=NETCDF_BLANK_VALUE;
+        inflow_net[iSim]=NETCDF_BLANK_VALUE;
         if (_pSubBasins[p]->GetReservoir() != NULL){
           inflow_obs[iSim] = _pSubBasins[p]->GetReservoirInflow();
+          if (Options.write_netresinflow){
+              double Qin=inflow_obs[iSim];
+              double P  =_pSubBasins[p]->GetReservoir()->GetReservoirPrecipGains(Options.timestep)/(Options.timestep*SEC_PER_DAY);
+              double E  =_pSubBasins[p]->GetReservoir()->GetReservoirEvapLosses (Options.timestep)/(Options.timestep*SEC_PER_DAY);
+              double GW =_pSubBasins[p]->GetReservoir()->GetReservoirGWLosses   (Options.timestep)/(Options.timestep*SEC_PER_DAY);
+              inflow_net[iSim]=Qin+P-E-GW;
+          }
         }
         iSim++;
       }
@@ -2399,6 +2441,10 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
       int qloc_id;
       retval = nc_inq_varid (_HYDRO_ncid, "q_loc",  &qloc_id);                            HandleNetCDFErrors(retval);
       retval = nc_put_vara_double(_HYDRO_ncid, qloc_id, start2, count2, &outflow_loc[0]); HandleNetCDFErrors(retval);
+    }
+    if (Options.write_netresinflow){
+      retval = nc_inq_varid (_HYDRO_ncid, "qnet_in",  &qin_net_id);                     HandleNetCDFErrors(retval);
+      retval = nc_put_vara_double(_HYDRO_ncid, qin_net_id,  start2, count2, &inflow_net[0]);  HandleNetCDFErrors(retval);
     }
   }
 
