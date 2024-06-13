@@ -197,6 +197,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 
   int               code;            //Parsing vars
   bool              ended(false);
+  bool              is_temp(false);
   int               Len,line(0);
   char             *s[MAXINPUTITEMS];
 
@@ -572,8 +573,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     //--------------------TRANSPORT PROCESSES ---------------
     if       (in_ifmode_statement)                        {code=-6; }
     else if  (!strcmp(s[0],":Transport"                 )){code=300;}
-    else if  (!strcmp(s[0],":FixedConcentration"        )){code=301;}//After corresponding DefineHRUGroup(s) command, if used
-    else if  (!strcmp(s[0],":FixedTemperature"          )){code=301;}//After corresponding DefineHRUGroup(s) command, if used
+    else if  (!strcmp(s[0],":FixedConcentration"        )){code=301; is_temp=false;}//After corresponding DefineHRUGroup(s) command, if used
+    else if  (!strcmp(s[0],":FixedTemperature"          )){code=301; is_temp=true;}//After corresponding DefineHRUGroup(s) command, if used
     else if  (!strcmp(s[0],":MassInflux"                )){code=302;}//After corresponding DefineHRUGroup(s) command, if used
     else if  (!strcmp(s[0],":GeochemicalProcesses"      )){code=303;}
     else if  (!strcmp(s[0],":EndGeochemicalProcesses"   )){code=304;}
@@ -718,7 +719,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (Options.noisy) {cout <<"Simulation Time Step"<<endl;}
       if (Len<2){ImproperFormatWarning(":TimeStep",p,Options.noisy); break;}
       string tString=s[1];
-      if ((tString.length()>=2) && ((tString.substr(2,1)==":") || (tString.substr(1,1)==":"))){//support for hh:mm:ss.00 format
+      if ((tString.length()>=3) && ((tString.substr(2,1)==":") || (tString.substr(1,1)==":"))){//support for hh:mm:ss.00 format
         time_struct tt;
         tt=DateStringToTimeStruct("0000-01-01",tString,Options.calendar);
         Options.timestep=FixTimestep(tt.julian_day);
@@ -3167,7 +3168,10 @@ bool ParseMainInputFile (CModel     *&pModel,
 
     case (301)://----------------------------------------------
     {/*:FixedConcentration or :FixedTemperature
-       :FixedConcentration [string constit_name] [string state_var (storage compartment)] [double concentration (mg/l) or double temperature (C) or .rvt file name] {optional HRU Group name}*/
+       :FixedConcentration [string constit_name] [string state_var (storage compartment)] [double concentration (mg/l) or .rvt file name] {optional HRU Group name}
+       :FixedTemperature [string state_var (storage compartment)] [double temperature (C) or .rvt file name] {optional HRU Group name}
+       :FixedConcentration O18 [string state_var (storage compartment)] [double concentration (mg/l) or .rvt file name] [double concentration2 (mg/l) or .rvt filename] {optional HRU Group name}
+       */
       if (Options.noisy){cout <<"Fixed concentration or temperature transport constituent"<<endl;}
 
       if (!transprepared){
@@ -3176,23 +3180,32 @@ bool ParseMainInputFile (CModel     *&pModel,
       }
       int layer_ind;
       int i_stor;
-      sv_type typ = pStateVar->StringToSVType(s[2],layer_ind,false);
+      int add=0;int add2=0;
+      bool is_isotope(false);
+      if (is_temp){add=-1;}
+      sv_type typ = pStateVar->StringToSVType(s[2+add],layer_ind,false);
       if (typ==UNRECOGNIZED_SVTYPE){
         WriteWarning(":FixedConcentration/:FixedTemperature command: unrecognized storage variable name: "+to_string(s[2]),Options.noisy);
         break;
       }
       i_stor=pModel->GetStateVarIndex(typ,layer_ind);
       if (i_stor != DOESNT_EXIST){
-        int c=pModel->GetTransportModel()->GetConstituentIndex(s[1]);
-        int add=0;
+        int c;
+        
+        if (is_temp) {
+          c=pModel->GetTransportModel()->GetConstituentIndex("TEMPERATURE");
+        }
+        else {
+          c=pModel->GetTransportModel()->GetConstituentIndex(s[1]);
+        }
         if (pModel->GetTransportModel()->GetConstituentModel(c)->GetType()==ISOTOPE){
-          add=1;
+          add2=1;
         }
         if(c!=DOESNT_EXIST) {
           int kk = DOESNT_EXIST;
-          if (Len > 4+add){
+          if (Len > 4+add+add2){
             CHRUGroup *pSourceGrp;
-            pSourceGrp = pModel->GetHRUGroup(s[4+add]);
+            pSourceGrp = pModel->GetHRUGroup(s[4+add+add2]);
             if (pSourceGrp == NULL){
               ExitGracefully("Invalid HRU Group name supplied in :FixedConcentration/:FixedTemperature command in .rvi file", BAD_DATA_WARN);
               break;
@@ -3202,14 +3215,16 @@ bool ParseMainInputFile (CModel     *&pModel,
             }
           }
 
-          double C2=s_to_d(s[3]);
-          if ((add==1) && (Len>=5)){C2=s_to_d(s[4]);} // for isotope
-          pModel->GetTransportModel()->GetConstituentModel(c)->AddDirichletCompartment(i_stor,kk,s_to_d(s[3]),C2);
+          double C1=s_to_d(s[3+add]);
+          double C2=s_to_d(s[3+add]);
+          if ((add2==1) && (Len>=5)){C2=s_to_d(s[5]);} // for isotope
+          pModel->GetTransportModel()->GetConstituentModel(c)->AddDirichletCompartment(i_stor,kk,C1,C2);
+          //if time series is specified, s_to_d(time series file) returns zero
         }
         else {
           ExitGracefully("ParseMainInputFile: invalid constiuent in :FixedConcentration/:FixedTemperature command in .rvi file",BAD_DATA_WARN);
         }
-        //if time series is specified, s_to_d(time series file) returns zero
+        
       }
       else{
         string warn=":FixedConcentration command: invalid state variable name"+to_string(s[2]);

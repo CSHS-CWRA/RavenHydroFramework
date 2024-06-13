@@ -42,6 +42,14 @@ string CParser::GetFilename   ()         {return _filename;}
 //-----------------------------------------------------------------------
 void   CParser::NextIsMathExp ()         {_parsing_math_exp=true;}
 //-----------------------------------------------------------------------
+streampos CParser::GetPosition() const {
+  return _INPUT->tellg();
+}
+//-----------------------------------------------------------------------
+void      CParser::SetPosition(streampos& pos) {
+  _INPUT->seekg(pos,std::ios_base::beg);
+}
+//-----------------------------------------------------------------------
 string CParser::Peek()
 {
 

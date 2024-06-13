@@ -439,6 +439,13 @@ time_struct DateStringToTimeStruct(const string sDate, string sTime, const int c
   if (tt.month==12){tt.julian_day+=30;}
   if ((tt.leap_yr  ) && (tt.month> 2)){tt.julian_day+= 1;}
 
+  if (tt.day_of_month > DAYS_PER_MONTH[tt.month - 1]) {
+    ExitGracefully("DateStringToTimeStruct: Invalid time format used - exceeded max day of month",BAD_DATA);
+  }
+  if (tt.day_of_month <=0 ) {
+    ExitGracefully("DateStringToTimeStruct: Invalid time format used - negative or zero day of month",BAD_DATA);
+  }
+
   int hr, min;
   double sec;
 
@@ -472,6 +479,68 @@ bool        IsInDateRange(const double &julian_day,const int &julian_start,const
   }
   else {
     return ((julian_day>=julian_start) || (julian_day<=julian_end)); //wraps around Dec 31-Jan 1
+  }
+}
+////////////////////////////////////////////////////////////////////////////
+/// \brief returns zero-indexed julian date (0..364(5)) given string in format Mmm-dd, mm-dd, or Julian date
+/// \param date_str [in] date string ('Apr-23', '04-23', or '113')
+/// \param calendar   [in] enumerated calendar type
+/// \return zero indexed julian date
+//
+int GetJulianDayFromMonthYear   (const string &date_str, const int calendar)
+{
+  if((date_str.length()==3) && (date_str.substr(1,1)=="-"))//support for m-d format (4-2)
+  {
+    string fulldate_str="1999-0"+date_str.substr(0,1)+"-0"+date_str.substr(2,1); //no leap year
+    time_struct tt = DateStringToTimeStruct(fulldate_str, "00:00:00", calendar);
+    return (int)(tt.julian_day);
+  }
+  else if((date_str.length()>=2) && (date_str.substr(1,1)=="-"))//support for m-dd format (4-23)
+  {
+    string fulldate_str="1999-0"+date_str; //no leap year
+    time_struct tt = DateStringToTimeStruct(fulldate_str, "00:00:00", calendar);
+    return (int)(tt.julian_day);
+  }
+  else if((date_str.length()==4) && (date_str.substr(2,1)=="-"))//support for mm-d format (10-2)
+  {
+    string fulldate_str="1999-"+date_str.substr(0, 3) + "0" + date_str.substr(3, 1); //no leap year
+    time_struct tt = DateStringToTimeStruct(fulldate_str, "00:00:00", calendar);
+    return (int)(tt.julian_day);
+  }
+  else if((date_str.length()==5) && (date_str.substr(2,1)=="-"))//support for mm-dd format (04-23)
+  {
+    string fulldate_str="1999-"+date_str; //no leap year
+    time_struct tt = DateStringToTimeStruct(fulldate_str, "00:00:00", calendar);
+    return (int)(tt.julian_day);
+  }
+  else if ((date_str.length()>=3) && (date_str.substr(3,1)=="-"))//support for Mmm-dd & Mmm-d format (Apr-23, Apr-02, or Apr-2)
+  {
+    string months[12] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+    string fulldate_str="";
+    for (int mon=0;mon<12;mon++){
+      if (date_str.substr(0,3)==months[mon]){
+        if (mon<9){fulldate_str="0"; }
+        if (date_str.length()<=5){ //Apr-1 
+          fulldate_str=fulldate_str+to_string(mon+1)+"-0"+date_str.substr(4, 1);
+        }
+        else{ //Apr-01 or Apr-23
+          fulldate_str=fulldate_str+to_string(mon+1)+"-"+date_str.substr(4, 2);
+        }
+      }
+    }
+    if (fulldate_str == "") {
+      ExitGracefully("GetJulianDayFromMonthYear: invalild month indicated in Mmm-dd date format",BAD_DATA);
+    }
+    fulldate_str="1999-"+fulldate_str;
+    time_struct tt = DateStringToTimeStruct(fulldate_str, "00:00:00", calendar);
+    return (int)(tt.julian_day);
+  }
+  else{ //julian date format
+    int val=s_to_i(date_str.c_str());
+    if ((val==0) || (val>365)){
+      ExitGracefully("GetJulianDayFromMonthYear: invalild format of julian date. Should be in 'Mmm-dd', 'mm-dd', or supplied as julian date 1..365",BAD_DATA);
+    }
+    return s_to_i(date_str.c_str())-1; //convert from integer julian days to Raven 0-indexed julian days
   }
 }
 ////////////////////////////////////////////////////////////////////////////

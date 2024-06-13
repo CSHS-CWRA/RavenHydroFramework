@@ -1333,6 +1333,7 @@ double      RoundToNearestMinute  (const double& t);
 bool        IsInDateRange         (const double &julian_day,
                                    const int    &julian_start,
                                    const int    &julian_end);
+int      GetJulianDayFromMonthYear(const string &date_str, const int calendar);
 
 bool        IsValidNetCDFTimeString   (const string unit_t_str);
 time_struct TimeStructFromNetCDFString(const string unit_t_str,

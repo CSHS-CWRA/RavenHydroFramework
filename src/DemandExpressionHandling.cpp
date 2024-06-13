@@ -53,13 +53,13 @@ expressionStruct::~expressionStruct()
   }
   delete [] pTerms; pTerms=NULL;
 }
+
 //////////////////////////////////////////////////////////////////
 /// constructor, destructor, and member functions of manConstraint structure
 //
 manConstraint::manConstraint()
 {
   name="";
-  pExpression=NULL;
 
   is_goal=false;
   penalty_under=1.0;
@@ -69,51 +69,40 @@ manConstraint::manConstraint()
   
   penalty_value=0;
 
-  nConditions=0;
-  pConditions=NULL;
+  nOperRegimes=1;
+  pOperRegimes=new op_regime* [1];
+  pOperRegimes[0]=new op_regime("default");
+
+  active_regime=DOESNT_EXIST;
   ever_satisfied=false;
   conditions_satisfied=false;
 }
 manConstraint::~manConstraint()
 {
-  delete pExpression; 
-  delete [] pConditions; nConditions=0;
+  delete [] pOperRegimes; nOperRegimes=0;
 }
-void manConstraint::AddCondition(exp_condition* pCond)
+
+void manConstraint::AddOperatingRegime(op_regime* pOR, bool first) 
 {
-  if(!DynArrayAppend((void**&)(pConditions),(void*)(pCond),nConditions)) {
-    ExitGracefully("management_constraint::AddCondition: adding NULL condition",BAD_DATA_WARN);
+  if ((nOperRegimes==1) && (first)){
+    pOperRegimes[0]->reg_name=pOR->reg_name;
+  }
+  else{
+    if(!DynArrayAppend((void**&)(pOperRegimes),(void*)(pOR),nOperRegimes)) {
+      ExitGracefully("management_constraint::AddOperatingRegime: adding NULL operating regime",BAD_DATA_WARN);
+    }
   }
 }
-//////////////////////////////////////////////////////////////////
-//todo: Move to LookupTable.h/.cpp
-CLookupTable::CLookupTable(string name, double* x, double* y, int N)
+void manConstraint::AddOpCondition(exp_condition* pCond)
 {
-  _name=name;
-  _aX=new double [N];
-  _aY=new double [N];
-  _nItems=N;
-  for (int i = 0; i < _nItems; i++) {
-    _aX[i]=x[i];
-    _aY[i]=y[i];
+  if(!DynArrayAppend((void**&)(pOperRegimes[nOperRegimes-1]->pConditions),(void*)(pCond),pOperRegimes[nOperRegimes-1]->nConditions)) {
+    ExitGracefully("management_constraint::AddOpCondition: adding NULL condition",BAD_DATA_WARN);
   }
 }
-CLookupTable::~CLookupTable() {
-  delete [] _aX;
-  delete [] _aY;
-}
-string CLookupTable::GetName() const
+void manConstraint::AddExpression(expressionStruct* pExp) 
 {
-  return _name;
-}
-double CLookupTable::GetValue(const double& x) const
-{
-  return InterpolateCurve(x,_aX,_aY,_nItems,false);
-}
-double CLookupTable::GetSlope(const double& x) const
-{
-  double dx=0.001*(_aX[_nItems-1]-_aX[0]);
-  return (1.0/dx)*(InterpolateCurve(x+dx,_aX,_aY,_nItems,false)-InterpolateCurve(x,_aX,_aY,_nItems,false));
+  pOperRegimes[nOperRegimes-1]->pExpression=pExp;
+  ExitGracefullyIf(pExp==NULL,"manConstraint::AddExpression: NULL Expression",RUNTIME_ERR);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -128,7 +117,27 @@ double CDemandOptimizer::GetNamedConstant(const string s) const
   }
   return RAV_BLANK_DATA;
 }
-int CDemandOptimizer::GetUserDVIndex(const string s) const {
+
+//////////////////////////////////////////////////////////////////
+/// \brief retrieves value of control variable from list of control variables
+/// \params s [in] - string
+/// \returns value of control var, or BLANK if not found
+//
+double CDemandOptimizer::GetControlVariable(const string s) const
+{
+  for (int i = 0; i < _nControlVars; i++) {
+    if (s==_pControlVars[i]->name){return _pControlVars[i]->current_val; }
+  }
+  return RAV_BLANK_DATA;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief retrieves value of decision variable index 
+/// \params s [in] - string
+/// \returns index of named user-specified decision var, or DOESNT_EXIST if not found
+//
+int CDemandOptimizer::GetUserDVIndex(const string s) const 
+{
   int ct=0;
   for (int i = 0; i < _nDecisionVars; i++) {
     if (_pDecisionVars[i]->dvar_type==DV_USER){
@@ -138,36 +147,12 @@ int CDemandOptimizer::GetUserDVIndex(const string s) const {
   }
   return DOESNT_EXIST;
 }
-
-int CDemandOptimizer::GetNumUserDVs() const{
-  return _nUserDecisionVars;
-}
-string TermTypeToString(termtype t) 
-{
-  if (t==TERM_DV     ){return "TERM_DV"; }   
-  if (t==TERM_TS     ){return "TERM_TS"; }   
-  if (t==TERM_LT     ){return "TERM_LT"; }   
-  if (t==TERM_HRU    ){return "TERM_HRU";}   
-  if (t==TERM_SB     ){return "TERM_SB"; }
-  if (t==TERM_CONST  ){return "TERM_CONST"; }   
-  if (t==TERM_HISTORY){return "TERM_HISTORY"; }   
-  if (t==TERM_MAX    ){return "TERM_MAX"; }   
-  if (t==TERM_MIN    ){return "TERM_MIN"; }   
-  if (t==TERM_CONVERT){return "TERM_CONVERT"; }   
-  if (t==TERM_UNKNOWN){return "TERM_UNKNOWN"; }   
-  return "TERM_UNKNOWN";
-}
-string DVTypeToString(dv_type t) 
-{
-  if (t==DV_QOUT    ){return "DV_QOUT"; }    
-  if (t==DV_QOUTRES ){return "DV_QOUTRES"; }  
-  if (t==DV_STAGE   ){return "DV_STAGE"; }    
-  if (t==DV_DELIVERY){return "DV_DELIVERY"; } 
-  if (t==DV_SLACK   ){return "DV_SLACK"; }   
-  if (t==DV_USER    ){return "DV_USER"; }    
-  return "DV_UNKNOWN";
-}
-
+//////////////////////////////////////////////////////////////////
+/// \brief retrieves index of native decision variable starting with !
+/// \params s [in] - string
+/// \returns index of named decision variable, or DOESNT_EXIST if not found
+/// supports !Qxxx, !Q.name, !hxxx, !Ixxx, !Dxxx, !Cxxx 
+//
 int CDemandOptimizer::GetIndexFromDVString(string s) const //String in format !Qxxx or !Q.name but not !Qxx[n]
 {
   if ((s[1] == 'Q') || (s[1] == 'h') || (s[1]=='I')) //Subbasin-indexed 
@@ -200,7 +185,62 @@ int CDemandOptimizer::GetIndexFromDVString(string s) const //String in format !Q
   }
   return DOESNT_EXIST;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief returns number of user-specified decision variables 
+//
+int CDemandOptimizer::GetNumUserDVs() const{
+  return _nUserDecisionVars;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief enum to string routines
+//
+string TermTypeToString(termtype t) 
+{
+  if (t==TERM_DV     ){return "TERM_DV"; }   
+  if (t==TERM_TS     ){return "TERM_TS"; }   
+  if (t==TERM_LT     ){return "TERM_LT"; }   
+  if (t==TERM_HRU    ){return "TERM_HRU";}   
+  if (t==TERM_SB     ){return "TERM_SB"; }
+  if (t==TERM_CONST  ){return "TERM_CONST"; }   
+  if (t==TERM_HISTORY){return "TERM_HISTORY"; }   
+  if (t==TERM_MAX    ){return "TERM_MAX"; }   
+  if (t==TERM_MIN    ){return "TERM_MIN"; }   
+  if (t==TERM_CONVERT){return "TERM_CONVERT"; }  
+  if (t==TERM_CUMUL  ){return "TERM_CUMUL";}
+  if (t==TERM_CUMUL_TS){return "TERM_CUMUL_TS";}
+  if (t==TERM_UNKNOWN){return "TERM_UNKNOWN"; }   
+  return "TERM_UNKNOWN";
+}
+string DVTypeToString(dv_type t) 
+{
+  if (t==DV_QOUT    ){return "DV_QOUT"; }    
+  if (t==DV_QOUTRES ){return "DV_QOUTRES"; }  
+  if (t==DV_STAGE   ){return "DV_STAGE"; }    
+  if (t==DV_DELIVERY){return "DV_DELIVERY"; } 
+  if (t==DV_SLACK   ){return "DV_SLACK"; }   
+  if (t==DV_USER    ){return "DV_USER"; }    
+  return "DV_UNKNOWN";
+}
+//////////////////////////////////////////////////////////////////
+/// \brief writes expType as string
+/// called by SummarizeExpression
+//
+string expTypeToString(termtype &typ){
+  switch (typ)
+  {
+  case(TERM_DV):      return "TERM_DV"; break;
+  case(TERM_TS):      return "TERM_TS"; break;
+  case(TERM_LT):      return "TERM_LT"; break;
+  case(TERM_CONST):   return "TERM_CONST"; break;
+  case(TERM_HISTORY): return "TERM_HISTORY"; break;
+  case(TERM_MAX):     return "TERM_MAX"; break;
+  case(TERM_MIN):     return "TERM_MIN"; break;
+  case(TERM_CONVERT): return "TERM_CONVERT"; break;
+  case(TERM_CUMUL):   return "TERM_CUMUL"; break;
+  case(TERM_UNKNOWN): return "TERM_UNKNOWN"; break;
+  }
+  return "?";
+}
 //////////////////////////////////////////////////////////////////
 /// \brief parses individual expression string and converts to expression term structure
 /// \param s [in] - string
@@ -381,6 +421,42 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     }
   }
   //----------------------------------------------------------------------
+  else if (s.find("@cumul(") != NPOS) //cumulative time series (e.g., @cumul(my_time_series,duration))
+  {
+    string name;
+    int    index;
+    size_t is = s.find("@cumul(");
+    size_t ie = s.find(",",is);
+    size_t ip = s.find(")",ie);
+    if (ie == NPOS) {
+      warn="ConvertToExpressionTerm: missing comma in @cumul expression"+warnstring;
+      ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+    }
+    if (ip == NPOS) {
+      warn="ConvertToExpressionTerm: missing end parentheses in @cumul expression"+warnstring;
+      ExitGracefully(warn.c_str(), BAD_DATA_WARN);
+    }
+    if ((is != NPOS) && (ie != NPOS)) 
+    {
+      bool found=false;
+      name  = s.substr(is+7,ie-(is+7));
+      index = s_to_i(s.substr(ie+1,ip-(ie+1)).c_str());
+      term->pTS=NULL;
+      for (int i = 0; i < _nUserTimeSeries; i++) {
+        if (StringToUppercase(_pUserTimeSeries[i]->GetName()) == StringToUppercase(name)) {
+          term->pTS = _pUserTimeSeries[i];
+          found=true;
+        }
+      }  
+      term->timeshift=index;
+      term->type     =TERM_CUMUL_TS;
+      if (!found) {
+        warn="ConvertToExpression: unrecognized time series name in @cumul command"+warnstring;
+        ExitGracefully(warn.c_str(), BAD_DATA_WARN);
+      }
+    }
+  }
+  //----------------------------------------------------------------------
   else if (s.find("@lookup(") != NPOS) //lookup table (e.g., @lookup(my_table,EXPRESSION)
   {
     string name;
@@ -464,7 +540,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     long   SBID;
     size_t is = s.find("@SB_var(");
     size_t ie = s.find(",",is);
-    size_t ip = s.find(")",ie);
+    size_t ip = s.find_last_of(")",ie);
     if (ie == NPOS) {
       warn="ConvertToExpressionTerm: missing comma in @SB_var expression"+warnstring;
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
@@ -504,7 +580,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     string x_in,y_in;
     size_t is = s.find("@max(");
     size_t ie = s.find(",",is);
-    size_t ip = s.find(")",ie);
+    size_t ip = s.find_last_of(")",ie);
     if (ie == NPOS) {
       warn="ConvertToExpressionTerm: missing comma in @max expression"+warnstring;
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
@@ -594,6 +670,12 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     term->value=GetNamedConstant(s);
   }
   //----------------------------------------------------------------------
+  else if (GetControlVariable(s) != RAV_BLANK_DATA) // control variable 
+  {
+    term->type=TERM_CONST;
+    term->value=GetControlVariable(s);
+  }
+  //----------------------------------------------------------------------
   else if (GetUserDVIndex(s)!=DOESNT_EXIST) // user-defined decision variable  
   {
     term->DV_ind=GetDVColumnInd(DV_USER, GetUserDVIndex(s));
@@ -613,6 +695,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
   }
   return true;
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief Parses demand constraint expression of form (e.g.,) A * B(x) * C + D * E - F = G * H(t) [NO PARENTHESES!]
 /// \params s [in] - array of strings of [size: Len]
@@ -765,7 +848,7 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
   tmp->pTerms=new expressionTerm **[nGroups];
   tmp->nTermsPerGrp=new int[nGroups];
   for (int j = 0; j < nGroups; j++) {
-    tmp->pTerms[j] = new expressionTerm * [nGroups];
+    tmp->pTerms[j] = new expressionTerm * [termspergrp[j]];
     tmp->nTermsPerGrp[j]=termspergrp[j];
     for (int k = 0; k < termspergrp[j]; k++) {
       tmp->pTerms[j][k]=terms[j][k];
@@ -774,26 +857,8 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
 
   return tmp;
 }
-//////////////////////////////////////////////////////////////////
-/// \brief writes expType as string
-/// called by SummarizeExpression
-//
-string expTypeToString(termtype &typ){
-  switch (typ)
-  {
-  case(TERM_DV):      return "TERM_DV"; break;
-  case(TERM_TS):      return "TERM_TS"; break;
-  case(TERM_LT):      return "TERM_LT"; break;
-  case(TERM_CONST):   return "TERM_CONST"; break;
-  case(TERM_HISTORY): return "TERM_HISTORY"; break;
-  case(TERM_MAX):     return "TERM_MAX"; break;
-  case(TERM_MIN):     return "TERM_MIN"; break;
-  case(TERM_CONVERT): return "TERM_CONVERT"; break;
-  case(TERM_CUMUL):   return "TERM_CUMUL"; break;
-  case(TERM_UNKNOWN): return "TERM_UNKNOWN"; break;
-  }
-  return "?";
-}
+
+
 //////////////////////////////////////////////////////////////////
 /// \brief writes out explicit details about expressionStructure contents
 /// called in ParseManagementFile under Noisy mode
@@ -814,42 +879,45 @@ void SummarizeExpression(const char **s, const int Len, expressionStruct* exp)
   cout<<"*"<<endl<<endl;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief checks if condition ii is satisfied, adjusts _pConstraints[ii]->conditions_satisfied
-//
-bool CDemandOptimizer::CheckGoalConditions(const int ii, const time_struct &tt, const optStruct &Options) const
+/// \brief checks if conditions of operating regime k or goal ii are satisfied
+/// returns true if *all* conditions of operating regime k of goal ii are satisfied
+/// 
+bool CDemandOptimizer::CheckGoalConditions(const int ii, const int k, const time_struct &tt, const optStruct &Options) const
 { 
   double dv_value;
   manConstraint *pC=_pConstraints[ii];
-
+  
   //Check if conditionals are satisfied 
-  for (int j = 0; j < pC->nConditions; j++) 
+  for (int j = 0; j < pC->pOperRegimes[k]->nConditions; j++) 
   {
-    if (pC->pConditions[j]->pExp != NULL) {
-      if(!EvaluateConditionExp(pC->pConditions[j]->pExp,tt.model_time))
+    exp_condition *pCond=pC->pOperRegimes[k]->pConditions[j];
+    if (pCond->pExp != NULL) {
+      if(!EvaluateConditionExp(pCond->pExp,tt.model_time))
       {
         return false;
       }
     }
-    else{
+    else
+    {
       dv_value=0.0;
-      if      (pC->pConditions[j]->dv_name == "DAY_OF_YEAR") 
+      if      (pCond->dv_name == "DAY_OF_YEAR") 
       {
         dv_value=tt.julian_day;
       }
-      else if (pC->pConditions[j]->dv_name == "MONTH")
+      else if (pCond->dv_name == "MONTH")
       {
         dv_value=(double)(tt.month);
       }
-      else if (pC->pConditions[j]->dv_name == "DATE") 
+      else if (pCond->dv_name == "DATE") 
       {
         dv_value=0;
         //handled below
       }
-      else if (pC->pConditions[j]->dv_name[0] == '!') //decision variable 
+      else if (pCond->dv_name[0] == '!') //decision variable 
       { 
-        char   tmp =pC->pConditions[j]->dv_name[1];
+        char   tmp =pCond->dv_name[1];
 
-        long   ind=pC->pConditions[j]->p_index; 
+        long   ind=pCond->p_index; 
       
         if      (tmp == 'Q') {
           dv_value=_pModel->GetSubBasinByID(ind)->GetOutflowRate();
@@ -868,39 +936,47 @@ bool CDemandOptimizer::CheckGoalConditions(const int ii, const time_struct &tt, 
         }
         //todo: support !q, !d, !B, !E, !F, !T 
       } 
-      else {//handle user specified DVs
-        bool found=false;
-        for (int i = 0; i < _nDecisionVars; i++) {
-          if (pC->pConditions[j]->dv_name == _pDecisionVars[i]->name) {
-            dv_value =_pDecisionVars[i]->value;
-            found=true;
+      else {//handle user specified DVs and control variables
+        int i=GetUserDVIndex(pCond->dv_name);
+        if (i == DOESNT_EXIST) {
+          bool found=false;
+          for (int j = 0; j < _nControlVars; j++) {
+            if (_pControlVars[j]->name == pCond->dv_name) {
+              dv_value =_pControlVars[i]->current_val;
+              found=true;
+            }
+          }
+
+          if (!found){
+            ExitGracefully("CheckGoalConditions: Unrecognized varible on left hand side of :Condition statement ",BAD_DATA_WARN); 
+            return false;
           }
         }
-        if (!found){
-          ExitGracefully("CheckGoalConditions: Unrecognized varible on left hand side of :Condition statement ",BAD_DATA_WARN); return false;
+        else {
+          dv_value =_pDecisionVars[i]->value;
         }
       }
 
-      comparison comp=pC->pConditions[j]->compare;
-      double        v=pC->pConditions[j]->value;
-      double       v2=pC->pConditions[j]->value2;
+      comparison comp=pCond->compare;
+      double        v=pCond->value;
+      double       v2=pCond->value2;
 
-      if (pC->pConditions[j]->dv_name == "DATE") //dates require special handling; remainder of values are just doubles
+      if (pCond->dv_name == "DATE") //dates require special handling; remainder of values are just doubles
       {
         dv_value=0;
 
-        time_struct time1=DateStringToTimeStruct(pC->pConditions[j]->date_string ,"00:00:00",Options.calendar);
+        time_struct time1=DateStringToTimeStruct(pCond->date_string ,"00:00:00",Options.calendar);
         v=-TimeDifference(time1.julian_day,time1.year,tt.julian_day,tt.year,Options.calendar);//v negative if day is after day1
 
         if (comp == COMPARE_BETWEEN) {
-          time_struct time2=DateStringToTimeStruct(pC->pConditions[j]->date_string2,"00:00:00",Options.calendar);
+          time_struct time2=DateStringToTimeStruct(pCond->date_string2,"00:00:00",Options.calendar);
           v2=-TimeDifference(time2.julian_day,time2.year,tt.julian_day,tt.year,Options.calendar);//v2 negative if day is after day2
         }
       }
 
       if (comp == COMPARE_BETWEEN) 
       {
-        if (pC->pConditions[j]->dv_name == "DAY_OF_YEAR") { //handles wraparound 
+        if (pCond->dv_name == "DAY_OF_YEAR") { //handles wraparound 
           if ( v2 < v ){
             if ((dv_value > v ) && (dv_value < v2)){return false;}
           }
@@ -928,16 +1004,18 @@ bool CDemandOptimizer::CheckGoalConditions(const int ii, const time_struct &tt, 
   }
   return true; //all conditionals satisfied 
 }
-    //////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////
 /// adds constraint ii to LP solve problem statement 
 /// \params ii [in] - index of constraint in _pConstraints array
+/// \param k - index of operating regime in _pConstraints[ii] 
 /// \param pLinProg [out] - pointer to valid lpsolve structure to be modified
 /// \param tt [in] - time structure  
 /// \param *col_ind [in] - empty array (with memory reserved) for storing column indices 
 /// \param *row_val [in] - empty array (with memory reserved) for storing row values
 //
 #ifdef _LPSOLVE_
-void CDemandOptimizer::AddConstraintToLP(const int ii, lp_lib::lprec* pLinProg, const time_struct &tt, int *col_ind, double *row_val) const 
+void CDemandOptimizer::AddConstraintToLP(const int ii, const int k, lp_lib::lprec* pLinProg, const time_struct &tt, int *col_ind, double *row_val) const 
 {
   double coeff;
   int    i=0;
@@ -950,7 +1028,7 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, lp_lib::lprec* pLinProg, 
   //int    nn=(int)((tt.model_time+TIME_CORRECTION)/1.0);//Options.timestep; //TMP DEBUG
 
   manConstraint    *pC=_pConstraints[ii];
-  expressionStruct *pE= pC->pExpression;
+  expressionStruct *pE= pC->pOperRegimes[k]->pExpression;
   
   RHS=0.0;
   for (int j = 0; j < pE->nGroups; j++)
@@ -992,7 +1070,7 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, lp_lib::lprec* pLinProg, 
       i++;
     }
   }
-  int constr_type;
+  int constr_type=ROWTYPE_EQ;
   int nSlack=1;
   coeff=1.0;
   if      (pE->compare==COMPARE_IS_EQUAL)   {constr_type=ROWTYPE_EQ; coeff=-1.0; nSlack=2;}
@@ -1016,7 +1094,16 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, lp_lib::lprec* pLinProg, 
   ExitGracefullyIf(retval==0,"AddConstraintToLP::Error adding user-specified constraint/goal",RUNTIME_ERR);
 }
 #endif 
-bool CDemandOptimizer::EvaluateConditionExp(expressionStruct* pE,const double &t) const
+
+//////////////////////////////////////////////////////////////////
+/// evaluates conditional expression 
+/// \params pE [in] - conditional expression
+/// \param t [in] - current model time 
+/// repeatedly calls EvaluateTerm()
+/// \returns true if expression is satisfied
+//
+
+bool CDemandOptimizer::EvaluateConditionExp(const expressionStruct* pE,const double &t) const
 {
   double coeff;
   double term;
@@ -1055,6 +1142,7 @@ bool CDemandOptimizer::EvaluateConditionExp(expressionStruct* pE,const double &t
   else if (pE->compare==COMPARE_GREATERTHAN){return (RHS<0);}
   return false;
 }
+
 //////////////////////////////////////////////////////////////////
 /// evaluates term in constraint/goal expression to numerical value (unless term is DV) 
 /// \params pTerms [in] - pointer to array of terms in expression group (e.g., (A*B*C(D,E) stored as [A,B,C,D,E])
@@ -1066,6 +1154,7 @@ bool CDemandOptimizer::EvaluateConditionExp(expressionStruct* pE,const double &t
 double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const double &t) const
 {
   int nshift;
+  double duration;
   double x,y;
   int kk;
   int p;
@@ -1081,6 +1170,11 @@ double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const
   {
     nshift=pT->timeshift;
     return pT->pTS->GetValue(t +(double)(nshift));
+  }
+  else if (pT->type == TERM_CUMUL_TS)
+  {
+    duration=(double)(pT->timeshift);
+    return pT->pTS->GetAvgValue(t-duration,duration)*(duration); //assumes daily timestep 
   }
   else if (pT->type == TERM_LT) 
   {
@@ -1100,7 +1194,7 @@ double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const
     int p=pT->p_index;
     return _pModel->GetSubBasin(p)->GetAvgStateVar(i);
   }
-  else if (pT->type == TERM_CONST) 
+  else if (pT->type == TERM_CONST) /*also handles control variables*/
   {
     return pT->value;
   }
@@ -1122,7 +1216,6 @@ double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const
     else {
       ExitGracefully("CDemandOptimizer::EvaluateTerm: Invalid history variable ",BAD_DATA);
     }
-    
   }
   else if (pT->type == TERM_MAX) {
     x=EvaluateTerm(pTerms,pT->nested_ind1,t);

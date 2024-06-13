@@ -1620,8 +1620,8 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
       p->Tokenize(s,Len); //:EndVaryingStageRelations
     }
     //----------------------------------------------------------------------------------------------
-    else if(!strcmp(s[0],":DZTRResservoirModel"))
-    {/*:DZTRResservoirModel
+    else if ((!strcmp(s[0],":DZTRResservoirModel")) || (!strcmp(s[0],":DZTRReservoirModel"))) 
+    {/*:DZTRReservoirModel
        :MaximumStorage           Vmax(m3)
        :MaximumChannelDischarge  Qmax(m3/s)
        :MonthlyMaxStorage        J F M A M J J A S N D  {or single constant value} (m3)
@@ -1667,9 +1667,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
       if    (Len>=13) { for(int i=0;i<12;i++) { Qci[i]=s_to_d(s[i+1]); } }
       else if(Len>=2) { for(int i=0;i<12;i++) { Qci[i]=s_to_d(s[1]); } }
 
-      p->Tokenize(s,Len); //:EndDZTR
-
-      break;
+      p->Tokenize(s,Len); //:EndDZTRReservoirModel
     }
     //----------------------------------------------------------------------------------------------
     else if (!strcmp(s[0], ":OutflowControlStructure")) {
@@ -1873,6 +1871,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
       if(Options.noisy) { cout << ":EndReservoir" << endl; }
       break;
     }
+    //----------------------------------------------------------------------------------------------
     else {
       WriteWarning("Reservoir::Parse: unrecognized command (" + to_string(s[0]) + ") in :Reservoir-:EndReservoir Block",Options.noisy);
     }

@@ -10,32 +10,13 @@
 #include "RavenInclude.h"
 #include <stdio.h>
 #include "Model.h"
+#include "LookupTable.h"
 
 #ifdef _LPSOLVE_
 namespace lp_lib  {
 #include "../lib/lp_solve/lp_lib.h"
 }
 #endif 
-
-///////////////////////////////////////////////////////////////////
-/// \brief Data abstraction for general lookup table y(x) 
-//
-class CLookupTable 
-{
- private:
-  string  _name;
-  double *_aX;
-  double *_aY;
-  int     _nItems;
-
- public:
-  CLookupTable(string name, double *x, double *y, int NM);
-  ~CLookupTable();
-
-  string GetName() const;
-  double GetValue(const double &x) const;
-  double GetSlope(const double &x) const;
-};
 
 ///////////////////////////////////////////////////////////////////
 /// \brief different expression types  
@@ -61,6 +42,7 @@ enum termtype
   TERM_MAX,       //< @max(x,y) 
   TERM_MIN,       //< @min(x,y)
   TERM_CONVERT,   //< @convert(x,units)
+  TERM_CUMUL_TS,  //< @cumul(ts_name,duration) //MAY WANT @cumul(ts_name,duration,n) to handle time shift, e.g., 3 days to 10 days ago?
   TERM_CUMUL,     //< cumulative delivery !C123
   TERM_UNKNOWN    //< unknown 
 };
@@ -76,7 +58,16 @@ enum dv_type
   DV_SLACK,   //< slack variable for goal satisfaction
   DV_USER     //< user specified decision variable 
 };
-// data structures used by CDemandOptimizer class
+
+// -------------------------------------------------------------------
+// data structures used by CDemandOptimizer class:
+//   -expressionTerm
+//   -expressionStruct (built from expressionTerms)
+//   -decision_var
+//   -exp_condition (may be defined using expressionStruct)
+//   -op_regime (has conditions)
+//   -control_var (defined using expressionStruct)
+//   -manConstraint (built using multiple operating regimes)
 // -------------------------------------------------------------------
 
 //////////////////////////////////////////////////////////////////
@@ -115,7 +106,7 @@ struct expressionTerm
 //
 struct expressionStruct //full expression 
 { 
-  expressionTerm  ***pTerms;      //< 2D irregular array of pointers to expression terms size:[nGroups][nExpPerGrp[j]]
+  expressionTerm  ***pTerms;      //< 2D irregular array of pointers to expression terms size:[nGroups][nTermsPerGrp[j]]
   int                nGroups;     //< total number of terms groups in expression 
   int               *nTermsPerGrp;//< number of terms per group [size: nGroups]
   comparison         compare;     //< comparison operator (==, <, >)
@@ -125,7 +116,6 @@ struct expressionStruct //full expression
   expressionStruct();
   ~expressionStruct();
 };
-
 
 //////////////////////////////////////////////////////////////////
 // decision variable  
@@ -159,19 +149,37 @@ struct exp_condition
   double      value2;       //< second conditional (if COMPARE_BETWEEN)
   string      date_string;  //< conditional value (if date)
   string      date_string2; //< second conditional (if DATE COMPARE_BETWEEN)
-
-  expressionStruct *pExp;   //< condition expression (or NULL if not used)
-
   comparison  compare;      //> comparison operator, e.g., COMPARE_IS_EQUAL
   long        p_index;      //> subbasin or demand index of LHS of condition expression (or DOESNT_EXIST)
 
+  expressionStruct *pExp;   //< condition expression (or NULL if not used)
+
   exp_condition(){
     dv_name="";
-    value=0.0;
-    value2=0.0;
+    value=value2=0.0;
+    date_string=date_string2="";
     compare=COMPARE_IS_EQUAL;
     p_index=DOESNT_EXIST;
     pExp=NULL;
+  }
+};
+//////////////////////////////////////////////////////////////////
+// operating regime 
+//
+struct op_regime 
+{
+  string            reg_name;             //< regime name 
+
+  expressionStruct *pExpression;          //< constraint expression
+
+  int               nConditions;          //< number of conditional statments 
+  exp_condition   **pConditions;          //< array of pointers to conditional statements
+
+  op_regime(string name) {
+    reg_name=name;
+    pExpression=NULL;
+    nConditions=0;
+    pConditions=NULL;
   }
 };
 //////////////////////////////////////////////////////////////////
@@ -179,8 +187,7 @@ struct exp_condition
 //
 struct manConstraint
 {
-  string            name;          //< constraint name 
-  expressionStruct *pExpression;   //< constraint expression 
+  string            name;          //< goal or constraint name 
   
   bool              is_goal;       //< true if constraint is soft (goal rather than constraint)
   int               priority;      //< priority (default==1, for goals only)
@@ -191,14 +198,30 @@ struct manConstraint
 
   double            penalty_value; //< (from solution) penalty incurred by not satisfying goal (or zero for constraint) 
 
-  int               nConditions;   //< number of conditional statments 
-  exp_condition   **pConditions;   //< array of pointers to conditional statements 
-  bool              conditions_satisfied; //< true if satisfied during current timestep
-  bool              ever_satisfied;//< true if ever satisfied during simulation (for warning at end of sim)
+  op_regime       **pOperRegimes;  //< array of pointers to operating regimes, which are chosen from conditionals and determine active expression [size:nOperRegimes]
+  int               nOperRegimes;  //< size of operating regime array 
+
+  int               active_regime;        //< currently active operating regime (or DOESNT_EXIST if none)
+  bool              conditions_satisfied; //< true if any operating regime satisfied during current timestep
+  bool              ever_satisfied;       //< true if any operating regime ever satisfied during simulation (for warning at end of sim)
 
   manConstraint();
   ~manConstraint();
-  void AddCondition(exp_condition *pCondition);
+  expressionStruct *GetCurrentExpression() const{return pOperRegimes[nOperRegimes-1]->pExpression; }
+  void AddOperatingRegime(op_regime *pOR, bool first);        
+  void AddOpCondition(exp_condition *pCondition); //adds to most recent operating regime
+  void AddExpression (expressionStruct *pExp);   //adds to most recent operating regime
+};
+
+//////////////////////////////////////////////////////////////////
+// control variable definition 
+//
+struct control_var
+{
+  string            name;          //< control variable name 
+  expressionStruct *pExpression;   //< expression defining control variable 
+
+  double            current_val;   //< current value of control variable (evaluated at start of time step)
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -208,10 +231,13 @@ class CDemandOptimizer
 {
 private: /*------------------------------------------------------*/
 
-  CModel          *_pModel;            //< pointer to model
+  CModel          *_pModel;             //< pointer to model
 
   int              _nDecisionVars;      //< total number of decision variables considered
   decision_var   **_pDecisionVars;      //< array of pointers to decision variable structures [size:_nDecisionVars]
+
+  int              _nControlVars;       //< total number of control variables considered
+  control_var    **_pControlVars;       //< array of pointers to control variables [size: _nControlVars]
 
   int              _nConstraints;       //< number of user-defined enforced constraints/goals in management model 
   manConstraint  **_pConstraints;       //< array of pointers to user-defined enforced constraints/goals in management model
@@ -223,6 +249,7 @@ private: /*------------------------------------------------------*/
   int             *_aResIndices;        //< storage of enabled reservoir indices (0:_nReservoirs or DOESNT_EXIST) [size:_nSubBasins] 
 
   //Should probably convert this to a demand class?
+  //CWaterDemand   **_pDemands;           //< array of pointers to water demand instances 
   int              _nDemands;           //< local storage of number of demand locations (:IrrigationDemand/:WaterDemand + :ReservoirExtraction time series)
   int             *_aDemandIDs;         //< local storage of demand IDs [size:_nDemands]
   long            *_aDemandSBIDs;       //< local storage of subbasin IDs for each demand [size: _nDemands]
@@ -235,7 +262,7 @@ private: /*------------------------------------------------------*/
   int             *_aCumDelDate;        //< julian date to calculate cumulative deliveries from {default: Jan 1)[size: _nDemands]
 
   int            **_aUpstreamDemands;   //< demand indices (d) upstream (inclusive) of subbasin p [size: nSBs][size: _aUpCount] (only restricted demands)
-  int             *_aUpCount;;          //< number of demands upstream (inclusive) of subbasin p [size: nSBs]
+  int             *_aUpCount;           //< number of demands upstream (inclusive) of subbasin p [size: nSBs]
   
   //int            _nDemandGroups;      //< number of demand groups 
   //CDemandGroup **_pDemandGroups;      //< array of pointers to demand groups   
@@ -244,11 +271,14 @@ private: /*------------------------------------------------------*/
   int              _nSlackVars;         //< number of slack variables 
 
   int             _nUserDecisionVars;   //< number of user-specified decision variables 
+
   int             _nUserConstants;      //< number of user-specified named constants
   string         *_aUserConstNames;     //< array of names of user-specified constants
   double         *_aUserConstants;      //< array of values of user-specified constants
+
   int             _nUserTimeSeries;     //< number of user variable time series
   CTimeSeries   **_pUserTimeSeries;     //< array of pointers to user variable time series
+
   int             _nUserLookupTables;   //< number of user variable lookup tables 
   CLookupTable  **_pUserLookupTables;   //< array of pointers to user variable lookup tables 
 
@@ -262,22 +292,26 @@ private: /*------------------------------------------------------*/
 
   int             _do_debug_level;      //< =1 if debug info is to be printed to screen, =2 if LP matrix also printed (full debug), 0 for nothing
 
+  //Called during simualtion
   void         UpdateHistoryArrays();
+  void      UpdateControlVariables(const time_struct &tt);
   bool     ConvertToExpressionTerm(const string s, expressionTerm* term, const int lineno, const string filename)  const;
   int               GetDVColumnInd(const dv_type typ, const int counter) const;
+  double              EvaluateTerm(expressionTerm **pTerms,const int k, const double &t) const;
+  bool        EvaluateConditionExp(const expressionStruct* pE,const double &t) const;
+
+  bool         CheckGoalConditions(const int ii, const int k, const time_struct &tt,const optStruct &Options) const; 
 
 #ifdef _LPSOLVE_
-  void           AddConstraintToLP(const int i, lp_lib::lprec *pLinProg, const time_struct &tt,int *col_ind, double *row_val) const;
+  void           AddConstraintToLP(const int i, const int k, lp_lib::lprec *pLinProg, const time_struct &tt,int *col_ind, double *row_val) const;
 #endif 
-  double              EvaluateTerm(expressionTerm **pTerms,const int k, const double &t) const;
-  bool        EvaluateConditionExp(expressionStruct* pE,const double &t) const;
 
-  bool         CheckGoalConditions(const int ii, const time_struct &tt,const optStruct &Options) const; 
 
+  //Called during initialization
   bool        UserTimeSeriesExists(string TSname) const;
   void     AddReservoirConstraints();
-
   void     IdentifyUpstreamDemands(); 
+  bool          VariableNameExists(const string &name) const;
 
 public: /*------------------------------------------------------*/
   CDemandOptimizer(CModel *pMod);
@@ -286,7 +320,8 @@ public: /*------------------------------------------------------*/
   int    GetDemandIndexFromName(const string dname) const;
   double GetNamedConstant      (const string s) const;
   int    GetUserDVIndex        (const string s) const;
-  double GetDemandDelivery     (const int p) const;
+  double GetControlVariable    (const string s) const;
+  //double GetDemandDelivery     (const int p) const;
   int    GetNumUserDVs         () const;
   int    GetDebugLevel         () const; 
   int    GetIndexFromDVString  (string s) const;
@@ -296,11 +331,12 @@ public: /*------------------------------------------------------*/
   void   SetDebugLevel         (const int lev);
   void   SetDemandAsUnrestricted(const string dname); 
   
-  manConstraint *AddConstraint (const string name, expressionStruct *exp, const bool soft_constraint);
+  manConstraint *AddGoalOrConstraint (const string name, const bool soft_constraint);
   
   void   AddDecisionVar        (const decision_var *pDV);
   void   SetDecisionVarBounds  (const string name, const double &min, const double &max);
   void   AddUserConstant       (const string name, const double &val);
+  void   AddControlVariable    (const string name, expressionStruct* pExp);
   void   AddUserTimeSeries     (const CTimeSeries *pTS);
   void   AddUserLookupTable    (const CLookupTable *pLUT);
    

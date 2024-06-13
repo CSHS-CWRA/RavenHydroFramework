@@ -70,6 +70,9 @@ public:
   void   ImproperFormat(char **s);
   void   IgnoreSpaces  (bool ignore_it){_comma_only=ignore_it;}
 
+  streampos GetPosition() const;
+  void      SetPosition(streampos &pos);
+
   bool   Tokenize(char **tokens, int &numwords);
 
   string Peek();

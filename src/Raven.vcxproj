@@ -713,6 +713,7 @@
     <ClCompile Include="GWSWProcessABC.cpp" />
     <ClCompile Include="IsotopeTransport.cpp" />
     <ClCompile Include="LatEquilibrate.cpp" />
+    <ClCompile Include="LookupTable.cpp" />
     <ClCompile Include="MassLoading.cpp" />
     <ClCompile Include="Matrix.cpp" />
     <ClCompile Include="NetCDFReading.cpp" />
@@ -976,6 +977,7 @@
     <ClInclude Include="GWRiverConnection.h" />
     <ClInclude Include="GWSWProcesses.h" />
     <ClInclude Include="IsotopeTransport.h" />
+    <ClInclude Include="LookupTable.h" />
     <ClInclude Include="MassLoading.h" />
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="MFUSGpp.h" />

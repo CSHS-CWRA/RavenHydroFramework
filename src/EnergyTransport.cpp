@@ -273,7 +273,7 @@ double CEnthalpyModel::GetEnergyLossesFromLake(const int p, double &Q_sens, doub
 
   CHydroUnit*   pHRU=_pModel->GetHydroUnit(pRes->GetHRUIndex());
 
-  double Acorr=pHRU->GetArea()*M2_PER_KM2/A_avg; //handles the fact that GetAET() returns mm/d normalized by HRU area, not actual area
+  double Acorr=1.0;
 
   double SW(0), LW(0), LW_in(0), temp_air(0), AET(0);
   double hstar(0),ksed(0),Vsed=0.001;
@@ -283,6 +283,9 @@ double CEnthalpyModel::GetEnergyLossesFromLake(const int p, double &Q_sens, doub
   double Ts_old=ConvertVolumetricEnthalpyToTemperature(_aMsed_last[p] / Vsed );
 
   if(pHRU!=NULL) { //otherwise only simulate advective mixing+ rain input
+
+    Acorr    =pHRU->GetArea()*M2_PER_KM2/A_avg; //handles the fact that GetAET() returns mm/d normalized by HRU area, not actual area
+
     temp_air =pHRU->GetForcingFunctions()->temp_ave;           //[C]
     SW       =pHRU->GetForcingFunctions()->SW_radia_net;       //[MJ/m2/d] - not using canopy correction!
     LW_in    =pHRU->GetForcingFunctions()->LW_incoming;        //[MJ/m2/d]
@@ -340,13 +343,15 @@ void   CEnthalpyModel::RouteMassInReservoir   (const int          p,          //
 
   CHydroUnit*   pHRU=_pModel->GetHydroUnit(pRes->GetHRUIndex());
 
-  double Acorr=pHRU->GetArea()*M2_PER_KM2/A_avg; //handles the fact that GetAET() returns mm/d normalized by HRU area, not actual area
+  double Acorr=1.0;
 
   double T_old    =ConvertVolumetricEnthalpyToTemperature(_aMres_last[p]/V_old);
 
   double SW(0), LW(0), LW_in(0), temp_air(0), AET(0);
   double hstar(0), ksed(0), Vsed=0.001;
   if(pHRU!=NULL) { //otherwise only simulate advective mixing+ rain input
+    Acorr    =pHRU->GetArea()*M2_PER_KM2/A_avg; //handles the fact that GetAET() returns mm/d normalized by HRU area, not actual area
+
     temp_air =pHRU->GetForcingFunctions()->temp_ave;           //[C]
     SW       =pHRU->GetForcingFunctions()->SW_radia_net;       //[MJ/m2/d]
     LW_in    =pHRU->GetForcingFunctions()->LW_incoming;        //[MJ/m2/d]

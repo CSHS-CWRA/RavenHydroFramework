@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2024 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "TimeSeries.h"
 #include "ParseLib.h"
@@ -648,6 +648,13 @@ CTimeSeries  *CTimeSeries::Sum(CTimeSeries *pTS1, CTimeSeries *pTS2, string name
 // OR
 // :AnnualCycle J F M A M J J A S O N D
 // OR
+// :AnnualEvents [STEP or INTERPOLATE]
+//   mm-dd v1   (or J v1, where J is julian day)
+//   mm-dd v2
+//   mm-dd v3
+//   ...
+// :EndAnnualEvents
+// OR
 // :ReadFromNetCDF
 //    :FileNameNC ./input/input.nc
 //    :VarNameNC Qobs
@@ -818,7 +825,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
   // ANNUALEVENTS FORMAT =========================================================
   if(!strcmp(s[0],":AnnualEvents"))
   {
-    int    *days=new int    [(int)(DAYS_PER_YEAR)];
+    int    *days=new int    [(int)(DAYS_PER_YEAR)];//sized for max # of events
     double *vals=new double [(int)(DAYS_PER_YEAR)];
     int nEvents=0;
 
@@ -828,7 +835,8 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
     {
       if   (IsComment(s[0],Len)) {}//comment line
       else if(Len==2) {
-        days[nEvents]=s_to_i(s[0])-1; //convert from integer julian days to Raven 0-indexed julian days
+        string date_str=s[0];
+        days[nEvents]=GetJulianDayFromMonthYear(date_str,Options.calendar);
         vals[nEvents]=s_to_d(s[1]);
         nEvents++;
       }
@@ -859,6 +867,85 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
     p->Tokenize(s,Len);//read closing term (e.g., ":EndData")
     if(string(s[0]).substr(0,4)!=":End") {
       ExitGracefully("CTimeSeries: Parse: no :EndData command (or similar :End* command) used with :AnnualEvents command ",BAD_DATA);
+    }
+    return pTimeSeries;
+  }
+
+   // ANNUALPATTERN FORMAT =======================================================
+  if(!strcmp(s[0],":AnnualPattern"))
+  {
+    bool step=false;
+    if (Len >= 2) {
+      if(!strcmp(s[0],"INTERPOLATE")){step=false;}
+      if(!strcmp(s[0],"STEP"       )){step=true;}
+    }
+
+    int    *days=new int    [(int)(DAYS_PER_YEAR)+1]; //sized for max # of events
+    double *vals=new double [(int)(DAYS_PER_YEAR)+1];
+    int nEvents=0;
+
+    p->Tokenize(s,Len);
+    bool done=false;
+    while(!done)
+    {
+      if   (IsComment(s[0],Len)) {}//comment line
+      else if(Len==2) {
+        string date_str=s[0];
+        days[nEvents]=GetJulianDayFromMonthYear(date_str,Options.calendar);
+        vals[nEvents]=s_to_d(s[1]);
+        nEvents++;
+        ExitGracefullyIf(nEvents>(int)(DAYS_PER_YEAR),"CTimeSeries::Parse: exceeded maximum number of items in :AnnualPattern command",BAD_DATA);
+      }
+      else            { p->ImproperFormat(s); break; }
+      bool eof=p->Tokenize(s,Len);
+      if (eof){done=true;}
+      if (!strcmp(s[0],":EndAnnualPattern")) { done=true; }
+    }
+
+    double* aVal;
+    int nVals=int(Options.duration)+1;
+    aVal =new double[nVals];
+    time_struct tt;
+
+    for(int n=0;n<nVals;n++) {
+      JulianConvert(double(n),Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
+      aVal[n]=0;
+      if (step){ //step with wraparound
+        aVal[n]=vals[nEvents-1]; //works if time < days[0] or > days[nEvents-1]
+        for(int i=0;i<nEvents-1;i++) {
+          if ((tt.julian_day>=days[i]) && (tt.julian_day<days[i+1])){aVal[n]=vals[i];}
+        }
+      }
+      else { //interpolate with wraparound
+        double lastday=days[nEvents-1]-(int)(DAYS_PER_YEAR);
+        double nextday=days[0];
+        double lastval=vals[nEvents-1];
+        double nextval=vals[0];
+        for(int i=0;i<nEvents-1;i++) {
+          if ((tt.julian_day>=days[i]) && (tt.julian_day<days[i+1])){
+            lastval=vals[i];  lastday=days[i];
+            nextval=vals[i+1];nextday=days[i];
+          }
+        }
+        if (tt.julian_day > days[nEvents - 1]) {
+          lastval=vals[nEvents - 1];  lastday=days[nEvents - 1];
+          nextval=vals[0];            nextday=days[0]+(int)(DAYS_PER_YEAR);
+        }
+        if ((nextday-lastday)==0){aVal[n]=lastval; }
+        else{
+          aVal[n]=(tt.julian_day-lastday)/(nextday-lastday)*(nextval-lastval)+lastval;
+        }
+      }
+    }
+
+    pTimeSeries=new CTimeSeries(name,loc_ID,p->GetFilename(),Options.julian_start_day,Options.julian_start_year,1.0,aVal,nVals,is_pulse);
+    delete[] aVal; aVal=NULL;
+    delete[] days; days=NULL;
+    delete[] vals; vals=NULL;
+
+    p->Tokenize(s,Len);//read closing term (e.g., ":EndData")
+    if(string(s[0]).substr(0,4)!=":End") {
+      ExitGracefully("CTimeSeries: Parse: no :EndData command (or similar :End* command) used with :AnnualPattern command ",BAD_DATA);
     }
     return pTimeSeries;
   }

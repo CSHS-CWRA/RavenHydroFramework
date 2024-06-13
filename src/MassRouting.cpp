@@ -163,6 +163,7 @@ double   CConstituentModel::GetMassAddedFromInflowSources(const double &t,const 
       }
     }
   }
+
   // Handle specified concentrations/temperatures of streamflow
   for(int i=0; i<_nSpecFlowConcs; i++)
   {
@@ -172,8 +173,10 @@ double   CConstituentModel::GetMassAddedFromInflowSources(const double &t,const 
     C=_pSpecFlowConcs[i]->GetValue(t+tstep);                             //mg/L or C
     if(_type==ENTHALPY) { C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3
     else                { C*=LITER_PER_M3; } //mg/m3
+
     //TMP DEBUG - DOES NOT HANDLE ISOTOPES PROPERLY !!!
     ExitGracefullyIf(_type==ISOTOPE,"GetMassAddedFromInflowSources: cannot handle isotopes",BAD_DATA);
+
     mass+=0.5*Q*C*tstep;  //[mg] or [MJ]
 
     if(t>0) {

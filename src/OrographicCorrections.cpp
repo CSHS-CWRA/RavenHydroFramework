@@ -389,7 +389,7 @@ void CModel::CorrectPET(const optStruct &Options,
     F.PET*=F.subdaily_corr;
   }
 
-  //Snow cover
+  //Suppresses PET if there is snow cover
   if(Options.snow_suppressPET)
   {
     double SWE     =0.0;
@@ -399,7 +399,14 @@ void CModel::CorrectPET(const optStruct &Options,
     if(iSnow!=DOESNT_EXIST) { SWE     =pHRU->GetStateVarValue(iSnow); }
     if(iSC  !=DOESNT_EXIST) { snow_cov=pHRU->GetStateVarValue(iSC); }
 
-    if(SWE>0.1) { F.PET*=(1.0-snow_cov); }
+    if(SWE>0.1) { F.PET*=(1.0-snow_cov);  }
+  }
+
+  //Suppress open water ET over frozen lakes 
+  if ((StateVarExists(ICE_THICKNESS)) && (pHRU->IsLake()))
+  {
+    int iIceThick=GetStateVarIndex(ICE_THICKNESS);
+    if (pHRU->GetStateVarValue(iIceThick)>10){F.OW_PET=0.0;}
   }
 
   //soil-based correction
