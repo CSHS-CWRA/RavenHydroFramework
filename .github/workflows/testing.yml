@@ -55,7 +55,7 @@ jobs:
           sudo apt-get install libnetcdf-dev build-essential cmake
       - name: Install dependencies (macOS)
         if: matrix.os == 'macos-latest'
-        uses: tecolicom/actions-use-homebrew-tools@5c37fd17a71166ce64ee8ba712f6f2b8c4e6089a # v1.2
+        uses: tecolicom/actions-use-homebrew-tools@v1
         with:
           tools: cmake
           cache: yes
@@ -68,7 +68,7 @@ jobs:
         continue-on-error: true
         run: |
           cmake . --config ${{ matrix.build_type }}
-          make -j4
+          cmake --build . -j 3
       - name: Run tests
         if: steps.build.outcome == 'success'
         run: |
@@ -90,19 +90,7 @@ jobs:
           egress-policy: audit
       - name: Checkout Repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-
-      - name: Install dependencies (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install build-essential cmake
-      - name: Install dependencies (macOS)
-        if: matrix.os == 'macos-latest'
-        uses: tecolicom/actions-use-homebrew-tools@5c37fd17a71166ce64ee8ba712f6f2b8c4e6089a # v1.2
-        with:
-          tools: cmake
-          cache: yes
-      - name: Install dependencies (Windows)
+      - name: Install dependencies
         if: matrix.os == 'windows-latest'
         uses: lukka/get-cmake@2bcb1a4c14ab154443cc740dced0f9b6a8fb2b59 # v3.29.6
 
@@ -110,7 +98,8 @@ jobs:
         id: build
         continue-on-error: true
         run: |
-          cmake --build . --config ${{ matrix.build_type }} -j 3
+          cmake . --config ${{ matrix.build_type }}
+          cmake --build . -j 3
 
       - name: Run tests (Linux and macOS)
         if: steps.build.outcome == 'success' && matrix.os != 'windows-latest'
