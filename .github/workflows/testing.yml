@@ -59,8 +59,8 @@ jobs:
       - name: Run tests
         if: steps.build.outcome == 'success'
         run: |
-          Raven
-          Raven -v
+          ./Raven
+          ./Raven -v
 
   build:
     name: Build (${{ matrix.build_type }}; ${{ matrix.os }}; NetCDF=False)
@@ -92,10 +92,11 @@ jobs:
       - name: Run tests (Linux and macOS)
         if: steps.build.outcome == 'success' && matrix.os != 'windows-latest'
         run: |
-          Raven
-          Raven -v
+          ./Raven
+          ./Raven -v
       - name: Run tests (Windows)
         if: steps.build.outcome == 'success' && matrix.os == 'windows-latest'
         run: |
-          Raven.exe
-          Raven.exe -v
+          ls
+          Raven
+          Raven -v
