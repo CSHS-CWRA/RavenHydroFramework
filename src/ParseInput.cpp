@@ -3191,7 +3191,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       i_stor=pModel->GetStateVarIndex(typ,layer_ind);
       if (i_stor != DOESNT_EXIST){
         int c;
-        
+
         if (is_temp) {
           c=pModel->GetTransportModel()->GetConstituentIndex("TEMPERATURE");
         }
@@ -3224,7 +3224,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         else {
           ExitGracefully("ParseMainInputFile: invalid constiuent in :FixedConcentration/:FixedTemperature command in .rvi file",BAD_DATA_WARN);
         }
-        
+
       }
       else{
         string warn=":FixedConcentration command: invalid state variable name"+to_string(s[2]);

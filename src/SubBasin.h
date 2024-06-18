@@ -108,7 +108,7 @@ private:/*------------------------------------------------------*/
   double      _rivulet_storage;   ///< water storage in rivulets [m3]
   double             _QoutLast;   ///< Qout from downstream channel segment [m3/s] at start of previous timestep- needed for reporting integrated outflow
   double             _QlatLast;   ///< Qlat (after convolution) at start of previous timestep [m3/s]
-  //double           _aQchanLast;   ///< channel outflow 
+  //double           _aQchanLast;   ///< channel outflow
   double               _Qlocal;   ///< local contribution to current subbasin outflow [m3/s] (just from in-catchment routing)
   double             _QlocLast;   ///< last local contribution [m3/s]
 
@@ -225,7 +225,7 @@ public:/*-------------------------------------------------------*/
   int             GetNumDiversions         () const;
 
   double          GetOutflowRate           () const;                   //[m3/s] from final reach segment OR reservoir, point in time
-  double          GetChannelOutflowRate    () const;                   //[m3/s] from final reach segment (NOT reservoir), point in time, BEFORE diversions included 
+  double          GetChannelOutflowRate    () const;                   //[m3/s] from final reach segment (NOT reservoir), point in time, BEFORE diversions included
   double          GetLastChannelOutflowRate() const;                   //[m3/s] from final reach segment (NOT reservoir), point in time, BEFORE diversions included
   double          GetLastOutflowRate       () const;                   //[m3/s] from final segment, previous timestep
   double          GetLocalOutflowRate      () const;                   //[m3/s] local contribution to outflow
@@ -237,7 +237,7 @@ public:/*-------------------------------------------------------*/
   double          GetReservoirLosses       (const double &tstep) const;//[m3] from reservoir integrated over timestep
   double      GetIntegratedReservoirInflow (const double &tstep) const;//[m3] from final segment upstream of reservoir integrated over timestep
   double          GetIrrigationLosses      (const double &tstep) const;//[m3] from actual irrigation (not just demand)
-  double          GetDiversionLosses       (const double &tstep) const;//[m3] from flow diversions 
+  double          GetDiversionLosses       (const double &tstep) const;//[m3] from flow diversions
 
   double          GetRivuletStorage        () const;                   //[m3] volume en route to outflow
   double          GetChannelStorage        () const;                   //[m3] volume in channel
