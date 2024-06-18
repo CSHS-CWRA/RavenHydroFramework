@@ -57,7 +57,7 @@ jobs:
           sudo apt-get install libnetcdf-dev build-essential cmake
       - name: Install dependencies (macOS)
         if: matrix.os == 'macos-latest'
-        uses: tecolicom/actions-use-homebrew-tools@v5c37fd17a71166ce64ee8ba712f6f2b8c4e6089a # v1.2
+        uses: tecolicom/actions-use-homebrew-tools@5c37fd17a71166ce64ee8ba712f6f2b8c4e6089a # v1.2
         with:
           tools: cmake
           cache: yes
@@ -102,7 +102,7 @@ jobs:
           sudo apt-get install build-essential cmake
       - name: Install dependencies (macOS)
         if: matrix.os == 'macos-latest'
-        uses: tecolicom/actions-use-homebrew-tools@v5c37fd17a71166ce64ee8ba712f6f2b8c4e6089a # v1.2
+        uses: tecolicom/actions-use-homebrew-tools@5c37fd17a71166ce64ee8ba712f6f2b8c4e6089a # v1.2
         with:
           tools: cmake
           cache: yes
