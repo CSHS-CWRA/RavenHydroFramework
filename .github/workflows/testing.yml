@@ -33,15 +33,13 @@ jobs:
         uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
 
   build-netcdf:
-    name: Build RavenHydroFramework binary (${{ matrix.build_type }})
+    name: Build (${{ matrix.build_type }}; ${{ matrix.os }}; NetCDF=True)
+    needs: lint
     runs-on: ubuntu-latest
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
         build_type: [Debug, Release]
-    defaults:
-      run:
-        shell: bash
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
@@ -78,15 +76,13 @@ jobs:
           ./Raven -v
 
   build:
-    name: Build RavenHydroFramework binary (${{ matrix.build_type }})
+    name: Build (${{ matrix.build_type }}; ${{ matrix.os }}; NetCDF=False)
+    needs: lint
     runs-on: ubuntu-latest
     strategy:
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
         build_type: [ Debug, Release ]
-    defaults:
-      run:
-        shell: bash
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
@@ -114,7 +110,7 @@ jobs:
         id: build
         continue-on-error: true
         run: |
-          cmake --build . --config {{ matrix.build_type }} -j 3
+          cmake --build . --config ${{ matrix.build_type }} -j 3
 
       - name: Run tests (Linux and macOS)
         if: steps.build.outcome == 'success' && matrix.os != 'windows-latest'
