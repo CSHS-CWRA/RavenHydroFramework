@@ -57,8 +57,10 @@ jobs:
           sudo apt-get install libnetcdf-dev build-essential cmake
       - name: Install dependencies (macOS)
         if: matrix.os == 'macos-latest'
-        run: |
-          brew install netcdf cmake wget
+        uses: tecolicom/actions-use-homebrew-tools@v5c37fd17a71166ce64ee8ba712f6f2b8c4e6089a # v1.2
+        with:
+          tools: cmake
+          cache: yes
 
       - name: Fetch NetCDF CMake script
         run: |
@@ -67,7 +69,7 @@ jobs:
         id: build
         continue-on-error: true
         run: |
-          cmake . -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          cmake . --config ${{ matrix.build_type }}
           make -j4
       - name: Run tests
         if: steps.build.outcome == 'success'
@@ -100,13 +102,13 @@ jobs:
           sudo apt-get install build-essential cmake
       - name: Install dependencies (macOS)
         if: matrix.os == 'macos-latest'
-        run: |
-          brew install cmake
+        uses: tecolicom/actions-use-homebrew-tools@v5c37fd17a71166ce64ee8ba712f6f2b8c4e6089a # v1.2
+        with:
+          tools: cmake
+          cache: yes
       - name: Install dependencies (Windows)
         if: matrix.os == 'windows-latest'
-        run: |
-          choco install cmake
-          choco install ninja
+        uses: lukka/get-cmake@2bcb1a4c14ab154443cc740dced0f9b6a8fb2b59 # v3.29.6
 
       - name: Build
         id: build
