@@ -9,7 +9,7 @@
   ----------------------------------------------------------------*/
 #include "DemandOptimization.h"
 
-void SummarizeExpression(const char **s, const int Len, expressionStruct* exp); //defined in DemandExpressionHandling.cpp 
+void SummarizeExpression(const char **s, const int Len, expressionStruct* exp); //defined in DemandExpressionHandling.cpp
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the Demand optimization constructor
@@ -254,15 +254,15 @@ void CDemandOptimizer::AddUserConstant(const string name, const double& val)
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief adds control variable  
+/// \brief adds control variable
 //
-void   CDemandOptimizer::AddControlVariable(const string name, expressionStruct* pExp) 
-{  
+void   CDemandOptimizer::AddControlVariable(const string name, expressionStruct* pExp)
+{
   if (VariableNameExists(name)) {
     string warn="CDemandOptimizer::AddControlVariable: control variable name "+name+" is already in use.";
     ExitGracefully(warn.c_str(),BAD_DATA_WARN);
   }
-  
+
   control_var *pCV = new control_var();
   pCV->name=name;
   pCV->pExpression=pExp;
@@ -312,7 +312,7 @@ manConstraint *CDemandOptimizer::AddGoalOrConstraint(string name,  bool soft_con
 //////////////////////////////////////////////////////////////////
 /// \brief sets demand penalty for demand dname
 //
-void CDemandOptimizer::SetDemandPenalty(const string dname, const double& pen) 
+void CDemandOptimizer::SetDemandPenalty(const string dname, const double& pen)
 {
 
   int d=GetDemandIndexFromName(dname);
@@ -326,9 +326,9 @@ void CDemandOptimizer::SetDemandPenalty(const string dname, const double& pen)
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief returns true if variable name is already in use 
+/// \brief returns true if variable name is already in use
 //
-bool CDemandOptimizer::VariableNameExists(const string &name) const 
+bool CDemandOptimizer::VariableNameExists(const string &name) const
 {
   for (int i = 0; i < _nControlVars; i++) {
     if (_pControlVars[i]->name==name){return true;}
@@ -665,7 +665,7 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
   {
     // ASSUMES ALL EXPRESSIONS IN GOAL/CONSTRAINT ARE EITHER == or >/<, NEVER MIXED.
     if (_pConstraints[j]->is_goal) {
-      if (_pConstraints[j]->pOperRegimes[0]->pExpression->compare == COMPARE_IS_EQUAL) { 
+      if (_pConstraints[j]->pOperRegimes[0]->pExpression->compare == COMPARE_IS_EQUAL) {
         _pConstraints[j]->slack_ind1=_nSlackVars;
         _pConstraints[j]->slack_ind2=_nSlackVars+1;
         pDV =  new decision_var("SL+" + to_string(j), p, DV_SLACK,_nSlackVars);
@@ -852,7 +852,7 @@ void CDemandOptimizer::AddReservoirConstraints()
         else {
           expString=":Expression !Q" + SBIDs+ " = 0.0";
         }
-        
+
         TokenizeString(expString, s, Len);
         exp = ParseExpression((const char**)(s), Len, 0, "internal");
         pConst=AddGoalOrConstraint(TSname,  true);
@@ -867,7 +867,7 @@ void CDemandOptimizer::AddReservoirConstraints()
         pConst->AddOpCondition(pCond);
 
         if (GetDebugLevel()>=1){
-          SummarizeExpression((const char**)(s),Len,pCond->pExp); 
+          SummarizeExpression((const char**)(s),Len,pCond->pExp);
         }
 
         advice="A :ReservoirMinStage time series for subbasin "+SBIDs+" has been added to the management optimization formulation";
@@ -995,10 +995,10 @@ int CDemandOptimizer::GetDVColumnInd(const dv_type typ, const int counter) const
   return 0;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Updates control variables 
+/// \brief Updates control variables
 /// called every time step by SolveDemandProblem() prior to solve
 //
-void CDemandOptimizer::UpdateControlVariables(const time_struct &tt) 
+void CDemandOptimizer::UpdateControlVariables(const time_struct &tt)
 {
   double t=tt.model_time;
   for (int i = 0; i < _nControlVars; i++) {
@@ -1006,10 +1006,10 @@ void CDemandOptimizer::UpdateControlVariables(const time_struct &tt)
   }
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Updates history arrays 
+/// \brief Updates history arrays
 /// called every time step by SolveDemandProblem() prior to solve
 //
-void CDemandOptimizer::UpdateHistoryArrays() 
+void CDemandOptimizer::UpdateHistoryArrays()
 {
   int pp=0;
   int p;
@@ -1060,7 +1060,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
   double t=tt.model_time;
   //int nn=tt.nn+1;//end of timestep
   int nn=static_cast<int>((t+TIME_CORRECTION)/Options.timestep);//+1;//end-of timestep index
-  
+
   int    *col_ind=new int    [_nDecisionVars]; //index of column to insert value in current row (1:nDV, not zero-indexed)
   double *row_val=new double [_nDecisionVars]; //values of row[col_ind]
 
@@ -1068,7 +1068,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
   double *Q_iter=new double [_pModel->GetNumSubBasins()];
   int    *lprow =new int    [_pModel->GetNumSubBasins()]; //index of goal equation for non-linear reservoir stage discharge curve in subbasin p
 
-  // evaluates value of all control variables for this time step 
+  // evaluates value of all control variables for this time step
   // ----------------------------------------------------------------
   UpdateControlVariables(tt);
 
@@ -1262,18 +1262,18 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
       if (op_is_active){
         _pConstraints[j]->conditions_satisfied=true;
         _pConstraints[j]->active_regime=k;
-        _pConstraints[j]->ever_satisfied=true; 
+        _pConstraints[j]->ever_satisfied=true;
 
         if (_pConstraints[j]->is_goal)
         {
           col_ind[i]=GetDVColumnInd(DV_SLACK,s);
           row_val[i]=_pConstraints[j]->penalty_over;
-          i++; 
+          i++;
           if (_pConstraints[j]->pOperRegimes[k]->pExpression->compare == COMPARE_IS_EQUAL) //two slack variables
           {
             col_ind[i]=GetDVColumnInd(DV_SLACK,s+1);
             row_val[i]=_pConstraints[j]->penalty_under;
-            i++; 
+            i++;
           }
         }
 
@@ -1281,7 +1281,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
       }
     }
 
-    //ensure counters are properly incremented 
+    //ensure counters are properly incremented
     s++;
     if (_pConstraints[j]->pOperRegimes[0]->pExpression->compare == COMPARE_IS_EQUAL) //two slack variables
     {
@@ -1559,7 +1559,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
   for (int i = 0; i < _nConstraints; i++)
   {
     int k=_pConstraints[i]->active_regime;
-    if (k!=DOESNT_EXIST)//at least one regime has been activated 
+    if (k!=DOESNT_EXIST)//at least one regime has been activated
     {
       AddConstraintToLP( i, k, pLinProg, tt, col_ind, row_val);
     }

@@ -520,7 +520,7 @@ int GetJulianDayFromMonthYear   (const string &date_str, const int calendar)
     for (int mon=0;mon<12;mon++){
       if (date_str.substr(0,3)==months[mon]){
         if (mon<9){fulldate_str="0"; }
-        if (date_str.length()<=5){ //Apr-1 
+        if (date_str.length()<=5){ //Apr-1
           fulldate_str=fulldate_str+to_string(mon+1)+"-0"+date_str.substr(4, 1);
         }
         else{ //Apr-01 or Apr-23

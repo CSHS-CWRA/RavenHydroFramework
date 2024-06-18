@@ -650,7 +650,7 @@ void   CEnthalpyModel::UpdateReachEnergySourceTerms(const int p)
   double SW       =pHRU->GetForcingFunctions()->SW_subcan_net;       //[MJ/m2/d]
   double LW_in    =pHRU->GetForcingFunctions()->LW_incoming;        //[MJ/m2/d]
   double AET      =pHRU->GetStateVarValue(iAET)/MM_PER_METER/tstep; //[m/d]
-  
+
   double temp_bed =_aBedTemp[p];
   double temp_lin =GetOutflowConcentration(p)+ZERO_CELSIUS; //[K]
 
@@ -914,7 +914,7 @@ double CEnthalpyModel::ApplyInCatchmentRouting (const int     p,
   beta=max(beta,1e-9); //to avoid divide by zero error
 
   double Mout_new_test=0;
-  
+
   double Mout_new=0.0;
   double dt=tstep;
   double term1,term2,term3;
