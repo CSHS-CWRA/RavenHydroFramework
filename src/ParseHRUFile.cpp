@@ -1620,7 +1620,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
       p->Tokenize(s,Len); //:EndVaryingStageRelations
     }
     //----------------------------------------------------------------------------------------------
-    else if ((!strcmp(s[0],":DZTRResservoirModel")) || (!strcmp(s[0],":DZTRReservoirModel"))) 
+    else if ((!strcmp(s[0],":DZTRResservoirModel")) || (!strcmp(s[0],":DZTRReservoirModel")))
     {/*:DZTRReservoirModel
        :MaximumStorage           Vmax(m3)
        :MaximumChannelDischarge  Qmax(m3/s)

@@ -1869,7 +1869,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   int         varid_qobs;                            // variable ID for observed outflows
   int         varid_qin;                             // variable ID for observed inflows
   int         varid_qloc;
-  int         varid_qnet_in;                         // variable ID for reservoir net inflows 
+  int         varid_qnet_in;                         // variable ID for reservoir net inflows
 
   int         retval;                                // error value for NetCDF routines
   string      tmpFilename;
@@ -2323,7 +2323,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
   int    qsim_id;               // variable id in NetCDF for simulated outflow
   int    qobs_id;               // variable id in NetCDF for observed outflow
   int    qin_id;                // variable id in NetCDF for observed inflow
-  int    qin_net_id;            // variable id in NetCDF for simulated net res inflow 
+  int    qin_net_id;            // variable id in NetCDF for simulated net res inflow
 
   // (a) count how many values need to be written for q_obs, q_sim, q_in
   int iSim, nSim; // current and total # of sub-basins with simulated outflows
