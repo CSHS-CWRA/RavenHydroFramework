@@ -10,9 +10,9 @@
 #include "RavenInclude.h"
 
 ///////////////////////////////////////////////////////////////////
-/// \brief Data abstraction for general lookup table y(x) 
+/// \brief Data abstraction for general lookup table y(x)
 //
-class CLookupTable 
+class CLookupTable
 {
  private:
   string  _name;

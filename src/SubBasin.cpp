@@ -812,7 +812,7 @@ double    CSubBasin::GetOutflowRate   () const
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns Outflow from channel reach (even if reservoir present) before diversions at start of current timestep (during solution) or end of completed timestep [m^3/s]
-/// \note used for calculating flow diversions 
+/// \note used for calculating flow diversions
 /// \return Channel outflow at start of current timestep (during solution) or end of completed timestep [m^3/s]
 //
 double    CSubBasin::GetChannelOutflowRate   () const
@@ -821,7 +821,7 @@ double    CSubBasin::GetChannelOutflowRate   () const
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns Outflow from channel reach (even if reservoir present) before diversions at start of current timestep (during solution) or end of completed timestep [m^3/s]
-/// \note used for calculating flow diversions 
+/// \note used for calculating flow diversions
 /// \return Channel outflow at start of current timestep (during solution) or end of completed timestep [m^3/s]
 //
 double    CSubBasin::GetLastChannelOutflowRate   () const
@@ -1990,7 +1990,7 @@ void CSubBasin::UpdateOutflows   (const double         *aQo,    //[m3/s]
   }
   double irrQ_act = min(irr_Q, _aQout[_nSegments-1]);
   _aQout[_nSegments-1]-=irrQ_act;
-  
+
   double divQ_act = min(Qdiv, _aQout[_nSegments-1]);
   _aQout[_nSegments-1]-=divQ_act;
 
@@ -2045,9 +2045,9 @@ void CSubBasin::UpdateOutflows   (const double         *aQo,    //[m3/s]
   //volume change from irrigation
   dV-=0.5*(_Qirr+_QirrLast)*dt;
 
-  //volume change from diversion 
+  //volume change from diversion
   dV-=0.5*(_Qdiverted+_QdivLast)*dt;
-  
+
   _channel_storage+=dV;//[m3]
 
   //Update rivulet storage

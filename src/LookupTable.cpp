@@ -23,7 +23,7 @@ CLookupTable::~CLookupTable() {
   delete [] _aY;
 }
 //////////////////////////////////////////////////////////////////
-// Accessors 
+// Accessors
 //
 string CLookupTable::GetName() const
 {

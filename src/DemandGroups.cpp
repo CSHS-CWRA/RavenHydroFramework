@@ -46,7 +46,7 @@ int    CDemandGroup::GetGlobalIndex       () const {return _global_ii;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns true if demands with ID demandID is in group
-/// \param demandID [in] demand id 
+/// \param demandID [in] demand id
 ///
 /// \return true if demand with  ID demandID is in group
 //

@@ -10,7 +10,7 @@ Copyright (c) 2008-2024 the Raven Development Team
 #include "Demands.h"
 #include "LookupTable.h"
 
-void SummarizeExpression(const char **s, const int Len, expressionStruct* exp); //defined in DemandExpressionHandling.cpp 
+void SummarizeExpression(const char **s, const int Len, expressionStruct* exp); //defined in DemandExpressionHandling.cpp
 
 void swapWildcards(const char **s,const int Len, string **aWildcards,const int &nWildcards)
 {
@@ -27,7 +27,7 @@ void swapWildcards(const char **s,const int Len, string **aWildcards,const int &
     tmp = s[i];
     for (int j=0;j<nWildcards;j++)
     {
-      wc=aWildcards[j][0]; 
+      wc=aWildcards[j][0];
       size_t ind = tmp.find(wc);
       if (ind!=string::npos)
       {
@@ -42,7 +42,7 @@ void swapWildcards(const char **s,const int Len, string **aWildcards,const int &
 
 //////////////////////////////////////////////////////////////////
 /// \brief Parses Demand Management file
-/// \details model.rvm: input file that defines management optimization problem and solution options 
+/// \details model.rvm: input file that defines management optimization problem and solution options
 ///
 /// \param *&pModel [out] Reference to model object
 /// \param &Options [out] Global model options information
@@ -224,9 +224,9 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       break;
     }
     case(11):  //----------------------------------------------
-    {/*:DemandGroup [groupname] 
+    {/*:DemandGroup [groupname]
          [demand1] [demand2] ... [demandN]
-       :EndDemandGroup     
+       :EndDemandGroup
      */
       if(Options.noisy) { cout <<"Demand Group"<<endl; }
       //pDO->AddDemandGroup(s[1]);
@@ -285,21 +285,21 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     case(21):  //----------------------------------------------
     { /*:DefineDecisionVariable [name] = [expressionRHS] */
       if(Options.noisy) { cout <<"Define Decision Variable"<<endl; }
-      expressionStruct *pExp;      
+      expressionStruct *pExp;
       manConstraint    *pConst=NULL;
       decision_var     *pDV = new decision_var(s[1],DOESNT_EXIST,DV_USER,pDO->GetNumUserDVs());
-      
+
       pDO->AddDecisionVar(pDV);
       pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
 
       if (pDO->GetDebugLevel()>=1){
-        SummarizeExpression((const char**)(s),Len,pExp); 
+        SummarizeExpression((const char**)(s),Len,pExp);
       }
 
       if (pExp!=NULL){
         pConst = pDO->AddGoalOrConstraint(s[1], false);
-        pConst->AddExpression(pExp); 
-      } 
+        pConst->AddExpression(pExp);
+      }
       else {
         string warn ="Invalid expression in :DefineDecisionVariable command at line " + pp->GetLineNumber();
         WriteWarning(warn.c_str(),Options.noisy);
@@ -313,35 +313,35 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       break;
     }
     case(23):  //----------------------------------------------
-    {/*:ManagementConstraint [name] 
+    {/*:ManagementConstraint [name]
          :OperatingRegime A
            :Expression [expression]
            :Condition [condition]
            :Condition [condition]
-         :EndOperatingRegime 
+         :EndOperatingRegime
          :OperatingRegime B
            :Expression [expression]
-         :EndOperatingRegime 
+         :EndOperatingRegime
        :EndManagementConstraint
        or
-       :ManagementGoal [name] 
+       :ManagementGoal [name]
          :OperatingRegime A
           :Expression [expression]
           :Condition [condition]
           :Condition [condition]
          :EndOperatingRegime
-         :Penalty [value] {value2} 
+         :Penalty [value] {value2}
        :EndManagementGoal
-       :ManagementGoal [name] 
+       :ManagementGoal [name]
          :Expression [expression]
-         :Penalty [value] {value2} 
+         :Penalty [value] {value2}
        :EndManagementGoal
      */
       if(Options.noisy) { cout <<"Management Constraint or Management Goal"<<endl; }
 
       manConstraint *pConst=pDO->AddGoalOrConstraint(s[1], is_goal);
 
-      expressionStruct *pExp;      
+      expressionStruct *pExp;
       bool is_first=true;
       firstword=pp->Peek();
       if (firstword == ":Expression") {pp->NextIsMathExp();}
@@ -356,19 +356,19 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         if     (Len == 0)             { if(Options.noisy) { cout << "#" << endl; } }//Do nothing
         else if (IsComment(s[0],Len)) { if(Options.noisy) { cout << "#" << endl; } }
         //----------------------------------------------
-        else if (!strcmp(s[0], ":OperatingRegime")) 
-        { 
-          op_regime *pOR=new op_regime(s[1]);//[OPUPDATE] 
+        else if (!strcmp(s[0], ":OperatingRegime"))
+        {
+          op_regime *pOR=new op_regime(s[1]);//[OPUPDATE]
           pConst->AddOperatingRegime(pOR,is_first);
           is_first=false;
         }
         //----------------------------------------------
-        else if (!strcmp(s[0], ":EndOperatingRegime")) 
+        else if (!strcmp(s[0], ":EndOperatingRegime"))
         {
           //does nothing
         }
         //----------------------------------------------
-        else if(!strcmp(s[0], ":Expression")) 
+        else if(!strcmp(s[0], ":Expression"))
         {
           if (pConst->GetCurrentExpression() != NULL) {
             ExitGracefully("ParseManagementFile: only one :Expression allowed in each :OperatingRegime command block (or only one if no :OperatingRegime blocks used).",BAD_DATA_WARN);
@@ -383,23 +383,23 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
             WriteWarning(warn.c_str(),Options.noisy);
           }
           if (pDO->GetDebugLevel()>=1){
-            SummarizeExpression((const char**)(s),Len,pExp); 
+            SummarizeExpression((const char**)(s),Len,pExp);
           }
         }
         //----------------------------------------------
-        else if (!strcmp(s[0], ":Condition")) 
+        else if (!strcmp(s[0], ":Condition"))
         {
           //TODO: Would it be better to support @date(), @between, @day_of_year() in general expression??
           //:Condition !Q32[0] < 300 + @ts(myTs,0)
           //:Condition DATE IS_BETWEEN 1975-01-02 and 2010-01-02
-          //:Condition DATE > @date(1975-01-02) //[NOT YET SUPPORTED] 
-          //:Condition DATE < @date(2010-01-02) //[NOT YET SUPPORTED] 
+          //:Condition DATE > @date(1975-01-02) //[NOT YET SUPPORTED]
+          //:Condition DATE < @date(2010-01-02) //[NOT YET SUPPORTED]
           //:Condition MONTH = 2
           //:Condition DAY_OF_YEAR IS_BETWEEN 173 and 210
           //:Condition DAY_OF_YEAR > 174
           //:Condition DAY_OF_YEAR < 210
-          //:Condition DAY_OF_YEAR IS_BETWEEN 300 20 //wraps around 
-          //:Condition @is_between(DAY_OF_YEAR,300,20) = 1  //[NOT YET SUPPORTED] 
+          //:Condition DAY_OF_YEAR IS_BETWEEN 300 20 //wraps around
+          //:Condition @is_between(DAY_OF_YEAR,300,20) = 1  //[NOT YET SUPPORTED]
           if (pConst!=NULL){
             bool badcond=false;
             exp_condition *pCond = new exp_condition();
@@ -419,7 +419,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
               else if (!strcmp(s[2],"IS_GREATER_THAN")){pCond->compare=COMPARE_GREATERTHAN;}
               else if (!strcmp(s[2],"IS_LESS_THAN"   )){pCond->compare=COMPARE_LESSTHAN;}
               else if (!strcmp(s[2],"IS_EQUAL_TO"    )){pCond->compare=COMPARE_IS_EQUAL;}
-              else if (!strcmp(s[2],"IS_NOT_EQUAL_TO")){pCond->compare=COMPARE_NOT_EQUAL;} 
+              else if (!strcmp(s[2],"IS_NOT_EQUAL_TO")){pCond->compare=COMPARE_NOT_EQUAL;}
               else {
                 ExitGracefully("ParseManagementFile: unrecognized comparison operator in :Condition statement",BAD_DATA_WARN);
                 break;
@@ -435,7 +435,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
                 }
               }
 
-              if (pCond->dv_name[0] == '!') { //decision variable 
+              if (pCond->dv_name[0] == '!') { //decision variable
                 char   tmp =pCond->dv_name[1];
                 string tmp2=pCond->dv_name.substr(2);
                 char code=pCond->dv_name[1];
@@ -454,7 +454,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
                     }
                   }
                 }
-                else { //demand 
+                else { //demand
                   int d=pDO->GetDemandIndexFromName(tmp2);
                   if (d == DOESNT_EXIST) {
                     ExitGracefully("ParseManagementFile: !D or !C used in :Condition statement has invalid demand ID",BAD_DATA_WARN);
@@ -463,15 +463,15 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
               }
               if (!badcond)
               {
-                pCond->p_index=pDO->GetIndexFromDVString(pCond->dv_name); 
+                pCond->p_index=pDO->GetIndexFromDVString(pCond->dv_name);
                 pConst->AddOpCondition(pCond);
               }
             }
-          } 
+          }
           else{
             ExitGracefully("ParseManagementFile: :Condition statement must appear after valid :Expression in :ManagementConstraint command",BAD_DATA_WARN);
           }
-        } 
+        }
         //----------------------------------------------
         else if (!strcmp(s[0], ":Penalty")) {
           if (!pConst->is_goal) {
@@ -485,7 +485,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         }
         //----------------------------------------------
         else if (!strcmp(s[0], ":Priority")) {
-          pConst->priority = s_to_i(s[1]); //for later 
+          pConst->priority = s_to_i(s[1]); //for later
         }
         //----------------------------------------------
         else if (!strcmp(s[0], ":EndManagementGoal")) {
@@ -494,7 +494,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         //----------------------------------------------
         else if (!strcmp(s[0], ":EndManagementConstraint")) {
           break;
-        } 
+        }
         else {
           WriteWarning("ParseManagementFile: Unrecognized command in :ManagementConstraint command block",Options.noisy);
         }
@@ -506,7 +506,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     }
     case(24):  //----------------------------------------------
     { /*:DeclareDecisionVariable [name]  */
-      if(Options.noisy) { cout <<"Declare Decision Variable"<<endl; }      
+      if(Options.noisy) { cout <<"Declare Decision Variable"<<endl; }
       decision_var     *pDV = new decision_var(s[1],DOESNT_EXIST,DV_USER,pDO->GetNumUserDVs());
       pDO->AddDecisionVar(pDV);
       break;
@@ -514,16 +514,16 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     case(25):  //----------------------------------------------
     { /*:DefineControlVariable [name] = [expressionRHS] */
       if(Options.noisy) { cout <<"Define Control Variable"<<endl; }
-      expressionStruct *pExp;      
+      expressionStruct *pExp;
       pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
 
       if (pDO->GetDebugLevel()>=1){
-        SummarizeExpression((const char**)(s),Len,pExp); 
+        SummarizeExpression((const char**)(s),Len,pExp);
       }
 
       if (pExp!=NULL){
         pDO->AddControlVariable(s[1],pExp);
-      } 
+      }
       else {
         string warn ="Invalid expression in :DefineControlVariable command at line " + pp->GetLineNumber();
         WriteWarning(warn.c_str(),Options.noisy);
@@ -531,16 +531,16 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       break;
     }
     case(30):  //----------------------------------------------
-    {/*:LookupTable [name]  
-         N 
-         x1 y1 
+    {/*:LookupTable [name]
+         N
+         x1 y1
          x2 y2
          ...
-         xN yN 
+         xN yN
        :EndLookupTable
      */
       if(Options.noisy) { cout <<"LookupTable"<<endl; }
-      
+
       string name = s[1];
 
       pp->Tokenize(s,Len);
@@ -548,13 +548,13 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
 
       double *aX = new double[N];
       double *aY = new double[N];
-      for(int i = 0; i < N; i++) 
+      for(int i = 0; i < N; i++)
       {
         pp->Tokenize(s,Len);
         if(IsComment(s[0],Len)) { i--; }
         else {
           if(Len>=2) {
-            aX[i] = s_to_d(s[0]);  
+            aX[i] = s_to_d(s[0]);
             aY[i] = s_to_d(s[1]);
           }
           else {
@@ -572,31 +572,31 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     }
     case(40):  //----------------------------------------------
     { /*:LoopThrough [SB_GROUP or DEMAND_GROUP] [group name]  */
-      if(Options.noisy) { cout <<"Start Loop"<<endl; }      
+      if(Options.noisy) { cout <<"Start Loop"<<endl; }
       //if (Len<2){ImproperFormatWarning(":NumericalMethod",p,Options.noisy); break;}
 
       loopStartPos=pp->GetPosition();
       loopStartLine=pp->GetLineNumber();
 
       if       (!strcmp(s[1],"SB_GROUP"    )){
-       
+
         if ((pLoopSBGroup != NULL) || (pLoopDemandGroup !=NULL)){
           ExitGracefully("ParseManagementFile: Cannot have nested :LoopThrough statements",BAD_DATA);
         }
         pLoopSBGroup=pModel->GetSubBasinGroup(s[2]);
         if (pLoopSBGroup == NULL) {
           ExitGracefully("ParseManagementFile: bad subbasin group name in :LoopThrough command",BAD_DATA_WARN);
-        } 
+        }
         else {
           loopCount=0;
           long     SBID = pLoopSBGroup->GetSubBasin(loopCount)->GetID();
           string SBName = pLoopSBGroup->GetSubBasin(loopCount)->GetName();
-          
+
           aWildcards[0][0] = "$ID$";   aWildcards[0][1] = to_string(SBID);
           aWildcards[1][0] = "$NAME$"; aWildcards[1][1] = SBName;
 
           nWildcards=2;
-          //look for $SBID$ 
+          //look for $SBID$
         }
       }
       else if  (!strcmp(s[1],"DEMAND_GROUP")){
@@ -610,12 +610,12 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     }
     case(41):  //----------------------------------------------
     { /*:EndLoopThrough   */
-      if(Options.noisy) { cout <<"End Loop"<<endl; } 
+      if(Options.noisy) { cout <<"End Loop"<<endl; }
       bool loopDone=false;
-      
+
       loopCount++;
 
-      if (pLoopSBGroup!=NULL)//iterating  subbasin loop 
+      if (pLoopSBGroup!=NULL)//iterating  subbasin loop
       {
         if (loopCount == pLoopSBGroup->GetNumSubbasins())
         {
@@ -626,13 +626,13 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         {
           long     SBID = pLoopSBGroup->GetSubBasin(loopCount)->GetID();
           string SBName = pLoopSBGroup->GetSubBasin(loopCount)->GetName();
-          
+
           aWildcards[0][0] = "$ID$";   aWildcards[0][1] = to_string(SBID);
           aWildcards[1][0] = "$NAME$"; aWildcards[1][1] = SBName;
         }
       }
       else if (pLoopDemandGroup != NULL) {
-        
+
         if (loopCount == pLoopDemandGroup->GetNumDemands()){
           pLoopDemandGroup=NULL;
           loopDone=true;
@@ -642,7 +642,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         }
       }
       else {
-        //shouldnt happen 
+        //shouldnt happen
         loopDone=true;
       }
 
@@ -663,7 +663,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         }
 
         cout<<" LOOP COUNT: "<<loopCount<<" of "<< endl;
-        // jump back to start of loop 
+        // jump back to start of loop
         pp->SetPosition(loopStartPos);
         pp->SetLineCounter(loopStartLine);
       }
@@ -671,8 +671,8 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     }
     case(42):  //----------------------------------------------
     { /*:LoopVector $wildcard$ v1 v2 v3 ... vN   */ /*vN are strings*/
-      if(Options.noisy) { cout <<"Loop Vector Data"<<endl; } 
-      if (loopCount==0){//only read on first loop through 
+      if(Options.noisy) { cout <<"Loop Vector Data"<<endl; }
+      if (loopCount==0){//only read on first loop through
         int size=Len-2;
         if ((pLoopSBGroup != NULL) && (size != pLoopSBGroup->GetNumSubbasins())) {
           ExitGracefully(":LoopVector: invalid number of terms in vector. Should be equal to size of subbasin group",BAD_DATA_WARN);
