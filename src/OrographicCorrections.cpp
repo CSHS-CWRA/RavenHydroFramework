@@ -402,7 +402,7 @@ void CModel::CorrectPET(const optStruct &Options,
     if(SWE>0.1) { F.PET*=(1.0-snow_cov);  }
   }
 
-  //Suppress open water ET over frozen lakes 
+  //Suppress open water ET over frozen lakes
   if ((StateVarExists(ICE_THICKNESS)) && (pHRU->IsLake()))
   {
     int iIceThick=GetStateVarIndex(ICE_THICKNESS);

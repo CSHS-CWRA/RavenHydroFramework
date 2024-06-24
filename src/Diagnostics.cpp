@@ -377,7 +377,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
   {
     double avgobs=0.0;
     N=0;
-    double pct=_width/100; //"width" is actually percentage. If ==0, reverts to NSE 
+    double pct=_width/100; //"width" is actually percentage. If ==0, reverts to NSE
     for(nn=nnstart;nn<nnend;nn++)
     {
       weight=baseweight[nn];
@@ -1451,5 +1451,5 @@ diag_type StringToDiagnostic(string distring)
   else if (!distring.compare("SPEARMAN"             )){return DIAG_SPEARMAN; }
   else if (!distring.compare("NASH_SUTCLIFFE_RUN"   )){return DIAG_NASH_SUTCLIFFE_RUN; }
   else if (!distring.compare("FUZZY_NASH"           )){return DIAG_FUZZY_NASH; }
-  else                                                {return DIAG_UNRECOGNIZED;} 
+  else                                                {return DIAG_UNRECOGNIZED;}
 }

@@ -112,7 +112,7 @@ void   CmvDecay::GetRatesOfChange(const double      *state_vars,
     {
       //dm/dt=-km
       double decay_coeff = _pTransModel->GetGeochemParam(PAR_DECAY_COEFF,_constit_ind,ii,_process_ind,pHRU);
-      if(decay_coeff!=NOT_SPECIFIED) { 
+      if(decay_coeff!=NOT_SPECIFIED) {
         rates[q]= decay_coeff*mass;
       }
     }
@@ -121,7 +121,7 @@ void   CmvDecay::GetRatesOfChange(const double      *state_vars,
     {
       //dm/dt=-J
       double loss_rate = _pTransModel->GetGeochemParam(PAR_MASS_LOSS_RATE,_constit_ind,ii,_process_ind,pHRU);
-      if(loss_rate!=NOT_SPECIFIED) { 
+      if(loss_rate!=NOT_SPECIFIED) {
         rates[q]= min(loss_rate,mass/Options.timestep);
       }
     }
@@ -140,7 +140,7 @@ void   CmvDecay::GetRatesOfChange(const double      *state_vars,
     else if(_dtype==DECAY_DENITRIF)
     {
       double decay_coeff = _pTransModel->GetGeochemParam(PAR_DECAY_COEFF,_constit_ind,ii,_process_ind,pHRU);
-      if(decay_coeff!=NOT_SPECIFIED) { 
+      if(decay_coeff!=NOT_SPECIFIED) {
 
         double temp=pHRU->GetForcingFunctions()->temp_ave;
         double c1     =1.0;
