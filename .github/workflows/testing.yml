@@ -98,5 +98,5 @@ jobs:
         if: steps.build.outcome == 'success' && matrix.os == 'windows-latest'
         run: |
           ls
-          Raven
-          Raven -v
+          .\Raven.exe
+          .\Raven.exe -v
