@@ -70,6 +70,8 @@ string CDiagnostic::GetName() const
   case(DIAG_NSE4):              {return "DIAG_NSE4"; }
   case(DIAG_YEARS_OF_RECORD):   {return "DIAG_YEARS_OF_RECORD";}
   case(DIAG_SPEARMAN):          {return "DIAG_SPEARMAN";}
+  case(DIAG_KLING_GUPTA_PRIME): {return "DIAG_KLING_GUPTA_PRIME";}
+  case(DIAG_KLING_GUPTA_DEVIATION_PRIME):   {return "DIAG_KLING_GUPTA_DEVIATION_PRIME"; }
   default:                      {return "";}
   }
 }
@@ -956,6 +958,62 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
       return -ALMOST_INF;
     }
   }
+  case(DIAG_KLING_GUPTA_PRIME)://-----------------------------------------
+  case(DIAG_KLING_GUPTA_DEVIATION_PRIME)://-------------------------------
+  {
+    double ObsAvg = 0;
+    double ModAvg = 0;
+    double ObsSum = 0;
+    double ModSum = 0;
+    double ObsStd = 0;
+    double ModStd = 0;
+    double Cov = 0;
+    N = 0;
+    for (nn = nnstart; nn < nnend; nn++) //mean
+    {
+      weight =baseweight[nn];
+      obsval = pTSObs->GetSampledValue(nn);
+      modval = pTSMod->GetSampledValue(nn);
+
+      ObsSum += obsval*weight;
+      ModSum += modval*weight;
+      N += weight;
+    }
+    ObsAvg = ObsSum / N;
+    ModAvg = ModSum / N;
+
+    for (nn = nnstart; nn < nnend; nn++) //std deviation
+    {
+      weight =baseweight[nn];
+      obsval = pTSObs->GetSampledValue(nn);
+      modval = pTSMod->GetSampledValue(nn);
+
+      ObsStd += pow((obsval - ObsAvg), 2)*weight;
+      ModStd += pow((modval - ModAvg), 2)*weight;
+      Cov += (obsval - ObsAvg) * (modval - ModAvg)*weight;
+    }
+
+    ObsStd = sqrt(ObsStd / N);   // Standard Deviation for Observed Flow
+    ModStd = sqrt(ModStd / N);   // Standard Deviation for Modelled Flow
+    Cov /= N;                    // Covariance between observed and modelled flows
+
+    double r     = Cov / ObsStd / ModStd; // pearson product-moment correlation coefficient
+    double Beta  = ModAvg / ObsAvg;
+    double Alpha=(ModStd / ModAvg) / (ObsStd / ObsAvg);
+
+    if (_type==DIAG_KLING_GUPTA_DEVIATION_PRIME){Beta=1.0;} //remove penalty for difference in means} 
+
+    if ((N>0) && ((ObsAvg!=0.0) || (Beta==1.0)) && (ObsStd!=0.0) && (ModStd!=0.0) && (ModAvg!=0.0))
+    {
+      return 1.0 - sqrt(pow((r - 1), 2) + pow((Alpha - 1), 2) + pow((Beta - 1), 2));
+    }
+    else
+    {
+      string warn = "DIAG_KLING_GUPTA_PRIME not calculated. Missing non-zero weighted observations during simulation duration and/or zero standard deviation in modeled/observation data.";
+      WriteWarning(warn,Options.noisy);
+      return -ALMOST_INF;
+    }
+  }
   case(DIAG_KLING_GUPTA_DER)://-----------------------------------------
   {
     nnend -= 1;  // Reduce nnend by 1 for derivative of Kling Gupta
@@ -1410,5 +1468,7 @@ diag_type StringToDiagnostic(string distring)
   else if (!distring.compare("YEARS_OF_RECORD"      )){return DIAG_YEARS_OF_RECORD; }
   else if (!distring.compare("SPEARMAN"             )){return DIAG_SPEARMAN; }
   else if (!distring.compare("NASH_SUTCLIFFE_RUN"   )){return DIAG_NASH_SUTCLIFFE_RUN; }
+  else if (!distring.compare("KLING_GUPTA_PRIME"    )){return DIAG_KLING_GUPTA_PRIME;}
+  else if (!distring.compare("KLING_GUPTA_DEVIATION_PRIME")){return DIAG_KLING_GUPTA_DEVIATION_PRIME;}
   else                                                {return DIAG_UNRECOGNIZED;}
 }
