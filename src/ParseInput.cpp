@@ -1811,7 +1811,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       int pp=pModel->GetSubBasinGroup(s[1])->GetGlobalIndex();
       CCustomTable *pTab=new CCustomTable(s[2],pp,pModel);
 
-      while ((Len==0) || (strcmp(s[0],":EndHRUGroup")))
+      while ((Len==0) || (strcmp(s[0],":EndCustomTable")))
       {
         p->Tokenize(s,Len);
         if      (IsComment(s[0], Len)){}//comment or blank line
@@ -2537,7 +2537,7 @@ bool ParseMainInputFile (CModel     *&pModel,
        :SnowSqueeze SQUEEZE_RAVEN SNOW_LIQ [state_var to_index]*/
       if (Options.noisy){cout <<"Liquid Snow Release Process"<<endl;}
       if (Len<4){ImproperFormatWarning(":SnowSqueeze",p,Options.noisy); break;}
-      FromToErrorCheck(":LakeEvaporation",s[2],s[3],SNOW_LIQ,USERSPEC_SVTYPE,pModel,pStateVar);
+      FromToErrorCheck(":SnowSqueeze",s[2],s[3],SNOW_LIQ,USERSPEC_SVTYPE,pModel,pStateVar);
       CmvSnowSqueeze::GetParticipatingStateVarList(tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
       tmpS[0] = pStateVar->StringToSVType(s[3], tmpLev[0], true);

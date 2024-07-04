@@ -46,6 +46,7 @@ string CDiagnostic::GetName() const
   case(DIAG_PCT_BIAS):          {return "DIAG_PCT_BIAS";}
   case(DIAG_ABS_PCT_BIAS):      {return "DIAG_ABS_PCT_BIAS"; }
   case(DIAG_ABSERR):            {return "DIAG_ABSERR";}
+  case(DIAG_ABSERR_RUN):        {return "DIAG_ABSERR_RUN";}
   case(DIAG_ABSMAX):            {return "DIAG_ABSMAX";}
   case(DIAG_PDIFF):             {return "DIAG_PDIFF";}
   case(DIAG_PCT_PDIFF):         {return "DIAG_PCT_PDIFF";}
@@ -534,6 +535,63 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     {
       string warn = "DIAG_ABSERR not calculated. Missing non-zero weighted observations during simulation duration.";
       WriteWarning(warn, Options.noisy);
+      return -ALMOST_INF;
+    }
+  }
+  case(DIAG_ABSERR_RUN)://----------------------------------------------------
+  {
+    if (_width < 2)
+    {
+      string warn = "Provide average _width greater than 1 in format: DIAG_ABSERR_RUN[n]";
+      WriteWarning(warn, Options.noisy);
+      return -ALMOST_INF;
+    }
+    if (_width * 2 > nnend)
+    {
+      string warn = "Not enough sample values. Check width and timeseries";
+      WriteWarning(warn, Options.noisy);
+      return -ALMOST_INF;
+    }
+    nnend    -= _width;
+    nnstart  += _width;
+
+    N=0;
+    
+    double sum1(0.0);
+    for (nn=nnstart;nn<nnend;nn++)
+    {
+      int front = 0;
+      int back = 0;
+      double modavg = 0.0;
+      double obsavg = 0.0;
+      weight = baseweight[nn];
+
+      front = (int)floor(_width / 2);
+      if(_width % 2 == 1) {back = front;}
+      else                {back = front - 1;}
+
+      for(int k = nn - front; k <= nn + back; k++)
+      {
+        modavg += pTSMod->GetSampledValue(k);
+        obsavg += pTSObs->GetSampledValue(k);
+        weight *= baseweight[k];
+      }
+      N  += weight;
+
+      modval = modavg / _width;
+      obsval = obsavg / _width;
+
+      sum1 += fabs(obsval - modval)*weight;
+    }
+
+    if(N>0.0)
+    {
+      return sum1;
+    }
+    else
+    {
+      string warn = "DIAG_ABSERR_RUN not performed correctly. Missing non-zero weighted observations during simulation duration.";
+      WriteWarning(warn,Options.noisy);
       return -ALMOST_INF;
     }
   }
@@ -1425,6 +1483,7 @@ diag_type StringToDiagnostic(string distring)
   else if (!distring.compare("PCT_BIAS"             )){return DIAG_PCT_BIAS;}
   else if (!distring.compare("ABS_PCT_BIAS"         )){return DIAG_ABS_PCT_BIAS; }
   else if (!distring.compare("ABSERR"               )){return DIAG_ABSERR;}
+  else if (!distring.compare("ABSERR_RUN"           )){return DIAG_ABSERR_RUN;}
   else if (!distring.compare("ABSMAX"               )){return DIAG_ABSMAX;}
   else if (!distring.compare("PDIFF"                )){return DIAG_PDIFF;}
   else if (!distring.compare("PCT_PDIFF"            )){return DIAG_PCT_PDIFF;}
