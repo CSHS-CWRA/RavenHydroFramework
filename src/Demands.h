@@ -31,7 +31,8 @@ public:/*-------------------------------------------------------*/
   int               GetNumDemands      () const;
   int               GetGlobalIndex     () const;
   int               GetDemandID        (const int ii_local) const;
-  //CDemand        *GetDemand          (const int ii_local) cosnst;
+  //string          GetDemandName      (const int ii_local) const;
+  //CDemand        *GetDemand          (const int ii_local) const;
   bool              IsInGroup          (const int demandID) const;
   bool              IsDisabled         () const;
 };

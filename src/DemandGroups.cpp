@@ -58,15 +58,25 @@ bool  CDemandGroup::IsInGroup          (const int demandID) const
   return false;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Returns demand corresponding to index p in group
-/// \param p [in] Index referring to pth element of the demand Group
-/// \return demand corresponding to index p
+/// \brief Returns demand corresponding to index ii in group
+/// \param ii [in] Index referring to pth element of the demand Group
+/// \return demand corresponding to index ii
 //
-int CDemandGroup::GetDemandID(const int p) const
+int CDemandGroup::GetDemandID(const int ii) const
 {
-  ExitGracefullyIf((p<0) || (p>=_nDemands),"CDemandGroup GetDemand::improper index",BAD_DATA);
-  return _aDemandIDs[p];
+  ExitGracefullyIf((ii<0) || (ii>=_nDemands),"CDemandGroup GetDemandID::improper index",BAD_DATA);
+  return _aDemandIDs[ii];
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Returns demand name corresponding to index ii in group
+/// \param ii [in] Index referring to pth element of the demand Group
+/// \return demand name corresponding to index ii
+//
+/*string CDemandGroup::GetDemandName(const int ii) const
+{
+  ExitGracefullyIf((ii<0) || (ii>=_nDemands),"CDemandGroup GetDemandName::improper index",BAD_DATA);
+  return _aDemandNames[ii];
+}*/
 //////////////////////////////////////////////////////////////////
 /// \return true if subbasin group is disabled
 //
