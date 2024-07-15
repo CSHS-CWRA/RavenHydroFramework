@@ -74,6 +74,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
   int       loopStartLine;
   CSubbasinGroup *pLoopSBGroup=NULL;
   CDemandGroup   *pLoopDemandGroup=NULL;
+  int             loopListSize=0;
   string **aWildcards  = new string *[MAX_WILDCARDS  ];
   string **aLoopVector = new string *[MAX_WILDCARDS  ];
   for (int i = 0; i < MAX_WILDCARDS; i++) {
@@ -575,33 +576,65 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       if(Options.noisy) { cout <<"Start Loop"<<endl; }
       //if (Len<2){ImproperFormatWarning(":NumericalMethod",p,Options.noisy); break;}
 
+      if ((pLoopSBGroup != NULL) || (pLoopDemandGroup !=NULL) || (loopListSize!=0)){
+        ExitGracefully("ParseManagementFile: Cannot have nested :LoopThrough statements",BAD_DATA);
+      }
+
       loopStartPos=pp->GetPosition();
       loopStartLine=pp->GetLineNumber();
 
-      if       (!strcmp(s[1],"SB_GROUP"    )){
-
-        if ((pLoopSBGroup != NULL) || (pLoopDemandGroup !=NULL)){
-          ExitGracefully("ParseManagementFile: Cannot have nested :LoopThrough statements",BAD_DATA);
-        }
+      if       (!strcmp(s[1],"SB_GROUP"    ))
+      { 
         pLoopSBGroup=pModel->GetSubBasinGroup(s[2]);
         if (pLoopSBGroup == NULL) {
           ExitGracefully("ParseManagementFile: bad subbasin group name in :LoopThrough command",BAD_DATA_WARN);
         }
         else {
           loopCount=0;
-          long     SBID = pLoopSBGroup->GetSubBasin(loopCount)->GetID();
-          string SBName = pLoopSBGroup->GetSubBasin(loopCount)->GetName();
+          aLoopVector[0]=new string [pLoopSBGroup->GetNumSubbasins()];
+          aLoopVector[1]=new string [pLoopSBGroup->GetNumSubbasins()];
+          for (int p = 0; p < pLoopSBGroup->GetNumSubbasins(); p++) 
+          {
+            long     SBID = pLoopSBGroup->GetSubBasin(p)->GetID();
+            string SBName = pLoopSBGroup->GetSubBasin(p)->GetName();
+            aLoopVector[0][p]=to_string(SBID);
+            aLoopVector[1][p]=SBName;
+          }
 
-          aWildcards[0][0] = "$ID$";   aWildcards[0][1] = to_string(SBID);
-          aWildcards[1][0] = "$NAME$"; aWildcards[1][1] = SBName;
-
+          aWildcards[0][0] = "$ID$";   aWildcards[0][1] = aLoopVector[0][0];
+          aWildcards[1][0] = "$NAME$"; aWildcards[1][1] = aLoopVector[1][0];
           nWildcards=2;
-          //look for $SBID$
         }
       }
-      else if  (!strcmp(s[1],"DEMAND_GROUP")){
-        //\todo[funct]
+      else if  (!strcmp(s[1],"DEMAND_GROUP"))
+      {
         ExitGracefully("Loop through demand group not yet supported",STUB);
+        //pLoopDemandGroup=pDO->GetDemandGroup(s[2]);
+        if (pLoopDemandGroup == NULL) {
+          ExitGracefully("ParseManagementFile: bad demand group name in :LoopThrough command",BAD_DATA_WARN);
+        } 
+        else {
+          loopCount=0;
+          aLoopVector[0]=new string [pLoopDemandGroup->GetNumDemands()];
+          aLoopVector[1]=new string [pLoopDemandGroup->GetNumDemands()];
+          for (int p = 0; p < pLoopDemandGroup->GetNumDemands(); p++) 
+          {
+            long       ID = pLoopDemandGroup->GetDemandID(loopCount);
+            string  DName = "";// pLoopDemandGroup->GetDemand(loopCount)->GetName(); //todo: support 
+            aLoopVector[0][p]=to_string(ID);
+            aLoopVector[1][p]=DName;
+          }
+
+          aWildcards[0][0] = "$ID$";   aWildcards[0][1] = aLoopVector[0][0];
+          aWildcards[1][0] = "$NAME$"; aWildcards[1][1] = aLoopVector[1][0];
+          nWildcards=2;
+        }
+      }
+      else if (!strcmp(s[1], "LIST")) 
+      {
+        loopListSize=s_to_i(s[2]);
+        loopCount=0;
+        nWildcards=0;
       }
       else {
         ExitGracefully(":LoopThrough- invalid format",BAD_DATA_WARN);
@@ -615,55 +648,39 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
 
       loopCount++;
 
-      if (pLoopSBGroup!=NULL)//iterating  subbasin loop
+      if ((pLoopSBGroup!=NULL) && (loopCount == pLoopSBGroup->GetNumSubbasins()))//iterating  subbasin loop 
       {
-        if (loopCount == pLoopSBGroup->GetNumSubbasins())
-        {
-          pLoopSBGroup=NULL;
-          loopDone=true;
-        }
-        else
-        {
-          long     SBID = pLoopSBGroup->GetSubBasin(loopCount)->GetID();
-          string SBName = pLoopSBGroup->GetSubBasin(loopCount)->GetName();
-
-          aWildcards[0][0] = "$ID$";   aWildcards[0][1] = to_string(SBID);
-          aWildcards[1][0] = "$NAME$"; aWildcards[1][1] = SBName;
-        }
+        pLoopSBGroup=NULL;
+        loopDone=true;
       }
-      else if (pLoopDemandGroup != NULL) {
-
-        if (loopCount == pLoopDemandGroup->GetNumDemands()){
-          pLoopDemandGroup=NULL;
-          loopDone=true;
-        }
-        else {
-
-        }
+      else if ((pLoopDemandGroup != NULL) && (loopCount == pLoopDemandGroup->GetNumDemands()))
+      {  
+        pLoopDemandGroup=NULL;
+        loopDone=true;
       }
-      else {
-        //shouldnt happen
+      else if ((loopListSize != 0) && (loopCount == loopListSize))
+      {
+        loopListSize=0;
         loopDone=true;
       }
 
       if (loopDone) //Finished. Reset loop variables
       {
-        for (int j = 0; j < nWildcards - 2; j++) {
+        for (int j = 0; j < nWildcards; j++) {
           delete [] aLoopVector[j];
         }
         loopCount       =0;
+        loopListSize    =0;
         pLoopSBGroup    =NULL;
         pLoopDemandGroup=NULL;
-      }
-      else {
-        if (nWildcards>=2){
-          for (int j = 0; j < nWildcards - 2; j++) {
-            aWildcards[j+2][1]=aLoopVector[j][loopCount];
-          }
+      } 
+      else //not finished yet - update all wildcards and jump back to start of loop 
+      {
+        for (int j = 0; j < nWildcards; j++) {
+          aWildcards[j][1]=aLoopVector[j][loopCount];
         }
 
-        cout<<" LOOP COUNT: "<<loopCount<<" of "<< endl;
-        // jump back to start of loop
+        // jump back to start of loop 
         pp->SetPosition(loopStartPos);
         pp->SetLineCounter(loopStartLine);
       }
@@ -680,18 +697,19 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         if ((pLoopDemandGroup != NULL) && (size != pLoopDemandGroup->GetNumDemands())) {
           ExitGracefully(":LoopVector: invalid number of terms in vector. Should be equal to size of demand group",BAD_DATA_WARN);
         }
-        if ((pLoopSBGroup == NULL) && (pLoopDemandGroup == NULL)) {
+        if ((loopListSize != 0) && (size != loopListSize)) {
+          ExitGracefully(":LoopVector: invalid number of terms in vector. Should be equal to size of List",BAD_DATA_WARN);
+        }
+        if ((pLoopSBGroup == NULL) && (pLoopDemandGroup == NULL) && (loopListSize==0)) {
           ExitGracefully(":LoopVector command must be within :LoopThrough-:EndLoopThrough command block",BAD_DATA_WARN);
         }
-        if (nWildcards>=2){
-          aLoopVector[nWildcards-2]=new string [size];
-          for (int i=0;i<size; i++){
-            aLoopVector[nWildcards-2][i] = s[i + 2];
-          }
-          aWildcards[nWildcards][0] = s[1];
-          aWildcards[nWildcards][1] = aLoopVector[nWildcards-2][0];
-          nWildcards++;
+        aLoopVector[nWildcards]=new string [size];
+        for (int i=0;i<size; i++){
+          aLoopVector[nWildcards][i] = s[i];
         }
+        aWildcards[nWildcards][0] = s[1];
+        aWildcards[nWildcards][1] = aLoopVector[nWildcards][0];
+        nWildcards++;
       }
       break;
     }
