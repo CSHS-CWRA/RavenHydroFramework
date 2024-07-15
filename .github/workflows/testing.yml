@@ -18,17 +18,29 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            azure.archive.ubuntu.com:80
+            esm.ubuntu.com:443
+            files.pythonhosted.org:443
+            github.com:443
+            motd.ubuntu.com:443
+            packages.microsoft.com:443
+            pypi.org:443
+
       - name: Checkout Repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
       - name: Install linters
         run: |
           sudo apt-get update
           sudo apt-get install uncrustify cppcheck iwyu
+
       - name: Set up Python3
         uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
         with:
           python-version: '3.x'
+
       - name: Run pre-commit hooks
         uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
 
@@ -44,18 +56,30 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
         with:
-          egress-policy: audit
+          disable-sudo: true
+          egress-policy: block
+          allowed-endpoints: >
+            azure.archive.ubuntu.com:80
+            esm.ubuntu.com:443
+            github.com:443
+            motd.ubuntu.com:443
+            packages.microsoft.com:443
+            raw.githubusercontent.com:443
+
       - name: Checkout Repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
       - name: Fetch NetCDF CMake script
         run: |
           wget https://raw.githubusercontent.com/Kitware/VTK/master/CMake/FindNetCDF.cmake -P cmake
+
       - name: Build
         id: build
         continue-on-error: true
         run: |
           cmake .
           cmake --build . --config ${{ matrix.build_type }} -j 3
+
       - name: Run tests
         if: steps.build.outcome == 'success'
         run: |
@@ -70,11 +94,23 @@ jobs:
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
         build_type: [ Debug, Release ]
+    defaults:
+      run:
+        shell: bash -l {0}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
         with:
-          egress-policy: audit
+          disable-sudo: true
+          egress-policy: block
+          allowed-endpoints: >
+            azure.archive.ubuntu.com:80
+            esm.ubuntu.com:443
+            github.com:443
+            motd.ubuntu.com:443
+            objects.githubusercontent.com:443
+            packages.microsoft.com:443
+
       - name: Checkout Repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
