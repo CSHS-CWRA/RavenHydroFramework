@@ -576,7 +576,7 @@ void BarycentricWeights() {
   TEST.open("BarycentricWeights.csv");
   for(int m=0; m<10000;m++) {
     sum=0;
-    for(int i=0;i<4;i++) { aVals[i]=rand()/(double)(RAND_MAX+1); }
+    for(int i=0;i<4;i++) { aVals[i]=rand()/(double)(RAND_MAX); }
     for(int q=0; q<N-1;q++) {
       _aWeights[q]=(1.0-sum)*(1.0-pow(1.0-aVals[q],1.0/(N-q)));
       sum+=_aWeights[q];

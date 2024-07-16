@@ -648,12 +648,19 @@ CTimeSeries  *CTimeSeries::Sum(CTimeSeries *pTS1, CTimeSeries *pTS2, string name
 // OR
 // :AnnualCycle J F M A M J J A S O N D
 // OR
-// :AnnualEvents [STEP or INTERPOLATE]
+// :AnnualEvents
 //   mm-dd v1   (or J v1, where J is julian day)
 //   mm-dd v2
 //   mm-dd v3
 //   ...
 // :EndAnnualEvents
+// OR
+// :AnnualPattern [STEP or INTERPOLATE]
+//   mm-dd v1   (or J v1, where J is julian day)
+//   mm-dd v2
+//   mm-dd v3
+//   ...
+// :EndAnnualPattern
 // OR
 // :ReadFromNetCDF
 //    :FileNameNC ./input/input.nc

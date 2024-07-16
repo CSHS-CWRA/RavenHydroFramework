@@ -14,7 +14,11 @@
 
 #ifdef _LPSOLVE_
 namespace lp_lib  {
+#ifdef _WIN32
 #include "../lib/lp_solve/lp_lib.h"
+#else
+#include "../lib/lp_solve_unix/lp_lib.h"
+#endif
 }
 #endif
 

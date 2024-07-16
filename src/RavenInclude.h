@@ -16,7 +16,9 @@
 
 //#define _MODFLOW_USG_ // uncomment if compiling MODFLOW-USG coupled version of Raven
 //#define _STRICTCHECK_ // uncomment if strict checking should be enabled (slows down model)
+#ifndef _LPSOLVE_
 //#define _LPSOLVE_       // uncomment if compiling lpsolve Demand Optimization version of Raven
+#endif
 #define STANDALONE
 #ifdef netcdf
 #define _RVNETCDF_      // if Makefile is used this will be automatically be uncommented if netCDF library is available
