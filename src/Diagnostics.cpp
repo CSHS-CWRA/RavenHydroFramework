@@ -999,7 +999,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
 
     double r     = Cov / ObsStd / ModStd; // pearson product-moment correlation coefficient
     double Beta  = ModAvg / ObsAvg;
-    double Alpha=(ModStd / ModAvg) / (ObsStd / ObsAvg);
+    double Alpha = (ModStd / fabs(ModAvg)) / (ObsStd / fabs(ObsAvg)); // coefficient of vairability
 
     if (_type==DIAG_KLING_GUPTA_DEVIATION_PRIME){Beta=1.0;} //remove penalty for difference in means} 
 
