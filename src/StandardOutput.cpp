@@ -764,7 +764,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       if (Options.ave_hydrograph)
       {
         _HYDRO<<usetime<<","<<usedate<<","<<usehour;
-        if(t!=0) { _HYDRO<<","<<GetAveragePrecip(); }//watershed-wide precip
+        if(t!=0) { _HYDRO<<","<<GetAveragePrecip(); }//watershed-wide precip + irrigation
         else     { _HYDRO<<",---";                  }
 
         for (int p=0;p<_nSubBasins;p++)
@@ -814,7 +814,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         if((Options.period_starting) && (t==0)){}//don't write anything at time zero
         else{
           _HYDRO<<t<<","<<thisdate<<","<<thishour;
-          if(t!=0){ _HYDRO<<","<<GetAveragePrecip(); }//watershed-wide precip
+          if(t!=0){ _HYDRO<<","<<GetAveragePrecip(); }//watershed-wide precip+irrigation
           else    { _HYDRO<<",---";                  }
           for(int p=0;p<_nSubBasins;p++)
           {
@@ -937,7 +937,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       if((Options.period_starting) && (t==0)){}//don't write anything at time zero
       else{
         _LEVELS<<t<<","<<thisdate<<","<<thishour;
-        if(t!=0){ _LEVELS<<","<<GetAveragePrecip(); }//watershed-wide precip
+        if(t!=0){ _LEVELS<<","<<GetAveragePrecip(); }//watershed-wide precip+irrigation
         else    { _LEVELS<<",---";                  }
         for(int p=0;p<_nSubBasins;p++)
         {
@@ -1004,7 +1004,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
           pSB=_pSubBasins[p];
           if((pSB->IsEnabled()) && (pSB->IsGauged()) && (pSB->HasIrrigationDemand()))
           {
-            double Q   =pSB->GetOutflowRate     (); //AFTER irrigation removed
+            double Q   =pSB->GetOutflowRate     (); //AFTER irrigation removed -INSTANTANEOUS FLOW
             double eF  =pSB->GetEnviroMinFlow   (tt.model_time);
             _DEMANDS<<","<<Q<<","<<eF;
             for (int ii=0;ii<pSB->GetNumWaterDemands();ii++)
@@ -2351,7 +2351,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
   current_prec[0] = NETCDF_BLANK_VALUE;
   if (Options.ave_hydrograph)
   {
-    if(tt.model_time != 0.0) { current_prec[0] = GetAveragePrecip(); } //watershed-wide precip
+    if(tt.model_time != 0.0) { current_prec[0] = GetAveragePrecip(); } //watershed-wide precip+irrigation
     else                     { current_prec[0] = NETCDF_BLANK_VALUE; } // was originally '---'
     for (int p=0;p<_nSubBasins;p++)
     {
@@ -2384,7 +2384,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
     }
   }
   else {  // point-value hydrograph
-    if (tt.model_time != 0.0){current_prec[0] = GetAveragePrecip();} //watershed-wide precip
+    if (tt.model_time != 0.0){current_prec[0] = GetAveragePrecip();} //watershed-wide precip+irrigation
     else                     {current_prec[0] = NETCDF_BLANK_VALUE;} // was originally '---'
     for (int p=0;p<_nSubBasins;p++)
     {
@@ -2480,7 +2480,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
     // (c) obtain data
     iSim = 0;
     current_prec[0] = NETCDF_BLANK_VALUE;
-    if(tt.model_time != 0.0) { current_prec[0] = GetAveragePrecip(); } //watershed-wide precip
+    if(tt.model_time != 0.0) { current_prec[0] = GetAveragePrecip(); } //watershed-wide precip+irrigation
 
     for(int p=0;p<_nSubBasins;p++)
     {
@@ -2656,7 +2656,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
     // (c) obtain data
     iSim = 0;
     current_prec[0] = NETCDF_BLANK_VALUE;
-    if(tt.model_time != 0.0) { current_prec[0] = GetAveragePrecip(); } //watershed-wide precip
+    if(tt.model_time != 0.0) { current_prec[0] = GetAveragePrecip(); } //watershed-wide precip+irrigation
     double oldstor;
     for(int p=0;p<_nSubBasins;p++)
     {

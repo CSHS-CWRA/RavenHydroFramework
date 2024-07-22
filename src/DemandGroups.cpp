@@ -99,7 +99,7 @@ void CDemandGroup::Initialize()
   if(_disabled)
   {
     for(int p=0;p<_nDemands;p++){
-     // _aDemands[p]->Disable(); //this disables constituent demands
+      //_pDemands[p]->Disable(); //this disables constituent demands
     }
   }
 }

@@ -87,7 +87,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
 
   CDemandOptimizer *pDO=pModel->GetDemandOptimizer();
 
-  pDO->Initialize(pModel,Options); //only requires rvh read
+  pDO->Initialize(pModel,Options); //only requires rvh,.rvt read
 
   if(Options.noisy) {
     cout <<"======================================================"<<endl;
@@ -230,13 +230,44 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
        :EndDemandGroup
      */
       if(Options.noisy) { cout <<"Demand Group"<<endl; }
-      //pDO->AddDemandGroup(s[1]);
-      //...
+      if (pDO->DemandsAreInitialized()) {
+        ExitGracefully("ParseManagementFile: all :Demand commands must be specified before management goals/constraints/decision vars in the .rvm file",BAD_DATA_WARN);
+      }
+      if (Len!=2){pp->ImproperFormat(s);}
+
+      pDO->AddDemandGroup(s[1]);
+      CDemandGroup *pGrp;
+      pGrp=pDO->GetDemandGroup(pDO->GetNumDemandGroups()-1);
+
+      int demandID;
+      bool eof=false;
+      while ( (Len==0) || (strcmp(s[0],":EndDemandGroup")) )
+      {
+        eof=pp->Tokenize(s,Len);
+        if(eof) { break; }
+        if      (IsComment(s[0], Len)){}//comment line
+        else if (!strcmp(s[0],":EndDemandGroup")){}//done
+        else if (s[0][0] == ':') {
+          string warn="ParseHRUPropsFile: Command found between :DemandGroup...:EndDemandGroup commands at line "+to_string(pp->GetLineNumber())+" of .rvm file. Only demand IDs should be between these two commands";
+          ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+        }
+        else
+        {
+          for(i=0;i<Len;i++)
+          {
+            demandID=s_to_i(s[i]);
+            pGrp->AddDemand(demandID);
+          }
+        }
+      }
       break;
     }
     case(12):  //----------------------------------------------
     {/*:DemandMultiplier [demand] [multiplier] */
       if(Options.noisy) { cout <<"Demand Multiplier"<<endl; }
+      if (pDO->DemandsAreInitialized()) {
+        ExitGracefully("ParseManagementFile: all :Demand commands must be specified before management goals/constraints/decision vars in the .rvm file",BAD_DATA_WARN);
+      }
       double mult = s_to_d(s[2]);
       //pDO->MultiplyDemand(s[1],mult);
       break;
@@ -244,6 +275,9 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     case(13):  //----------------------------------------------
     {/*:DemandGroupMultiplier [groupname] [multiplier] */
       if(Options.noisy) { cout <<"Demand Group Multiplier"<<endl; }
+      if (pDO->DemandsAreInitialized()) {
+        ExitGracefully("ParseManagementFile: all :Demand commands must be specified before management goals/constraints/decision vars in the .rvm file",BAD_DATA_WARN);
+      }
       double mult = s_to_d(s[2]);
       //pDO->MultiplyGroupDemand(s[1],mult);
       break;
@@ -269,7 +303,22 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     case(17):  //----------------------------------------------
     {/*:DemandIsUnrestricted [demand1] */ //demand1 is 1234 or FarmerBob, not !D1234 or !D.FarmerBob
       if(Options.noisy) { cout <<"Unrestricted Demand"<<endl; }
+      if (pDO->DemandsAreInitialized()) {
+        ExitGracefully("ParseManagementFile: all :Demand commands must be specified before management goals/constraints/decision vars in the .rvm file",BAD_DATA_WARN);
+      }
       pDO->SetDemandAsUnrestricted(s[1]);
+      break;
+    }
+    case(18):  //----------------------------------------------
+    {/*:IrrigationApplication [demand1] [HRUGroup] */ //demand1 is 1234 or FarmerBob, not !D1234 or !D.FarmerBob
+      if(Options.noisy) { cout <<"Irrigation Application"<<endl; }
+      //pDO->SetDemandApplicationGroup(s[1],s[2]);
+      break;
+    }
+    case(19):  //----------------------------------------------
+    {/*:IrrigationReturnPct [demand1] [pct] */ //demand1 is 1234 or FarmerBob, not !D1234 or !D.FarmerBob
+      if(Options.noisy) { cout <<"Irrigation Return Percentage"<<endl; }
+      //pDO->SetDemandReturnPct(s[1],s_to_d(s[2]));
       break;
     }
     case(20):  //----------------------------------------------
@@ -286,6 +335,9 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     case(21):  //----------------------------------------------
     { /*:DefineDecisionVariable [name] = [expressionRHS] */
       if(Options.noisy) { cout <<"Define Decision Variable"<<endl; }
+
+      pDO->InitializeDemands(pModel,Options);
+
       expressionStruct *pExp;
       manConstraint    *pConst=NULL;
       decision_var     *pDV = new decision_var(s[1],DOESNT_EXIST,DV_USER,pDO->GetNumUserDVs());
@@ -298,8 +350,11 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       }
 
       if (pExp!=NULL){
-        pConst = pDO->AddGoalOrConstraint(s[1], false);
+        pConst=new manConstraint();
+        pConst->name=s[1];
+        pConst->is_goal=false;
         pConst->AddExpression(pExp);
+        pDO->AddGoalOrConstraint(pConst);
       }
       else {
         string warn ="Invalid expression in :DefineDecisionVariable command at line " + pp->GetLineNumber();
@@ -340,7 +395,11 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
      */
       if(Options.noisy) { cout <<"Management Constraint or Management Goal"<<endl; }
 
-      manConstraint *pConst=pDO->AddGoalOrConstraint(s[1], is_goal);
+      pDO->InitializeDemands(pModel,Options);
+
+      manConstraint *pConst=new manConstraint();
+      pConst->name=s[1];
+      pConst->is_goal=is_goal;
 
       expressionStruct *pExp;
       bool is_first=true;
@@ -359,6 +418,10 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         //----------------------------------------------
         else if (!strcmp(s[0], ":OperatingRegime"))
         {
+          if (Options.noisy){cout<<" Operating regime "<<endl; }
+          if (Len < 2) {
+            ExitGracefully("ParseManagementFile: OperatingRegime name missing.",BAD_DATA_WARN);
+          }
           op_regime *pOR=new op_regime(s[1]);//[OPUPDATE]
           pConst->AddOperatingRegime(pOR,is_first);
           is_first=false;
@@ -366,11 +429,13 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         //----------------------------------------------
         else if (!strcmp(s[0], ":EndOperatingRegime"))
         {
+          if (Options.noisy){cout<<" End operating regime "<<endl; }
           //does nothing
         }
         //----------------------------------------------
         else if(!strcmp(s[0], ":Expression"))
         {
+          if (Options.noisy){cout<<" Expression "<<endl; }
           if (pConst->GetCurrentExpression() != NULL) {
             ExitGracefully("ParseManagementFile: only one :Expression allowed in each :OperatingRegime command block (or only one if no :OperatingRegime blocks used).",BAD_DATA_WARN);
             break;
@@ -380,7 +445,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
             pConst->AddExpression(pExp);
           }
           else {
-            string warn ="Invalid expression in :Expression command at line " + pp->GetLineNumber();
+            string warn ="Invalid expression in :Expression command at line " + to_string(pp->GetLineNumber());
             WriteWarning(warn.c_str(),Options.noisy);
           }
           if (pDO->GetDebugLevel()>=1){
@@ -390,6 +455,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         //----------------------------------------------
         else if (!strcmp(s[0], ":Condition"))
         {
+          if (Options.noisy){cout<<" Condition "<<endl; }
           //TODO: Would it be better to support @date(), @between, @day_of_year() in general expression??
           //:Condition !Q32[0] < 300 + @ts(myTs,0)
           //:Condition DATE IS_BETWEEN 1975-01-02 and 2010-01-02
@@ -458,7 +524,8 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
                 else { //demand
                   int d=pDO->GetDemandIndexFromName(tmp2);
                   if (d == DOESNT_EXIST) {
-                    ExitGracefully("ParseManagementFile: !D or !C used in :Condition statement has invalid demand ID",BAD_DATA_WARN);
+                    WriteWarning("ParseManagementFile: !D or !C used in :Condition statement has invalid or disabled demand ID. Conditional will be assumed true.",Options.noisy);
+                    badcond=true;
                   }
                 }
               }
@@ -474,7 +541,9 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           }
         }
         //----------------------------------------------
-        else if (!strcmp(s[0], ":Penalty")) {
+        else if (!strcmp(s[0], ":Penalty")) 
+        {
+          if (Options.noisy){cout<<" Penalty "<<endl; }
           if (!pConst->is_goal) {
             ExitGracefully("ParseManagementFile: :Penalty found within :ManagementConstraint command. It will be ignored, as all constraints have infinite penalty.",BAD_DATA_WARN);
           }
@@ -485,15 +554,19 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           }
         }
         //----------------------------------------------
-        else if (!strcmp(s[0], ":Priority")) {
+        else if (!strcmp(s[0], ":Priority")) 
+        {
+          if (Options.noisy){cout<<" Priority "<<endl; }
           pConst->priority = s_to_i(s[1]); //for later
         }
         //----------------------------------------------
         else if (!strcmp(s[0], ":EndManagementGoal")) {
+          if (Options.noisy){cout<<endl; }
           break;
         }
         //----------------------------------------------
         else if (!strcmp(s[0], ":EndManagementConstraint")) {
+          if (Options.noisy){cout<<endl; }
           break;
         }
         else {
@@ -503,6 +576,15 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         if (firstword == ":Expression") {pp->NextIsMathExp();}
         if (firstword == ":Condition")  {pp->NextIsMathExp();}
       }
+      //any invalid expressions have to shut down simulation
+      bool badgoal=false;
+      for (int k = 0; k < pConst->nOperRegimes; k++) {
+        if (pConst->pOperRegimes[k]->pExpression == NULL) { badgoal=true;}
+      }
+      if (!badgoal) {
+        pDO->AddGoalOrConstraint(pConst);
+      }
+      
       break;
     }
     case(24):  //----------------------------------------------

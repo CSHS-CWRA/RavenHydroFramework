@@ -236,9 +236,9 @@ void CGauge::Initialize(const optStruct   &Options,
   // Check for monthly values, when needed
   //--------------------------------------------------------------------------
   ExitGracefullyIf((_aAveTemp[0]==NOT_SPECIFIED) && ((Options.evaporation==PET_FROMMONTHLY)),
-                   "CGauge::Initialize: monthly temps for gauge not specified, but are needed",BAD_DATA);
+                   "CGauge::Initialize: monthly temperatures for gauge not specified (using :MonthlyAveTemperature command) , but are needed",BAD_DATA);
   ExitGracefullyIf((_aAvePET[0]==NOT_SPECIFIED) && ((Options.evaporation==PET_FROMMONTHLY) || (Options.evaporation==PET_MONTHLY_FACTOR)),
-                   "CGauge::Initialize: monthly PET values for gauge not specified, but are needed",BAD_DATA);
+                   "CGauge::Initialize: monthly PET values for gauge not specified (using :MonthlyAveEvaporation command), but are needed",BAD_DATA);
 
 }
 //////////////////////////////////////////////////////////////////

@@ -12,7 +12,7 @@
 void RavenUnitTesting(const optStruct &Options)
 {
   //cout<<"RAVEN UNIT TESTING MODE"<<endl;
-
+  //for (int i=0;i<23;i++){cout<<ravenASCII[i];}
   //uncomment one for use:
   //DateTest();
   //OpticalAirMassTest();

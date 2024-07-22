@@ -80,7 +80,7 @@ string CParser::AddSpacesBeforeOps(string line) const
   string tmp;
   for (int i = 0; i < line.size(); i++) {
     char o=line[i];//).c_str();
-    if      ((o == '/') || (o == '*') || (o == '+') || (o == '-') || (o == '=') || (o == '~') || (o == '<') || (o == '>')){
+    if      ((o == '/') || (o == '*') || (o == '+')  || (o == '=') || (o == '~') || (o == '<') || (o == '>')){ //|| (o == '-')
       tmp+=" "+to_string(line[i])+" ";
     }
     else {

@@ -603,8 +603,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     }
     case (52): //---------------------------------------------
     {/*:ReservoirDemand {long SBID} [int demandID] [string demandName] (or :ReservoirExtraction)
-       {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
-       {double Qout} x nMeasurements [m3/s]
+         {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+         {double Qout} x nMeasurements [m3/s]
        :EndReservoirDemand
      */
       if (Options.noisy) {cout <<"Reservoir Water Demand Time Series"<<endl;}
@@ -618,10 +618,21 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Len>=4){demand_name=s[3];}
 
       pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,true,demand_name,SBID,"none",Options);
-      if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
+
+      if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL))
+      {
+        pTimeSer=CTimeSeries::Parse(p,true,demand_name,SBID,"none",Options);
+
+        int ii=pSB->GetReservoir()->GetNumWaterDemands();
+
         pTimeSer->SetIDTag(demand_ID);
         pSB->GetReservoir()->AddDemandTimeSeries(pTimeSer);
+        
+        if (Options.management_optimization){
+		  CDemand *pDem=new CDemand(demand_ID,demand_name,SBID,true,pTimeSer);
+          pDem->SetLocalIndex(ii);
+          pModel->GetDemandOptimizer()->AddWaterDemand(pDem);
+        }
       }
       else
       {
@@ -904,7 +915,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if(Options.noisy) { cout <<"Irrigation/Water use demand"<<endl; }
       long SBID     =DOESNT_EXIST;
       int  demand_ID=DOESNT_EXIST;
-      int  j        =0;
+      int  ii       =0;
       string demand_name = "";
 
       if(Len>=2) {SBID       =s_to_l(s[1]); }
@@ -912,14 +923,20 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if(Len>=4) {demand_name=s[3];}
 
       CSubBasin *pSB=pModel->GetSubBasinByID(SBID);
-      if (pSB!=NULL) {j=pSB->GetNumWaterDemands();}
-      if (demand_ID   == DOESNT_EXIST) { demand_ID = SBID*10+j;} //DEFAULT - SBIDx
-      if (demand_name == "")           { demand_name = "D"+to_string(SBID)+"abcdefghijklmnopqrstuvwxyz"[j];} //e.g., D120b; }
+      if (pSB!=NULL) {ii=pSB->GetNumWaterDemands();}
+      if (demand_ID   == DOESNT_EXIST) { demand_ID = SBID*10+ii;} //DEFAULT - SBIDx
+      if (demand_name == "")           { demand_name = "D"+to_string(SBID)+"abcdefghijklmnopqrstuvwxyz"[ii];} //e.g., D120b; }
 
       pTimeSer = CTimeSeries::Parse(p, false, demand_name, SBID, "none", Options);
       if(pSB!=NULL) {
         pTimeSer->SetIDTag(demand_ID);
         pSB->AddIrrigationDemand(pTimeSer); has_irrig=true;
+
+        if (Options.management_optimization){
+		  CDemand *pDem=new CDemand(demand_ID,demand_name,SBID,false,pTimeSer);
+          pDem->SetLocalIndex(ii);
+          pModel->GetDemandOptimizer()->AddWaterDemand(pDem);
+        }
       }
       else
       {

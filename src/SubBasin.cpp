@@ -490,6 +490,8 @@ double CSubBasin::GetTotalWaterDemand(const double &t) const
 double CSubBasin::GetWaterDemand(const int ii, const double &t) const
 {
   double Qirr;
+  //ExitGracefullyIf(ii<0 || ii>=_nIrrigDemands,"GetWaterDemand:: Invalid demand index",RUNTIME_ERR);
+
   Qirr=_pIrrigDemands[ii]->GetValue(t);
   if (Qirr==RAV_BLANK_DATA){Qirr=0.0;}
   return Qirr;
