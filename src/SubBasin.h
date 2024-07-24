@@ -140,6 +140,7 @@ private:/*------------------------------------------------------*/
 
   int           _nIrrigDemands;   ///< number of irrigation demand/water demand time series
   CTimeSeries **_pIrrigDemands;   ///< pointer to array of time series of demand (which can be unmet) applied at downstream end of basin reach [size: _nIrrigDemand]
+  //CDemand     **_pWaterDemands;   ///< pointer to array of demand objects; demand applied at downstream end of basin reach [size: _nIrrigDemand]
 
   int             _nDiversions;   ///< number of flow diversions from basin
   diversion     **_pDiversions;   ///< array of pointers to flow diversion structures

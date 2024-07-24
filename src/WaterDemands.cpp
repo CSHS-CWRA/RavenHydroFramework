@@ -18,8 +18,11 @@ CDemand::CDemand(int ID, string name, long SBID, bool is_res)
   _loc_index=DOESNT_EXIST;
   _unrestricted=0;
   _cumDelivDate=0; //Jan-1
-  _pDemandTS=NULL;
+  
   _penalty=1.0;
+  _multiplier=1.0;
+
+  _pDemandTS=NULL;
 
   _currentDemand=0;
 }
@@ -90,15 +93,30 @@ void    CDemand::SetAsUnrestricted()
 {
   _unrestricted=true;
 }
+void    CDemand::SetMultiplier(const double& M)
+{
+  _multiplier*=M; //allows for multiple calls to set multiplier
+}
 //////////////////////////////////////////////////////////////////
 /// \brief re-calculates current demand magnitude (_currentDemand) - called at start of time step
 //
 void    CDemand::UpdateDemand(const optStruct &Options,const time_struct& tt) 
 {
+  //if (_demand_type==DEM_TIME_SERIES)
   if (_pDemandTS!=NULL)
   {
     //int nn=tt.nn;
     int nn=(int)((tt.model_time+TIME_CORRECTION)/Options.timestep);//current timestep index
-    _currentDemand=_pDemandTS->GetSampledValue(nn);
+    
+    double Qirr=_pDemandTS->GetSampledValue(nn);
+    if (Qirr==RAV_BLANK_DATA){Qirr=0.0;}
+
+    _currentDemand=_multiplier*Qirr;
   }
+  /*else if (_demand_type == DEM_AET_PERCENTAGE) {
+
+  }
+  else if (_demand_type == DEM_SOIL_MOISTURE) {
+
+  }*/
 }

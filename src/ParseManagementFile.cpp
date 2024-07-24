@@ -126,9 +126,9 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     else if(in_ifmode_statement)                          { code=-6; }
     else if(!strcmp(s[0],":EndIfModeEquals"             )){ code=-2; }//treat as comment - unused mode
 
-    //-------------------MODEL ENSEMBLE PARAMETERS----------------
+    //-------------------MODEL MANAGEMENT PARAMETERS------------
     else if(!strcmp(s[0],":LookbackDuration"))            { code=1;  }
-    else if(!strcmp(s[0],":DebugLevel"))                  { code=2; }
+    else if(!strcmp(s[0],":DebugLevel"))                  { code=2;  }
     else if(!strcmp(s[0],":DemandGroup"))                 { code=11; }
     else if(!strcmp(s[0],":DemandMultiplier"))            { code=12; }
     else if(!strcmp(s[0],":DemandGroupMultiplier"))       { code=13; }
@@ -239,7 +239,6 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       CDemandGroup *pGrp;
       pGrp=pDO->GetDemandGroup(pDO->GetNumDemandGroups()-1);
 
-      int demandID;
       bool eof=false;
       while ( (Len==0) || (strcmp(s[0],":EndDemandGroup")) )
       {
@@ -248,15 +247,21 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         if      (IsComment(s[0], Len)){}//comment line
         else if (!strcmp(s[0],":EndDemandGroup")){}//done
         else if (s[0][0] == ':') {
-          string warn="ParseHRUPropsFile: Command found between :DemandGroup...:EndDemandGroup commands at line "+to_string(pp->GetLineNumber())+" of .rvm file. Only demand IDs should be between these two commands";
+          string warn="ParseManagementFile: Command found between :DemandGroup...:EndDemandGroup commands at line "+to_string(pp->GetLineNumber())+" of .rvm file. Only demand IDs should be between these two commands";
           ExitGracefully(warn.c_str(),BAD_DATA_WARN);
         }
         else
         {
           for(i=0;i<Len;i++)
           {
-            demandID=s_to_i(s[i]);
-            pGrp->AddDemand(demandID);
+            int d=pDO->GetDemandIndexFromName(s[i]);
+            if (d!=DOESNT_EXIST){
+              pGrp->AddDemand(pDO->GetWaterDemand(d));
+            }
+            else {
+              string warn="ParseManagementFile: invalid or disabled demand in :DemandGroup command. Will be ignored";
+              WriteWarning(warn.c_str(),Options.noisy);
+            }
           }
         }
       }
@@ -269,7 +274,16 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         ExitGracefully("ParseManagementFile: all :Demand commands must be specified before management goals/constraints/decision vars in the .rvm file",BAD_DATA_WARN);
       }
       double mult = s_to_d(s[2]);
-      //pDO->MultiplyDemand(s[1],mult);
+      if (mult < 0) {
+        ExitGracefully("ParseManagementFile: :DemandMultiplier cannot be negative",BAD_DATA_WARN);
+      }
+      int d=pDO->GetDemandIndexFromName(s[1]);
+      if (d == DOESNT_EXIST) {
+        WriteWarning("ParseManagementFile: invalid or disabled demand index in :DemandMultiplier command. Will be ignored",Options.noisy);
+      }
+      else{
+        pDO->GetWaterDemand(d)->SetMultiplier(mult);
+      }
       break;
     }
     case(13):  //----------------------------------------------
@@ -279,7 +293,18 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         ExitGracefully("ParseManagementFile: all :Demand commands must be specified before management goals/constraints/decision vars in the .rvm file",BAD_DATA_WARN);
       }
       double mult = s_to_d(s[2]);
-      //pDO->MultiplyGroupDemand(s[1],mult);
+      if (mult < 0) {
+        ExitGracefully("ParseManagementFile: :DemandGroupMultiplier cannot be negative",BAD_DATA_WARN);
+      }
+      CDemandGroup *pDG=pDO->GetDemandGroupFromName(s[1]);
+      if (pDG == NULL) {
+        WriteWarning("ParseManagementFile: invalid group name in :DemandGroupMultiplier command. Will be ignored",Options.noisy);
+      }
+      else {
+        for (int ii = 0; ii < pDG->GetNumDemands(); ii++) {
+          pDG->GetDemand(ii)->SetMultiplier(s_to_d(s[2]));
+        }
+      }
       break;
     }
     case(14):  //----------------------------------------------
@@ -590,6 +615,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     case(24):  //----------------------------------------------
     { /*:DeclareDecisionVariable [name]  */
       if(Options.noisy) { cout <<"Declare Decision Variable"<<endl; }
+      pDO->InitializeDemands(pModel,Options);
       decision_var     *pDV = new decision_var(s[1],DOESNT_EXIST,DV_USER,pDO->GetNumUserDVs());
       pDO->AddDecisionVar(pDV);
       break;
@@ -690,8 +716,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       }
       else if  (!strcmp(s[1],"DEMAND_GROUP"))
       {
-        ExitGracefully("Loop through demand group not yet supported",STUB);
-        //pLoopDemandGroup=pDO->GetDemandGroup(s[2]);
+        pLoopDemandGroup=pDO->GetDemandGroupFromName(s[2]);
         if (pLoopDemandGroup == NULL) {
           ExitGracefully("ParseManagementFile: bad demand group name in :LoopThrough command",BAD_DATA_WARN);
         } 
@@ -701,8 +726,8 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           aLoopVector[1]=new string [pLoopDemandGroup->GetNumDemands()];
           for (int p = 0; p < pLoopDemandGroup->GetNumDemands(); p++) 
           {
-            long       ID = pLoopDemandGroup->GetDemandID(loopCount);
-            string  DName = "";// pLoopDemandGroup->GetDemand(loopCount)->GetName(); //todo: support 
+            long       ID = pLoopDemandGroup->GetDemand(loopCount)->GetID();
+            string  DName = pLoopDemandGroup->GetDemand(loopCount)->GetName(); 
             aLoopVector[0][p]=to_string(ID);
             aLoopVector[1][p]=DName;
           }
@@ -797,6 +822,11 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     }
     default://------------------------------------------------
     {
+      /*cout << "UNREC LINE: (Len=" << Len << ")";
+      for (int i = 0; i < Len; i++) {
+        cout<<s[i]<<"|";
+      }
+      cout<<endl;*/
       char firstChar = *(s[0]);
       switch(firstChar)
       {
@@ -846,6 +876,8 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     }
   } //end while !end_of_file
   RVM.close();
+
+  pDO->InitializeDemands(pModel,Options); //if no management goals/constraints, called here
 
   pDO->InitializePostRVMRead(pModel,Options);
 

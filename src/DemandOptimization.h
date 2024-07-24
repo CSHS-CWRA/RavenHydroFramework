@@ -326,7 +326,10 @@ public: /*------------------------------------------------------*/
   int    GetDebugLevel         () const;
   int    GetIndexFromDVString  (string s) const;
   CDemandGroup *GetDemandGroup (const int ii);
+  CDemandGroup *GetDemandGroupFromName(const string name);
   int    GetNumDemandGroups    () const;
+  CDemand *GetWaterDemand      (const int d);
+  int    GetNumWaterDemands    () const;
 
   bool   DemandsAreInitialized() const;
 

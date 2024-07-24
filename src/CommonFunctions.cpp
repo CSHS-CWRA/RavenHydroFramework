@@ -1830,6 +1830,18 @@ void quickSort(double arr[], int left, int right)
   if (i < right){quickSort(arr, i, right);}
 }
 //////////////////////////////////////////////////////////////////
+/// \brief adds value v to end of integer array a[] of original size n, expands a[] to size n+1
+// 
+void pushIntoIntArray(int*&a, const int &v, int &n)
+{
+  int *tmp=new int [n+1];
+  for (int i = 0; i < n; i++) { tmp[i]=a[i];}
+  tmp[n]=v;
+  if (n>0){delete [] a;}
+  a=tmp;
+  n++;
+}
+//////////////////////////////////////////////////////////////////
 // given unsorted or sorted array arr[] returns rank of each term, where 0 indicates the largest value (none smaller) and N-1 the smallest value (all are greater)
 // if values are not unique, gaps will form between ranks
 // NOT OPTIMIZED

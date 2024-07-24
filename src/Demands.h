@@ -31,6 +31,8 @@ private:/*------------------------------------------------------*/
   //int    _irrigHRUGroup; ///< index kk of HRU group on which withdrawn water is applied
   //double _returnPct;     ///< percentage of flow which returns to stream
 
+  double    _multiplier;   ///< multiplies time series or any other means of calculating demand 
+
   CTimeSeries *_pDemandTS; ///< pointer to time series of demands (or NULL, if calculated elsewise)
 
   double   _currentDemand; ///< (time-variable) demand in current time step [m3/s]
@@ -56,7 +58,9 @@ public:/*-------------------------------------------------------*/
   void    SetDemandPenalty(const double &P);
   void    SetCumulDeliveryDate(const int date);
   void    SetAsUnrestricted();
+  void    SetMultiplier(const double &M);
 
+  void    Initialize(const optStruct &Options,const time_struct &tt);
   //Called during simulation
   void    UpdateDemand(const optStruct &Options,const time_struct &tt);
 };
@@ -69,28 +73,22 @@ private:/*------------------------------------------------------*/
 
   string          _name;        ///< Demand group name
   int             _nDemands ;   ///< Number of Demands present in group
-  int             *_aDemandIDs; ///< Array of demand indices [size:_nDemands]
-  //CDemand        **_pDemands;   ///< Array of pointers to demand objects [size: _nDemands]
+  CDemand       **_pDemands;    ///< Array of pointers to demand objects [size: _nDemands]
   int             _global_ii;   ///< index of group in master Demand Group array (in CModel)
-  bool            _disabled;    ///< true if all Subbasins in group are disabled
 
 public:/*-------------------------------------------------------*/
   //Constructors:
   CDemandGroup(string tag,int global_ind);
   ~CDemandGroup();
 
-  void AddDemand(int demandID);
-  void DisableGroup();
+  void AddDemand(CDemand *pDem);
   void Initialize();
 
   string            GetName            () const;
   int               GetNumDemands      () const;
   int               GetGlobalIndex     () const;
-  int               GetDemandID        (const int ii_local) const;
-  //string          GetDemandName      (const int ii_local) const;
-  //CDemand        *GetDemand          (const int ii_local) const;
+  CDemand          *GetDemand          (const int ii_local) const;
   bool              IsInGroup          (const int demandID) const;
-  bool              IsDisabled         () const;
 };
 
 #endif

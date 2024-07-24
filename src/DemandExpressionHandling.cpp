@@ -147,6 +147,7 @@ int CDemandOptimizer::GetUserDVIndex(const string s) const
   }
   return DOESNT_EXIST;
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief retrieves index of native decision variable starting with !
 /// \params s [in] - string
@@ -159,20 +160,13 @@ int CDemandOptimizer::GetIndexFromDVString(string s) const //String in format !Q
   {
     if (s[2] == '.') {
       string name=s.substr(3);
-      CSubBasin *pSB;
-      int p;
-      for (int pp = 0; pp < _pModel->GetNumSubBasins(); pp++) {
-        p=_pModel->GetOrderedSubBasinIndex(pp);
-        pSB=_pModel->GetSubBasin(p);
-        if (name == pSB->GetName()) {
-          return p;
-        }
+      for (int p = 0; p < _pModel->GetNumSubBasins(); p++) {
+        if (name == _pModel->GetSubBasin(p)->GetName()) {return p;}
       }
       return DOESNT_EXIST;
     }
     else{
-      string sbid=s.substr(2);
-      long   SBID=s_to_l(sbid.c_str());
+      long   SBID=s_to_l(s.substr(2).c_str());
       return _pModel->GetSubBasinIndex(SBID);
     }
   }
@@ -185,6 +179,7 @@ int CDemandOptimizer::GetIndexFromDVString(string s) const //String in format !Q
   }
   return DOESNT_EXIST;
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief returns number of user-specified decision variables
 //
@@ -196,19 +191,19 @@ int CDemandOptimizer::GetNumUserDVs() const{
 //
 string TermTypeToString(termtype t)
 {
-  if (t==TERM_DV     ){return "TERM_DV"; }
-  if (t==TERM_TS     ){return "TERM_TS"; }
-  if (t==TERM_LT     ){return "TERM_LT"; }
-  if (t==TERM_HRU    ){return "TERM_HRU";}
-  if (t==TERM_SB     ){return "TERM_SB"; }
-  if (t==TERM_CONST  ){return "TERM_CONST"; }
-  if (t==TERM_HISTORY){return "TERM_HISTORY"; }
-  if (t==TERM_MAX    ){return "TERM_MAX"; }
-  if (t==TERM_MIN    ){return "TERM_MIN"; }
-  if (t==TERM_CONVERT){return "TERM_CONVERT"; }
-  if (t==TERM_CUMUL  ){return "TERM_CUMUL";}
+  if (t==TERM_DV      ){return "TERM_DV"; }
+  if (t==TERM_TS      ){return "TERM_TS"; }
+  if (t==TERM_LT      ){return "TERM_LT"; }
+  if (t==TERM_HRU     ){return "TERM_HRU";}
+  if (t==TERM_SB      ){return "TERM_SB"; }
+  if (t==TERM_CONST   ){return "TERM_CONST"; }
+  if (t==TERM_HISTORY ){return "TERM_HISTORY"; }
+  if (t==TERM_MAX     ){return "TERM_MAX"; }
+  if (t==TERM_MIN     ){return "TERM_MIN"; }
+  if (t==TERM_CONVERT ){return "TERM_CONVERT"; }
+  if (t==TERM_CUMUL   ){return "TERM_CUMUL";}
   if (t==TERM_CUMUL_TS){return "TERM_CUMUL_TS";}
-  if (t==TERM_UNKNOWN){return "TERM_UNKNOWN"; }
+  if (t==TERM_UNKNOWN ){return "TERM_UNKNOWN"; }
   return "TERM_UNKNOWN";
 }
 string DVTypeToString(dv_type t)
@@ -290,6 +285,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
           return false;
         }
         if (!_pModel->GetSubBasin(p)->IsEnabled()) {
+          //if (!_suppress_disabled_warnings){
           warn="ConvertToExpressionTerm: history expression "+warnstring+" includes reference to disabled subbasin. Expression will be ignored";
           WriteWarning(warn,true);
           return false;
@@ -319,11 +315,13 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
         return false;
       }
       if (!_pModel->GetSubBasin(p)->IsEnabled()) {
+        //if (!_suppress_disabled_warnings){
         warn="ConvertToExpressionTerm: reference to disabled subbasin "+warnstring+". Constraint/goal will be disabled";
         WriteWarning(warn.c_str(),true);
         return false;
       }
       if (_aSBIndices[p] == DOESNT_EXIST) {
+        //if (!_suppress_disabled_warnings){
         warn="ConvertToExpressionTerm: disabled subbasin ID in expression "+warnstring+ ". Expression will be ignored";
         WriteWarning(warn.c_str(),true);
         return false;

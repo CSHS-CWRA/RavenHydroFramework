@@ -59,6 +59,7 @@ string CParser::Peek()
     bool eof;
     char *s[MAXINPUTITEMS];
 
+    if (_INPUT->eof()){return ""; }
     place=_INPUT->tellg(); // Get current position
     eof=Tokenize(s,Len);   //read and parse whole line
     _lineno--;             //otherwise line number incremented upon peeking
@@ -137,7 +138,7 @@ bool CParser::Tokenize(char **out, int &numwords){
 
   if (_parsing_math_exp) {
     string line;
-    line=AddSpacesBeforeOps(wholeline); //NOT WORKING
+    line=AddSpacesBeforeOps(wholeline); 
     strcpy(wholeline,line.c_str());
     _parsing_math_exp=false;
   }
