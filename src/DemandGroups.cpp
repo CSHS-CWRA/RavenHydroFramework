@@ -12,7 +12,7 @@
 CDemandGroup::CDemandGroup(string tag, int global_ind)
 {
   _name=tag;
-  _nDemands=0;  
+  _nDemands=0;
   _pDemands=NULL;
   _global_ii=global_ind;
 }
@@ -91,4 +91,3 @@ void CDemandGroup::AddDemand(CDemand *pDem)
 void CDemandGroup::Initialize()
 {
 }
-

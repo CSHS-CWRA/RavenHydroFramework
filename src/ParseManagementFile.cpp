@@ -566,7 +566,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           }
         }
         //----------------------------------------------
-        else if (!strcmp(s[0], ":Penalty")) 
+        else if (!strcmp(s[0], ":Penalty"))
         {
           if (Options.noisy){cout<<" Penalty "<<endl; }
           if (!pConst->is_goal) {
@@ -579,7 +579,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           }
         }
         //----------------------------------------------
-        else if (!strcmp(s[0], ":Priority")) 
+        else if (!strcmp(s[0], ":Priority"))
         {
           if (Options.noisy){cout<<" Priority "<<endl; }
           pConst->priority = s_to_i(s[1]); //for later
@@ -609,7 +609,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       if (!badgoal) {
         pDO->AddGoalOrConstraint(pConst);
       }
-      
+
       break;
     }
     case(24):  //----------------------------------------------
