@@ -1673,6 +1673,7 @@ void   CalcWeightsFromUniformNums(const double* aVals, double* aWeights, const i
 void   quickSort        (double arr[], int left, int right) ;
 double InterpolateCurve (const double x,const double *xx,const double *y,int N,bool extrapbottom);
 void   getRanks         (const double *arr, const int N, int *ranks);
+void   pushIntoIntArray (int*&a, const int &v, int &n);
 
 //Geographic Conversion Functions-----------------------------------
 //defined in UTM_to_LatLong.cpp
