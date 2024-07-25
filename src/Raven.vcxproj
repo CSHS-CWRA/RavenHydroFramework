@@ -953,6 +953,7 @@
     </ClCompile>
     <ClCompile Include="ParsePropertyFile.cpp" />
     <ClCompile Include="ParseTimeSeriesFile.cpp" />
+    <ClCompile Include="WaterDemands.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Advection.h" />

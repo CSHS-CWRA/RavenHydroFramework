@@ -54,6 +54,7 @@ diag_type StringToDiagnostic(string distring);
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for time series comparison diagnostics
+//
 class CDiagnostic
 {
 private:/*------------------------------------------------------*/

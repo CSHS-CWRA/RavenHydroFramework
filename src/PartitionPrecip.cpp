@@ -167,6 +167,9 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
   int qSnowToLake=13;
   int qSnLiqToLake=14;
   int qPondToLake=15;
+  //int qSnowToDep=16;
+  //int qSnLiqToDep=17;
+  //int qPondToDep=18;
 
   //get precipitation information from gauges
   total_precip=pHRU->GetForcingFunctions()->precip;//[mm/day]
@@ -177,6 +180,8 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
   if (!pModel->StateVarExists(SNOW)){Fsnow=0;}
   snowfall=(    Fsnow)*total_precip;
   rainfall=(1.0-Fsnow)*total_precip;//[mm/day]
+
+  rainfall+=pHRU->GetForcingFunctions()->irrigation;//[mm/day]
 
   double SWE=0.0;
   if(pModel->StateVarExists(SNOW)) {
@@ -259,7 +264,7 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
   {
     rates[qDep] =snowthru + rainthru; //all water goes to depression in wetland
 
-    /*if (pModel->StateVarExists(ICE_THICKNESS))//all remaining snow and ponded water dumped to wetland/depression
+    /*if (pModel->StateVarExists(ICE_THICKNESS))// \todo[funct]: all remaining snow and ponded water dumped to wetland/depression
     {
        rates[qSnowToDep ]+=state_vars[iSWE  ]/Options.timestep;
        rates[qSnLiqToDep]+=state_vars[iSnLiq]/Options.timestep;
@@ -322,7 +327,7 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
 
       /*if (pModel->StateVarExists(ICE_THICKNESS))
       {
-         rates[qPondToDep ]+=state_vars[iPond ]/Options.timestep; //handles on-wetland snowmelt whether ice is present or not
+         rates[qPondToDep ]+=state_vars[iPond ]/Options.timestep; // \todo[funct]: handles on-wetland snowmelt whether ice is present or not
       }*/
     }
     else{

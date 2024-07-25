@@ -67,12 +67,6 @@
     <Filter Include="Header Files\Input/Output">
       <UniqueIdentifier>{b3b47708-8613-43e3-8e03-f13932f8f869}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Profiles/XSects/Reservoirs">
-      <UniqueIdentifier>{537f9a12-16f7-4875-8db2-89a184fe6788}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\Profiles/XSects/Reservoirs">
-      <UniqueIdentifier>{8448587a-0329-4cec-acdb-91f7e0c6618f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\Transport">
       <UniqueIdentifier>{56bc8cff-8585-4c16-97b5-fb3cf3c0f2cc}</UniqueIdentifier>
     </Filter>
@@ -115,8 +109,17 @@
     <Filter Include="Header Files\_Support Headers">
       <UniqueIdentifier>{a829b735-aa63-4c39-865d-a2593fb8012b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Water Demand">
+    <Filter Include="Source Files\Water Management">
       <UniqueIdentifier>{b1b522d7-f7f8-40a5-b79e-06d083a9d869}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Routing Components">
+      <UniqueIdentifier>{537f9a12-16f7-4875-8db2-89a184fe6788}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Routing Components">
+      <UniqueIdentifier>{8448587a-0329-4cec-acdb-91f7e0c6618f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Water Management">
+      <UniqueIdentifier>{4f71f44c-6101-46a8-8941-28dad1a073eb}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -172,10 +175,7 @@
       <Filter>Source Files\Forcing Functions\Gauge/Time Series/ForcingGrid</Filter>
     </ClCompile>
     <ClCompile Include="ChannelXSect.cpp">
-      <Filter>Source Files\Profiles/XSects/Reservoirs</Filter>
-    </ClCompile>
-    <ClCompile Include="SoilProfile.cpp">
-      <Filter>Source Files\Profiles/XSects/Reservoirs</Filter>
+      <Filter>Source Files\Routing Components</Filter>
     </ClCompile>
     <ClCompile Include="Evaporation.cpp">
       <Filter>Source Files\Forcing Functions</Filter>
@@ -268,7 +268,7 @@
       <Filter>Source Files\Forcing Functions</Filter>
     </ClCompile>
     <ClCompile Include="Reservoir.cpp">
-      <Filter>Source Files\Profiles/XSects/Reservoirs</Filter>
+      <Filter>Source Files\Routing Components</Filter>
     </ClCompile>
     <ClCompile Include="Advection.cpp">
       <Filter>Source Files\Transport Processes</Filter>
@@ -418,10 +418,10 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ControlStructures.cpp">
-      <Filter>Source Files\Profiles/XSects/Reservoirs</Filter>
+      <Filter>Source Files\Routing Components</Filter>
     </ClCompile>
     <ClCompile Include="StageDischargeRelations.cpp">
-      <Filter>Source Files\Profiles/XSects/Reservoirs</Filter>
+      <Filter>Source Files\Routing Components</Filter>
     </ClCompile>
     <ClCompile Include="MassLoading.cpp">
       <Filter>Source Files\Transport Processes</Filter>
@@ -460,10 +460,10 @@
       <Filter>Source Files\Transport Processes</Filter>
     </ClCompile>
     <ClCompile Include="DemandOptimization.cpp">
-      <Filter>Source Files\Water Demand</Filter>
+      <Filter>Source Files\Water Management</Filter>
     </ClCompile>
     <ClCompile Include="DemandExpressionHandling.cpp">
-      <Filter>Source Files\Water Demand</Filter>
+      <Filter>Source Files\Water Management</Filter>
     </ClCompile>
     <ClCompile Include="ParseManagementFile.cpp">
       <Filter>Source Files\_Driver\Input Parsing</Filter>
@@ -472,7 +472,16 @@
       <Filter>Source Files\_Driver</Filter>
     </ClCompile>
     <ClCompile Include="DemandGroups.cpp">
-      <Filter>Source Files\Water Demand</Filter>
+      <Filter>Source Files\Water Management</Filter>
+    </ClCompile>
+    <ClCompile Include="LookupTable.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SoilProfile.cpp">
+      <Filter>Source Files\Parameters/Classes</Filter>
+    </ClCompile>
+    <ClCompile Include="WaterDemands.cpp">
+      <Filter>Source Files\Water Management</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -513,10 +522,7 @@
       <Filter>Header Files\Forcing Functions\Gauge/Time Series</Filter>
     </ClInclude>
     <ClInclude Include="ChannelXSect.h">
-      <Filter>Header Files\Profiles/XSects/Reservoirs</Filter>
-    </ClInclude>
-    <ClInclude Include="SoilProfile.h">
-      <Filter>Header Files\Profiles/XSects/Reservoirs</Filter>
+      <Filter>Header Files\Routing Components</Filter>
     </ClInclude>
     <ClInclude Include="CustomOutput.h">
       <Filter>Header Files\Input/Output</Filter>
@@ -558,7 +564,7 @@
       <Filter>Header Files\Parameters/Classes</Filter>
     </ClInclude>
     <ClInclude Include="Reservoir.h">
-      <Filter>Header Files\Profiles/XSects/Reservoirs</Filter>
+      <Filter>Header Files\Routing Components</Filter>
     </ClInclude>
     <ClInclude Include="Diagnostics.h">
       <Filter>Header Files\Input/Output</Filter>
@@ -636,13 +642,13 @@
       <Filter>Header Files\Groundwater</Filter>
     </ClInclude>
     <ClInclude Include="ControlStructures.h">
-      <Filter>Header Files\Profiles/XSects/Reservoirs</Filter>
+      <Filter>Header Files\Routing Components</Filter>
     </ClInclude>
     <ClInclude Include="MassLoading.h">
       <Filter>Header Files\Transport</Filter>
     </ClInclude>
     <ClInclude Include="StageDischargeRelations.h">
-      <Filter>Header Files\Profiles/XSects/Reservoirs</Filter>
+      <Filter>Header Files\Routing Components</Filter>
     </ClInclude>
     <ClInclude Include="EnKF.h">
       <Filter>Header Files\Model</Filter>
@@ -671,17 +677,23 @@
     <ClInclude Include="BMI.h">
       <Filter>Header Files\Input/Output</Filter>
     </ClInclude>
-    <ClInclude Include="DemandOptimization.h">
-      <Filter>Header Files\Subbasins/HRUs</Filter>
-    </ClInclude>
     <ClInclude Include="GracefulEndBMI.h">
       <Filter>Header Files\Model</Filter>
     </ClInclude>
     <ClInclude Include="GracefulEndStandalone.h">
       <Filter>Header Files\Model</Filter>
     </ClInclude>
+    <ClInclude Include="LookupTable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DemandOptimization.h">
+      <Filter>Header Files\Water Management</Filter>
+    </ClInclude>
     <ClInclude Include="Demands.h">
-      <Filter>Header Files\Subbasins/HRUs</Filter>
+      <Filter>Header Files\Water Management</Filter>
+    </ClInclude>
+    <ClInclude Include="SoilProfile.h">
+      <Filter>Header Files\Parameters/Classes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

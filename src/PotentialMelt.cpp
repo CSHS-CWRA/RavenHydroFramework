@@ -95,7 +95,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
   //----------------------------------------------------------
   else if (method==POTMELT_EB)
   {
-    double rainfall  = F->precip*(1-F->snow_frac);
+    double rainfall  = F->precip*(1-F->snow_frac);//+F.irrigation;
     double air_temp  = F->temp_ave;
     double air_pres  = F->air_pres;
     double rel_humid = F->rel_humidity;
@@ -134,7 +134,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     //degree-day with rain-on-snow correction
     double melt_temp=pHRU->GetSurfaceProps()->DD_melt_temp;
     double Ma       =pHRU->GetSurfaceProps()->melt_factor;
-    double rainfall=F->precip*(1-F->snow_frac);
+    double rainfall=F->precip*(1-F->snow_frac);//+F.irrigation;
     double adv_melt= SPH_WATER/LH_FUSION*max(F->temp_ave,0.0)*rainfall; //[mm/d]
     return Ma*(F->temp_daily_ave-melt_temp)*F->subdaily_corr+adv_melt;
   }
@@ -222,7 +222,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     //As documented in HYDROTEL 2.1 manual
     double Ma       =pHRU->GetSurfaceProps()->melt_factor;
     double melt_temp=pHRU->GetSurfaceProps()->DD_melt_temp;
-    double rainfall =F->precip*(1.0-F->snow_frac);
+    double rainfall =F->precip*(1.0-F->snow_frac);//+F.irrigation;
     double slope_fact=F->ET_radia/F->ET_radia_flat;
     double snoalb  = pHRU->GetSnowAlbedo(); // Average snow surface albedo
     double adv_melt= SPH_WATER/LH_FUSION*max(F->temp_ave,0.0)*rainfall; //[mm/d]

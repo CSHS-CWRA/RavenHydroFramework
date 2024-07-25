@@ -11,10 +11,15 @@
 #include <stdio.h>
 #include "Model.h"
 #include "LookupTable.h"
+#include "Demands.h"
 
 #ifdef _LPSOLVE_
 namespace lp_lib  {
+#ifdef _WIN32
 #include "../lib/lp_solve/lp_lib.h"
+#else
+#include "../lib/lp_solve_unix/lp_lib.h"
+#endif
 }
 #endif
 
@@ -55,8 +60,8 @@ enum dv_type
   DV_QOUTRES, //< outflow from reservoir
   DV_STAGE,   //< reservoir stage
   DV_DELIVERY,//< delivery of water demand
-  DV_SLACK,   //< slack variable for goal satisfaction
-  DV_USER     //< user specified decision variable
+  DV_USER,    //< user specified decision variable
+  DV_SLACK    //< slack variable for goal satisfaction
 };
 
 // -------------------------------------------------------------------
@@ -150,7 +155,7 @@ struct exp_condition
   string      date_string;  //< conditional value (if date)
   string      date_string2; //< second conditional (if DATE COMPARE_BETWEEN)
   comparison  compare;      //> comparison operator, e.g., COMPARE_IS_EQUAL
-  long        p_index;      //> subbasin or demand index of LHS of condition expression (or DOESNT_EXIST)
+  int         p_index;      //> subbasin or demand index of LHS of condition expression (or DOESNT_EXIST)
 
   expressionStruct *pExp;   //< condition expression (or NULL if not used)
 
@@ -248,24 +253,17 @@ private: /*------------------------------------------------------*/
   int              _nReservoirs;        //< local storage of number of simulated lakes/reservoirs
   int             *_aResIndices;        //< storage of enabled reservoir indices (0:_nReservoirs or DOESNT_EXIST) [size:_nSubBasins]
 
-  //Should probably convert this to a demand class?
-  //CWaterDemand   **_pDemands;           //< array of pointers to water demand instances
+  CDemand        **_pDemands;           //< array of pointers to water demand instances
   int              _nDemands;           //< local storage of number of demand locations (:IrrigationDemand/:WaterDemand + :ReservoirExtraction time series)
-  int             *_aDemandIDs;         //< local storage of demand IDs [size:_nDemands]
-  long            *_aDemandSBIDs;       //< local storage of subbasin IDs for each demand [size: _nDemands]
-  int             *_aDemandIndices;     //< local storage of demand index ii (counter in each subbasin) [size: _nDemands]
-  string          *_aDemandAliases;     //< list of demand aliases [size: _nDemands]
-  double          *_aDemandPenalties;   //< array of priority weights [size: _nDemands]
-  bool            *_aDemandUnrestrict;  //< array of restriction status for demands - true if unrestricted, false otherwise [size: _nDemands]
-  double          *_aDelivery;          //< array of delivered water for each demand [m3/s] [size: _nDemands]
+
+  double          *_aDelivery;          //< array of delivered water for each water demand [m3/s] [size: _nDemands]
   double          *_aCumDelivery;       //< array of cumulative deliveries of demand since _aCumDivDate of this year [m3] [size: _nDemands]
-  int             *_aCumDelDate;        //< julian date to calculate cumulative deliveries from {default: Jan 1)[size: _nDemands]
 
   int            **_aUpstreamDemands;   //< demand indices (d) upstream (inclusive) of subbasin p [size: nSBs][size: _aUpCount] (only restricted demands)
   int             *_aUpCount;           //< number of demands upstream (inclusive) of subbasin p [size: nSBs]
 
-  //int            _nDemandGroups;      //< number of demand groups
-  //CDemandGroup **_pDemandGroups;      //< array of pointers to demand groups
+  int              _nDemandGroups;      //< number of demand groups
+  CDemandGroup   **_pDemandGroups;      //< array of pointers to demand groups
 
   double          *_aSlackValues;       //< array of slack variable values [size: _nSlackVars]
   int              _nSlackVars;         //< number of slack variables
@@ -289,6 +287,8 @@ private: /*------------------------------------------------------*/
 
   ofstream        _DEMANDOPT;          //< ofstream for DemandOptimization.csv
   ofstream        _GOALSAT;            //< ofstream for GoalSatisfaction.csv
+
+  bool            _demands_initialized;//< true if demands have been initialized
 
   int             _do_debug_level;      //< =1 if debug info is to be printed to screen, =2 if LP matrix also printed (full debug), 0 for nothing
 
@@ -325,20 +325,31 @@ public: /*------------------------------------------------------*/
   int    GetNumUserDVs         () const;
   int    GetDebugLevel         () const;
   int    GetIndexFromDVString  (string s) const;
+  CDemandGroup *GetDemandGroup (const int ii);
+  CDemandGroup *GetDemandGroupFromName(const string name);
+  int    GetNumDemandGroups    () const;
+  CDemand *GetWaterDemand      (const int d);
+  int    GetNumWaterDemands    () const;
+
+  bool   DemandsAreInitialized() const;
 
   void   SetHistoryLength      (const int n);
   void   SetCumulativeDate     (const int julian_date, const string demandID);
   void   SetDebugLevel         (const int lev);
   void   SetDemandAsUnrestricted(const string dname);
 
-  manConstraint *AddGoalOrConstraint (const string name, const bool soft_constraint);
+  //manConstraint *AddGoalOrConstraint (const string name, const bool soft_constraint);
 
+  void   AddGoalOrConstraint   (const manConstraint *pConstraint);
   void   AddDecisionVar        (const decision_var *pDV);
   void   SetDecisionVarBounds  (const string name, const double &min, const double &max);
   void   AddUserConstant       (const string name, const double &val);
   void   AddControlVariable    (const string name, expressionStruct* pExp);
   void   AddUserTimeSeries     (const CTimeSeries *pTS);
   void   AddUserLookupTable    (const CLookupTable *pLUT);
+
+  void   AddWaterDemand        (CDemand *pDem);
+  void   AddDemandGroup        (const string groupname);
 
   //void MultiplyDemand        (const string dname, const double &mult);
   //void MultiplyGroupDemand   (const string groupname, const double &mult);
@@ -349,6 +360,7 @@ public: /*------------------------------------------------------*/
 
   void   Initialize            (CModel *pModel, const optStruct &Options);
   void   InitializePostRVMRead (CModel *pModel, const optStruct &Options);
+  void   InitializeDemands     (CModel *pModel, const optStruct &Options);
   void   SolveDemandProblem    (CModel *pModel, const optStruct &Options, const double *aSBrunoff, const time_struct &tt);
 
   void   WriteOutputFileHeaders(const optStruct &Options);

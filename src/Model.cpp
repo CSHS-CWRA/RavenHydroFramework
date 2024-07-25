@@ -984,7 +984,7 @@ CDemandOptimizer  *CModel::GetDemandOptimizer() const { return _pDO; }
 *****************************************************************/
 
 //////////////////////////////////////////////////////////////////
-/// \brief Returns area-weighted average total precipitation rate at all HRUs [mm/d]
+/// \brief Returns area-weighted average total precipitation+irrigation rate at all HRUs [mm/d]
 ///
 /// \return Area-weighted average of total precipitation rate [mm/d] over all HRUs
 //
@@ -995,7 +995,8 @@ double CModel::GetAveragePrecip() const
   {
     if(_pHydroUnits[k]->IsEnabled())
     {
-      sum+=_pHydroUnits[k]->GetForcingFunctions()->precip*_pHydroUnits[k]->GetArea();
+      sum+=(_pHydroUnits[k]->GetForcingFunctions()->precip+
+            _pHydroUnits[k]->GetForcingFunctions()->irrigation)*_pHydroUnits[k]->GetArea();
     }
   }
   return sum/_WatershedArea;

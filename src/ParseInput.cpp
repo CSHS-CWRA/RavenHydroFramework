@@ -145,7 +145,7 @@ bool ParseInputFiles (CModel      *&pModel,
     ExitGracefully("Cannot find or read .rvt file",BAD_DATA);return false;
   }
 
-  //Ensemble file (.rve)
+  // Ensemble file (.rve)
   //--------------------------------------------------------------------------------
   if(pModel->GetEnsemble()->GetType()!=ENSEMBLE_NONE) {
     if(!ParseEnsembleFile(pModel,Options)) {

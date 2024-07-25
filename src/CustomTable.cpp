@@ -23,8 +23,8 @@ CCustomTable::CCustomTable(string filename, int pp, const CModel* pMod)
   _aForcings=NULL;
   _aSVtypes=NULL;
   _aLayers=NULL;
-  _nCols=NULL;
-
+  _nCols=0;
+  _pModel=pMod;
 }
 CCustomTable::~CCustomTable()
 {

@@ -16,7 +16,9 @@
 
 //#define _MODFLOW_USG_ // uncomment if compiling MODFLOW-USG coupled version of Raven
 //#define _STRICTCHECK_ // uncomment if strict checking should be enabled (slows down model)
+#ifndef _LPSOLVE_
 //#define _LPSOLVE_       // uncomment if compiling lpsolve Demand Optimization version of Raven
+#endif
 #define STANDALONE
 #ifdef netcdf
 #define _RVNETCDF_      // if Makefile is used this will be automatically be uncommented if netCDF library is available
@@ -259,6 +261,31 @@ const double  DEFAULT_MAX_REACHLENGTH =10000.0;                                 
 
 //Special symbols
 const char  DEG_SYMBOL                ='o';                                     ///< degree symbol, (or \0xB0)
+
+const string ravenASCII[]={
+ "    ::                                                                          .  ::         \n",
+ "     -%:  .                                                                     +* .##.   .=  \n",
+ "  -#.:%%:.*:                                                                   :%%.=%#.  :#=  \n",
+ " .%%+:@@:-@=                                                                 .*%*:%%= .*@*.   \n",
+ "-. :%@%=*@+-%#:  :                                                           .+**=##-:*%%-..=%\n",
+ "#%+:.=%@%*%%*#@*.-%:                                                        :*****+=%%*::*%%*.\n",
+ "-**%*--#%@%%%#*%*=@*.                                                   :*=**#%%%%%%%%@@%-::  \n",
+ " :=#%%####%%%%%%%%%%*:..                                      ..::..=%@%%%%#*##%%%%%%%%%%+.   \n",
+ "    ....-+*%%%@@%%%%*%@@@#*%=:                               :=-+%%%%%%@@%********###%%%%#:   \n",
+ "    :%@@%%%%%%%%%+=+#@@%%##%@@%=+:.           .::.      .:=*%%*#**%%@%%@@@%%%%%%%@@@@@@%*     \n",
+ "    :*%%%%%%%%%#######%%@%%@@@@%@%%@@*=-.   .+*##+::=*##+==%%%%%%##%%%##***#%%%%%%##*=-.      \n",
+ "     .+@@@@@@%%%%%%#%%%%@@%%@@@@@@%%@%*+%%%%@O@%%O##@@@%*#%%%%%%%%#%@%##%###%%%@@@@%+:        \n",
+ "        :@%%%%%%%%%%%%%%#%*%@@@%%@%@@@@@@@@@@@|*|%@@@@@@@*%%%@@@@##%%%%###%%%%%%%%%*-...      \n",
+ "          :+******#%%%#***%@%#%%@%@@@@@@@@|@@@%v#%%%@@|@@%%##+#@@@@##%%#*#%%%%%%%%%:          \n",
+ "              :#@@%%%%%%%%%%@@@%+%%@%%@%%#%@@@%%@%%@@@%*@%%%%#**#%%%###%%#**#%@%*.            \n",
+ "             .=**%@@@%%%%@@@@%%#%%%%%@@-.*#%@@%@@@@@@=..::#%@%*###%%%%%%%%%%#-                \n",
+ "                 :=+%@%#@@@@%%%%@%+%@@%= .-#%%@@@@@@%.    =@@%#%+#%%%%%#+=.                   \n",
+ "                      .%%@@@:%@#*-*=   .+%%%%%@@@@%%@#:   :#%:= -:..                          \n",
+ "                        .-.  ..  ..  .=%#%@%%@@@@@@%@%%*:                                     \n",
+ "                        .          .-%**%%#+%%@@@@%#%%%%@=.                                   \n",
+ "                                   :+=#%%%%+%%#%@%@#@@@%%%:..                                 \n",
+ "                                    .#*=**.*#%%%%*%=--..-==:.                                 \n",
+ "                                              :-*:                                            \n"};
 
 //*****************************************************************
 //Exit Strategies
@@ -1191,7 +1218,7 @@ const int MAX_FORCING_TYPES=50;
 enum forcing_type
 {
   F_PRECIP,         F_PRECIP_DAILY_AVE, F_PRECIP_5DAY,    F_SNOW_FRAC,
-  F_RAINFALL,       F_SNOWFALL,
+  F_RAINFALL,       F_SNOWFALL,         F_IRRIGATION,
   F_TEMP_AVE,
   F_TEMP_DAILY_MIN, F_TEMP_DAILY_MAX,   F_TEMP_DAILY_AVE,
   F_TEMP_MONTH_MAX, F_TEMP_MONTH_MIN,   F_TEMP_MONTH_AVE,
@@ -1216,6 +1243,7 @@ struct force_struct
   double precip_daily_ave;    ///< average precipitaiton over day (0:00-24:00) [mm/d]
   double precip_5day;         ///< 5-day precipitation total [mm] (needed for SCS)
   double snow_frac;           ///< fraction of precip that is snow [0..1]
+  double irrigation;          ///< irrigation rate over time step [mm/d]
   double precip_temp;         ///< precipitation temperature [C]
   double precip_conc;         ///< precipitation concentration [C] (\todo[funct]: should make vector)
 
@@ -1645,6 +1673,7 @@ void   CalcWeightsFromUniformNums(const double* aVals, double* aWeights, const i
 void   quickSort        (double arr[], int left, int right) ;
 double InterpolateCurve (const double x,const double *xx,const double *y,int N,bool extrapbottom);
 void   getRanks         (const double *arr, const int N, int *ranks);
+void   pushIntoIntArray (int*&a, const int &v, int &n);
 
 //Geographic Conversion Functions-----------------------------------
 //defined in UTM_to_LatLong.cpp

@@ -147,36 +147,30 @@ int CDemandOptimizer::GetUserDVIndex(const string s) const
   }
   return DOESNT_EXIST;
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief retrieves index of native decision variable starting with !
 /// \params s [in] - string
 /// \returns index of named decision variable, or DOESNT_EXIST if not found
-/// supports !Qxxx, !Q.name, !hxxx, !Ixxx, !Dxxx, !Cxxx
+/// supports !Qxxx, !Q.name, !hxxx, !Ixxx, !Dxxx, !Cxxx, $Bxxx, $Exxx
 //
 int CDemandOptimizer::GetIndexFromDVString(string s) const //String in format !Qxxx or !Q.name but not !Qxx[n]
 {
-  if ((s[1] == 'Q') || (s[1] == 'h') || (s[1]=='I')) //Subbasin-indexed
+  if ((s[1] == 'Q') || (s[1] == 'h') || (s[1]=='I') || (s[1]=='B') || (s[1]=='E')) //Subbasin-indexed
   {
     if (s[2] == '.') {
       string name=s.substr(3);
-      CSubBasin *pSB;
-      int p;
-      for (int pp = 0; pp < _pModel->GetNumSubBasins(); pp++) {
-        p=_pModel->GetOrderedSubBasinIndex(pp);
-        pSB=_pModel->GetSubBasin(p);
-        if (name == pSB->GetName()) {
-          return p;
-        }
+      for (int p = 0; p < _pModel->GetNumSubBasins(); p++) {
+        if (name == _pModel->GetSubBasin(p)->GetName()) {return p;}
       }
       return DOESNT_EXIST;
     }
     else{
-      string sbid=s.substr(2);
-      long   SBID=s_to_l(sbid.c_str());
+      long   SBID=s_to_l(s.substr(2).c_str());
       return _pModel->GetSubBasinIndex(SBID);
     }
   }
-  else if ((s[1]=='D') || (s[1]=='C'))
+  else if ((s[1]=='D') || (s[1]=='C') || (s[1]=='d'))
   {
     string demandID;
     if (s[2] == '.') {demandID=s.substr(3);} //!D.FarmerBobsDemand
@@ -185,6 +179,7 @@ int CDemandOptimizer::GetIndexFromDVString(string s) const //String in format !Q
   }
   return DOESNT_EXIST;
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief returns number of user-specified decision variables
 //
@@ -196,19 +191,19 @@ int CDemandOptimizer::GetNumUserDVs() const{
 //
 string TermTypeToString(termtype t)
 {
-  if (t==TERM_DV     ){return "TERM_DV"; }
-  if (t==TERM_TS     ){return "TERM_TS"; }
-  if (t==TERM_LT     ){return "TERM_LT"; }
-  if (t==TERM_HRU    ){return "TERM_HRU";}
-  if (t==TERM_SB     ){return "TERM_SB"; }
-  if (t==TERM_CONST  ){return "TERM_CONST"; }
-  if (t==TERM_HISTORY){return "TERM_HISTORY"; }
-  if (t==TERM_MAX    ){return "TERM_MAX"; }
-  if (t==TERM_MIN    ){return "TERM_MIN"; }
-  if (t==TERM_CONVERT){return "TERM_CONVERT"; }
-  if (t==TERM_CUMUL  ){return "TERM_CUMUL";}
+  if (t==TERM_DV      ){return "TERM_DV"; }
+  if (t==TERM_TS      ){return "TERM_TS"; }
+  if (t==TERM_LT      ){return "TERM_LT"; }
+  if (t==TERM_HRU     ){return "TERM_HRU";}
+  if (t==TERM_SB      ){return "TERM_SB"; }
+  if (t==TERM_CONST   ){return "TERM_CONST"; }
+  if (t==TERM_HISTORY ){return "TERM_HISTORY"; }
+  if (t==TERM_MAX     ){return "TERM_MAX"; }
+  if (t==TERM_MIN     ){return "TERM_MIN"; }
+  if (t==TERM_CONVERT ){return "TERM_CONVERT"; }
+  if (t==TERM_CUMUL   ){return "TERM_CUMUL";}
   if (t==TERM_CUMUL_TS){return "TERM_CUMUL_TS";}
-  if (t==TERM_UNKNOWN){return "TERM_UNKNOWN"; }
+  if (t==TERM_UNKNOWN ){return "TERM_UNKNOWN"; }
   return "TERM_UNKNOWN";
 }
 string DVTypeToString(dv_type t)
@@ -267,29 +262,30 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
   size_t i3=s.find("(");
 
   if ((i1 != NPOS) && (i2 != NPOS) && (i3==NPOS)) { //array NOT nested within function
-    string contents=s.substr(i1+1,i2-i1);
-    //cout<<" BRACKET CONTENTS: ["<<contents<<"]"<<endl;
+    string contents=s.substr(i1+1,i2-i1-1);
     n=s_to_i(contents.c_str());
+    //cout<<" BRACKET CONTENTS: ["<<contents<<"]"<<" n: "<<n<<endl;
     has_brackets=true;
   }
 
   //----------------------------------------------------------------------
-  if ((s[0] == '!') && (has_brackets)) //historical lookup (e.g., !Q102[-2])
+  if ( ((s[0] == '!') || (s[0] == '$')) && (has_brackets)) //historical lookup (e.g., !Q102[-2])
   {
-    ExitGracefullyIf(n>=0,              "ConvertToExpressionTerm:: term in square brackets must be <=0 for historical variables.",BAD_DATA_WARN);
+    ExitGracefullyIf(n>=0,              "ConvertToExpressionTerm:: term in square brackets must be <0 for historical variables.",BAD_DATA_WARN);
     ExitGracefullyIf(n<-_nHistoryItems, "ConvertToExpressionTerm:: term in square brackets exceeds the magnitude of the :LookbackDuration", BAD_DATA_WARN);
 
-    if ((s[1] == 'Q') || (s[1] == 'D') || (s[1]=='h'))
+    if ((s[1] == 'Q') || (s[1] == 'D') || (s[1]=='h') || (s[1] == 'B') || (s[1] == 'E'))
     {
       if (n<0)
       {
         int p=GetIndexFromDVString(s.substr(0,i1));
         if (p == DOESNT_EXIST) {
-          warn="ConvertToExpressionTerm: invalid subbasin ID in expression"+warnstring;
+          warn="ConvertToExpressionTerm: invalid subbasin ID ("+s.substr(0,i1)+") in expression"+warnstring;
           ExitGracefully(warn.c_str(), BAD_DATA_WARN);
           return false;
         }
         if (!_pModel->GetSubBasin(p)->IsEnabled()) {
+          //if (!_suppress_disabled_warnings){
           warn="ConvertToExpressionTerm: history expression "+warnstring+" includes reference to disabled subbasin. Expression will be ignored";
           WriteWarning(warn,true);
           return false;
@@ -300,9 +296,9 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
         return true;
 
       }
-    }
+    } 
     else {
-      warn="ConvertToExpression:: Unparseable term in expression starting with ! - only !Q, !D, or !h currently supported. "+warnstring;
+      warn="ConvertToExpression:: Unparseable term in history expression starting with !/$ - only !Q, !D, !h, $B, or $E currently supported. "+warnstring;
       ExitGracefully(warn.c_str(), BAD_DATA_WARN);
       return false;
     }
@@ -314,17 +310,19 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     {
       int p=GetIndexFromDVString(s);
       if (p == DOESNT_EXIST) {
-        warn="ConvertToExpressionTerm: invalid subbasin ID in expression"+warnstring;
+        warn="ConvertToExpressionTerm: invalid subbasin ID ("+s+") in expression"+warnstring;
         ExitGracefully(warn.c_str(),BAD_DATA_WARN);
         return false;
       }
       if (!_pModel->GetSubBasin(p)->IsEnabled()) {
+        //if (!_suppress_disabled_warnings){
         warn="ConvertToExpressionTerm: reference to disabled subbasin "+warnstring+". Constraint/goal will be disabled";
         WriteWarning(warn.c_str(),true);
         return false;
       }
       if (_aSBIndices[p] == DOESNT_EXIST) {
-        warn="ConvertToExpressionTerm: disabled subbasin ID in expression"+warnstring+ ". Expression will be ignored";
+        //if (!_suppress_disabled_warnings){
+        warn="ConvertToExpressionTerm: disabled subbasin ID in expression "+warnstring+ ". Expression will be ignored";
         WriteWarning(warn.c_str(),true);
         return false;
       }
@@ -361,7 +359,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
       int d=GetIndexFromDVString(s);
 
       if (d == DOESNT_EXIST) {
-        warn = "ConvertToExpressionTerm: invalid demand ID or demand from disabled subbasin used in expression " +warnstring +": goal/constraint will be ignored";
+        warn="ConvertToExpressionTerm: invalid demand ID or demand from disabled subbasin used in expression " +warnstring +": goal/constraint will be ignored";
         WriteWarning(warn.c_str(),true);
         return false;
       }
@@ -383,6 +381,33 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
 
     term->type=TERM_DV;
     return true;
+  }
+  //----------------------------------------------------------------------
+  else if (s[0] == '$') 
+  {
+    if ((s[1] == 'B') || (s[1] == 'E')) //Subbasin-indexed
+    {
+      int p=GetIndexFromDVString(s);
+      if (p == DOESNT_EXIST) {
+        warn="ConvertToExpressionTerm: invalid subbasin ID ("+s+") in expression"+warnstring;
+        ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+        return false;
+      }
+      if (!_pModel->GetSubBasin(p)->IsEnabled()) {
+        warn="ConvertToExpressionTerm: reference to disabled subbasin "+warnstring+". Constraint/goal will be disabled";
+        WriteWarning(warn.c_str(),true);
+        return false;
+      }
+      if (_aSBIndices[p] == DOESNT_EXIST) {
+        warn="ConvertToExpressionTerm: disabled subbasin ID in expression "+warnstring+ ". Expression will be ignored";
+        WriteWarning(warn.c_str(),true);
+        return false;
+      }
+      term->type=TERM_HISTORY;
+      term->timeshift=0;
+      term->p_index=p;
+      return true;
+    }
   }
   //----------------------------------------------------------------------
   else if (s.find("@ts(") != NPOS) //time series (e.g., @ts(my_time_series,n)
@@ -768,9 +793,7 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
       terms[j][k] = new expressionTerm();
       terms[j][k]->mult=1.0;
       valid=ConvertToExpressionTerm(to_string(s[i]),terms[j][k],lineno,filename);
-      if (!valid){
-        return NULL;
-      }
+      if (!valid){return NULL; }
 
       //TMP DEBUG
       //cout<<"   TERM["<<k<<" in "<< j << "]: " << s[i] << " : type = " << TermTypeToString(terms[j][k]->type) << " index : " << terms[j][k]->DV_ind << endl;
@@ -932,7 +955,7 @@ bool CDemandOptimizer::CheckGoalConditions(const int ii, const int k, const time
           dv_value=_aCumDelivery[ind];
         }
         else if (tmp == 'D') {
-          dv_value = _pModel->GetSubBasinByID(_aDemandSBIDs[ind])->GetDemandDelivery(_aDemandIndices[ind]);
+          dv_value=_pModel->GetSubBasinByID(_pDemands[ind]->GetSubBasinID())->GetDemandDelivery(_pDemands[ind]->GetLocalIndex());
         }
         //todo: support !q, !d, !B, !E, !F, !T
       }
@@ -1213,6 +1236,8 @@ double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const
     if      (tmp=='Q'){return _aQhist[_aSBIndices[p]][nshift]; }
     else if (tmp=='h'){return _ahhist[_aSBIndices[p]][nshift]; }
     else if (tmp=='D'){return _aDhist[_aSBIndices[p]][nshift]; }
+    else if (tmp=='B'){return _pModel->GetSubBasin(p)->GetSpecifiedInflow(t+pT->timeshift*1.0); } //ASSUMES DAILY TIMESTEP!
+    else if (tmp=='E'){return _pModel->GetSubBasin(p)->GetEnviroMinFlow  (t+pT->timeshift*1.0); } //ASSUMES DAILY TIMESTEP!
     else {
       ExitGracefully("CDemandOptimizer::EvaluateTerm: Invalid history variable ",BAD_DATA);
     }
