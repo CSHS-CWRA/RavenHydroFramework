@@ -556,7 +556,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     nnstart  += _width;
 
     N=0;
-    
+
     double sum1(0.0);
     for (nn=nnstart;nn<nnend;nn++)
     {
