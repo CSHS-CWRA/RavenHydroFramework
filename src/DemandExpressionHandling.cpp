@@ -55,34 +55,36 @@ expressionStruct::~expressionStruct()
 }
 
 //////////////////////////////////////////////////////////////////
-/// constructor, destructor, and member functions of manConstraint structure
+/// constructor, destructor, and member functions of managementGoal structure
 //
-manConstraint::manConstraint()
+managementGoal::managementGoal()
 {
   name="";
 
   is_goal=false;
   penalty_under=1.0;
-  penalty_over=1.0;
+  penalty_over =1.0;
   slack_ind1=DOESNT_EXIST;
   slack_ind2=DOESNT_EXIST;
 
-  penalty_value=0;
-
   nOperRegimes=1;
   pOperRegimes=new op_regime* [1];
-  pOperRegimes[0]=new op_regime("default");
+  pOperRegimes[0] = new op_regime("[DEFAULT]");
 
   active_regime=DOESNT_EXIST;
   ever_satisfied=false;
   conditions_satisfied=false;
+
+  use_stage_units=false;
+  units_correction=1.0;
+  reservoir_index=DOESNT_EXIST;
 }
-manConstraint::~manConstraint()
+managementGoal::~managementGoal()
 {
   delete [] pOperRegimes; nOperRegimes=0;
 }
 
-void manConstraint::AddOperatingRegime(op_regime* pOR, bool first)
+void managementGoal::AddOperatingRegime(op_regime* pOR, bool first)
 {
   if ((nOperRegimes==1) && (first)){
     pOperRegimes[0]->reg_name=pOR->reg_name;
@@ -93,16 +95,16 @@ void manConstraint::AddOperatingRegime(op_regime* pOR, bool first)
     }
   }
 }
-void manConstraint::AddOpCondition(exp_condition* pCond)
+void managementGoal::AddOpCondition(exp_condition* pCond)
 {
   if(!DynArrayAppend((void**&)(pOperRegimes[nOperRegimes-1]->pConditions),(void*)(pCond),pOperRegimes[nOperRegimes-1]->nConditions)) {
     ExitGracefully("management_constraint::AddOpCondition: adding NULL condition",BAD_DATA_WARN);
   }
 }
-void manConstraint::AddExpression(expressionStruct* pExp)
+void managementGoal::AddExpression(expressionStruct* pExp)
 {
   pOperRegimes[nOperRegimes-1]->pExpression=pExp;
-  ExitGracefullyIf(pExp==NULL,"manConstraint::AddExpression: NULL Expression",RUNTIME_ERR);
+  ExitGracefullyIf(pExp==NULL,"managementGoal::AddExpression: NULL Expression",RUNTIME_ERR);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -908,7 +910,7 @@ void SummarizeExpression(const char **s, const int Len, expressionStruct* exp)
 bool CDemandOptimizer::CheckGoalConditions(const int ii, const int k, const time_struct &tt, const optStruct &Options) const
 {
   double dv_value;
-  manConstraint *pC=_pConstraints[ii];
+  managementGoal *pC=_pGoals[ii];
 
   //Check if conditionals are satisfied
   for (int j = 0; j < pC->pOperRegimes[k]->nConditions; j++)
@@ -999,7 +1001,7 @@ bool CDemandOptimizer::CheckGoalConditions(const int ii, const int k, const time
 
       if (comp == COMPARE_BETWEEN)
       {
-        if (pCond->dv_name == "DAY_OF_YEAR") { //handles wraparound
+        if ((pCond->dv_name == "DAY_OF_YEAR") || (pCond->dv_name =="MONTH")) { //handles wraparound
           if ( v2 < v ){
             if ((dv_value > v ) && (dv_value < v2)){return false;}
           }
@@ -1018,10 +1020,10 @@ bool CDemandOptimizer::CheckGoalConditions(const int ii, const int k, const time
         if (dv_value > v){return false;}//don't apply condition
       }
       else if (comp == COMPARE_IS_EQUAL) {
-        if (fabs(dv_value - v) > REAL_SMALL){return false;}//usually integer value (e.g., month)
+        if (fabs(dv_value - v) > PRETTY_SMALL){return false;}//usually integer value (e.g., month)
       }
       else if (comp == COMPARE_NOT_EQUAL) {
-        if (fabs(dv_value - v) < REAL_SMALL){return false;}
+        if (fabs(dv_value - v) < PRETTY_SMALL){return false;}
       }
     }
   }
@@ -1030,8 +1032,8 @@ bool CDemandOptimizer::CheckGoalConditions(const int ii, const int k, const time
 
 //////////////////////////////////////////////////////////////////
 /// adds constraint ii to LP solve problem statement
-/// \params ii [in] - index of constraint in _pConstraints array
-/// \param k - index of operating regime in _pConstraints[ii]
+/// \params ii [in] - index of constraint in _pGoals array
+/// \param k - index of operating regime in _pGoals[ii]
 /// \param pLinProg [out] - pointer to valid lpsolve structure to be modified
 /// \param tt [in] - time structure
 /// \param *col_ind [in] - empty array (with memory reserved) for storing column indices
@@ -1050,7 +1052,7 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, const int k, lp_lib::lpre
 
   //int    nn=(int)((tt.model_time+TIME_CORRECTION)/1.0);//Options.timestep; //TMP DEBUG
 
-  manConstraint    *pC=_pConstraints[ii];
+  managementGoal    *pC=_pGoals[ii];
   expressionStruct *pE= pC->pOperRegimes[k]->pExpression;
 
   RHS=0.0;

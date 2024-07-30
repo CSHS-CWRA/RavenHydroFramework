@@ -1174,7 +1174,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       :EndUserTimeSeries
      */
       if(Options.noisy) { cout <<"User-specified Time Series"<<endl; }
-      pTimeSer=CTimeSeries::Parse(p,false,s[2], DOESNT_EXIST, "none", Options);
+      pTimeSer=CTimeSeries::Parse(p,false,s[1], DOESNT_EXIST, "none", Options);
       if(pModel->GetDemandOptimizer()!=NULL) {
         pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
       }

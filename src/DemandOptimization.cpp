@@ -62,8 +62,8 @@ CDemandOptimizer::CDemandOptimizer(CModel *pMod)
   _aDhist=NULL;
   _ahhist=NULL;
 
-  _nConstraints=0;
-  _pConstraints=NULL;
+  _nGoals=0;
+  _pGoals=NULL;
 
   _demands_initialized=false;
 
@@ -375,12 +375,12 @@ void CDemandOptimizer::AddUserLookupTable(const CLookupTable *pLUT)
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief adds decision variable constraint OR goal to _pConstraints member array
-/// \param pConstraint [in] - constraint structure
+/// \brief adds decision variable constraint OR goal to _pGoals member array
+/// \param pGoal [in] - goal/constraint structure
 ///
-void CDemandOptimizer::AddGoalOrConstraint(const manConstraint *pConstraint)
+void CDemandOptimizer::AddGoalOrConstraint(const managementGoal *pGoal)
 {
-  if (!DynArrayAppend((void**&)(_pConstraints),(void*)(pConstraint),_nConstraints)){
+  if (!DynArrayAppend((void**&)(_pGoals),(void*)(pGoal),_nGoals)){
    ExitGracefully("CDemandOptimizer::AddConstraint: adding NULL goal or constraint",BAD_DATA);}
 }
 
@@ -661,19 +661,49 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
   //------------------------------------------------------------------
   AddReservoirConstraints();
 
+  // Calculate penalty units correction for reservoirs 
+  //------------------------------------------------------------------
+  for (int j = 0; j < _nGoals; j++)
+  {
+    if ((_pGoals[j]->is_goal) &&  (_pGoals[j]->use_stage_units)) 
+    {
+      pSB =_pModel->GetSubBasin(_pGoals[j]->reservoir_index);
+
+      if (pSB->GetReservoir()!=NULL)
+      {
+        int k=pSB->GetReservoir()->GetHRUIndex();
+        if (k!=DOESNT_EXIST){
+          _pGoals[j]->units_correction=(_pModel->GetHydroUnit(k)->GetArea()*M2_PER_KM2)/SEC_PER_DAY; //[m]/[dt (d)]->[m3/s];
+        }
+      }
+      else {
+        ExitGracefully("InitalizePostRVMRead: invalid reservoir index associated with goal",RUNTIME_ERR);
+      }
+    }
+  }
+  // set operating regime penalties to default, if not specified
+  //------------------------------------------------------------------
+  for (int j = 0; j < _nGoals; j++)
+  {
+    for (int k=0;k<_pGoals[j]->nOperRegimes;k++){
+      if (_pGoals[j]->pOperRegimes[k]->penalty_over ==RAV_BLANK_DATA){_pGoals[j]->pOperRegimes[k]->penalty_over =_pGoals[j]->penalty_over; } 
+      if (_pGoals[j]->pOperRegimes[k]->penalty_under==RAV_BLANK_DATA){_pGoals[j]->pOperRegimes[k]->penalty_under=_pGoals[j]->penalty_under;}
+    }
+  }
+
   // Sift through user-specified goals, update _nSlackVars, reserve memory for _aSlackValues
   //------------------------------------------------------------------
   // ISSUE : THIS IS TOTAL POSSIBLE NUMBER OF SLACK VARIABLES; MAY NOT BE IN PLAY DUE TO CONDITIONALS - for disabled constraints, just set penalty to zero>??
   //
   string nm;
 
-  for (int j = 0; j < _nConstraints; j++)
+  for (int j = 0; j < _nGoals; j++)
   {
     // ASSUMES ALL EXPRESSIONS IN GOAL/CONSTRAINT ARE EITHER == or >/<, NEVER MIXED.
-    if (_pConstraints[j]->is_goal) {
-      if (_pConstraints[j]->pOperRegimes[0]->pExpression->compare == COMPARE_IS_EQUAL) {
-        _pConstraints[j]->slack_ind1=_nSlackVars;
-        _pConstraints[j]->slack_ind2=_nSlackVars+1;
+    if (_pGoals[j]->is_goal) {
+      if (_pGoals[j]->pOperRegimes[0]->pExpression->compare == COMPARE_IS_EQUAL) {
+        _pGoals[j]->slack_ind1=_nSlackVars;
+        _pGoals[j]->slack_ind2=_nSlackVars+1;
         pDV =  new decision_var("SL+" + to_string(j), p, DV_SLACK,_nSlackVars);
         AddDecisionVar(pDV);
         pDV =  new decision_var("SL-" + to_string(j), p, DV_SLACK,_nSlackVars+1);
@@ -681,15 +711,15 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
         _nSlackVars+=2;
       }
       else {
-        _pConstraints[j]->slack_ind1=_nSlackVars;
-        if (_pConstraints[j]->pOperRegimes[0]->pExpression->compare==COMPARE_LESSTHAN){nm="-";}
+        _pGoals[j]->slack_ind1=_nSlackVars;
+        if (_pGoals[j]->pOperRegimes[0]->pExpression->compare==COMPARE_LESSTHAN){nm="-";}
         else                                                                          {nm="+";}
         pDV =  new decision_var("SL"+ nm + to_string(j), p, DV_SLACK,_nSlackVars);
         AddDecisionVar(pDV);
         _nSlackVars++;
       }
     }
-    _pConstraints[j]->ever_satisfied=false;
+    _pGoals[j]->ever_satisfied=false;
   }
 
   _aSlackValues = new double[_nSlackVars];
@@ -735,18 +765,19 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
     string tmpstr,tmpstr2;
     cout<<" # History Items: "     <<_nHistoryItems<<endl;
     cout<<" # Slack Vars: "        <<_nSlackVars<<endl;
-    cout<<" # Constraints/Goals: " <<_nConstraints<<endl;
-    for (int i = 0; i < _nConstraints; i++) {
-      if (_pConstraints[i]->is_goal){tmpstr="[GOAL]      "; }
+    cout<<" # Constraints/Goals: " <<_nGoals<<endl;
+    for (int i = 0; i < _nGoals; i++) {
+      if (_pGoals[i]->is_goal){tmpstr="[GOAL]      "; }
       else                          {tmpstr="[CONSTRAINT]"; }
-      cout<<"    "<<i<<" "<<tmpstr<<": "<<_pConstraints[i]->name<<endl;
-      for (int k=0; k<_pConstraints[i]->nOperRegimes; k++)
+      cout<<"    "<<i<<" "<<tmpstr<<": "<<_pGoals[i]->name<<endl;
+      for (int k=0; k<_pGoals[i]->nOperRegimes; k++)
       {
-        cout<<"      +oper regime: "<<_pConstraints[i]->pOperRegimes[k]->reg_name<<endl;
-        cout<<"        +expression: "<<_pConstraints[i]->pOperRegimes[k]->pExpression->origexp<<endl;
-        for (int j = 0; j < _pConstraints[i]->pOperRegimes[k]->nConditions; j++) {
-          if (_pConstraints[i]->pOperRegimes[k]->pConditions[j]->pExp!=NULL){tmpstr2=_pConstraints[i]->pOperRegimes[k]->pConditions[j]->pExp->origexp;}
-          else                                                              {tmpstr2=_pConstraints[i]->pOperRegimes[k]->pConditions[j]->dv_name;}
+        cout<<"      +oper regime: "<<_pGoals[i]->pOperRegimes[k]->reg_name<<endl;
+        cout<<"        +expression: "<<_pGoals[i]->pOperRegimes[k]->pExpression->origexp<<endl;
+        cout<<"        +penalty:    ("<<_pGoals[i]->pOperRegimes[k]->penalty_under<<","<<_pGoals[i]->pOperRegimes[k]->penalty_over<<")"<<endl;
+        for (int j = 0; j < _pGoals[i]->pOperRegimes[k]->nConditions; j++) {
+          if (_pGoals[i]->pOperRegimes[k]->pConditions[j]->pExp!=NULL){tmpstr2=_pGoals[i]->pOperRegimes[k]->pConditions[j]->pExp->origexp;}
+          else                                                              {tmpstr2=_pGoals[i]->pOperRegimes[k]->pConditions[j]->dv_name;}
           cout<<"        + condition: "<<tmpstr2<<endl;
         }
       }
@@ -788,17 +819,16 @@ void TokenizeString(string instring, char **s, int &Len)
 //
 void CDemandOptimizer::AddReservoirConstraints()
 {
-  int p;
-  CSubBasin *pSB;
-  string TSname,SBIDs;
-  long SBID;
+  int               p;
+  CSubBasin        *pSB;
+  string            TSname,SBIDs;
+  long              SBID;
   expressionStruct *exp;
-  manConstraint    *pConst=NULL;
-  string expString;
-  string advice;
-  double stage_units_adjustment;
-  int Len=0;
-  char *s[MAXINPUTITEMS];
+  managementGoal   *pGoal=NULL;
+  string            expString;
+  string            advice;
+  int               Len=0;
+  char             *s[MAXINPUTITEMS];
 
   for (int pp=0;pp<_pModel->GetNumSubBasins();pp++)
   {
@@ -810,13 +840,9 @@ void CDemandOptimizer::AddReservoirConstraints()
     if (((pSB->IsEnabled()) && (pSB->GetReservoir()!=NULL)))
     {
       int k=pSB->GetReservoir()->GetHRUIndex();
-      if (k!=DOESNT_EXIST){
-        stage_units_adjustment=(_pModel->GetHydroUnit(k)->GetArea()*M2_PER_KM2)/SEC_PER_DAY; //[m]/[dt (d)]->[m3/s]
-      }
-      else {
-        advice="The reservoir in subbasin "+SBIDs+" doesnt have an :HRUID - this will negatively impact the units scaling of management optimization penalties.";
-        WriteWarning(advice,false);
-        stage_units_adjustment=1.0;
+      if (k==DOESNT_EXIST){
+        advice="AddReservoirConstraints: The reservoir in subbasin "+SBIDs+" doesnt have an :HRUID - this will negatively impact the units scaling of management optimization penalties.";
+        ExitGracefully(advice.c_str(), BAD_DATA_WARN);
       }
 
       //Max Stage constraints
@@ -828,12 +854,15 @@ void CDemandOptimizer::AddReservoirConstraints()
         expString=":Expression !h" + SBIDs+ " < @ts(" + TSname + ",0)";
         TokenizeString(expString, s, Len);
         exp = ParseExpression((const char**)(s), Len, 0, "internal");
-        pConst=new manConstraint();
-        pConst->name=TSname;
-        pConst->is_goal=true;
-        pConst->AddExpression(exp);
-        pConst->penalty_over=6.0*stage_units_adjustment;
-        AddGoalOrConstraint(pConst);
+        pGoal=new managementGoal();
+        pGoal->name=TSname;
+        pGoal->is_goal=true;
+        pGoal->AddExpression(exp);
+        pGoal->use_stage_units=true;
+        pGoal->reservoir_index=p;
+        pGoal->penalty_over=6.0;
+        
+        AddGoalOrConstraint(pGoal);
         advice="A :ReservoirMaxStage time series for subbasin "+SBIDs+" has been added to the management optimization formulation";
         WriteAdvisory(advice,false);
       }
@@ -855,19 +884,21 @@ void CDemandOptimizer::AddReservoirConstraints()
         TokenizeString(expString, s, Len);
         exp = ParseExpression((const char**)(s), Len, 0, "internal");
         
-        pConst=new manConstraint();
-        pConst->name=TSname;
-        pConst->is_goal=true;
-        pConst->AddExpression(exp);
-        pConst->penalty_over=6.0*stage_units_adjustment;
-        AddGoalOrConstraint(pConst);
+        pGoal=new managementGoal();
+        pGoal->name=TSname;
+        pGoal->is_goal=true;
+        pGoal->AddExpression(exp);
+        pGoal->use_stage_units=true;
+        pGoal->reservoir_index=p;
+        pGoal->penalty_over=6.0;
+        AddGoalOrConstraint(pGoal);
 
         exp_condition *pCond = new exp_condition();
 
         expString = ":Condition !h" + SBIDs + "[-1] < @ts(" + TSname + ",0)";
         TokenizeString(expString, s, Len);
         pCond->pExp=ParseExpression((const char**)(s), Len, 0, "internal");
-        pConst->AddOpCondition(pCond);
+        pGoal->AddOpCondition(pCond);
 
         if (GetDebugLevel()>=1){
           SummarizeExpression((const char**)(s),Len,pCond->pExp);
@@ -887,12 +918,12 @@ void CDemandOptimizer::AddReservoirConstraints()
         TokenizeString(expString, s, Len);
         exp = ParseExpression((const char**)(s), Len, 0, "internal");
 
-        pConst=new manConstraint();
-        pConst->name=TSname;
-        pConst->is_goal=true;
-        pConst->AddExpression(exp);
-        pConst->penalty_over=5.0;
-        AddGoalOrConstraint(pConst);
+        pGoal=new managementGoal();
+        pGoal->name=TSname;
+        pGoal->is_goal=true;
+        pGoal->AddExpression(exp);
+        pGoal->penalty_over=5.0;
+        AddGoalOrConstraint(pGoal);
 
         advice="A :ReservoirMinimumFlow time series for subbasin "+SBIDs+" has been added to the management optimization formulation";
         WriteAdvisory(advice,false);
@@ -908,12 +939,12 @@ void CDemandOptimizer::AddReservoirConstraints()
         TokenizeString(expString, s, Len);
         exp = ParseExpression((const char**)(s), Len, 0, "internal");
 
-        pConst=new manConstraint();
-        pConst->name=TSname;
-        pConst->is_goal=true;
-        pConst->AddExpression(exp);
-        pConst->penalty_over=5.0;
-        AddGoalOrConstraint(pConst);
+        pGoal=new managementGoal();
+        pGoal->name=TSname;
+        pGoal->is_goal=true;
+        pGoal->AddExpression(exp);
+        pGoal->penalty_over=5.0;
+        AddGoalOrConstraint(pGoal);
 
         advice = "A :ReservoirMaximumFlow time series for subbasin " + SBIDs + " has been added to the management optimization formulation";
         WriteAdvisory(advice,false);
@@ -929,12 +960,12 @@ void CDemandOptimizer::AddReservoirConstraints()
         TokenizeString(expString, s, Len);
         exp = ParseExpression((const char**)(s), Len, 0, "internal");
 
-        pConst=new manConstraint();
-        pConst->name=TSname;
-        pConst->is_goal=true;
-        pConst->AddExpression(exp);
-        pConst->penalty_over=4.0;
-        AddGoalOrConstraint(pConst);
+        pGoal=new managementGoal();
+        pGoal->name=TSname;
+        pGoal->is_goal=true;
+        pGoal->AddExpression(exp);
+        pGoal->penalty_over=4.0;
+        AddGoalOrConstraint(pGoal);
 
         advice = "An :OverrideReservoirFlow time series for subbasin " + SBIDs + " has been added to the management optimization formulation";
         WriteAdvisory(advice,false);
@@ -951,12 +982,12 @@ void CDemandOptimizer::AddReservoirConstraints()
         TokenizeString(expString, s, Len);
         exp = ParseExpression((const char**)(s), Len, 0, "internal");
 
-        pConst=new manConstraint();
-        pConst->name=TSname;
-        pConst->is_goal=true;
-        pConst->AddExpression(exp);
-        pConst->penalty_over=3.0;
-        AddGoalOrConstraint(pConst);
+        pGoal=new managementGoal();
+        pGoal->name=TSname;
+        pGoal->is_goal=true;
+        pGoal->AddExpression(exp);
+        pGoal->penalty_over=3.0;
+        AddGoalOrConstraint(pGoal);
 
         advice = "An :ReservoirMaxQDelta time series for subbasin " + SBIDs + " has been added to the management optimization formulation";
         WriteAdvisory(advice,false);
@@ -973,12 +1004,12 @@ void CDemandOptimizer::AddReservoirConstraints()
         TokenizeString(expString, s, Len);
         exp = ParseExpression((const char**)(s), Len, 0, "internal");
 
-        pConst=new manConstraint();
-        pConst->name=TSname;
-        pConst->is_goal=true;
-        pConst->AddExpression(exp);
-        pConst->penalty_over=3.0;
-        AddGoalOrConstraint(pConst);
+        pGoal=new managementGoal();
+        pGoal->name=TSname;
+        pGoal->is_goal=true;
+        pGoal->AddExpression(exp);
+        pGoal->penalty_over=3.0;
+        AddGoalOrConstraint(pGoal);
 
         advice = "An :ReservoirMaxQDecrease time series for subbasin " + SBIDs + " has been added to the management optimization formulation";
         WriteAdvisory(advice,false);
@@ -994,12 +1025,14 @@ void CDemandOptimizer::AddReservoirConstraints()
         TokenizeString(expString, s, Len);
         exp = ParseExpression((const char**)(s), Len, 0, "internal");
 
-        pConst=new manConstraint();
-        pConst->name=TSname;
-        pConst->is_goal=true;
-        pConst->AddExpression(exp);
-        pConst->penalty_over=2.0*stage_units_adjustment;
-        AddGoalOrConstraint(pConst);
+        pGoal=new managementGoal();
+        pGoal->name=TSname;
+        pGoal->is_goal=true;
+        pGoal->AddExpression(exp);
+        pGoal->use_stage_units=true;
+        pGoal->reservoir_index=p;
+        pGoal->penalty_over=2.0;
+        AddGoalOrConstraint(pGoal);
 
         advice = "An :ReservoirTargetStage time series for subbasin " + SBIDs + " has been added to the management optimization formulation";
         WriteAdvisory(advice,false);
@@ -1227,7 +1260,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
   }
 
   s=0;
-  // reservoir discharge curve goal penalties
+  // reservoir discharge curve goal penalties (2*nReservoirs slack vars)
   // ----------------------------------------------------------------
   for (int pp = 0; pp<pModel->GetNumSubBasins(); pp++)
   {
@@ -1244,17 +1277,19 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
     }
   }
 
-  // enviro min flow goal penalties
+  // enviro min flow goal penalties (_nEnviroFlowGoals slack vars)
   // ----------------------------------------------------------------
+  _nEnviroFlowGoals=0;
   for (int pp = 0; pp<pModel->GetNumSubBasins(); pp++)
   {
     p  =pModel->GetOrderedSubBasinIndex(pp);
     pSB=pModel->GetSubBasin(p);
     if (pSB->IsEnabled()){
-      if (pSB->GetEnviroMinFlow(t)>0.0)  {
+      if (pSB->GetEnviroMinFlow(t)>REAL_SMALL)  {
         col_ind[i]=GetDVColumnInd(DV_SLACK,s);
         row_val[i]=1.0;
         i++; s++;
+        _nEnviroFlowGoals++;
       }
       /*if (pSB->GetUnusableFlowPercentage()>0) {
         col_ind[i]=GetDVColumnInd(DV_SLACK,s);
@@ -1272,39 +1307,50 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
   // user-specified goal penalties
   // ----------------------------------------------------------------
   bool op_is_active;
-  for (int j = 0; j < _nConstraints; j++)
+  double penalty_over,penalty_under;
+
+  for (int j = 0; j < _nGoals; j++)
   {
-    _pConstraints[j]->conditions_satisfied=false;
-    _pConstraints[j]->active_regime=DOESNT_EXIST;
-    for (int k=0;k<_pConstraints[j]->nOperRegimes;k++)
+    _pGoals[j]->conditions_satisfied=false;
+    _pGoals[j]->active_regime=DOESNT_EXIST;
+    
+    // ASSUMES ALL OP REGIME EXPRESSIONS IN GOAL/CONSTRAINT ARE EITHER == or >/<, NEVER MIXED.
+
+    for (int k=0;k<_pGoals[j]->nOperRegimes;k++)
     {
       op_is_active=CheckGoalConditions(j,k,tt,Options);
 
       if (op_is_active){
-        _pConstraints[j]->conditions_satisfied=true;
-        _pConstraints[j]->active_regime=k;
-        _pConstraints[j]->ever_satisfied=true;
+        _pGoals[j]->conditions_satisfied=true;
+        _pGoals[j]->active_regime=k;
+        _pGoals[j]->ever_satisfied=true;
 
-        if (_pConstraints[j]->is_goal)
+        if (_pGoals[j]->is_goal)
         {
+          penalty_over =_pGoals[j]->pOperRegimes[k]->penalty_over;
+          penalty_under=_pGoals[j]->pOperRegimes[k]->penalty_under;
+
+          penalty_under*=_pGoals[j]->units_correction;
+          penalty_over *=_pGoals[j]->units_correction;
+
           col_ind[i]=GetDVColumnInd(DV_SLACK,s);
-          row_val[i]=_pConstraints[j]->penalty_over;
+          row_val[i]=penalty_over;
           i++;
-          if (_pConstraints[j]->pOperRegimes[k]->pExpression->compare == COMPARE_IS_EQUAL) //two slack variables
+          if (_pGoals[j]->pOperRegimes[k]->pExpression->compare == COMPARE_IS_EQUAL) //two slack variables
           {
             col_ind[i]=GetDVColumnInd(DV_SLACK,s+1);
-            row_val[i]=_pConstraints[j]->penalty_under;
+            row_val[i]=penalty_under;
             i++;
           }
         }
 
-        k=_pConstraints[j]->nOperRegimes+1; //successfully found operating regime - stop searching through remaining operating regimes
+        k=_pGoals[j]->nOperRegimes+1; //successfully found operating regime - stop searching through remaining operating regimes
       }
     }
 
-    //ensure counters are properly incremented
+    //ensure slack counters are properly incremented
     s++;
-    if (_pConstraints[j]->pOperRegimes[0]->pExpression->compare == COMPARE_IS_EQUAL) //two slack variables
+    if (_pGoals[j]->pOperRegimes[0]->pExpression->compare == COMPARE_IS_EQUAL) //two slack variables
     {
       s++;
     }
@@ -1596,15 +1642,15 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
 
   // user-specified constraints / goals
   // ----------------------------------------------------------------
-  for (int i = 0; i < _nConstraints; i++)
+  for (int i = 0; i < _nGoals; i++)
   {
-    int k=_pConstraints[i]->active_regime;
+    int k=_pGoals[i]->active_regime;
     if (k!=DOESNT_EXIST)//at least one regime has been activated
     {
       AddConstraintToLP( i, k, pLinProg, tt, col_ind, row_val);
 
       rowcount++;
-      rowname=_pConstraints[i]->name;
+      rowname=_pGoals[i]->name;
       lp_lib::set_row_name(pLinProg, rowcount, &rowname[0]);
     }
   }
@@ -1838,7 +1884,7 @@ void CDemandOptimizer::WriteOutputFileHeaders(const optStruct &Options)
     ExitGracefully(("CModel::WriteOutputFileHeaders: unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
   }
 
-  _DEMANDOPT<<"time [d],date,hour";
+  _DEMANDOPT<<"time,date,hour";
   for (int i=0;i<_nDecisionVars;i++){
     if ((_pDecisionVars[i]->p_index == DOESNT_EXIST) &&
         (_pDecisionVars[i]->dvar_type!=DV_SLACK))  { //user specified non-slack variable
@@ -1860,14 +1906,11 @@ void CDemandOptimizer::WriteOutputFileHeaders(const optStruct &Options)
   if (_GOALSAT.fail()){
     ExitGracefully(("CModel::WriteOutputFileHeaders: unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
   }
-  _GOALSAT<<"time [d],date,hour";
-  for (int d = 0; d < _nDemands; d++) {
-    _GOALSAT << "," << _pDemands[d]->GetID();
-  }
-  for (int i = 0; i < _nConstraints; i++) {
-    if (_pConstraints[i]->is_goal) {
-      _GOALSAT<<","<<_pConstraints[i]->name;
-      _GOALSAT<<","<<_pConstraints[i]->name+" regime";
+  _GOALSAT<<"time,date,hour";
+  for (int i = 0; i < _nGoals; i++) {
+    if (_pGoals[i]->is_goal) {
+      _GOALSAT<<","<<_pGoals[i]->name+" penalty";
+      _GOALSAT<<","<<_pGoals[i]->name+" regime";
     }
   }
   _GOALSAT<<endl;
@@ -1910,54 +1953,42 @@ void CDemandOptimizer::WriteMinorOutput(const optStruct &Options,const time_stru
   bool   include_pen=false;
   double pen;
   double mult=1.0;
-  int    ii;
+  
   _GOALSAT<<tt.model_time <<","<<usedate<<","<<usehour;
 
-  for (int d = 0; d < _nDemands; d++) 
+  //first slack terms are due to environmental flow constraints (_nEnviroFlowGoals) and reservoir outflow targets (2*_nReservoirs)
+  //this is first index of user-specified slack variable
+  int s=_nEnviroFlowGoals+2*_nReservoirs; 
+  for (int i = 0; i < _nGoals; i++) 
   {
-    if (include_pen){mult=_pDemands[d]->GetPenalty();}
-    ii =_pDemands[d]->GetLocalIndex();
-    pSB=_pModel->GetSubBasinByID(_pDemands[d]->GetSubBasinID());
-    _GOALSAT << "," << mult*(pSB->GetWaterDemand(ii,tt.model_time)-_aDelivery[d]);
-  }
+    if (_pGoals[i]->is_goal) 
+    {
+      if (include_pen){mult=_pGoals[i]->penalty_over*_pGoals[i]->units_correction;}
+      if (_pGoals[i]->pOperRegimes[0]->pExpression->compare == COMPARE_GREATERTHAN){mult*=-1.0; }
 
-  int k=_nDemands+2*_nReservoirs; //first slack terms are due to environmental flow constraints (nDemands) and reservoir outflow targets (2*nReservoirs)
-  for (int i = 0; i < _nConstraints; i++) 
-  {
-    if (_pConstraints[i]->is_goal) {
-      if (_pConstraints[i]->pOperRegimes[0]->pExpression->compare != COMPARE_IS_EQUAL) 
+      pen = mult*_aSlackValues[s];
+      s++;
+      if (_pGoals[i]->pOperRegimes[0]->pExpression->compare == COMPARE_IS_EQUAL) 
       {
-        if (include_pen){mult=_pConstraints[i]->penalty_over;}
-
-        pen = mult*_aSlackValues[k];
-        _GOALSAT<<","<<pen;
-        k++;
+        if (include_pen){mult=_pGoals[i]->penalty_under*_pGoals[i]->units_correction;}
+        pen-=mult*_aSlackValues[s];
+        s++;
       }
-      else 
-      {
-        if (include_pen){mult=_pConstraints[i]->penalty_over;}
-        pen =mult*_aSlackValues[k];
+      _GOALSAT<<","<<pen;
 
-        if (include_pen){mult=_pConstraints[i]->penalty_under;}
-        pen+=mult*_aSlackValues[k+1];
-
-        _GOALSAT<<","<<pen;
-        k+=2;
-      }
       //print active operating regime
-      if (!_pConstraints[i]->conditions_satisfied)
+      if (!_pGoals[i]->conditions_satisfied)
       {
         _GOALSAT<<",INACTIVE";
       }
       else {
         string active_regime;
-        active_regime=_pConstraints[i]->pOperRegimes[_pConstraints[i]->active_regime]->reg_name;
+        active_regime=_pGoals[i]->pOperRegimes[_pGoals[i]->active_regime]->reg_name;
         _GOALSAT<<","<<active_regime;
       }
     }
   }
   _GOALSAT<<endl;
-
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Closes output file streams
@@ -1975,14 +2006,14 @@ void CDemandOptimizer::CloseOutputStreams()
 void CDemandOptimizer::Closure(const optStruct &Options)
 {
   string warn;
-  for (int j = 0; j < _nConstraints; j++) {
+  for (int j = 0; j < _nGoals; j++) {
     int nConditions=0;
-    for (int k = 0; k < _pConstraints[j]->nOperRegimes; k++) {
-      nConditions+=_pConstraints[j]->pOperRegimes[k]->nConditions;
+    for (int k = 0; k < _pGoals[j]->nOperRegimes; k++) {
+      nConditions+=_pGoals[j]->pOperRegimes[k]->nConditions;
     }
 
-    if (!(_pConstraints[j]->ever_satisfied) && (nConditions>0)) {
-      warn="CDemandOptimizer::Closure: constraint/goal ["+to_string(j)+"] "+_pConstraints[j]->name+" was never activated during simulation, as none of its conditions were ever met.";
+    if (!(_pGoals[j]->ever_satisfied) && (nConditions>0)) {
+      warn="CDemandOptimizer::Closure: constraint/goal ["+to_string(j)+"] "+_pGoals[j]->name+" was never activated during simulation, as none of its conditions were ever met.";
       WriteWarning(warn,Options.noisy);
     }
   }

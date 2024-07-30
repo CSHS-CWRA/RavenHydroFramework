@@ -55,7 +55,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
   bool        in_ifmode_statement=false;
 
   ifstream    RVM;
-  RVM.open(Options.rvm_filename.c_str());
+  RVM.open(Options.rvm_filename.c_str(),ios::binary);
   if(RVM.fail()) {
     cout << "ERROR opening model management file: "<<Options.rvm_filename<<endl; return false;
   }
@@ -166,9 +166,9 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       for(i=1;i<Len;i++) { filename+=s[i]; if(i<Len-1) { filename+=' '; } }
       if(Options.noisy) { cout <<"Redirect to file: "<<filename<<endl; }
 
-      filename=CorrectForRelativePath(filename,Options.rvm_filename);
+      filename=CorrectForRelativePath(filename,Options.rvm_filename); 
 
-      INPUT2.open(filename.c_str());
+      INPUT2.open(filename.c_str(),ios::binary); //binary enables tellg() to work correctly for Unix files in parseLib::Peek()
       if(INPUT2.fail()) {
         string warn;
         warn=":RedirectToFile (from .rvm): Cannot find file "+filename;
@@ -364,7 +364,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       pDO->InitializeDemands(pModel,Options);
 
       expressionStruct *pExp;
-      manConstraint    *pConst=NULL;
+      managementGoal    *pConst=NULL;
       decision_var     *pDV = new decision_var(s[1],DOESNT_EXIST,DV_USER,pDO->GetNumUserDVs());
 
       pDO->AddDecisionVar(pDV);
@@ -375,7 +375,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       }
 
       if (pExp!=NULL){
-        pConst=new manConstraint();
+        pConst=new managementGoal();
         pConst->name=s[1];
         pConst->is_goal=false;
         pConst->AddExpression(pExp);
@@ -410,24 +410,27 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           :Expression [expression]
           :Condition [condition]
           :Condition [condition]
+          :Penalty [value] {value2} #specific to goal 
          :EndOperatingRegime
-         :Penalty [value] {value2}
+         :Penalty [value] {value2} #default penalty if outside op block
        :EndManagementGoal
        :ManagementGoal [name]
          :Expression [expression]
          :Penalty [value] {value2}
+         :UseStageUnitsCorrection [SBID]
        :EndManagementGoal
      */
       if(Options.noisy) { cout <<"Management Constraint or Management Goal"<<endl; }
 
       pDO->InitializeDemands(pModel,Options);
 
-      manConstraint *pConst=new manConstraint();
-      pConst->name=s[1];
-      pConst->is_goal=is_goal;
+      managementGoal *pGoal=new managementGoal();
+      pGoal->name=s[1];
+      pGoal->is_goal=is_goal;
 
       expressionStruct *pExp;
       bool is_first=true;
+      bool in_op_block=false;
       firstword=pp->Peek();
       if (firstword == ":Expression") {pp->NextIsMathExp();}
       if (firstword == ":Condition")  {pp->NextIsMathExp();}
@@ -448,26 +451,27 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
             ExitGracefully("ParseManagementFile: OperatingRegime name missing.",BAD_DATA_WARN);
           }
           op_regime *pOR=new op_regime(s[1]);//[OPUPDATE]
-          pConst->AddOperatingRegime(pOR,is_first);
+          pGoal->AddOperatingRegime(pOR,is_first);
           is_first=false;
+          in_op_block=true;
         }
         //----------------------------------------------
         else if (!strcmp(s[0], ":EndOperatingRegime"))
         {
           if (Options.noisy){cout<<" End operating regime "<<endl; }
-          //does nothing
+          in_op_block=false;
         }
         //----------------------------------------------
         else if(!strcmp(s[0], ":Expression"))
         {
           if (Options.noisy){cout<<" Expression "<<endl; }
-          if (pConst->GetCurrentExpression() != NULL) {
+          if (pGoal->GetCurrentExpression() != NULL) {
             ExitGracefully("ParseManagementFile: only one :Expression allowed in each :OperatingRegime command block (or only one if no :OperatingRegime blocks used).",BAD_DATA_WARN);
             break;
           }
           pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
           if (pExp!=NULL){
-            pConst->AddExpression(pExp);
+            pGoal->AddExpression(pExp);
           }
           else {
             string warn ="Invalid expression in :Expression command at line " + to_string(pp->GetLineNumber());
@@ -492,7 +496,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           //:Condition DAY_OF_YEAR < 210
           //:Condition DAY_OF_YEAR IS_BETWEEN 300 20 //wraps around
           //:Condition @is_between(DAY_OF_YEAR,300,20) = 1  //[NOT YET SUPPORTED]
-          if (pConst!=NULL){
+          if (pGoal!=NULL){
             bool badcond=false;
             exp_condition *pCond = new exp_condition();
             pCond->dv_name=s[1];
@@ -504,7 +508,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
             }
             if (is_exp) {
               pCond->pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
-              pConst->AddOpCondition(pCond);
+              pGoal->AddOpCondition(pCond);
             }
             else{
               if      (!strcmp(s[2],"IS_BETWEEN"     )){pCond->compare=COMPARE_BETWEEN;}
@@ -557,7 +561,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
               if (!badcond)
               {
                 pCond->p_index=pDO->GetIndexFromDVString(pCond->dv_name);
-                pConst->AddOpCondition(pCond);
+                pGoal->AddOpCondition(pCond);
               }
             }
           }
@@ -569,20 +573,54 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         else if (!strcmp(s[0], ":Penalty")) 
         {
           if (Options.noisy){cout<<" Penalty "<<endl; }
-          if (!pConst->is_goal) {
+          if (!pGoal->is_goal) {
             ExitGracefully("ParseManagementFile: :Penalty found within :ManagementConstraint command. It will be ignored, as all constraints have infinite penalty.",BAD_DATA_WARN);
           }
-          pConst->penalty_under = s_to_d(s[1]);
-          pConst->penalty_over  = s_to_d(s[1]);
-          if (Len >= 3) {
-            pConst->penalty_over = s_to_d(s[2]);
+          if (in_op_block) {
+            int k=pGoal->nOperRegimes;
+            pGoal->pOperRegimes[k]->penalty_under = s_to_d(s[1]);
+            pGoal->pOperRegimes[k]->penalty_over  = s_to_d(s[1]);
+            if (Len >= 3) {
+              pGoal->pOperRegimes[k]->penalty_over = s_to_d(s[2]);
+            }
+          }
+          else{
+            pGoal->penalty_under = s_to_d(s[1]);
+            pGoal->penalty_over  = s_to_d(s[1]);
+            if (Len >= 3) {
+              pGoal->penalty_over = s_to_d(s[2]);
+            }
           }
         }
         //----------------------------------------------
         else if (!strcmp(s[0], ":Priority")) 
         {
           if (Options.noisy){cout<<" Priority "<<endl; }
-          pConst->priority = s_to_i(s[1]); //for later
+          pGoal->priority = s_to_i(s[1]); //for later
+        }
+        //----------------------------------------------
+        else if (!strcmp(s[0], ":UseStageUnitsCorrection ")) 
+        {
+          if (Options.noisy){cout<<" Use Stage Units Correction "<<endl; }
+          CSubBasin *pSB=pModel->GetSubBasinByID(s_to_l(s[1]));
+          
+          ExitGracefullyIf(pSB->GetGlobalIndex()==DOESNT_EXIST,"ParseManagementFile: subbasin ID in :UseStageUnitsCorrection is invalid",BAD_DATA_WARN);
+
+          if (pSB->GetReservoir()==NULL){
+            string advice="ParseManagementFile:The reservoir in subbasin "+to_string(pSB->GetID()) + " doesnt exist and cannot be used to calculate a stage units correction.";
+            ExitGracefully(advice.c_str(), BAD_DATA_WARN);
+          }
+          else{
+            int k=pSB->GetReservoir()->GetHRUIndex();
+            if (k!=DOESNT_EXIST){
+                string advice="ParseManagementFile:The reservoir in subbasin "+to_string(pSB->GetID()) + " doesnt have an :HRUID and cannot be used to calculate a stage units correction.";
+                ExitGracefully(advice.c_str(), BAD_DATA_WARN);
+            }
+            else {
+              pGoal->use_stage_units=true;
+              pGoal->reservoir_index=pSB->GetGlobalIndex();
+            }
+          }
         }
         //----------------------------------------------
         else if (!strcmp(s[0], ":EndManagementGoal")) {
@@ -603,11 +641,11 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       }
       //any invalid expressions have to shut down simulation
       bool badgoal=false;
-      for (int k = 0; k < pConst->nOperRegimes; k++) {
-        if (pConst->pOperRegimes[k]->pExpression == NULL) { badgoal=true;}
+      for (int k = 0; k < pGoal->nOperRegimes; k++) {
+        if (pGoal->pOperRegimes[k]->pExpression == NULL) { badgoal=true;}
       }
       if (!badgoal) {
-        pDO->AddGoalOrConstraint(pConst);
+        pDO->AddGoalOrConstraint(pGoal);
       }
       
       break;

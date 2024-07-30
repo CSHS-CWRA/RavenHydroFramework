@@ -72,7 +72,7 @@ enum dv_type
 //   -exp_condition (may be defined using expressionStruct)
 //   -op_regime (has conditions)
 //   -control_var (defined using expressionStruct)
-//   -manConstraint (built using multiple operating regimes)
+//   -managementGoal (built using multiple operating regimes)
 // -------------------------------------------------------------------
 
 //////////////////////////////////////////////////////////////////
@@ -175,33 +175,36 @@ struct op_regime
 {
   string            reg_name;             //< regime name
 
-  expressionStruct *pExpression;          //< constraint expression
+  expressionStruct *pExpression;          //< goal expression
 
   int               nConditions;          //< number of conditional statments
   exp_condition   **pConditions;          //< array of pointers to conditional statements
+
+  double            penalty_under;        //< penalty associated with not satisfying goal (or RAV_BLANK_DATA, if default is to be used)
+  double            penalty_over;         //< penalty associated with not satisfying goal (or RAV_BLANK_DATA, if default is to be used)
 
   op_regime(string name) {
     reg_name=name;
     pExpression=NULL;
     nConditions=0;
     pConditions=NULL;
+    penalty_under=RAV_BLANK_DATA;
+    penalty_over =RAV_BLANK_DATA;
   }
 };
 //////////////////////////////////////////////////////////////////
-// management constraint or goal (soft constraint) or DV definition (a special constraint defining a user specified DV)
+// management goal (or constraint) or DV definition (a special constraint defining a user specified DV)
 //
-struct manConstraint
+struct managementGoal
 {
   string            name;          //< goal or constraint name
 
   bool              is_goal;       //< true if constraint is soft (goal rather than constraint)
   int               priority;      //< priority (default==1, for goals only)
-  double            penalty_under; //< penalty if under specified value (for goals only)
-  double            penalty_over;  //< penalty if over value (for goals only)
+  double            penalty_under; //< DEFAULT penalty if under specified value (for goals only)
+  double            penalty_over;  //< DEFAULT penalty if over value (for goals only)
   int               slack_ind1;    //< slack index (0.._nSlackVars) of under/over slack index for goal, or DOESNT_EXIST if constraint
   int               slack_ind2;    //< slack index (0.._nSlackVars) of over slack index for target goal, or DOESNT_EXIST if constraint
-
-  double            penalty_value; //< (from solution) penalty incurred by not satisfying goal (or zero for constraint)
 
   op_regime       **pOperRegimes;  //< array of pointers to operating regimes, which are chosen from conditionals and determine active expression [size:nOperRegimes]
   int               nOperRegimes;  //< size of operating regime array
@@ -210,8 +213,12 @@ struct manConstraint
   bool              conditions_satisfied; //< true if any operating regime satisfied during current timestep
   bool              ever_satisfied;       //< true if any operating regime ever satisfied during simulation (for warning at end of sim)
 
-  manConstraint();
-  ~manConstraint();
+  bool              use_stage_units;      //< true if goal penalty needs to be converted to units of s/m3
+  double            units_correction;     //< penalty correction for units different than m3/s [default: 1]
+  int               reservoir_index;      //< p index of reservoir for stage conversion
+
+  managementGoal();
+  ~managementGoal();
   expressionStruct *GetCurrentExpression() const{return pOperRegimes[nOperRegimes-1]->pExpression; }
   void AddOperatingRegime(op_regime *pOR, bool first);
   void AddOpCondition(exp_condition *pCondition); //adds to most recent operating regime
@@ -244,13 +251,13 @@ private: /*------------------------------------------------------*/
   int              _nControlVars;       //< total number of control variables considered
   control_var    **_pControlVars;       //< array of pointers to control variables [size: _nControlVars]
 
-  int              _nConstraints;       //< number of user-defined enforced constraints/goals in management model
-  manConstraint  **_pConstraints;       //< array of pointers to user-defined enforced constraints/goals in management model
+  int              _nGoals;             //< number of user-defined enforced constraints/goals in management model
+  managementGoal  **_pGoals;            //< array of pointers to user-defined enforced constraints/goals in management model
 
   int              _nEnabledSubBasins;  //< number of enabled subbasins in model
   int             *_aSBIndices;         //< local index of enabled subbasins (0:_nEnabledSubBasins) [size: _nSubBasins]
 
-  int              _nReservoirs;        //< local storage of number of simulated lakes/reservoirs
+  int              _nReservoirs;        //< local storage of number of enabled lakes/reservoirs
   int             *_aResIndices;        //< storage of enabled reservoir indices (0:_nReservoirs or DOESNT_EXIST) [size:_nSubBasins]
 
   CDemand        **_pDemands;           //< array of pointers to water demand instances
@@ -265,6 +272,7 @@ private: /*------------------------------------------------------*/
   int              _nDemandGroups;      //< number of demand groups
   CDemandGroup   **_pDemandGroups;      //< array of pointers to demand groups
 
+  int              _nEnviroFlowGoals;   //< number of *active* environmental flow goals 
   double          *_aSlackValues;       //< array of slack variable values [size: _nSlackVars]
   int              _nSlackVars;         //< number of slack variables
 
@@ -317,19 +325,20 @@ public: /*------------------------------------------------------*/
   CDemandOptimizer(CModel *pMod);
   ~CDemandOptimizer();
 
-  int    GetDemandIndexFromName(const string dname) const;
-  double GetNamedConstant      (const string s) const;
-  int    GetUserDVIndex        (const string s) const;
-  double GetControlVariable    (const string s) const;
-  //double GetDemandDelivery     (const int p) const;
-  int    GetNumUserDVs         () const;
-  int    GetDebugLevel         () const;
-  int    GetIndexFromDVString  (string s) const;
-  CDemandGroup *GetDemandGroup (const int ii);
+  int           GetDemandIndexFromName(const string dname) const;
+  double        GetNamedConstant      (const string s) const;
+  int           GetUserDVIndex        (const string s) const;
+  double        GetControlVariable    (const string s) const;
+  //double      GetDemandDelivery     (const int p) const;
+  int           GetNumUserDVs         () const;
+  int           GetDebugLevel         () const;
+  int           GetIndexFromDVString  (string s) const;
+
+  CDemandGroup *GetDemandGroup        (const int ii);
   CDemandGroup *GetDemandGroupFromName(const string name);
-  int    GetNumDemandGroups    () const;
-  CDemand *GetWaterDemand      (const int d);
-  int    GetNumWaterDemands    () const;
+  int           GetNumDemandGroups    () const;
+  CDemand      *GetWaterDemand        (const int d);
+  int           GetNumWaterDemands    () const;
 
   bool   DemandsAreInitialized() const;
 
@@ -338,9 +347,7 @@ public: /*------------------------------------------------------*/
   void   SetDebugLevel         (const int lev);
   void   SetDemandAsUnrestricted(const string dname);
 
-  //manConstraint *AddGoalOrConstraint (const string name, const bool soft_constraint);
-
-  void   AddGoalOrConstraint   (const manConstraint *pConstraint);
+  void   AddGoalOrConstraint   (const managementGoal *pGoal);
   void   AddDecisionVar        (const decision_var *pDV);
   void   SetDecisionVarBounds  (const string name, const double &min, const double &max);
   void   AddUserConstant       (const string name, const double &val);

@@ -431,7 +431,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     if (MB.fail()){
       ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
     }
-    MB<<"time [d],date,hour";
+    MB<<"time,date,hour";
     for (j=0;j<_nProcesses;j++){
       for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
         MB<<","<<GetProcessName(_pProcesses[j]->GetProcessType());
@@ -460,7 +460,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     MB.close();
   }
 
-  //WatershedMassEnergyBalance.csv
+  //HRUGroup_MassEnergyBalance.csv
   //--------------------------------------------------------------
   if (Options.write_group_mb!=DOESNT_EXIST)
   {
@@ -472,7 +472,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     if (HGMB.fail()){
       ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
     }
-    HGMB<<"time [d],date,hour";
+    HGMB<<"time,date,hour";
     for (j=0;j<_nProcesses;j++){
       for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
         HGMB<<","<<GetProcessName(_pProcesses[j]->GetProcessType());
@@ -511,7 +511,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     if (MB.fail()){
       ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
     }
-    MB<<"time[d],date,hour";
+    MB<<"time,date,hour";
     bool first;
     for (i=0;i<_nStateVars;i++){
       if (CStateVariable::IsWaterStorage(_aStateVarType[i]))
@@ -588,7 +588,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
       }
       int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP);
-      HRUSTOR<<"time [d],date,hour,rainfall [mm/day],snowfall [mm/d SWE]";
+      HRUSTOR<<"time,date,hour,rainfall [mm/day],snowfall [mm/d SWE]";
       for (i=0;i<GetNumStateVars();i++){
         if (CStateVariable::IsWaterStorage(_aStateVarType[i])){
           if (i!=iAtmPrecip){
@@ -1639,7 +1639,7 @@ void CModel::RunDiagnostics(const optStruct &Options)
       int N=_pSubBasins[p]->GetReservoir()->GetNumDryTimesteps();
       if (N>0)
       {
-        string warn="CModel::RunDiagnostics: basin "+to_string(_pSubBasins[p]->GetID())+ " was dried out "+to_string(N) + " time steps during the course of the simulation";
+        string warn="CModel::RunDiagnostics: reservoir in basin "+to_string(_pSubBasins[p]->GetID())+ " went dry "+to_string(N) + " time steps during the course of the simulation";
         WriteWarning(warn,Options.noisy);
       }
     }
