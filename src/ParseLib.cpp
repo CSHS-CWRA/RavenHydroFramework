@@ -138,7 +138,7 @@ bool CParser::Tokenize(char **out, int &numwords){
 
   if (_parsing_math_exp) {
     string line;
-    line=AddSpacesBeforeOps(wholeline); 
+    line=AddSpacesBeforeOps(wholeline);
     strcpy(wholeline,line.c_str());
     _parsing_math_exp=false;
   }

@@ -120,7 +120,7 @@ int CDemandOptimizer::GetDemandIndexFromName(const string demand_tag) const
   return DOESNT_EXIST;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief gets demand from index 
+/// \brief gets demand from index
 //
 CDemand* CDemandOptimizer::GetWaterDemand(const int d) {
   return _pDemands[d];
@@ -132,16 +132,16 @@ int CDemandOptimizer::GetNumWaterDemands() const {
   return _nDemands;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief gets demand group from index 
+/// \brief gets demand group from index
 //
-CDemandGroup* CDemandOptimizer::GetDemandGroup(const int ii) 
+CDemandGroup* CDemandOptimizer::GetDemandGroup(const int ii)
 {
   return _pDemandGroups[ii];
 }
 //////////////////////////////////////////////////////////////////
-/// \brief gets demand group from name, or NULL if invalid name 
+/// \brief gets demand group from name, or NULL if invalid name
 //
-CDemandGroup* CDemandOptimizer::GetDemandGroupFromName(const string name) 
+CDemandGroup* CDemandOptimizer::GetDemandGroupFromName(const string name)
 {
   for (int ii=0;ii<_nDemandGroups;ii++){
     if (_pDemandGroups[ii]->GetName() == name) {
@@ -151,14 +151,14 @@ CDemandGroup* CDemandOptimizer::GetDemandGroupFromName(const string name)
   return NULL;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief gets demand group from index 
+/// \brief gets demand group from index
 //
-int CDemandOptimizer::GetNumDemandGroups() const 
+int CDemandOptimizer::GetNumDemandGroups() const
 {
   return _nDemandGroups;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief returns true if demands have been initialized 
+/// \brief returns true if demands have been initialized
 //
 bool CDemandOptimizer::DemandsAreInitialized() const
 {
@@ -206,7 +206,7 @@ void CDemandOptimizer::SetDebugLevel(const int val)
 /// \brief assigns a demand 'unrestricted' status, meaning it wont be considered when applying environmental min flow constraints
 /// \params dname [in] - name of demand
 //
-void   CDemandOptimizer::SetDemandAsUnrestricted(const string dname) 
+void   CDemandOptimizer::SetDemandAsUnrestricted(const string dname)
 {
   int d = GetDemandIndexFromName(dname);
   if (d!=DOESNT_EXIST){
@@ -214,7 +214,7 @@ void   CDemandOptimizer::SetDemandAsUnrestricted(const string dname)
   }
   else{
     string warn = "CDemandOptimizer::SetDemandAsUnrestricted: invalid or disabled demand name " + dname +" provided in : DemandIsUnrestricted command. This will be ignored ";
-    WriteWarning(warn,true); 
+    WriteWarning(warn,true);
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -229,7 +229,7 @@ void CDemandOptimizer::SetDemandPenalty(const string dname, const double& pen)
   }
   else {
     string warn = "CDemandOptimizer::SetDemandPenalty: invalid or disabled demand name " + dname +" provided in : DemandPenalty command. This will be ignored ";
-    WriteWarning(warn,true); 
+    WriteWarning(warn,true);
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -253,7 +253,7 @@ void CDemandOptimizer::SetCumulativeDate(const int julian_date, const string dem
 /// \brief adds demand group to array of demand groups
 /// \params groupname [in] - user-specified demand group name
 //
-void   CDemandOptimizer::AddDemandGroup(const string groupname) 
+void   CDemandOptimizer::AddDemandGroup(const string groupname)
 {
   CDemandGroup *pDG=new CDemandGroup(groupname,_nDemandGroups);
 
@@ -265,7 +265,7 @@ void   CDemandOptimizer::AddDemandGroup(const string groupname)
 /// \brief adds demand ONLY if subbasin associated with demand is enabled, otherwise tosses out.
 /// \params pDem [in] - pointer to demand object
 //
-void  CDemandOptimizer::AddWaterDemand(CDemand* pDem) 
+void  CDemandOptimizer::AddWaterDemand(CDemand* pDem)
 {
   long SBID=pDem->GetSubBasinID();
   if (_pModel->GetSubBasinByID(SBID)->IsEnabled())
@@ -548,7 +548,7 @@ void CDemandOptimizer::InitializeDemands(CModel* pModel, const optStruct& Option
 
   if (Options.noisy){cout<<"CDemandOptimizer: Demand initialization..."<<endl;}
 
-  // reserve memory for delivery arrays 
+  // reserve memory for delivery arrays
   //------------------------------------------------------------------
   _aDelivery        = new double[_nDemands];
   _aCumDelivery     = new double[_nDemands];
@@ -560,14 +560,14 @@ void CDemandOptimizer::InitializeDemands(CModel* pModel, const optStruct& Option
 
   // determine upstream demand connectivity
   //------------------------------------------------------------------
-  IdentifyUpstreamDemands(); 
+  IdentifyUpstreamDemands();
 
   int p;
   decision_var *pDV;
 
-  // add delivered demand decision vars 
+  // add delivered demand decision vars
   //------------------------------------------------------------------
-  for (int d = 0; d < _nDemands; d++) 
+  for (int d = 0; d < _nDemands; d++)
   {
     p=pModel->GetSubBasinByID(_pDemands[d]->GetSubBasinID())->GetGlobalIndex();
     pDV=new decision_var(_pDemands[d]->GetName(), p, DV_DELIVERY, d);
@@ -613,7 +613,7 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
       _aDhist[pp][i]=0.0;
     }
   }
-  
+
   int p;
   _nSlackVars = 0;
   CSubBasin    *pSB;
@@ -661,11 +661,11 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
   //------------------------------------------------------------------
   AddReservoirConstraints();
 
-  // Calculate penalty units correction for reservoirs 
+  // Calculate penalty units correction for reservoirs
   //------------------------------------------------------------------
   for (int j = 0; j < _nGoals; j++)
   {
-    if ((_pGoals[j]->is_goal) &&  (_pGoals[j]->use_stage_units)) 
+    if ((_pGoals[j]->is_goal) &&  (_pGoals[j]->use_stage_units))
     {
       pSB =_pModel->GetSubBasin(_pGoals[j]->reservoir_index);
 
@@ -686,7 +686,7 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
   for (int j = 0; j < _nGoals; j++)
   {
     for (int k=0;k<_pGoals[j]->nOperRegimes;k++){
-      if (_pGoals[j]->pOperRegimes[k]->penalty_over ==RAV_BLANK_DATA){_pGoals[j]->pOperRegimes[k]->penalty_over =_pGoals[j]->penalty_over; } 
+      if (_pGoals[j]->pOperRegimes[k]->penalty_over ==RAV_BLANK_DATA){_pGoals[j]->pOperRegimes[k]->penalty_over =_pGoals[j]->penalty_over; }
       if (_pGoals[j]->pOperRegimes[k]->penalty_under==RAV_BLANK_DATA){_pGoals[j]->pOperRegimes[k]->penalty_under=_pGoals[j]->penalty_under;}
     }
   }
@@ -861,7 +861,7 @@ void CDemandOptimizer::AddReservoirConstraints()
         pGoal->use_stage_units=true;
         pGoal->reservoir_index=p;
         pGoal->penalty_over=6.0;
-        
+
         AddGoalOrConstraint(pGoal);
         advice="A :ReservoirMaxStage time series for subbasin "+SBIDs+" has been added to the management optimization formulation";
         WriteAdvisory(advice,false);
@@ -883,7 +883,7 @@ void CDemandOptimizer::AddReservoirConstraints()
 
         TokenizeString(expString, s, Len);
         exp = ParseExpression((const char**)(s), Len, 0, "internal");
-        
+
         pGoal=new managementGoal();
         pGoal->name=TSname;
         pGoal->is_goal=true;
@@ -1149,7 +1149,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
   for (int d = 0; d < _nDemands; d++) {
     _pDemands[d]->UpdateDemand(Options,tt);
   }
-  
+
   // instantiate linear programming solver
   // ----------------------------------------------------------------
   lp_lib::lprec *pLinProg;
@@ -1250,7 +1250,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
   d=0;
   // penalties for unmet demand
   // ----------------------------------------------------------------
-  for (int d = 0; d < _nDemands; d++) 
+  for (int d = 0; d < _nDemands; d++)
   {
     demand_penalty_sum+=(_pDemands[d]->GetPenalty()*_pDemands[d]->GetDemand());
 
@@ -1313,7 +1313,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
   {
     _pGoals[j]->conditions_satisfied=false;
     _pGoals[j]->active_regime=DOESNT_EXIST;
-    
+
     // ASSUMES ALL OP REGIME EXPRESSIONS IN GOAL/CONSTRAINT ARE EITHER == or >/<, NEVER MIXED.
 
     for (int k=0;k<_pGoals[j]->nOperRegimes;k++)
@@ -1683,7 +1683,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
     retval = lp_lib::solve(pLinProg);
 
     if (retval!=OPTIMAL){
-      cout<<"code: "<<retval<<endl; 
+      cout<<"code: "<<retval<<endl;
       string filename=Options.output_dir+"/lp_bad_matrix.txt";
       lp_lib::set_outputfile(pLinProg,&filename[0]);
       lp_lib::print_lp(pLinProg);
@@ -1842,7 +1842,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
       _aCumDelivery[d]+=value*(Options.timestep*SEC_PER_DAY);
 
       if (tt.julian_day==_pDemands[d]->GetCumulDeliveryDate()){
-        _aCumDelivery[d]=0.0; 
+        _aCumDelivery[d]=0.0;
       }
 
       if (!_pDemands[d]->IsReservoirDemand()){
@@ -1953,22 +1953,22 @@ void CDemandOptimizer::WriteMinorOutput(const optStruct &Options,const time_stru
   bool   include_pen=false;
   double pen;
   double mult=1.0;
-  
+
   _GOALSAT<<tt.model_time <<","<<usedate<<","<<usehour;
 
   //first slack terms are due to environmental flow constraints (_nEnviroFlowGoals) and reservoir outflow targets (2*_nReservoirs)
   //this is first index of user-specified slack variable
-  int s=_nEnviroFlowGoals+2*_nReservoirs; 
-  for (int i = 0; i < _nGoals; i++) 
+  int s=_nEnviroFlowGoals+2*_nReservoirs;
+  for (int i = 0; i < _nGoals; i++)
   {
-    if (_pGoals[i]->is_goal) 
+    if (_pGoals[i]->is_goal)
     {
       if (include_pen){mult=_pGoals[i]->penalty_over*_pGoals[i]->units_correction;}
       if (_pGoals[i]->pOperRegimes[0]->pExpression->compare == COMPARE_GREATERTHAN){mult*=-1.0; }
 
       pen = mult*_aSlackValues[s];
       s++;
-      if (_pGoals[i]->pOperRegimes[0]->pExpression->compare == COMPARE_IS_EQUAL) 
+      if (_pGoals[i]->pOperRegimes[0]->pExpression->compare == COMPARE_IS_EQUAL)
       {
         if (include_pen){mult=_pGoals[i]->penalty_under*_pGoals[i]->units_correction;}
         pen-=mult*_aSlackValues[s];

@@ -298,7 +298,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
         return true;
 
       }
-    } 
+    }
     else {
       warn="ConvertToExpression:: Unparseable term in history expression starting with !/$ - only !Q, !D, !h, $B, or $E currently supported. "+warnstring;
       ExitGracefully(warn.c_str(), BAD_DATA_WARN);
@@ -385,7 +385,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     return true;
   }
   //----------------------------------------------------------------------
-  else if (s[0] == '$') 
+  else if (s[0] == '$')
   {
     if ((s[1] == 'B') || (s[1] == 'E')) //Subbasin-indexed
     {

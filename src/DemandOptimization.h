@@ -272,7 +272,7 @@ private: /*------------------------------------------------------*/
   int              _nDemandGroups;      //< number of demand groups
   CDemandGroup   **_pDemandGroups;      //< array of pointers to demand groups
 
-  int              _nEnviroFlowGoals;   //< number of *active* environmental flow goals 
+  int              _nEnviroFlowGoals;   //< number of *active* environmental flow goals
   double          *_aSlackValues;       //< array of slack variable values [size: _nSlackVars]
   int              _nSlackVars;         //< number of slack variables
 

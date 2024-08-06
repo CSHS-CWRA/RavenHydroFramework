@@ -15,11 +15,11 @@ class CDemand
 {
 private:/*------------------------------------------------------*/
   int       _ID;           ///< unique integer identifier
-  string    _name;         ///< unique name/alias identifier 
+  string    _name;         ///< unique name/alias identifier
 
-  long      _SBID;         ///< subbasin ID 
-  int       _loc_index;    ///< local demand index (counter in each subbasin) 
-  bool      _is_reservoir; ///< true if withdrawal is from reservoir 
+  long      _SBID;         ///< subbasin ID
+  int       _loc_index;    ///< local demand index (counter in each subbasin)
+  bool      _is_reservoir; ///< true if withdrawal is from reservoir
 
   double    _penalty;      ///< penalty for not satisfying demand [s/m3]
 
@@ -31,7 +31,7 @@ private:/*------------------------------------------------------*/
   //int    _irrigHRUGroup; ///< index kk of HRU group on which withdrawn water is applied
   //double _returnPct;     ///< percentage of flow which returns to stream
 
-  double    _multiplier;   ///< multiplies time series or any other means of calculating demand 
+  double    _multiplier;   ///< multiplies time series or any other means of calculating demand
 
   CTimeSeries *_pDemandTS; ///< pointer to time series of demands (or NULL, if calculated elsewise)
 

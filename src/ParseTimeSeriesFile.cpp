@@ -627,7 +627,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
         pTimeSer->SetIDTag(demand_ID);
         pSB->GetReservoir()->AddDemandTimeSeries(pTimeSer);
-        
+
         if (Options.management_optimization){
 		  CDemand *pDem=new CDemand(demand_ID,demand_name,SBID,true,pTimeSer);
           pDem->SetLocalIndex(ii);
