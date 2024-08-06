@@ -42,5 +42,9 @@ jobs:
               It appears that this is your first Pull Request. To give credit where it's due, we ask that you add your information to the \`AUTHORS.md\` and \`.zenodo.json\`:
                - [ ] The relevant author information has been added to \`AUTHORS.md\` and \`.zenodo.json\`
 
+              We also require that you sign our [Contributor License Agreement](https://github.com/CSHS-CWRA/RavenHydroFramework/blob/main/contributor-licensing-agreement.txt) before we can merge your code.
+              Please add the following line to your Pull Request description:
+               - [x] I have read and agree to the terms of the Contributor License Agreement.
+
               Please make sure you've read our [contributing guide](CONTRIBUTING.md). We look forward to reviewing your Pull Request shortly ✨`
             })
