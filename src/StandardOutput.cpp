@@ -332,6 +332,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
           if(_pSubBasins[p]->GetName()==""){ name=to_string(_pSubBasins[p]->GetID())+"="+to_string(_pSubBasins[p]->GetID()); }
           else                             { name=_pSubBasins[p]->GetName(); }
           RES_MB<<","   <<name<<" stage [m]";
+          RES_MB<<","   <<name<<" area [m2]";
           RES_MB<<","   <<name<<" inflow [m3]";
           RES_MB<<","   <<name<<" outflow [m3]"; //from main outlet
           for (int i = 0; i < _pSubBasins[p]->GetReservoir()->GetNumControlStructures(); i++) {
@@ -615,6 +616,8 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
   //--------------------------------------------------------------
   _pTransModel->WriteOutputFileHeaders(Options);
 
+  // Management output files
+  //--------------------------------------------------------------
   if (Options.management_optimization) {
     _pDO->WriteOutputFileHeaders(Options);
   }
@@ -1042,7 +1045,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         }
 
         RES_MB<< usetime<<","<<usedate<<","<<usehour<<","<<GetAveragePrecip();
-        double in,out,loss,stor,oldstor,precip,evap,seepage,stage;
+        double in,out,loss,stor,oldstor,precip,evap,seepage,stage,area;
         for(int p=0;p<_nSubBasins;p++)
         {
           pSB=_pSubBasins[p];
@@ -1053,9 +1056,10 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
             else                  { name=pSB->GetName(); }
 
             stage         =pSB->GetReservoir()->GetResStage();//m
+            area          =pSB->GetReservoir()->GetSurfaceArea();//m2
             in            =pSB->GetIntegratedReservoirInflow(Options.timestep);//m3
             out           =pSB->GetIntegratedOutflow        (Options.timestep);//m3
-            RES_MB<<","<<stage;
+            RES_MB<<","<<stage<<","<<area;
             RES_MB<<","<<in<<","<<out;
             for (int i = 0; i < pSB->GetReservoir()->GetNumControlStructures(); i++) {
               double Qc=pSB->GetReservoir()->GetIntegratedControlOutflow(i,Options.timestep);
@@ -2182,6 +2186,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
       retval = nc_put_att_text(_RESMB_ncid,varid_bsim,"units",    tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
 
       varid= NetCDFAddMetadata2D(_RESMB_ncid,time_dimid,nbasins_dimid,"stage",    "stage",  "m");
+      varid= NetCDFAddMetadata2D(_RESMB_ncid,time_dimid,nbasins_dimid,"area",     "area",  "m2");
       varid= NetCDFAddMetadata2D(_RESMB_ncid,time_dimid,nbasins_dimid,"inflow",   "inflow", "m3");
       varid= NetCDFAddMetadata2D(_RESMB_ncid,time_dimid,nbasins_dimid,"outflow",  "outflow","m3");
       varid= NetCDFAddMetadata2D(_RESMB_ncid,time_dimid,nbasins_dimid,"precip_m3","precip", "m3");
@@ -2633,6 +2638,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
 
     // (b) allocate memory if necessary
     double* stage=NULL;
+    double* area=NULL;
     double* inflow=NULL;
     double* outflow=NULL;
     double* evap=NULL;
@@ -2643,6 +2649,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
     double* precip=NULL;
     if(nSim>0) {
       stage  =new double [nSim];
+      area   =new double [nSim];
       inflow =new double [nSim];
       outflow=new double [nSim];
       evap   =new double [nSim];
@@ -2664,6 +2671,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
       if(pSB->IsGauged() && (pSB->IsEnabled()) && (pSB->GetReservoir()!=NULL))
       {
         stage  [iSim]=pSB->GetReservoir()->GetResStage();
+        area   [iSim]=pSB->GetReservoir()->GetSurfaceArea();
         inflow [iSim]=pSB->GetIntegratedReservoirInflow(Options.timestep);//m3
         outflow[iSim]=pSB->GetIntegratedOutflow        (Options.timestep);//m3
         evap   [iSim]=pSB->GetReservoir()->GetReservoirEvapLosses (Options.timestep);//m3
@@ -2675,7 +2683,6 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
         MBerr  [iSim]=inflow[iSim]-outflow[iSim]-losses[iSim]+precip[iSim]-(stor[iSim]-oldstor);
         //constraint_str[iSim]=pSB->GetReservoir()->GetCurrentConstraint   ();
         if(tt.model_time==0.0){ inflow[iSim]=0.0; }
-
 
         iSim++;
       }
@@ -2697,6 +2704,8 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
       count2[1] = nSim;   // writes exactly nSim elements
       retval = nc_inq_varid(_RESMB_ncid,"stage",&this_id);                          HandleNetCDFErrors(retval);
       retval = nc_put_vara_double(_RESMB_ncid,this_id,start2,count2,&stage[0]);     HandleNetCDFErrors(retval);
+      retval = nc_inq_varid(_RESMB_ncid,"area",&this_id);                           HandleNetCDFErrors(retval);
+      retval = nc_put_vara_double(_RESMB_ncid,this_id,start2,count2,&area[0]);      HandleNetCDFErrors(retval);
       retval = nc_inq_varid(_RESMB_ncid,"inflow",&this_id);                         HandleNetCDFErrors(retval);
       retval = nc_put_vara_double(_RESMB_ncid,this_id,start2,count2,&inflow[0]);    HandleNetCDFErrors(retval);
       retval = nc_inq_varid(_RESMB_ncid,"outflow",&this_id);                        HandleNetCDFErrors(retval);
@@ -2707,7 +2716,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
       retval = nc_put_vara_double(_RESMB_ncid,this_id,start2,count2,&seepage[0]);   HandleNetCDFErrors(retval);
       retval = nc_inq_varid(_RESMB_ncid,"volume",&this_id);                         HandleNetCDFErrors(retval);
       retval = nc_put_vara_double(_RESMB_ncid,this_id,start2,count2,&stor[0]);      HandleNetCDFErrors(retval);
-      retval = nc_inq_varid(_RESMB_ncid,"MB_error",&this_id);                          HandleNetCDFErrors(retval);
+      retval = nc_inq_varid(_RESMB_ncid,"MB_error",&this_id);                       HandleNetCDFErrors(retval);
       retval = nc_put_vara_double(_RESMB_ncid,this_id,start2,count2,&MBerr[0]);     HandleNetCDFErrors(retval);
       retval = nc_inq_varid(_RESMB_ncid,"losses",&this_id);                         HandleNetCDFErrors(retval);
       retval = nc_put_vara_double(_RESMB_ncid,this_id,start2,count2,&losses[0]);    HandleNetCDFErrors(retval);
@@ -2717,6 +2726,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
       //retval = nc_put_vara_double(_RESMB_ncid,this_id,start2,count2,&constraint[0]); HandleNetCDFErrors(retval);
     }
     delete [] stage;
+    delete [] area;
     delete [] inflow;
     delete [] outflow;
     delete [] evap;

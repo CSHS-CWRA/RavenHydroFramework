@@ -196,6 +196,7 @@ public:/*-------------------------------------------------------*/
   double            GetStageDischargeDerivative(const double &stage,const int nn) const; //[m3/s/d]
   double            GetMinStage              (const int nn) const;//[m]
   double            GetMaxStage              (const int nn) const;//[m]
+  double            GetSillElevation         (const int nn) const;//[m]
 
   int               GetNumWaterDemands       () const;
   int               GetWaterDemandID         (const int ii) const;

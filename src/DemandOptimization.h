@@ -59,6 +59,7 @@ enum dv_type
   DV_QOUT,    //< outflow from reach
   DV_QOUTRES, //< outflow from reservoir
   DV_STAGE,   //< reservoir stage
+  DV_BINRES,  //< binary integer value for above/beneath stage-discharge sill
   DV_DELIVERY,//< delivery of water demand
   DV_USER,    //< user specified decision variable
   DV_SLACK    //< slack variable for goal satisfaction
@@ -209,6 +210,8 @@ struct managementGoal
   op_regime       **pOperRegimes;  //< array of pointers to operating regimes, which are chosen from conditionals and determine active expression [size:nOperRegimes]
   int               nOperRegimes;  //< size of operating regime array
 
+  bool              overrides_SDcurve;    //< true if management goal should override local stage-discharge cuve in reservoir with reservoir_index
+
   int               active_regime;        //< currently active operating regime (or DOESNT_EXIST if none)
   bool              conditions_satisfied; //< true if any operating regime satisfied during current timestep
   bool              ever_satisfied;       //< true if any operating regime ever satisfied during simulation (for warning at end of sim)
@@ -293,10 +296,17 @@ private: /*------------------------------------------------------*/
   double        **_aDhist;             //< history of actual diversions [size: _nEnabledSBs * _nHistoryItems]
   double        **_ahhist;             //< history of actual reservoir stages  (or 0 for non-reservoir basins) [size: _nEnabledSBs * _nHistoryItems]
 
-  ofstream        _DEMANDOPT;          //< ofstream for DemandOptimization.csv
+  int             _nSolverResiduals;   //< number of residuals of solution (equal to lp_lib::nRows)
+  double         *_aSolverResiduals;   //< vector of residuals of solution [size: _nSolverResiduals]
+  string         *_aSolverRowNames;    //< vector of solver row names [size: _nSolverResiduals]
+
+  ofstream        _MANOPT;          //< ofstream for ManagementOptimization.csv
   ofstream        _GOALSAT;            //< ofstream for GoalSatisfaction.csv
+  ofstream        _RESID;              //< ofstream for OptimizationResidual.csv
 
   bool            _demands_initialized;//< true if demands have been initialized
+
+  bool            _stage_discharge_as_goal; //< TMP DEBUG - SET TO TRUE IF SD CURVE IS GOAL INSTEAD OF CONSTRAINT 
 
   int             _do_debug_level;      //< =1 if debug info is to be printed to screen, =2 if LP matrix also printed (full debug), 0 for nothing
 
@@ -310,8 +320,12 @@ private: /*------------------------------------------------------*/
 
   bool         CheckGoalConditions(const int ii, const int k, const time_struct &tt,const optStruct &Options) const;
 
+
+
 #ifdef _LPSOLVE_
+  void            WriteLPSubMatrix(lp_lib::lprec *pLinProg, string filename, const optStruct &Options) const; //for debugging 
   void           AddConstraintToLP(const int i, const int k, lp_lib::lprec *pLinProg, const time_struct &tt,int *col_ind, double *row_val) const;
+  void      IncrementAndSetRowName(lp_lib::lprec *pLinProg,int &rowcount,const string &name);
 #endif
 
 

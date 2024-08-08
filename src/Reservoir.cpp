@@ -201,6 +201,8 @@ CReservoir::CReservoir(const string Name, const long SubID,
     if(a_Qund==NULL){ _aQunder[i]=0.0; }
     else            { _aQunder[i]=a_Qund[i];   }
 
+    if (_aQ[i]==0){_crest_ht=_aStage[i];}
+
     // QA/QC:
     if ((i > 0) && ((_aStage[i]-_aStage[i-1])<0)){
       warn = "CReservoir::constructor: stage relations must be specified in order of increasing stage. [bad reservoir: " + _name + " "+to_string(SubID)+"]";
@@ -275,6 +277,7 @@ CReservoir::CReservoir(const string Name, const long SubID,
     _aQunder[i]=0.0;if(a_Qund!=NULL){ _aQunder[i]=a_Qund[i]; }
     _aArea  [i]=a_A[i];
     _aVolume[i]=a_V[i];
+    if (_aQ[i]==0){_crest_ht=_aStage[i]; } 
     for (int v = 0; v < _nDates; v++){
       _aQ_back[v][i] = a_QQ[v][i];
       if ((i > 0) && ((_aQ_back[v][i] - _aQ_back[v][i-1]) < -REAL_SMALL)){
@@ -298,7 +301,7 @@ CReservoir::CReservoir(const string Name, const long SubID,
   _max_capacity=_aVolume[_Np-1];
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Constructor for Prismatic lake reservoir controlled by weir coefficient
+/// \brief Constructor for prismatic lake reservoir controlled by weir coefficient
 /// \param Name [in] Nickname for reservoir
 /// \param SubID [in] subbasin ID
 /// \param weircoeff [in] weir coefficient, <1.0
@@ -359,27 +362,27 @@ CReservoir::CReservoir(const string Name,
 //
 CReservoir::~CReservoir()
 {
-  delete [] _aQ;      _aQ    =NULL;
-  delete [] _aQunder; _aQunder=NULL;
-  delete [] _aArea;   _aArea =NULL;
-  delete [] _aVolume; _aVolume=NULL;
+  delete [] _aQ;          _aQ     =NULL;
+  delete [] _aQunder;     _aQunder=NULL;
+  delete [] _aArea;       _aArea  =NULL;
+  delete [] _aVolume;     _aVolume=NULL;
   for (int v = 0; v<_nDates; v++){ delete[] _aQ_back[v]; } delete [] _aQ_back; _aQ_back=NULL;
-  delete [] _aDates; _aDates=NULL;
+  delete [] _aDates;      _aDates =NULL;
 
   for (int i=0; i<_nDemandTS;i++){delete _pDemandTS[i]; } delete [] _pDemandTS; _pDemandTS=NULL;
 
-  delete _pWeirHeightTS;_pWeirHeightTS=NULL;
-  delete _pMaxStageTS;_pMaxStageTS=NULL;
-  delete _pOverrideQ;_pOverrideQ=NULL;
-  delete _pMinStageTS;_pMinStageTS=NULL;
+  delete _pWeirHeightTS;  _pWeirHeightTS=NULL;
+  delete _pMaxStageTS;    _pMaxStageTS=NULL;
+  delete _pOverrideQ;     _pOverrideQ=NULL;
+  delete _pMinStageTS;    _pMinStageTS=NULL;
   delete _pMinStageFlowTS;_pMinStageFlowTS=NULL;
-  delete _pTargetStageTS;_pTargetStageTS=NULL;
+  delete _pTargetStageTS; _pTargetStageTS=NULL;
   delete _pMaxQIncreaseTS;_pMaxQIncreaseTS=NULL;
   delete _pMaxQDecreaseTS;_pMaxQDecreaseTS=NULL;
   delete _pDroughtLineTS; _pDroughtLineTS=NULL;
-  delete _pQminTS; _pQminTS=NULL;
-  delete _pQmaxTS; _pQmaxTS=NULL;
-  delete _pQdownTS; _pQdownTS=NULL;
+  delete _pQminTS;        _pQminTS=NULL;
+  delete _pQmaxTS;        _pQmaxTS=NULL;
+  delete _pQdownTS;       _pQdownTS=NULL;
 
   delete [] _aQstruct;      _aQstruct=NULL;
   delete [] _aQstruct_last; _aQstruct_last=NULL;
@@ -421,6 +424,18 @@ double  CReservoir::GetMinStage          (const int nn) const {
 double  CReservoir::GetMaxStage          (const int nn) const {
   if(_pMaxStageTS    !=NULL){ return _pMaxStageTS->GetSampledValue(nn);}
   return ALMOST_INF;
+}
+//////////////////////////////////////////////////////////////////
+/// \returns sill elevation [m]
+/// supports time-variable discharge curves and weir height adjustments 
+//
+double  CReservoir::GetSillElevation(const int nn) const 
+{
+  double weir_adj=0.0;
+  if (_pWeirHeightTS!=NULL){
+    weir_adj=_pWeirHeightTS->GetSampledValue(nn);
+  }
+  return _crest_ht+weir_adj;
 }
 //////////////////////////////////////////////////////////////////
 /// \returns current surface area [m2]
@@ -1206,7 +1221,8 @@ void CReservoir::AddToDeliveredDemand(const int ii, const double &Qdel)
 //
 void CReservoir::UpdateReservoir(const time_struct &tt, const optStruct &Options)
 {
-  // update flow rules-----------------------------------
+  // update flow rules (for time-variable stage-discharge curve)-------
+  // also updates crest height
   if (_nDates != 0){
     int vv=_nDates-1;
     for (int v = 0; v < _nDates; v++){
@@ -1214,6 +1230,7 @@ void CReservoir::UpdateReservoir(const time_struct &tt, const optStruct &Options
     }
     for (int i = 0; i < _Np; i++){
       _aQ[i] = _aQ_back[vv][i];
+      if (_aQ[i]==0.0){_crest_ht=_aStage[i];}
     }
   }
 

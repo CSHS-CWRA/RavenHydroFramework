@@ -78,6 +78,7 @@ managementGoal::managementGoal()
   use_stage_units=false;
   units_correction=1.0;
   reservoir_index=DOESNT_EXIST;
+  overrides_SDcurve=false;
 }
 managementGoal::~managementGoal()
 {
@@ -210,12 +211,13 @@ string TermTypeToString(termtype t)
 }
 string DVTypeToString(dv_type t)
 {
-  if (t==DV_QOUT    ){return "DV_QOUT"; }
-  if (t==DV_QOUTRES ){return "DV_QOUTRES"; }
-  if (t==DV_STAGE   ){return "DV_STAGE"; }
+  if (t==DV_QOUT    ){return "DV_QOUT";     }
+  if (t==DV_QOUTRES ){return "DV_QOUTRES";  }
+  if (t==DV_STAGE   ){return "DV_STAGE";    }
+  if (t==DV_BINRES  ){return "DV_BINRES";   }
   if (t==DV_DELIVERY){return "DV_DELIVERY"; }
-  if (t==DV_SLACK   ){return "DV_SLACK"; }
-  if (t==DV_USER    ){return "DV_USER"; }
+  if (t==DV_SLACK   ){return "DV_SLACK";    }
+  if (t==DV_USER    ){return "DV_USER";     }
   return "DV_UNKNOWN";
 }
 //////////////////////////////////////////////////////////////////
@@ -1040,7 +1042,7 @@ bool CDemandOptimizer::CheckGoalConditions(const int ii, const int k, const time
 /// \param *row_val [in] - empty array (with memory reserved) for storing row values
 //
 #ifdef _LPSOLVE_
-void CDemandOptimizer::AddConstraintToLP(const int ii, const int k, lp_lib::lprec* pLinProg, const time_struct &tt, int *col_ind, double *row_val) const
+void CDemandOptimizer::AddConstraintToLP(const int ii, const int kk, lp_lib::lprec* pLinProg, const time_struct &tt, int *col_ind, double *row_val) const
 {
   double coeff;
   int    i=0;
@@ -1053,48 +1055,67 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, const int k, lp_lib::lpre
   //int    nn=(int)((tt.model_time+TIME_CORRECTION)/1.0);//Options.timestep; //TMP DEBUG
 
   managementGoal    *pC=_pGoals[ii];
-  expressionStruct *pE= pC->pOperRegimes[k]->pExpression;
+  expressionStruct *pE;
 
-  RHS=0.0;
-  for (int j = 0; j < pE->nGroups; j++)
+  if (kk!=DOESNT_EXIST)
   {
-    coeff=1.0;
-    group_has_dv=false;
-    DV_ind=DOESNT_EXIST;
+    pE= pC->pOperRegimes[kk]->pExpression; //active expression
 
-    for (int k = 0; k < pE->nTermsPerGrp[j]; k++)
+    RHS=0.0;
+    for (int j = 0; j < pE->nGroups; j++)
     {
-      if (pE->pTerms[j][k]->type == TERM_DV)
-      {
-        DV_ind=pE->pTerms[j][k]->DV_ind;
-        group_has_dv=true;
-        coeff *= (pE->pTerms[j][k]->mult);
-      }
-      else if (!(pE->pTerms[j][k]->is_nested))
-      {
-        term=EvaluateTerm(pE->pTerms[j], k, tt.model_time);
+      coeff=1.0;
+      group_has_dv=false;
+      DV_ind=DOESNT_EXIST;
 
-        if (term==RAV_BLANK_DATA){constraint_valid=false;}
-        if (pE->pTerms[j][k]->reciprocal == true)
+      for (int k = 0; k < pE->nTermsPerGrp[j]; k++)
+      {
+        if (pE->pTerms[j][k]->type == TERM_DV)
         {
-          coeff /= (pE->pTerms[j][k]->mult) * term;
-          ExitGracefullyIf(term==0.0, "AddConstraintToLP: Divide by zero error in evaluating :Expression with division term",BAD_DATA);
+          DV_ind=pE->pTerms[j][k]->DV_ind;
+          group_has_dv=true;
+          coeff *= (pE->pTerms[j][k]->mult);
         }
-        else {
-          coeff *= (pE->pTerms[j][k]->mult) * term;
+        else if (!(pE->pTerms[j][k]->is_nested))
+        {
+          term=EvaluateTerm(pE->pTerms[j], k, tt.model_time);
+
+          if (term==RAV_BLANK_DATA){constraint_valid=false;}
+          if (pE->pTerms[j][k]->reciprocal == true)
+          {
+            coeff /= (pE->pTerms[j][k]->mult) * term;
+            ExitGracefullyIf(term==0.0, "AddConstraintToLP: Divide by zero error in evaluating :Expression with division term",BAD_DATA);
+          }
+          else {
+            coeff *= (pE->pTerms[j][k]->mult) * term;
+          }
         }
       }
-    }
 
-    if (!group_has_dv) {
-      RHS-=coeff; //term group goes on right hand side
-    }
-    else {        //term group multiplies decision variable
-      col_ind[i]=DV_ind;
-      row_val[i]=coeff;
-      i++;
+      if (!group_has_dv) {
+        RHS-=coeff; //term group goes on right hand side
+      }
+      else {        //term group multiplies decision variable
+        col_ind[i]=DV_ind;
+        row_val[i]=coeff;
+        i++;
+      }
     }
   }
+  else {
+    pE= pC->pOperRegimes[0]->pExpression; //inactive expression
+  }
+
+  if ((kk==DOESNT_EXIST) || (!constraint_valid)) // INACTIVE/INVALID GOAL/CONSTRAINT 
+  {
+    if (!pC->is_goal) {
+      col_ind[i]=1;
+      row_val[i]=0.0;
+      i++;
+    }
+    RHS=0; //leads to inert equation s1-s2=0, s1>=0, or s1<=0 OR 0*dv1=0 if constraint
+  }
+
   int constr_type=ROWTYPE_EQ;
   int nSlack=1;
   coeff=1.0;
@@ -1113,7 +1134,6 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, const int k, lp_lib::lpre
       i++;
     }
   }
-  if (!constraint_valid){return;} //usually due to blank time series element - no constraint applied
 
   retval = lp_lib::add_constraintex(pLinProg,i,row_val,col_ind,constr_type,RHS);
   ExitGracefullyIf(retval==0,"AddConstraintToLP::Error adding user-specified constraint/goal",RUNTIME_ERR);

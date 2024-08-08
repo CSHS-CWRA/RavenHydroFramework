@@ -414,10 +414,12 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
          :EndOperatingRegime
          :Penalty [value] {value2} #default penalty if outside op block
        :EndManagementGoal
+       or
        :ManagementGoal [name]
          :Expression [expression]
          :Penalty [value] {value2}
          :UseStageUnitsCorrection [SBID]
+         :OverrideStageDischargeCurve [SBID]
        :EndManagementGoal
      */
       if(Options.noisy) { cout <<"Management Constraint or Management Goal"<<endl; }
@@ -599,7 +601,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           pGoal->priority = s_to_i(s[1]); //for later
         }
         //----------------------------------------------
-        else if (!strcmp(s[0], ":UseStageUnitsCorrection ")) 
+        else if (!strcmp(s[0], ":UseStageUnitsCorrection")) 
         {
           if (Options.noisy){cout<<" Use Stage Units Correction "<<endl; }
           CSubBasin *pSB=pModel->GetSubBasinByID(s_to_l(s[1]));
@@ -620,6 +622,22 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
               pGoal->use_stage_units=true;
               pGoal->reservoir_index=pSB->GetGlobalIndex();
             }
+          }
+        }
+        //----------------------------------------------
+        else if (!strcmp(s[0], ":OverrideStageDischargeCurve")) {
+          if (Options.noisy){cout<<"Override Stage Discharge Curve"<<endl; }
+          CSubBasin *pSB=pModel->GetSubBasinByID(s_to_l(s[1]));
+          
+          ExitGracefullyIf(pSB->GetGlobalIndex()==DOESNT_EXIST,"ParseManagementFile: subbasin ID in :OverrideStageDischargeCurve is invalid",BAD_DATA_WARN);
+
+          if (pSB->GetReservoir()==NULL){
+            string advice="ParseManagementFile:The reservoir in subbasin "+to_string(pSB->GetID()) + " doesnt exist and stage discharge curve cannot be overridden.";
+            ExitGracefully(advice.c_str(), BAD_DATA_WARN);
+          }
+          else{
+            pGoal->overrides_SDcurve=true;
+            pGoal->reservoir_index=pSB->GetGlobalIndex(); //must be consistent with UseStageUnitsCorrection reservoir
           }
         }
         //----------------------------------------------
@@ -856,6 +874,18 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         aWildcards[nWildcards][1] = aLoopVector[nWildcards][0];
         nWildcards++;
       }
+      break;
+    }
+    case (70): //---------------------------------------------
+    {/*:UserTimeSeries {name} [units]
+        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+        {double val} x nValues
+      :EndUserTimeSeries
+     */
+      CTimeSeries *pTimeSer;
+      if(Options.noisy) { cout <<"User-specified Time Series"<<endl; }
+      pTimeSer=CTimeSeries::Parse(pp,false,s[1], DOESNT_EXIST, "none", Options);
+      pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
       break;
     }
     default://------------------------------------------------
