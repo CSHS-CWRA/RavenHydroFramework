@@ -54,6 +54,12 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
   bool        ended(false);
   bool        in_ifmode_statement=false;
 
+  CDemand    *pDemand=NULL;
+  int  demand_ind=0;
+  long demandSBID; 
+  int  demand_ID;
+  string demand_name;
+
   ifstream    RVM;
   RVM.open(Options.rvm_filename.c_str(),ios::binary);
   if(RVM.fail()) {
@@ -97,7 +103,8 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
   string firstword;
   //--Sift through file-----------------------------------------------
   firstword=pp->Peek();
-  if (firstword == ":DefineDecisionVariable") {
+  if ((firstword == ":DefineDecisionVariable") || (firstword == ":DemandExpression") || (firstword == ":ReturnExpression"))
+  {
     pp->NextIsMathExp();
   }
   bool end_of_file=pp->Tokenize(s,Len);
@@ -149,6 +156,23 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     else if(!strcmp(s[0],":LoopThrough"))                 { code=40; }
     else if(!strcmp(s[0],":EndLoopThrough"))              { code=41; }
     else if(!strcmp(s[0],":LoopVector"))                  { code=42; }
+
+    else if(!strcmp(s[0],":WaterDemand"))                 { code=50; }
+    else if(!strcmp(s[0],":EndWaterDemand"))              { code=51; }
+    else if(!strcmp(s[0],":DemandTimeSeries"))            { code=52; }
+    else if(!strcmp(s[0],":ReturnTimeSeries"))            { code=53; }
+    else if(!strcmp(s[0],":ReturnDestination"))           { code=54; }
+    else if(!strcmp(s[0],":IrrigationDestination"))       { code=55; }
+    else if(!strcmp(s[0],":ResetDate"))                   { code=56; }
+    else if(!strcmp(s[0],":Penalty"))                     { code=57; }
+    else if(!strcmp(s[0],":ReturnFraction"))              { code=58; }
+    else if(!strcmp(s[0],":ReturnExpression"))            { code=59; }
+    else if(!strcmp(s[0],":DemandFlowFraction"))          { code=60; }
+    else if(!strcmp(s[0],":DemandLookupTable"))           { code=61; }
+    else if(!strcmp(s[0],":DemandExpression"))            { code=62; }
+    //else if(!strcmp(s[0],":AnnualLicense"))             { code=63; }
+
+    else if(!strcmp(s[0],":UserTimeSeries"))              { code=70; }
 
     switch(code)
     {
@@ -332,18 +356,6 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         ExitGracefully("ParseManagementFile: all :Demand commands must be specified before management goals/constraints/decision vars in the .rvm file",BAD_DATA_WARN);
       }
       pDO->SetDemandAsUnrestricted(s[1]);
-      break;
-    }
-    case(18):  //----------------------------------------------
-    {/*:IrrigationApplication [demand1] [HRUGroup] */ //demand1 is 1234 or FarmerBob, not !D1234 or !D.FarmerBob
-      if(Options.noisy) { cout <<"Irrigation Application"<<endl; }
-      //pDO->SetDemandApplicationGroup(s[1],s[2]);
-      break;
-    }
-    case(19):  //----------------------------------------------
-    {/*:IrrigationReturnPct [demand1] [pct] */ //demand1 is 1234 or FarmerBob, not !D1234 or !D.FarmerBob
-      if(Options.noisy) { cout <<"Irrigation Return Percentage"<<endl; }
-      //pDO->SetDemandReturnPct(s[1],s_to_d(s[2]));
       break;
     }
     case(20):  //----------------------------------------------
@@ -876,6 +888,198 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       }
       break;
     }
+    case (50): //--------------------------------------------
+    { /*
+      :WaterDemand [SBID] [ID] [Name] 
+         ...
+      :EndWaterDemand
+      */
+      if(Options.noisy) { cout <<"Water demand object"<<endl; }
+      if (Len<4){
+        ExitGracefully("Incorrect number of terms in :WaterDemand command header.",BAD_DATA_WARN);
+      }
+      else{
+        demandSBID =s_to_l(s[1]); 
+        demand_ID  =s_to_i(s[2]);
+        demand_name=s[3];
+        CSubBasin *pSB=pModel->GetSubBasinByID(demandSBID);
+        if (pSB!=NULL) {
+          demand_ind=pSB->GetNumWaterDemands();
+          pDemand=new CDemand(demand_ID,demand_name,demandSBID,false);
+          pDemand->SetLocalIndex(demand_ind);
+          pSB->AddWaterDemand(pDemand);
+          pModel->GetDemandOptimizer()->AddWaterDemand(pDemand);
+        }
+        else {
+           ExitGracefully("Invalid subbasin ID in :WaterDemand command header.",BAD_DATA_WARN);
+           break;
+        }
+      }
+      break;
+    }
+    case (51): //--------------------------------------------
+    {/*:EndWaterDemand*/
+      if(Options.noisy) { cout <<"..end water demand object"<<endl; }
+      pDemand=NULL;
+      break;
+    }
+    case (52): //--------------------------------------------
+    {/*:DemandTimeSeries
+       {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+       {double Qdem} x nMeasurements [m3/s]
+     :EndDemandTimeSeries
+     */
+      if(Options.noisy) { cout <<"Demand time series"<<endl; }
+      if (pDemand==NULL){
+        ExitGracefully(":DemandTimeSeries must be between :WaterDemand and :EndWaterDemand commands.",BAD_DATA_WARN);
+      }
+      else {
+        CTimeSeries *pTS = CTimeSeries::Parse(pp, false, demand_name, demandSBID, "none", Options);
+        pTS->SetIDTag(demand_ID);
+        pDemand->SetDemandTimeSeries(pTS);
+      }
+      break;
+    }
+    case (53): //--------------------------------------------
+    {/*:ReturnTimeSeries
+       {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+       {double Qret} x nMeasurements [m3/s]
+     :EndReturnTimeSeries
+     */
+      if(Options.noisy) { cout <<"Return time series"<<endl; }
+      if (pDemand==NULL){
+        ExitGracefully(":ReturnTimeSeries must be between :WaterDemand and :EndWaterDemand commands.",BAD_DATA_WARN);
+      }
+      else {
+        CTimeSeries *pTS = CTimeSeries::Parse(pp, false, demand_name, demandSBID, "none", Options);
+        pTS->SetIDTag(demand_ID);
+        pDemand->SetReturnTimeSeries(pTS);
+      }
+      break;
+    }
+    case (54): //--------------------------------------------
+    {/*:ReturnDestination [SBID]*/
+      if(Options.noisy) { cout <<"Return destination ID"<<endl; }
+      if (pDemand==NULL){
+        ExitGracefully(":ReturnTimeSeries must be between :WaterDemand and :EndWaterDemand commands.",BAD_DATA_WARN);
+      }
+      else {
+        pDemand->SetTargetSBID(s_to_l(s[1]));
+      }
+      break;
+    }
+    case (55): //--------------------------------------------
+    {/*:IrrigationDestination [HRUGroup]*/
+      if(Options.noisy) { cout <<"Irrigation destination"<<endl; }
+      if (pDemand==NULL){
+        ExitGracefully(":IrrigationDestination must be between :WaterDemand and :EndWaterDemand commands.",BAD_DATA_WARN);
+      }
+      else {
+        CHRUGroup *pGrp=pModel->GetHRUGroup(s[1]);
+        if (pGrp == NULL) {
+          ExitGracefully(":IrrigationDestination uses invalid HRU Group.",BAD_DATA_WARN);
+        }
+        else {
+          pDemand->SetIrrigationGroup(pGrp->GetGlobalIndex());
+        } 
+      }
+      break;
+    }
+    case (56): //--------------------------------------------
+    {/*:ResetDate [Mmm-dd]*/
+      if(Options.noisy) { cout <<"Demand reset date"<<endl; }
+      if (pDemand==NULL){
+        ExitGracefully(":ResetDate must be between :WaterDemand and :EndWaterDemand commands.",BAD_DATA_WARN);
+      }
+      else {
+        pDO->SetCumulativeDate(demand_ID, s[1]);
+      }
+      break;
+    }
+    case (57): //--------------------------------------------
+    {/*:Penalty [value]*/
+      if(Options.noisy) { cout <<"Demand penalty"<<endl; }
+      if (pDemand==NULL){
+        ExitGracefully(":Penalty must be between :WaterDemand and :EndWaterDemand commands.",BAD_DATA_WARN);
+      }
+      else {
+        pDO->SetDemandPenalty(to_string(demand_ID),s_to_d(s[1]));
+      }
+      break;
+    }
+    case (58): //--------------------------------------------
+    {/*:ReturnFraction [value]*/
+      if(Options.noisy) { cout <<"Return flow fraction"<<endl; }
+      if (pDemand==NULL){
+        ExitGracefully(":ReturnFraction must be between :WaterDemand and :EndWaterDemand commands.",BAD_DATA_WARN);
+      }
+      else {
+        pDemand->SetReturnFraction(s_to_d(s[1]));
+      }
+      break;
+    }
+    case (59): //--------------------------------------------
+    {/*:ReturnExpression [expression]*/
+      if(Options.noisy) { cout <<"Return flow expression"<<endl; }
+      if (pDemand==NULL){
+        ExitGracefully(":ReturnExpression must be between :WaterDemand and :EndWaterDemand commands.",BAD_DATA_WARN);
+      }
+      else {
+        expressionStruct *pExp;
+
+        pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
+
+        if (pDO->GetDebugLevel()>=1){
+          SummarizeExpression((const char**)(s),Len,pExp);
+        }
+
+        if (pExp!=NULL){
+          pDemand->SetReturnExpression(pExp);
+        }
+        else {
+          string warn ="Invalid expression in :ReturnExpression command at line " + pp->GetLineNumber();
+          WriteWarning(warn.c_str(),Options.noisy);
+        }
+      }
+      break;
+    }
+    case (60): //--------------------------------------------
+    {/*:DemandFlowFraction [value]*/
+      if(Options.noisy) { cout <<"Demand flow fraction"<<endl; }
+      if (pDemand==NULL){
+        ExitGracefully(":DemandFlowFraction must be between :WaterDemand and :EndWaterDemand commands.",BAD_DATA_WARN);
+      }
+      else {
+        pDemand->SetDemandFraction(s_to_d(s[1]));
+      }
+      break;
+    }
+    case (62): //--------------------------------------------
+    {/*:DemandExpression [expression]*/
+      if(Options.noisy) { cout <<"Demand expression"<<endl; }
+      if (pDemand==NULL){
+        ExitGracefully(":DemandExpression must be between :WaterDemand and :EndWaterDemand commands.",BAD_DATA_WARN);
+      }
+      else {
+        expressionStruct *pExp;
+
+        pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
+
+        if (pDO->GetDebugLevel()>=1){
+          SummarizeExpression((const char**)(s),Len,pExp);
+        }
+
+        if (pExp!=NULL){
+          pDemand->SetDemandExpression(pExp);
+        }
+        else {
+          string warn ="Invalid expression in :DemandExpression command at line " + pp->GetLineNumber();
+          WriteWarning(warn.c_str(),Options.noisy);
+        }
+        
+      }
+      break;
+    }
     case (70): //---------------------------------------------
     {/*:UserTimeSeries {name} [units]
         {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
@@ -924,7 +1128,8 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     }//end switch(code)
 
     firstword=pp->Peek();
-    if (firstword == ":DefineDecisionVariable") {
+    if ((firstword == ":DefineDecisionVariable") || (firstword == ":DemandExpression") || (firstword == ":ReturnExpression"))
+    {
       pp->NextIsMathExp();
     }
 

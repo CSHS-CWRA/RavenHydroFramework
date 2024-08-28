@@ -55,7 +55,7 @@ string CParser::Peek()
 
 // return first word of current line in INPUT without proceeding forward in the file
     std::streampos place;
-    int Len;
+    int Len=0;
     bool eof;
     char *s[MAXINPUTITEMS];
 

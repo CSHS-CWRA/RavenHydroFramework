@@ -472,6 +472,7 @@ void MassEnergyBalance( CModel            *pModel,
   res_constraint res_const;
   const int MAX_CONTROL_STRUCTURES=10;
   double *res_Qstruct=new double [MAX_CONTROL_STRUCTURES];
+
   //determine total outflow from HRUs into respective basins (aRouted[p])
   for (p=0;p<NB;p++)
   {
@@ -489,12 +490,17 @@ void MassEnergyBalance( CModel            *pModel,
         pModel->GetSubBasin(p)->GetReservoir()->SetPrecip(SWvol);//[SW is treated as precip on reservoir]
       }
       else{
-        //surface water moved instantaneously from HRU to basin reach/channel storage
-        aRouted[p]+=SWvol;
+        aRouted[p]+=SWvol;             //surface water moved instantaneously from HRU to basin reach/channel storage
       }
       aPhinew[k][iRO]=aPhinew[k][iSW]; //track net runoff [mm]
       aPhinew[k][iSW]=0.0;             //zero out surface water storage
     }
+  }
+
+  //Update demands
+  for(p=0;p<NB;p++)
+  {
+    pModel->GetSubBasin(p)->UpdateDemands(Options,tt);
   }
   // Identify magnitude of flow diversions, calculate inflows
   for(p=0;p<NB;p++)
@@ -552,19 +558,21 @@ void MassEnergyBalance( CModel            *pModel,
     {
       pBasin->UpdateInflow(aQinnew[p]);              // from upstream, diversions, and specified flows
 
-      down_Q=pBasin->GetDownstreamInflow(t);         // treated as additional runoff (period starting)
-
-      pBasin->UpdateLateralInflow(aRouted[p]/(tstep*SEC_PER_DAY)+down_Q);//[m3/d]->[m3/s]
+      pBasin->UpdateLateralInflow(aRouted[p]/(tstep*SEC_PER_DAY));//[m3/d]->[m3/s] 
 
       pBasin->RouteWater    (aQoutnew,Options,tt);
 
       irr_Q=pBasin->ApplyIrrigationDemand(t+tstep,aQoutnew[pBasin->GetNumSegments()-1],Options.management_optimization);
 
-      div_Q_total=0;
-      for(int i=0; i<pBasin->GetNumDiversions();i++) { //downstream of reservoir!
+      div_Q_total=0; 
+      for(int i=0; i<pBasin->GetNumDiversions();i++) { //upstream of reservoir!
         div_Q=pBasin->GetDiversionFlow(i,pBasin->GetChannelOutflowRate(),Options,tt,pDivert); //diversions based upon flows at start of timestep (without diversions)
         div_Q_total+=div_Q;
       }
+
+      down_Q=pBasin->GetDownstreamInflow(t)+pBasin->GetTotalReturnFlow(); 
+
+      aQoutnew[pBasin->GetNumSegments()-1]+=down_Q; //add return flows and Basin inflow hydrographs (type2)
 
       res_ht=res_outflow=0.0; res_const=RC_NATURAL;
       if (pBasin->GetReservoir()!=NULL)

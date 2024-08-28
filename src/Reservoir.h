@@ -42,6 +42,7 @@ struct down_demand {
   int    julian_end;          ///< julian end day of demand (wraps, such that if julian_end < julian_start, demand in winter)
 };
 class CSubBasin;
+class CDemand;
 class CControlStructure;
 /*****************************************************************
    Class CReservoir
@@ -61,8 +62,8 @@ private:/*-------------------------------------------------------*/
 
   const CHydroUnit  *_pHRU;          ///< (potentially zero-area) HRU used for Precip/ET calculation (or NULL for no ET)
 
-  CTimeSeries **_pDemandTS;          ///< array of Time Series of water demand [m3/s] (or NULL for zero extraction) [size: _nDemandTS]
-  int           _nDemandTS;          ///< number of reservoir demand time series
+  int          _nWaterDemands;       ///< number of reservoir demand time series
+  CDemand    **_pWaterDemands;       ///< array of pointers to demand objects [size:_nDemands]
 
   CTimeSeries *_pWeirHeightTS;       ///< Time series of weir heights [m] (or NULL for fixed weir height)
   CTimeSeries *_pMaxStageTS;         ///< Time series of rule curve upper stage constraint [m] (or NULL for no maximum stage)
@@ -83,8 +84,8 @@ private:/*-------------------------------------------------------*/
   const CSubBasin *_pQdownSB;        ///< pointer to downstream SubBasin for diversions (or NULL for none)
   const CSubBasin *_pDownSB;         ///< pointer to downstream subbasin
 
-  down_demand**_aDemands;            ///< array of pointers to downstream demand information used to determine Qmin [size:_nDemands]
-  int          _nDemands;            ///< size of downstream demand location array
+  down_demand**_aDownDemands;        ///< array of pointers to downstream demand information used to determine Qmin [size:_nDemands]
+  int          _nDownDemands;        ///< size of downstream demand location array
 
   DZTRmodel    *_pDZTR;              ///< pointer to DZTR model, if used (default=NULL)
 
@@ -221,6 +222,7 @@ public:/*-------------------------------------------------------*/
   void              SetMinStage              (const double &min_z);
   void              SetMaxCapacity           (const double &max_cap);
   void              Initialize               (const optStruct &Options);
+  void              InitializePostRVM        (const optStruct &Options); 
   void              SetInitialFlow           (const double &Q,const double &Qlast,const time_struct &tt, const optStruct &Options);
   void              SetReservoirStage        (const double &ht, const double &ht_last);
   void              SetControlFlow           (const int i, const double &Q, const double &Qlast);
@@ -237,7 +239,8 @@ public:/*-------------------------------------------------------*/
   void              SetLakebedConductivity   (const double &cond);
   void              SetLakeConvectionCoeff   (const double &conv);
 
-  void              AddDemandTimeSeries      (CTimeSeries *pOutflow);
+  void              AddDemand                (CDemand *pDemand);
+
   void              AddWeirHeightTS          (CTimeSeries *pWeirHt);
   void              AddMaxStageTimeSeries    (CTimeSeries *pMS);
   void              AddOverrideQTimeSeries   (CTimeSeries *pQ);
@@ -265,6 +268,7 @@ public:/*-------------------------------------------------------*/
   void              ClearTimeSeriesData      (const optStruct& Options);
 
   //Called during simulation:
+  void              UpdateDemands            (const optStruct& Options, const time_struct& tt);
   double            RouteWater               (const double      &Qin_old,
                                               const double      &Qin_new,
                                               const CModelABC*  pModel,

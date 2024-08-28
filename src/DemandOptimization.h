@@ -12,6 +12,7 @@
 #include "Model.h"
 #include "LookupTable.h"
 #include "Demands.h"
+#include "Expression.h"
 
 #ifdef _LPSOLVE_
 namespace lp_lib  {
@@ -32,25 +33,7 @@ enum exptype
   EXP_OP,  //< operator
   EXP_INV  //< inverse operator
 };
-///////////////////////////////////////////////////////////////////
-/// \brief different expression term types
-//
-enum termtype
-{
-  TERM_DV,        //< decision variable !Q123 or named
-  TERM_TS,        //< time series @ts(name,n)
-  TERM_LT,        //< lookup table @lookup(x)
-  TERM_HRU,       //< state variable @HRU_var(SNOW,2345)
-  TERM_SB,        //< state variable @SB_var(SNOW,234)
-  TERM_CONST,     //< constant
-  TERM_HISTORY,   //< bracketed - !Q123[-2]
-  TERM_MAX,       //< @max(x,y)
-  TERM_MIN,       //< @min(x,y)
-  TERM_CONVERT,   //< @convert(x,units)
-  TERM_CUMUL_TS,  //< @cumul(ts_name,duration) //MAY WANT @cumul(ts_name,duration,n) to handle time shift, e.g., 3 days to 10 days ago?
-  TERM_CUMUL,     //< cumulative delivery !C123
-  TERM_UNKNOWN    //< unknown
-};
+
 ///////////////////////////////////////////////////////////////////
 /// \brief decision variable types
 //
@@ -61,67 +44,12 @@ enum dv_type
   DV_STAGE,   //< reservoir stage
   DV_BINRES,  //< binary integer value for above/beneath stage-discharge sill
   DV_DELIVERY,//< delivery of water demand
+  DV_RETURN,  //< return flows to reach 
   DV_USER,    //< user specified decision variable
   DV_SLACK    //< slack variable for goal satisfaction
 };
 
-// -------------------------------------------------------------------
-// data structures used by CDemandOptimizer class:
-//   -expressionTerm
-//   -expressionStruct (built from expressionTerms)
-//   -decision_var
-//   -exp_condition (may be defined using expressionStruct)
-//   -op_regime (has conditions)
-//   -control_var (defined using expressionStruct)
-//   -managementGoal (built using multiple operating regimes)
-// -------------------------------------------------------------------
 
-//////////////////////////////////////////////////////////////////
-/// expression term
-///    individual term in expression
-//
-struct expressionTerm
-{
-  termtype      type;            //< type of expression
-  double        mult;            //< multiplier of expression (+/- 1, depending upon operator and location in exp)
-  bool          reciprocal;      //< true if term is in denominator
-
-  double        value;           //< constant value or conversion multiplier
-  CTimeSeries  *pTS;             //< pointer to time series, if this is a named time series
-  CLookupTable *pLT;             //< pointer to lookup table, if this is a named time series
-  bool          is_nested;       //< true if nested within (i.e., an argument to) another term
-  int           timeshift;       //< for time series (+ or -) or lookback value (+)
-  int           DV_ind;          //< index of decision variable
-  int           nested_ind1;     //< index k of first argument (e.g., for lookup table with term entry)
-  int           nested_ind2;     //< index k of second argument (e.g., for min/max functions)
-  string        nested_exp1;     //< contents of first argument to function - can be expression
-  string        nested_exp2;     //< contents of second argument to function
-
-  string        origexp;         //< original string expression
-  int           p_index;         //< subbasin index p (for history variables, e.g, !Q324[-2] or @SB_var() command )
-  int           HRU_index;       //< HRU index k (for @HRU_var command)
-  int           SV_index;        //< state variable index i (for @SB_var or @HRU_var command)
-
-  expressionTerm(); //defined in DemandExpressionHandling.cpp
-};
-
-//////////////////////////////////////////////////////////////////
-/// expression structure
-///   abstraction of (A*B*C)+(D*E)-(F)+(G*H) <= 0
-///   parenthetical collections are groups of terms -example has 4 groups with [3,2,1,2] terms per group
-//
-struct expressionStruct //full expression
-{
-  expressionTerm  ***pTerms;      //< 2D irregular array of pointers to expression terms size:[nGroups][nTermsPerGrp[j]]
-  int                nGroups;     //< total number of terms groups in expression
-  int               *nTermsPerGrp;//< number of terms per group [size: nGroups]
-  comparison         compare;     //< comparison operator (==, <, >)
-
-  string             origexp;     //< original string expression
-
-  expressionStruct();
-  ~expressionStruct();
-};
 
 //////////////////////////////////////////////////////////////////
 // decision variable
@@ -130,8 +58,8 @@ struct decision_var
 {
   string  name;      //< decision variable names: Qxxxx or Dxxxx where xxxx is SBID
   dv_type dvar_type; //< decision variable type: e.g., DV_QOUT or DV_DELIVERY
-  int     p_index;   //< raw subbasin index p (not SBID) of decision variable (or DOESNT_EXIST if not linked to SB)
-  int     dem_index; //< demand index in subbasin p (or DOESNT_EXIST if type not DV_DELIVERY) (ii..nDemands in SB p_index, usually <=1)
+  int     p_index;   //< raw subbasin index p (not SBID) of decision variable (or DOESNT_EXIST if not linked to SB) (target basin for DV_RETURN, source basin for DV_DELIVERY)
+  int     dem_index; //< demand index in subbasin p (or DOESNT_EXIST if type not DV_DELIVERY/DV_RETURN) (ii..nDemands in SB p_index, usually <=1)
   int     loc_index; //< local index (rescount or subbasincount or demand count)
   double  value;     //< solution value for decision variable
   double  min;       //< minimum bound (default=0)
@@ -264,7 +192,8 @@ private: /*------------------------------------------------------*/
   int             *_aResIndices;        //< storage of enabled reservoir indices (0:_nReservoirs or DOESNT_EXIST) [size:_nSubBasins]
 
   CDemand        **_pDemands;           //< array of pointers to water demand instances
-  int              _nDemands;           //< local storage of number of demand locations (:IrrigationDemand/:WaterDemand + :ReservoirExtraction time series)
+  int              _nDemands;           //< local storage of number of demand locations
+  int              _nReturns;           //< total number of demands with return flows (<=_nDemands)
 
   double          *_aDelivery;          //< array of delivered water for each water demand [m3/s] [size: _nDemands]
   double          *_aCumDelivery;       //< array of cumulative deliveries of demand since _aCumDivDate of this year [m3] [size: _nDemands]
@@ -376,6 +305,8 @@ public: /*------------------------------------------------------*/
   //void MultiplyGroupDemand   (const string groupname, const double &mult);
   void SetDemandPenalty        (const string dname, const double &pen);
   //void SetDemandPriority     (const string dname, const int &prior);
+
+  double     EvaluateExpression(const expressionStruct* pE,const double &t,bool RHS_only) const;
 
   expressionStruct *ParseExpression(const char **s, const int Len, const int lineno, const string filename) const;
 

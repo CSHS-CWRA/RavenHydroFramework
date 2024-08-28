@@ -96,6 +96,7 @@ int main(int argc, char* argv[])
   if(Options.management_optimization) {
     if(!ParseManagementFile(pModel,Options)) {
       ExitGracefully("Cannot find or read .rvm file",BAD_DATA);}}
+  pModel->InitializePostRVM(Options);
 
   CheckForErrorWarnings(false, pModel);
 

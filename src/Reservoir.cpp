@@ -36,8 +36,8 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
   _aQstruct=NULL;
   _aQstruct_last=NULL;
 
-  _pDemandTS=NULL;
-  _nDemandTS=0;
+  _pWaterDemands=NULL;
+  _nWaterDemands=0;
 
   _pHRU=NULL;
 
@@ -55,8 +55,8 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
   _pQdownTS=NULL;
   _QdownRange=0.0;
   _pQdownSB=NULL;
-  _nDemands=0;
-  _aDemands=NULL;
+  _nDownDemands=0;
+  _aDownDemands=NULL;
   _demand_mult=1.0;
 
   _Qoptimized=RAV_BLANK_DATA;
@@ -369,7 +369,7 @@ CReservoir::~CReservoir()
   for (int v = 0; v<_nDates; v++){ delete[] _aQ_back[v]; } delete [] _aQ_back; _aQ_back=NULL;
   delete [] _aDates;      _aDates =NULL;
 
-  for (int i=0; i<_nDemandTS;i++){delete _pDemandTS[i]; } delete [] _pDemandTS; _pDemandTS=NULL;
+  for (int ii=0; ii<_nWaterDemands;ii++){delete _pWaterDemands[ii]; } delete [] _pWaterDemands; _pWaterDemands=NULL;
 
   delete _pWeirHeightTS;  _pWeirHeightTS=NULL;
   delete _pMaxStageTS;    _pMaxStageTS=NULL;
@@ -627,7 +627,7 @@ double CReservoir::GetDischargeFromStage(const double &stage, const int nn) cons
 /// \return number of water/irrigation demands
 //
 int    CReservoir::GetNumWaterDemands() const {
-  return _nDemandTS;
+  return _nWaterDemands;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns water/irrigation demand integer ID
@@ -635,10 +635,10 @@ int    CReservoir::GetNumWaterDemands() const {
 //
 int    CReservoir::GetWaterDemandID(const int ii) const
 {
-  #ifdef _STRICTCHECK_
+#ifdef _STRICTCHECK_
   ExitGracefullyIf(ii < 0 || ii >= _nDemandTS, "CReservoir::GetWaterDemandID: invalid index",RUNTIME_ERR);
 #endif
-  return _pDemandTS[ii]->GetIDTag(); //stores demand ID
+  return _pWaterDemands[ii]->GetID(); //stores demand ID
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns water/irrigation demand name/alias
@@ -649,7 +649,7 @@ string CReservoir::GetWaterDemandName      (const int ii) const
 #ifdef _STRICTCHECK_
   ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CSubBasin::GetWaterDemandName: invalid index",RUNTIME_ERR);
 #endif
-  return _pDemandTS[ii]->GetName();
+  return _pWaterDemands[ii]->GetName();
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns specified irrigation/water use demand from reservoir at time t
@@ -658,10 +658,7 @@ string CReservoir::GetWaterDemandName      (const int ii) const
 //
 double CReservoir::GetWaterDemand           (const int ii,const double &t) const
 {
-  double Qirr;
-  Qirr=_pDemandTS[ii]->GetValue(t);
-  if (Qirr==RAV_BLANK_DATA){Qirr=0.0;}
-  return Qirr;
+  return _pWaterDemands[ii]->GetDemand();
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns instantaneous ACTUAL irrigation use at end of current timestep
@@ -683,10 +680,7 @@ void CReservoir::Initialize(const optStruct &Options)
   double model_duration =Options.duration;
   double timestep       =Options.timestep;
 
-  for (int i=0; i<_nDemandTS; i++)
-  {
-    _pDemandTS[i]->Initialize(model_start_day, model_start_yr, model_duration, timestep, false, Options.calendar);
-  }
+
   if(_pWeirHeightTS!=NULL)
   {
     _pWeirHeightTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
@@ -735,10 +729,7 @@ void CReservoir::Initialize(const optStruct &Options)
   {
     _pQdownTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
   }
-  _aQdelivered = new double [_nDemandTS];
-  for (int ii = 0; ii < _nDemandTS; ii++) {
-    _aQdelivered[ii]=0.0;
-  }
+
   _aQstruct     =new double [_nControlStructures];
   _aQstruct_last=new double [_nControlStructures];
   for (int i = 0; i < _nControlStructures; i++) {
@@ -746,15 +737,26 @@ void CReservoir::Initialize(const optStruct &Options)
   }
   _dry_timesteps=0;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Initializes SB demand members AFTER RVM FILE READ
+/// \param &Options [in] Global model options information
+//
+void  CReservoir::InitializePostRVM(const optStruct& Options) 
+{
+  _aQdelivered = new double [_nWaterDemands];
+  for (int ii = 0; ii < _nWaterDemands; ii++) {
+    _pWaterDemands[ii]->Initialize(Options);
+    _aQdelivered[ii]=0.0;
+  }
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Adds extraction history
 /// \param *pDemand demand time series to be added
 //
-void    CReservoir::AddDemandTimeSeries (CTimeSeries *pDemand)
+void    CReservoir::AddDemand (CDemand *pDemand)
 {
-  if (!DynArrayAppend((void**&)(_pDemandTS),(void*)(pDemand),_nDemandTS)){
-    ExitGracefully("CReservoir::AddDemandTimeSeries : trying to add NULL time series",BAD_DATA);}
+  if (!DynArrayAppend((void**&)(_pWaterDemands),(void*)(pDemand),_nWaterDemands)){
+    ExitGracefully("CReservoir::AddDemand : trying to add NULL demand object",BAD_DATA);}
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Adds weir height time series [m]
@@ -884,7 +886,7 @@ void  CReservoir::AddDownstreamDemand(const CSubBasin *pSB,const double pct, con
   pDemand->percent     =pct;
   pDemand->julian_start=julian_start;
   pDemand->julian_end  =julian_end;
-  if(!DynArrayAppend((void**&)(_aDemands),(void*)(pDemand),_nDemands)) {
+  if(!DynArrayAppend((void**&)(_aDownDemands),(void*)(pDemand),_nDownDemands)) {
     ExitGracefully("CReservoir::AddDownstreamDemand: adding NULL source",RUNTIME_ERR);
   }
 }
@@ -1134,6 +1136,17 @@ double CReservoir::ScaleFlow(const double& scale,const bool overriding, const do
 
   return va;
 }
+/////////////////////////////////////////////////////////////////
+/// \brief update demand magnitudes, called in solver at start of every time step
+/// \param &Options [in] Global model options information
+/// \param &tt [in] time structure at start of current time step
+//
+void CReservoir::UpdateDemands(const optStruct& Options, const time_struct& tt) 
+{
+  for (int ii = 0; ii < _nWaterDemands; ii++) {
+    _pWaterDemands[ii]->UpdateDemand(Options,tt);
+  }
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief updates state variable "stage" and other reservoir auxiliary variables at end of computational time step
@@ -1192,13 +1205,12 @@ void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep, co
     _MB_losses+=_GW_seepage;
   }
 
-  for (int ii = 0; ii < _nDemandTS; ii++) {
+  for (int ii = 0; ii < _nWaterDemands; ii++) {
     if (Options.management_optimization) {
       _MB_losses+=_aQdelivered[ii];
     }
     else{
-      int nn        =(int)((tt.model_time+TIME_CORRECTION)/tstep);//current timestep index
-      _MB_losses+=_pDemandTS[ii]->GetSampledValue(nn) * SEC_PER_DAY * tstep;
+      _MB_losses+=_pWaterDemands[ii]->GetDemand() * SEC_PER_DAY * tstep;
     }
   }
 
@@ -1259,7 +1271,7 @@ void CReservoir::UpdateReservoir(const time_struct &tt, const optStruct &Options
   }
 
   // reboot delivered amount to zero each tstep ------------------
-  for (int ii=0; ii<_nDemandTS; ii++){
+  for (int ii=0; ii<_nWaterDemands; ii++){
     _aQdelivered[ii]=0.0;
   }
   return;
@@ -1454,10 +1466,10 @@ double  CReservoir::RouteWater(const double &Qin_old,
   }
 
   // Downstream water demand sets minimum flow
-  for(int i=0;i<_nDemands;i++) {
-    if(IsInDateRange(tt.julian_day,_aDemands[i]->julian_start,_aDemands[i]->julian_end)){
-      Qmin+=(_aDemands[i]->pDownSB->GetTotalWaterDemand(tt.model_time)*_aDemands[i]->percent);
-      Qmin+= _aDemands[i]->pDownSB->GetEnviroMinFlow   (tt.model_time)*1.0; //assume 100% of environmental min flow must be met
+  for(int i=0;i<_nDownDemands;i++) {
+    if(IsInDateRange(tt.julian_day,_aDownDemands[i]->julian_start,_aDownDemands[i]->julian_end)){
+      Qmin+=(_aDownDemands[i]->pDownSB->GetTotalWaterDemand(tt.model_time)*_aDownDemands[i]->percent);
+      Qmin+= _aDownDemands[i]->pDownSB->GetEnviroMinFlow   (tt.model_time)*1.0; //assume 100% of environmental min flow must be met
     }
   }
 
@@ -1493,14 +1505,14 @@ double  CReservoir::RouteWater(const double &Qin_old,
     seep_old=_seepage_const*(_stage-_local_GW_head); //[m3/s]
   }
   ext_new=ext_old=0.0;
-  for (int ii=0; ii<_nDemandTS;ii++){
+  for (int ii=0; ii<_nWaterDemands;ii++){
     if (Options.management_optimization){
       ext_new+=_aQdelivered[ii];
       ext_old+=_aQdelivered[ii];
     }
     else{
-      ext_old=_pDemandTS[ii]->GetSampledValue(nn);
-      ext_new=_pDemandTS[ii]->GetSampledValue(nn); //steady rate over time step
+      ext_old=_pWaterDemands[ii]->GetDemand();
+      ext_new=_pWaterDemands[ii]->GetDemand(); //steady rate over time step - all water delivered
     }
   }
 
@@ -1508,9 +1520,6 @@ double  CReservoir::RouteWater(const double &Qin_old,
   if(gamma<0)
   {//reservoir dried out; no solution available. (f is always >0, so gamma must be as well)
    //only remaining filling action is via seepage, which is likely not enough, and Q_out_new can't be negative
-   // string warn="CReservoir::RouteWater: basin "+to_string(_SBID)+ " dried out on " +tt.date_string;
-   //WriteWarning(warn,false);
-
     constraint=RC_DRY_RESERVOIR;
     res_outflow=0.0;
     return _min_stage;
@@ -1756,7 +1765,6 @@ double     CReservoir::GetWeirOutflow(const double &ht, const double &adj) const
 //
 void CReservoir::ClearTimeSeriesData(const optStruct& Options)
 {
-  for (int i=0; i<_nDemandTS;i++){delete _pDemandTS[i]; } delete [] _pDemandTS; _pDemandTS=NULL;
   delete _pWeirHeightTS;_pWeirHeightTS=NULL;
   delete _pMaxStageTS;_pMaxStageTS=NULL;
   delete _pOverrideQ;_pOverrideQ=NULL;

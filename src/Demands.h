@@ -7,6 +7,19 @@
 
 #include "RavenInclude.h"
 #include "TimeSeries.h"
+#include "Expression.h"
+
+enum demand_type{
+  DEMAND_TIME_SERIES,
+  DEMAND_PCT,
+  DEMAND_LOOKUP,
+  DEMAND_EXPRESSION //could even link to soil moisture or AET
+};
+enum return_type{
+  RETURN_TIME_SERIES,
+  RETURN_PCT,
+  RETURN_EXPRESSION
+};
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for irrigation or other water demand
@@ -14,28 +27,38 @@
 class CDemand
 {
 private:/*------------------------------------------------------*/
-  int       _ID;           ///< unique integer identifier
-  string    _name;         ///< unique name/alias identifier 
+  int                  _ID;           ///< unique integer identifier
+  string               _name;         ///< unique name/alias identifier 
 
-  long      _SBID;         ///< subbasin ID 
-  int       _loc_index;    ///< local demand index (counter in each subbasin) 
-  bool      _is_reservoir; ///< true if withdrawal is from reservoir 
+  long                 _SBID;         ///< subbasin ID 
+  int                  _loc_index;    ///< local demand index ii (counter in each subbasin) 
+  bool                 _is_reservoir; ///< true if withdrawal is from reservoir 
 
-  double    _penalty;      ///< penalty for not satisfying demand [s/m3]
+  double               _penalty;      ///< penalty for not satisfying demand [s/m3]
 
-  bool      _unrestricted; ///< true if demand is unrestricted by downstream flow regulations [default: false]
+  bool                _unrestricted; ///< true if demand is unrestricted by downstream flow regulations [default: false]
 
-  int       _cumDelivDate; ///< julian date to calculate cumulative deliveries from {default: Jan 1}
-  //double _annualLicense; ///< annual maximum allocation
+  int                 _cumDelivDate;  ///< julian date to calculate cumulative deliveries from {default: Jan 1}
 
-  //int    _irrigHRUGroup; ///< index kk of HRU group on which withdrawn water is applied
-  //double _returnPct;     ///< percentage of flow which returns to stream
+  //Demand characterization 
+  demand_type         _demType;       ///< demand type 
+  double              _multiplier;    ///< multiplies time series or any other means of calculating demand 
+  CTimeSeries        *_pDemandTS;     ///< pointer to time series of demands (or NULL, if calculated elsewise)
+  //CLookupTable     *_pDemandLT;     ///< pointer to demand lookup table D(Qin+Runoff) (or NULL)
+  expressionStruct   *_pDemandExp;    ///< return expression (or NULL, if calculated elsewise)
+  double              _demandFract;   ///< [0..1] percentage of flow demanded  
+  //double            _annualLicense; ///< annual maximum allocation    
+  // 
+  //Return flow variables 
+  return_type        _retType;       ///< return type 
+  long               _targetSBID;    ///< subbasin id of return destination (defaults to _SBID, is -1 for irrigation to HRU group)
+  int                _irrigHRUGroup; ///< index kk of HRU group on which withdrawn water is applied
+  double             _returnPct;     ///< percentage of delivered demand which returns to stream or land
+  CTimeSeries       *_pReturnTS;     ///< pointer to time series of target return flows (or NULL, if calculated elsewise)
+  expressionStruct  *_pReturnExp;    ///< return expression (or NULL, if calculated elsewise)
 
-  double    _multiplier;   ///< multiplies time series or any other means of calculating demand 
-
-  CTimeSeries *_pDemandTS; ///< pointer to time series of demands (or NULL, if calculated elsewise)
-
-  double   _currentDemand; ///< (time-variable) demand in current time step [m3/s]
+  double             _currentDemand;   ///< (time-variable) demand in current time step [m3/s]
+  double             _currentRetTarget;///< (time-variable) return flow target in current time step [m3/s]
 
 public:/*-------------------------------------------------------*/
   CDemand(int ID, string name, long SBID, bool is_res);
@@ -50,8 +73,12 @@ public:/*-------------------------------------------------------*/
   bool    IsUnrestricted() const;
   int     GetCumulDeliveryDate() const;
   bool    IsReservoirDemand() const;
+  bool    HasReturnFlow() const; 
+  long    GetTargetSBID() const;
+  double  GetReturnFlowFraction() const;
 
   double  GetDemand() const;
+  double  GetReturnFlowTarget() const;
 
   //Manipulators
   void    SetLocalIndex(const int ii);
@@ -59,8 +86,17 @@ public:/*-------------------------------------------------------*/
   void    SetCumulDeliveryDate(const int date);
   void    SetAsUnrestricted();
   void    SetMultiplier(const double &M);
+  void    SetTargetSBID(const long ID);
+  void    SetDemandFraction(const double &val);
+  void    SetReturnFraction(const double &val); 
+  void    SetDemandTimeSeries(CTimeSeries *pTS);
+  void    SetReturnTimeSeries(CTimeSeries *pTS);
+  void    SetDemandExpression(expressionStruct *pExp);
+  void    SetReturnExpression(expressionStruct *pExp);
+  void    SetIrrigationGroup(const int kk);
 
-  void    Initialize(const optStruct &Options,const time_struct &tt);
+  void    Initialize(const optStruct &Options);
+
   //Called during simulation
   void    UpdateDemand(const optStruct &Options,const time_struct &tt);
 };

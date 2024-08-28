@@ -367,6 +367,9 @@ void JulianConvert(double model_time, const double start_date, const int start_y
 
   tt.date_string=string(out);
   tt.leap_yr=IsLeapYear(tt.year,calendar);
+
+  //tt.nn=(int)((tt.model_time+TIME_CORRECTION)/Options.timestep);//current timestep index - likely needs Options.timestep to be in global member
+
 }
 
 ////////////////////////////////////////////////////////////////////////////

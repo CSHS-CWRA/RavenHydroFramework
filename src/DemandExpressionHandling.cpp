@@ -173,7 +173,7 @@ int CDemandOptimizer::GetIndexFromDVString(string s) const //String in format !Q
       return _pModel->GetSubBasinIndex(SBID);
     }
   }
-  else if ((s[1]=='D') || (s[1]=='C') || (s[1]=='d'))
+  else if ((s[1]=='D') || (s[1]=='C') || (s[1]=='R') || (s[1] == 'd'))
   {
     string demandID;
     if (s[2] == '.') {demandID=s.substr(3);} //!D.FarmerBobsDemand
@@ -216,6 +216,7 @@ string DVTypeToString(dv_type t)
   if (t==DV_STAGE   ){return "DV_STAGE";    }
   if (t==DV_BINRES  ){return "DV_BINRES";   }
   if (t==DV_DELIVERY){return "DV_DELIVERY"; }
+  if (t==DV_RETURN  ){return "DV_RETURN";   }
   if (t==DV_SLACK   ){return "DV_SLACK";    }
   if (t==DV_USER    ){return "DV_USER";     }
   return "DV_UNKNOWN";
@@ -278,7 +279,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     ExitGracefullyIf(n>=0,              "ConvertToExpressionTerm:: term in square brackets must be <0 for historical variables.",BAD_DATA_WARN);
     ExitGracefullyIf(n<-_nHistoryItems, "ConvertToExpressionTerm:: term in square brackets exceeds the magnitude of the :LookbackDuration", BAD_DATA_WARN);
 
-    if ((s[1] == 'Q') || (s[1] == 'D') || (s[1]=='h') || (s[1] == 'B') || (s[1] == 'E'))
+    if ((s[1] == 'Q') || (s[1] == 'D') || (s[1]=='I') || (s[1] == 'h') || (s[1] == 'B') || (s[1] == 'E'))
     {
       if (n<0)
       {
@@ -302,13 +303,13 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
       }
     } 
     else {
-      warn="ConvertToExpression:: Unparseable term in history expression starting with !/$ - only !Q, !D, !h, $B, or $E currently supported. "+warnstring;
+      warn="ConvertToExpression:: Unparseable term in history expression starting with !/$ - only !Q, !I, !D, !h, $B, or $E currently supported. "+warnstring;
       ExitGracefully(warn.c_str(), BAD_DATA_WARN);
       return false;
     }
   }
   //----------------------------------------------------------------------
-  else if      (s[0]=='!')  //decision variable e.g., !Q234 or !D42a
+  else if      (s[0]=='!')  //decision variable e.g., !Q234, !I32, or !D42a
   {
     if ((s[1] == 'Q') || (s[1] == 'h') || (s[1]=='I')) //Subbasin-indexed
     {
@@ -358,7 +359,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
       }
       term->p_index=p;//not needed?
     }
-    else if ((s[1]=='D') || (s[1]=='C'))   //demand indexed
+    else if ((s[1]=='D') || (s[1]=='C') || (s[1]=='R'))   //demand indexed
     {
       int d=GetIndexFromDVString(s);
 
@@ -371,6 +372,10 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
       {
         term->DV_ind=GetDVColumnInd(DV_DELIVERY,d);
       }
+      else if (s[1]=='R')
+      {
+        term->DV_ind=GetDVColumnInd(DV_RETURN,d);
+      }
       else if (s[1]=='C')
       {
         term->type=TERM_CUMUL;
@@ -379,7 +384,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
       }
     }
     else{
-      warn="ConvertToExpression:: Unparseable term in expression starting with ! - only !Q, !I, !D, or !h currently supported. "+warnstring;
+      warn="ConvertToExpression:: Unparseable term in expression starting with ! - only !Q, !I, !D, !R, !C, or !h currently supported. "+warnstring;
       ExitGracefully(warn.c_str(), BAD_DATA_WARN);
     }
 
@@ -961,6 +966,9 @@ bool CDemandOptimizer::CheckGoalConditions(const int ii, const int k, const time
         else if (tmp == 'D') {
           dv_value=_pModel->GetSubBasinByID(_pDemands[ind]->GetSubBasinID())->GetDemandDelivery(_pDemands[ind]->GetLocalIndex());
         }
+        else if (tmp == 'R') {
+          dv_value=_pModel->GetSubBasinByID(_pDemands[ind]->GetSubBasinID())->GetReturnFlow(_pDemands[ind]->GetLocalIndex());
+        }
         //todo: support !q, !d, !B, !E, !F, !T
       }
       else {//handle user specified DVs and control variables
@@ -1141,14 +1149,15 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, const int kk, lp_lib::lpr
 #endif
 
 //////////////////////////////////////////////////////////////////
-/// evaluates conditional expression
+/// evaluates difference between right hand side and left hand side of expression, or value of RHS if RHS_only==true and statement only has one term left of (in)equality 
+/// does not support active decision variables in expression (only to be used for conditionals and demand/return expressions)
 /// \params pE [in] - conditional expression
 /// \param t [in] - current model time
 /// repeatedly calls EvaluateTerm()
-/// \returns true if expression is satisfied
+/// \returns RHS if RHS_only or RHS-LHS if !RHS_only
 //
 
-bool CDemandOptimizer::EvaluateConditionExp(const expressionStruct* pE,const double &t) const
+double CDemandOptimizer::EvaluateExpression(const expressionStruct* pE,const double &t,bool RHS_only) const
 {
   double coeff;
   double term;
@@ -1157,34 +1166,53 @@ bool CDemandOptimizer::EvaluateConditionExp(const expressionStruct* pE,const dou
   for (int j = 0; j < pE->nGroups; j++)
   {
     coeff=1.0;
-
-    for (int k = 0; k < pE->nTermsPerGrp[j]; k++)
-    {
-      if (pE->pTerms[j][k]->type == TERM_DV)
-      {
-        ExitGracefully("EvaluateConditionalExp: conditional expressions cannot contain decision variables",BAD_DATA);
-      }
-      else if (!(pE->pTerms[j][k]->is_nested))
-      {
-        term=EvaluateTerm(pE->pTerms[j], k, t);
-
-        if (term==RAV_BLANK_DATA){return true;} //condition assumed satisfied if no data in conditional
-        if (pE->pTerms[j][k]->reciprocal == true)
-        {
-          coeff /= (pE->pTerms[j][k]->mult) * term;
-          ExitGracefullyIf(term==0.0, "EvaluateConditionExp: Divide by zero error in evaluating :Condition expression with division term",BAD_DATA);
-        }
-        else {
-          coeff *= (pE->pTerms[j][k]->mult) * term;
-        }
-      }
+    if (RHS_only && j==0) {
+      //skip first term (assumes expression is of form  A = B + C - D /E, i.e., only one term on left
     }
-    RHS-=coeff; //term group goes on right hand side
-  }
+    else{
+      for (int k = 0; k < pE->nTermsPerGrp[j]; k++)
+      {
+        if (pE->pTerms[j][k]->type == TERM_DV)
+        {
+          ExitGracefully("EvaluateConditionalExp: conditional expressions or demand/return expressions cannot contain decision variables",BAD_DATA);
+        }
+        else if (!(pE->pTerms[j][k]->is_nested))
+        {
+          term=EvaluateTerm(pE->pTerms[j], k, t);
 
-  if      (pE->compare==COMPARE_IS_EQUAL)   {return (fabs(RHS)<REAL_SMALL);}
-  else if (pE->compare==COMPARE_LESSTHAN)   {return (RHS>0);}
-  else if (pE->compare==COMPARE_GREATERTHAN){return (RHS<0);}
+          if (term==RAV_BLANK_DATA){return RAV_BLANK_DATA;} //returns blank if missing data in expression
+          if (pE->pTerms[j][k]->reciprocal == true)
+          {
+            coeff /= (pE->pTerms[j][k]->mult) * term;
+            ExitGracefullyIf(term==0.0, "EvaluateConditionExp: Divide by zero error in evaluating :Condition or :DemandExpression expression with division term",BAD_DATA);
+          }
+          else {
+            coeff *= (pE->pTerms[j][k]->mult) * term;
+          }
+        }
+      }
+    
+      RHS-=coeff; //term group goes on right hand side
+    }
+  }
+  return RHS;
+}
+
+//////////////////////////////////////////////////////////////////
+/// evaluates conditional expression
+/// \params pE [in] - conditional expression
+/// \param t [in] - current model time
+/// \returns true if conditional expression is satisfied
+//
+bool CDemandOptimizer::EvaluateConditionExp(const expressionStruct* pE,const double &t) const
+{
+  
+  double RHSminusLHS=EvaluateExpression(pE,t,false);
+
+  if      (fabs(RHSminusLHS-RAV_BLANK_DATA)<REAL_SMALL) {return true;}//condition assumed satisfied if no data in conditional
+  if      (pE->compare==COMPARE_IS_EQUAL)               {return (fabs(RHSminusLHS)<REAL_SMALL);}
+  else if (pE->compare==COMPARE_LESSTHAN)               {return (RHSminusLHS>0);}
+  else if (pE->compare==COMPARE_GREATERTHAN)            {return (RHSminusLHS<0);}
   return false;
 }
 

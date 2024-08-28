@@ -695,6 +695,9 @@
     <ClInclude Include="SoilProfile.h">
       <Filter>Header Files\Parameters/Classes</Filter>
     </ClInclude>
+    <ClInclude Include="Expression.h">
+      <Filter>Header Files\Water Management</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Raven.rc">
