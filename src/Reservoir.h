@@ -202,8 +202,9 @@ public:/*-------------------------------------------------------*/
   int               GetNumWaterDemands       () const;
   int               GetWaterDemandID         (const int ii) const;
   string            GetWaterDemandName       (const int ii) const;
+  bool              HasReturnFlow            (const int ii) const;
   double            GetWaterDemand           (const int ii,const double &t) const;  //[m3/s] iith demand from reservoir at point in time
-  double            GetDemandDelivery        (const int ii) const;       //[m3/s] instantaneous delivery rate to demand ii
+  double            GetDemandDelivery        (const int ii) const;                  //[m3/s] instantaneous delivery rate to demand ii
 
   int               GetHRUIndex              () const;
   double            GetMaxCapacity           () const; //[m3]
@@ -221,8 +222,6 @@ public:/*-------------------------------------------------------*/
   //Manipulators
   void              SetMinStage              (const double &min_z);
   void              SetMaxCapacity           (const double &max_cap);
-  void              Initialize               (const optStruct &Options);
-  void              InitializePostRVM        (const optStruct &Options); 
   void              SetInitialFlow           (const double &Q,const double &Qlast,const time_struct &tt, const optStruct &Options);
   void              SetReservoirStage        (const double &ht, const double &ht_last);
   void              SetControlFlow           (const int i, const double &Q, const double &Qlast);
@@ -266,6 +265,10 @@ public:/*-------------------------------------------------------*/
   void              SetHRU                   (const CHydroUnit *pHRU);
   void              DisableOutflow           ();
   void              ClearTimeSeriesData      (const optStruct& Options);
+
+  //Called during initialization:
+  void              Initialize               (const optStruct &Options);
+  void              InitializePostRVM        (const optStruct &Options); 
 
   //Called during simulation:
   void              UpdateDemands            (const optStruct& Options, const time_struct& tt);

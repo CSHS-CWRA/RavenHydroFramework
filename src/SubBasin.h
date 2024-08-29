@@ -215,6 +215,7 @@ public:/*-------------------------------------------------------*/
   int                  GetNumWaterDemands   () const;
   int                  GetWaterDemandID     (const int ii) const;
   string               GetWaterDemandName   (const int ii) const;
+  bool                 HasReturnFlow        (const int ii) const;
   double               GetUnusableFlowPercentage() const;
 
   const double   *GetUnitHydrograph        () const;

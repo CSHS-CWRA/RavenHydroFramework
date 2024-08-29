@@ -407,6 +407,9 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
           name=pSB->GetWaterDemandName(ii);
           _DEMANDS<<","<<name<<" (demand) [m3/s]";
           _DEMANDS<<","<<name<<" (delivery) [m3/s]";
+          if (pSB->HasReturnFlow(ii)){
+          _DEMANDS<<","<<name<<" (return) [m3/s]";
+          }
         }
 
         if (pSB->GetReservoir()!=NULL){
@@ -414,6 +417,9 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
             name=pSB->GetReservoir()->GetWaterDemandName(ii);
             _DEMANDS<<","<<name<<" (res. demand) [m3/s]";
             _DEMANDS<<","<<name<<" (res. delivery) [m3/s]";
+            if (pSB->GetReservoir()->HasReturnFlow(ii)){
+            _DEMANDS<<","<<name<<" (res. return) [m3/s]";
+            }
           }
         }
 
@@ -1014,15 +1020,23 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
             {
               double irr =pSB->GetWaterDemand(ii,tt.model_time);
               double Qd  =pSB->GetDemandDelivery(ii);
+              double Qr  =pSB->GetReturnFlow(ii);
               double unmet=max(irr-Qd,0.0);
               _DEMANDS<<","<<irr<<","<<Qd;
+              if (pSB->HasReturnFlow(ii)){
+                _DEMANDS<<","<<Qr;
+              }
             }
             if (pSB->GetReservoir()!=NULL){
               for (int ii=0;ii<pSB->GetReservoir()->GetNumWaterDemands(); ii++){
                 double irr =pSB->GetReservoir()->GetWaterDemand(ii,tt.model_time);
                 double Qd  =pSB->GetReservoir()->GetDemandDelivery(ii);
+                double Qr  =0.0;//pSB->GetReservoir()->GetReturnFlow(ii); //TMP DEBUG!! 
                 double unmet=max(irr-Qd,0.0);
                 _DEMANDS<<","<<irr<<","<<Qd;
+                if (pSB->GetReservoir()->HasReturnFlow(ii)){
+                  _DEMANDS<<","<<Qr;
+                }
               }
             }
           }

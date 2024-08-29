@@ -222,7 +222,8 @@ private: /*------------------------------------------------------*/
 
   int             _nHistoryItems;      //< size of flow/demand/stage history that needs to be stored (in time steps) (from :LookbackDuration)
   double        **_aQhist;             //< history of subbasin discharge [size: _nEnabledSBs * _nHistoryItems]
-  double        **_aDhist;             //< history of actual diversions [size: _nEnabledSBs * _nHistoryItems]
+  double        **_aDhist;             //< history of actual delivery [size: _nEnabledSBs * _nHistoryItems]
+  double        **_aIhist;             //< history of reservoir inflows [size: _nEnabledSBs * _nHistoryItems]
   double        **_ahhist;             //< history of actual reservoir stages  (or 0 for non-reservoir basins) [size: _nEnabledSBs * _nHistoryItems]
 
   int             _nSolverResiduals;   //< number of residuals of solution (equal to lp_lib::nRows)

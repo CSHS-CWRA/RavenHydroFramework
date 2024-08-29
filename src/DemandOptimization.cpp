@@ -61,6 +61,7 @@ CDemandOptimizer::CDemandOptimizer(CModel *pMod)
   _nHistoryItems=1;
   _aQhist=NULL;
   _aDhist=NULL;
+  _aIhist=NULL;
   _ahhist=NULL;
 
   _nGoals=0;
@@ -100,12 +101,14 @@ CDemandOptimizer::~CDemandOptimizer()
     if (_aQhist!=NULL){
       delete [] _aQhist[p];
       delete [] _aDhist[p];
+      delete [] _aIhist[p];
       delete [] _ahhist[p];
     }
   }
   delete [] _aQhist;
   delete [] _ahhist;
   delete [] _aDhist;
+  delete [] _aIhist;
   delete [] _aUserConstants;
   delete [] _aUserConstNames;
   delete [] _aDelivery;
@@ -618,7 +621,7 @@ void CDemandOptimizer::InitializeDemands(CModel* pModel, const optStruct& Option
         p=DOESNT_EXIST;
       }
     
-      pDV=new decision_var(_pDemands[d]->GetName(), p, DV_RETURN, r);
+      pDV=new decision_var(_pDemands[d]->GetName()+"[return]", p, DV_RETURN, r);
       pDV->dem_index=_pDemands[d]->GetLocalIndex();
 
       AddDecisionVar(pDV);
@@ -651,17 +654,20 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
   _aQhist = new double *[_nEnabledSubBasins];
   _ahhist = new double *[_nEnabledSubBasins];
   _aDhist = new double *[_nEnabledSubBasins];
+  _aIhist = new double *[_nEnabledSubBasins];
   ExitGracefullyIf(_aDhist==NULL,"CDemandOptimizer::InitializePostRVMRead",OUT_OF_MEMORY);
   for (int pp=0;pp<_nEnabledSubBasins;pp++){
     _aDhist[pp]=NULL;
     _aQhist[pp] = new double[_nHistoryItems];
     _ahhist[pp] = new double[_nHistoryItems];
     _aDhist[pp] = new double[_nHistoryItems];
+    _aIhist[pp] = new double[_nHistoryItems];
     ExitGracefullyIf(_aDhist[pp]==NULL,"CDemandOptimizer::InitializePostRVMRead (2)",OUT_OF_MEMORY);
     for (int i = 0; i < _nHistoryItems; i++) {
       _aQhist[pp][i]=0.0;
       _ahhist[pp][i]=0.0;
       _aDhist[pp][i]=0.0;
+      _aIhist[pp][i]=0.0;
     }
   }
   
@@ -1124,16 +1130,21 @@ void CDemandOptimizer::UpdateHistoryArrays()
       for (int i = _nHistoryItems-1; i>0; i--) {
         _aQhist[pp][i]=_aQhist[pp][i-1];
         _aDhist[pp][i]=_aDhist[pp][i-1];
+        _aIhist[pp][i]=_aIhist[pp][i-1];
+        _ahhist[pp][i]=_ahhist[pp][i-1];
       }
       _aQhist[pp][0]=pSB->GetOutflowRate();
+      _aDhist[pp][0]=0.0;
+      _aIhist[pp][0]=0.0;
       _ahhist[pp][0]=0.0;
-      if (pSB->GetReservoir()!=NULL){
-        _ahhist[pp][0]=pSB->GetReservoir()->GetResStage();
-      }
-      _aDhist[pp][0]=0;
       for (int ii=0;ii<pSB->GetNumWaterDemands();ii++){
         _aDhist[pp][0]+=pSB->GetDemandDelivery(ii);
       }
+      if (pSB->GetReservoir()!=NULL){
+        _aIhist[pp][0]=pSB->GetChannelOutflowRate();
+        _ahhist[pp][0]=pSB->GetReservoir()->GetResStage();
+      }
+
       pp++;
     }
   }
@@ -1479,7 +1490,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
     //------------------------------------------------------------------------
     // Mass balance equation at reach outlet:
     // Q_p = (Qin +Qin2 )*U0 + sum(Ui*Qn-i) + Runoff - Div_out(Q) + Div_in - Delivered + Qadded + U_0*Qadded2 +Qreturn
-    // Q_p-U_0*Qin-U_0*Qin2... +Delivered +Qreturn= sum(Ui*Qn-i) + Runoff - Div_out(Q) + Div_in + Qadded + U_0*Qadded2
+    // Q_p-U_0*Qin-U_0*Qin2... +Delivered -Qreturn= sum(Ui*Qn-i) + Runoff - Div_out(Q) + Div_in + Qadded + U_0*Qadded2
     //------------------------------------------------------------------------
     if (pSB->IsEnabled())
     {
@@ -1525,12 +1536,12 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
       for (int ddd = 0; ddd < _nDemands; ddd++) 
       {
         if (_pDemands[ddd]->HasReturnFlow()){
-		  if ((_pDemands[ddd]->GetTargetSBID()==SBID)) {
+		      if ((_pDemands[ddd]->GetTargetSBID()==SBID)) {
             col_ind[i]=GetDVColumnInd(DV_RETURN,r);
-            row_val[i]=1.0;
+            row_val[i]=-1.0;//added=-
             i++;
-		  }
-		  r++;
+		      }
+		      r++;
         }
       }
       if (pSB->GetReservoir() != NULL) {
@@ -2032,7 +2043,12 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
     }
   }/*end iteration loop*/
 
-
+  //Report post-iteration objective function: This will be sum of penalties*violations
+  //"penalties" for unmaximized return flows are removed 
+  if (_do_debug_level>=2)
+  {
+    cout<<"Objective value: "<<lp_lib::get_objective(pLinProg)+demand_penalty_sum<<" solver rows: "<<_nSolverResiduals<<endl;
+  }
 
   lp_lib::delete_lp(pLinProg);
   delete [] soln;
@@ -2088,16 +2104,17 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
     else if (typ == DV_RETURN) 
     {
       ii=_pDecisionVars[i]->dem_index;
-
+      d =_pDecisionVars[i]->loc_index;
       //p is index of recipient subbasin 
       if (p!=DOESNT_EXIST){
+        //cout<<" ADDING RETURN FLOW IN BASIN "<<pModel->GetSubBasin(p)->GetID()<<" :" << value << endl;
         pModel->GetSubBasin(p)->AddToReturnFlow(value);
       }
       else {
         //todo: add irrigation support 
         //pModel->AddIrrigation(value,_pDemands[d]->GetIrrigationHRUGroup());
       };
-      
+      //cout<<" RECORDING RETURN FLOW IN BASIN "<<_pDemands[d]->GetSubBasinID()<<" :" << value << endl;
       pModel->GetSubBasinByID(_pDemands[d]->GetSubBasinID())->RecordReturnFlow(ii,value); //UGH this is ugly 
       demand_penalty_sum+=value;
     }
@@ -2108,12 +2125,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
     }
   }
   
-  //Report post-iteration objective function: This will be sum of penalties*violations
-  //"penalties" for unmaximized return flows are removed 
-  if (_do_debug_level>=2)
-  {
-    cout<<"Objective value: "<<lp_lib::get_objective(pLinProg)+demand_penalty_sum<<" solver rows:"<<_nSolverResiduals<<endl;
-  }
+
 #endif
 }
 
@@ -2289,6 +2301,7 @@ void CDemandOptimizer::CloseOutputStreams()
 /// \details used in debugging
 /// file should not include full path and should end in .csv
 //
+#ifdef _LPSOLVE_
 void CDemandOptimizer::WriteLPSubMatrix(lp_lib::lprec* pLinProg,string file, const optStruct &Options) const
 {
   ofstream LPMAT;
@@ -2327,7 +2340,7 @@ void CDemandOptimizer::WriteLPSubMatrix(lp_lib::lprec* pLinProg,string file, con
   LPMAT.close();
   delete [] val;
 }
-
+#endif 
 //////////////////////////////////////////////////////////////////
 /// \brief Provides end warnings
 /// \details after end of simulation from Main()

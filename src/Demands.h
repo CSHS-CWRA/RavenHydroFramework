@@ -17,7 +17,7 @@ enum demand_type{
 };
 enum return_type{
   RETURN_TIME_SERIES,
-  RETURN_PCT,
+  RETURN_MAX,
   RETURN_EXPRESSION
 };
 

@@ -2907,8 +2907,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         }
         else {
           int Conns=1;
-          if(Len == 2) { Conns = 1; }
-          else if(Len == 3) { Conns = s_to_i(s[2]); } //GWMIGRATE - not sure what is happening here.
+          if(Len == 3) { Conns = s_to_i(s[2]); } //GWMIGRATE - not sure what is happening here.
           pMover = new CmvRecharge(rech_type, Conns, pModel);
         }
         AddProcess(pModel, pMover, pProcGroup);

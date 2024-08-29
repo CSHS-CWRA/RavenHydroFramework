@@ -652,6 +652,14 @@ string CReservoir::GetWaterDemandName      (const int ii) const
   return _pWaterDemands[ii]->GetName();
 }
 //////////////////////////////////////////////////////////////////
+/// \brief returns true if water demand ii has return flow 
+/// \return true if water demand ii has return flow 
+//
+bool  CReservoir::HasReturnFlow(const int ii) const 
+{
+  return _pWaterDemands[ii]->HasReturnFlow();
+}
+//////////////////////////////////////////////////////////////////
 /// \brief Returns specified irrigation/water use demand from reservoir at time t
 /// \param &t [in] Model time at which the demand from reservoir is to be determined
 /// \return specified demand from reservoir at time t

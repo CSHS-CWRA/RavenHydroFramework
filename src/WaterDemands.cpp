@@ -16,6 +16,7 @@ CDemand::CDemand(int ID, string name, long SBID, bool is_res)
   _is_reservoir=is_res;
 
   _demType=DEMAND_TIME_SERIES;
+  _retType=RETURN_MAX;
 
   _loc_index=DOESNT_EXIST;
   _unrestricted=0;
@@ -134,7 +135,7 @@ void    CDemand::SetDemandTimeSeries(CTimeSeries* pTS) {
 }
 void    CDemand::SetReturnTimeSeries(CTimeSeries* pTS) {
   //todo: throw warning if _pReturnTS exists
-  if (_returnPct==0){_returnPct=1.0;} // problem: if multiplier intentionally set to zero, this overrides it
+  if (_returnPct==0.0){_returnPct=1.0;} // problem: if multiplier intentionally set to zero, this overrides it
   _retType=RETURN_TIME_SERIES;
   _pReturnTS=pTS;
 }
@@ -236,6 +237,9 @@ void    CDemand::UpdateDemand(const optStruct &Options,const time_struct& tt)
       if (Qret==RAV_BLANK_DATA){Qret=0.0;}
 
       _currentRetTarget=_multiplier*Qret;
+    }
+    else if (_retType == RETURN_MAX) {
+      _currentRetTarget = 1e8;
     }
     else if (_retType == RETURN_EXPRESSION) 
     {

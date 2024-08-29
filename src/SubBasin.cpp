@@ -805,6 +805,7 @@ int CSubBasin::GetNumWaterDemands() const
 //
 int CSubBasin::GetWaterDemandID     (const int ii) const
 {
+  //\todo[clean] - replace this and next 2 routines with GetWaterDemand() 
 #ifdef _STRICTCHECK_
   ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CSubBasin::GetWaterDemandID: invalid index",RUNTIME_ERR);
 #endif
@@ -821,6 +822,15 @@ string CSubBasin::GetWaterDemandName   (const int ii) const
 #endif
   return _pWaterDemands[ii]->GetName();
 }
+//////////////////////////////////////////////////////////////////
+/// \brief returns true if water demand ii has return flow 
+/// \return true if water demand ii has return flow 
+//
+bool  CSubBasin::HasReturnFlow(const int ii) const 
+{
+  return _pWaterDemands[ii]->HasReturnFlow();
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief Returns Outflow from subbasin at start of current timestep (during solution) or end of completed timestep [m^3/s]
 /// \return Outflow at start of current timestep (during solution) or end of completed timestep [m^3/s]
