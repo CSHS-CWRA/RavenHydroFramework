@@ -525,6 +525,9 @@ double CSubBasin::GetTotalReturnFlow() const
 //
 double CSubBasin::GetDemandDelivery(const int ii) const
 {
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf((ii<0) || (ii>=_nWaterDemands),"CSubBasin::GetDemandDelivery: invalid demand index",RUNTIME_ERR);
+#endif 
   return _aQdelivered[ii];
 }
 //////////////////////////////////////////////////////////////////
@@ -533,6 +536,9 @@ double CSubBasin::GetDemandDelivery(const int ii) const
 //
 double CSubBasin::GetReturnFlow(const int ii) const
 {
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf((ii<0) || (ii>=_nWaterDemands),"CSubBasin::GetDemandDelivery: invalid demand index",RUNTIME_ERR);
+#endif 
   return _aQreturned[ii];
 }
 //////////////////////////////////////////////////////////////////
@@ -1447,6 +1453,9 @@ void CSubBasin::SetDownstreamBasin(const CSubBasin* pSB)
 //
 void CSubBasin::AddToDeliveredDemand(const int ii, const double &Qdel)
 {
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf((ii<0) || (ii>=_nWaterDemands),"CSubBasin::AddToDeliveredDemand: invalid demand index",RUNTIME_ERR);
+#endif 
   _aQdelivered[ii]=Qdel;
   _Qdelivered+=Qdel;
 }
@@ -1477,6 +1486,9 @@ void CSubBasin::AddToReturnFlow(const double &Qret)
 }
 void CSubBasin::RecordReturnFlow(const int ii, const double& Qret) 
 {
+#ifdef _STRICTCHECK_"
+  ExitGracefullyIf((ii<0) || (ii>=_nWaterDemands),"CSubBasin::RecordReturnFlow: invalid demand index",RUNTIME_ERR);
+#endif 
   _aQreturned[ii]=Qret;
 }
 /////////////////////////////////////////////////////////////////

@@ -59,7 +59,7 @@ struct decision_var
   string  name;      //< decision variable names: Qxxxx or Dxxxx where xxxx is SBID
   dv_type dvar_type; //< decision variable type: e.g., DV_QOUT or DV_DELIVERY
   int     p_index;   //< raw subbasin index p (not SBID) of decision variable (or DOESNT_EXIST if not linked to SB) (target basin for DV_RETURN, source basin for DV_DELIVERY)
-  int     dem_index; //< demand index in subbasin p (or DOESNT_EXIST if type not DV_DELIVERY/DV_RETURN) (ii..nDemands in SB p_index, usually <=1)
+  int     dem_index; //< demand index ii in subbasin p (or DOESNT_EXIST if type not DV_DELIVERY/DV_RETURN) (ii..nDemands in SB p_index, usually <=1)
   int     loc_index; //< local index (rescount or subbasincount or demand count)
   double  value;     //< solution value for decision variable
   double  min;       //< minimum bound (default=0)

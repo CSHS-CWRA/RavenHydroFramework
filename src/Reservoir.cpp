@@ -638,7 +638,7 @@ int    CReservoir::GetNumWaterDemands() const {
 int    CReservoir::GetWaterDemandID(const int ii) const
 {
 #ifdef _STRICTCHECK_
-  ExitGracefullyIf(ii < 0 || ii >= _nDemandTS, "CReservoir::GetWaterDemandID: invalid index",RUNTIME_ERR);
+  ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CReservoir::GetWaterDemandID: invalid index",RUNTIME_ERR);
 #endif
   return _pWaterDemands[ii]->GetID(); //stores demand ID
 }
@@ -659,6 +659,9 @@ string CReservoir::GetWaterDemandName      (const int ii) const
 //
 bool  CReservoir::HasReturnFlow(const int ii) const 
 {
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CSubBasin::HasReturnFlow: invalid index",RUNTIME_ERR);
+#endif
   return _pWaterDemands[ii]->HasReturnFlow();
 }
 //////////////////////////////////////////////////////////////////
@@ -668,6 +671,9 @@ bool  CReservoir::HasReturnFlow(const int ii) const
 //
 double CReservoir::GetWaterDemand           (const int ii,const double &t) const
 {
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CReservoir::GetWaterDemand: invalid index",RUNTIME_ERR);
+#endif
   return _pWaterDemands[ii]->GetDemand();
 }
 //////////////////////////////////////////////////////////////////
@@ -676,6 +682,9 @@ double CReservoir::GetWaterDemand           (const int ii,const double &t) const
 //
 double CReservoir::GetDemandDelivery(const int ii) const
 {
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CReservoir::GetDemandDelivery: invalid index",RUNTIME_ERR);
+#endif
   return _aQdelivered[ii];
 }
 //////////////////////////////////////////////////////////////////
@@ -684,6 +693,9 @@ double CReservoir::GetDemandDelivery(const int ii) const
 //
 double CReservoir::GetReturnFlow(const int ii) const
 {
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CReservoir::GetReturnFlow: invalid index",RUNTIME_ERR);
+#endif
   return _aQreturned[ii];
 }
 //////////////////////////////////////////////////////////////////
@@ -1242,6 +1254,9 @@ void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep, co
 //
 void CReservoir::AddToDeliveredDemand(const int ii, const double &Qdel)
 {
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf((ii<0) || (ii>=_nWaterDemands),"CReservoir::AddToDeliveredDemand: invalid demand index",RUNTIME_ERR);
+#endif 
   _aQdelivered[ii]=Qdel;
 }
 //////////////////////////////////////////////////////////////////
@@ -1251,6 +1266,9 @@ void CReservoir::AddToDeliveredDemand(const int ii, const double &Qdel)
 //
 void CReservoir::RecordReturnFlow(const int ii, const double &Qret)
 {
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf((ii<0) || (ii>=_nWaterDemands),"CReservoir::RecordReturnFlow: invalid demand index",RUNTIME_ERR);
+#endif 
   _aQreturned[ii]=Qret;
 }
 //////////////////////////////////////////////////////////////////

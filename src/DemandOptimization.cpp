@@ -602,7 +602,7 @@ void CDemandOptimizer::InitializeDemands(CModel* pModel, const optStruct& Option
   {
     p=pModel->GetSubBasinByID(_pDemands[d]->GetSubBasinID())->GetGlobalIndex();
     pDV=new decision_var(_pDemands[d]->GetName(), p, DV_DELIVERY, d);
-    pDV->dem_index=_pDemands[d]->GetLocalIndex();
+    pDV->dem_index=_pDemands[d]->GetLocalIndex(); //ii
 
     AddDecisionVar(pDV);
   }
@@ -621,8 +621,9 @@ void CDemandOptimizer::InitializeDemands(CModel* pModel, const optStruct& Option
         p=DOESNT_EXIST;
       }
     
-      pDV=new decision_var(_pDemands[d]->GetName()+"[return]", p, DV_RETURN, r);
-      pDV->dem_index=_pDemands[d]->GetLocalIndex();
+      //pDV=new decision_var(_pDemands[d]->GetName()+"[return]", p, DV_RETURN, r);
+      pDV=new decision_var(_pDemands[d]->GetName()+"[return]", p, DV_RETURN, d); //loc_index is d so that demand can be accessed (not r)
+      pDV->dem_index=_pDemands[d]->GetLocalIndex(); //ii
 
       AddDecisionVar(pDV);
       r++;
@@ -807,13 +808,15 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
     cout << "    DV " << setw(4) << "#" << ": " << setw(20) << "name" << " " << setw(12) << "type" << " " << setw(4) << "col" << " " << "loc_index"<< endl;
     for (int i = 0; i < _nDecisionVars; i++)
     {
-      cout<<"    DV "<<setw(4)<<i<<": "<<setw(20)<<_pDecisionVars[i]->name<<" "<<setw(12)<<DVTypeToString(_pDecisionVars[i]->dvar_type)<<" ";
+      cout<<"    DV "<<setw(4)<<i<<": "<<setw(60)<<_pDecisionVars[i]->name<<" "<<setw(12)<<DVTypeToString(_pDecisionVars[i]->dvar_type)<<" ";
       cout<<setw(4)<<GetDVColumnInd(_pDecisionVars[i]->dvar_type,_pDecisionVars[i]->loc_index)<<" "<<_pDecisionVars[i]->loc_index<<endl;
     }
 
     cout<<" # Demands : "<<_nDemands<<endl;
     for (int d=0; d<_nDemands;d++){
-      cout << "    " << d << ": ID="<<setw(6) << _pDemands[d]->GetID() << " (alias: "<<setw(32)<<_pDemands[d]->GetName()<<") in basin "<< _pDemands[d]->GetSubBasinID() <<endl;
+      int ndem=_pModel->GetSubBasinByID(_pDemands[d]->GetSubBasinID())->GetNumWaterDemands();
+      int ii  =_pDemands[d]->GetLocalIndex();
+      cout << "    " <<setw(4)<< d << ": ID="<<setw(6) << _pDemands[d]->GetID() << " (alias: "<<setw(60)<<_pDemands[d]->GetName()<<") in basin "<<setw(3)<< _pDemands[d]->GetSubBasinID() <<" ("<<ii+1<<" of "<< ndem<<")"<<endl;
     }
 
     string tmpstr,tmpstr2;
@@ -2105,7 +2108,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
     else if (typ == DV_RETURN) 
     {
       ii=_pDecisionVars[i]->dem_index;
-      d =_pDecisionVars[i]->loc_index;
+      d =_pDecisionVars[i]->loc_index; //d is stored in loc_index, instead of r
       
       if (p!=DOESNT_EXIST){// here, p is index of *recipient* subbasin 
         pModel->GetSubBasin(p)->AddToReturnFlow(value);

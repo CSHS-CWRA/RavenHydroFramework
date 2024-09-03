@@ -31,7 +31,7 @@ private:/*------------------------------------------------------*/
   string               _name;         ///< unique name/alias identifier 
 
   long                 _SBID;         ///< subbasin ID 
-  int                  _loc_index;    ///< local demand index ii (counter in each subbasin) 
+  int                  _loc_index;    ///< local demand index ii (counter in each subbasin or reservoir) 
   bool                 _is_reservoir; ///< true if withdrawal is from reservoir 
 
   double               _penalty;      ///< penalty for not satisfying demand [s/m3]

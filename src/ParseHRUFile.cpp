@@ -343,6 +343,9 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
       if (Options.noisy) {cout <<":Reservoir"<<endl;}
       CReservoir *pRes;
       long long int HRUID;
+      if (Len < 2) {
+        ExitGracefully("ParseHRUProps: No reservoir name provided in :Reservoir command ",BAD_DATA_WARN);
+      }
       pRes=ReservoirParse(pp,s[1],pModel,HRUID,Options);
       pSB=pModel->GetSubBasinByID(pRes->GetSubbasinID());
       if (HRUID!=DOESNT_EXIST){
