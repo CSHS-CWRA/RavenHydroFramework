@@ -2094,6 +2094,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
         _aCumDelivery[d]=0.0; 
       }
 
+      //_pDemands[d]->SetDeliveredDemand(ii);
       if (!_pDemands[d]->IsReservoirDemand()){
         pModel->GetSubBasin(p)->AddToDeliveredDemand(ii,value);
       }
@@ -2105,17 +2106,21 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
     {
       ii=_pDecisionVars[i]->dem_index;
       d =_pDecisionVars[i]->loc_index;
-      //p is index of recipient subbasin 
-      if (p!=DOESNT_EXIST){
-        //cout<<" ADDING RETURN FLOW IN BASIN "<<pModel->GetSubBasin(p)->GetID()<<" :" << value << endl;
+      
+      if (p!=DOESNT_EXIST){// here, p is index of *recipient* subbasin 
         pModel->GetSubBasin(p)->AddToReturnFlow(value);
       }
       else {
         //todo: add irrigation support 
         //pModel->AddIrrigation(value,_pDemands[d]->GetIrrigationHRUGroup());
-      };
-      //cout<<" RECORDING RETURN FLOW IN BASIN "<<_pDemands[d]->GetSubBasinID()<<" :" << value << endl;
-      pModel->GetSubBasinByID(_pDemands[d]->GetSubBasinID())->RecordReturnFlow(ii,value); //UGH this is ugly 
+      }
+      //pDemands[d]->RecordReturnFlow(value);
+      if (_pDemands[d]->IsReservoirDemand()) {
+        pModel->GetSubBasinByID(_pDemands[d]->GetSubBasinID())->GetReservoir()->RecordReturnFlow(ii,value); //UGH this is ugly - this could really be tamed by storing with Demand
+      }
+      else{
+        pModel->GetSubBasinByID(_pDemands[d]->GetSubBasinID())->RecordReturnFlow(ii,value);
+      }
       demand_penalty_sum+=value;
     }
     else if (typ == DV_SLACK)

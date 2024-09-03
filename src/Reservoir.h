@@ -114,6 +114,7 @@ private:/*-------------------------------------------------------*/
   double      *_aQstruct;            ///< array of flows from control structures at end of time step [m3/s]
   double      *_aQstruct_last;       ///< array of flows from control structures at start of time step [m3/s]
   double      *_aQdelivered;         ///< amount of water demand delivered for each demand [m3/s] (for management optimization)
+  double      *_aQreturned;          ///< amount of water returned for each demand [m3/s] 
 
   res_constraint _constraint;        ///< current constraint type
 
@@ -205,6 +206,7 @@ public:/*-------------------------------------------------------*/
   bool              HasReturnFlow            (const int ii) const;
   double            GetWaterDemand           (const int ii,const double &t) const;  //[m3/s] iith demand from reservoir at point in time
   double            GetDemandDelivery        (const int ii) const;                  //[m3/s] instantaneous delivery rate to demand ii
+  double            GetReturnFlow            (const int ii) const;
 
   int               GetHRUIndex              () const;
   double            GetMaxCapacity           () const; //[m3]
@@ -271,6 +273,7 @@ public:/*-------------------------------------------------------*/
   void              InitializePostRVM        (const optStruct &Options); 
 
   //Called during simulation:
+
   void              UpdateDemands            (const optStruct& Options, const time_struct& tt);
   double            RouteWater               (const double      &Qin_old,
                                               const double      &Qin_new,
@@ -291,5 +294,6 @@ public:/*-------------------------------------------------------*/
   void              UpdateMassBalance        (const time_struct &tt, const double &tstep, const optStruct &Options);
   double            ScaleFlow                (const double &scale, const bool overriding,const double &tstep,const double &t);
   void              AddToDeliveredDemand     (const int ii, const double &Q);
+  void              RecordReturnFlow         (const int ii, const double& Qret);
 };
 #endif

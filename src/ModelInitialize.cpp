@@ -311,13 +311,21 @@ void CModel::Initialize(const optStruct &Options)
       }
     }
   }
-  //--check for stage observations not linked to valid reservoir
+  //--check for stage or area observations not linked to valid reservoir
   for(i=0; i<_nObservedTS; i++){
     if(!strcmp(_pObservedTS[i]->GetName().c_str(),"RESERVOIR_STAGE"))
     {
       long SBID=_pObservedTS[i]->GetLocID();
       if(GetSubBasinByID(SBID)->GetReservoir()==NULL){
-        string warn="Observations supplied for non-existent reservoir in subbasin "+to_string(SBID);
+        string warn="Stage observations supplied for non-existent reservoir in subbasin "+to_string(SBID);
+        ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+      }
+    }
+    else if(!strcmp(_pObservedTS[i]->GetName().c_str(),"LAKE_AREA"))
+    {
+      long SBID=_pObservedTS[i]->GetLocID();
+      if(GetSubBasinByID(SBID)->GetReservoir()==NULL){
+        string warn="Lake area bservations supplied for non-existent reservoir in subbasin "+to_string(SBID);
         ExitGracefully(warn.c_str(),BAD_DATA_WARN);
       }
     }

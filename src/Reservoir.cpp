@@ -61,6 +61,7 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
 
   _Qoptimized=RAV_BLANK_DATA;
   _aQdelivered=NULL;
+  _aQreturned =NULL;
 
   _pDZTR=NULL;
 
@@ -387,6 +388,7 @@ CReservoir::~CReservoir()
   delete [] _aQstruct;      _aQstruct=NULL;
   delete [] _aQstruct_last; _aQstruct_last=NULL;
   delete [] _aQdelivered;   _aQdelivered=NULL;
+  delete [] _aQreturned;    _aQreturned=NULL;
 
   for (int i=0;i<_nControlStructures;i++){delete _pControlStructures[i];} delete [] _pControlStructures; _pControlStructures=NULL;
 }
@@ -676,7 +678,14 @@ double CReservoir::GetDemandDelivery(const int ii) const
 {
   return _aQdelivered[ii];
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Returns instantaneous ACTUAL irrigation use at end of current timestep
+/// \return actual delivery from reservoir [m3/s]
+//
+double CReservoir::GetReturnFlow(const int ii) const
+{
+  return _aQreturned[ii];
+}
 //////////////////////////////////////////////////////////////////
 /// \brief initializes reservoir variables
 /// \param Options [in] model options structure
@@ -752,9 +761,11 @@ void CReservoir::Initialize(const optStruct &Options)
 void  CReservoir::InitializePostRVM(const optStruct& Options) 
 {
   _aQdelivered = new double [_nWaterDemands];
+  _aQreturned  = new double [_nWaterDemands];
   for (int ii = 0; ii < _nWaterDemands; ii++) {
     _pWaterDemands[ii]->Initialize(Options);
     _aQdelivered[ii]=0.0;
+    _aQreturned [ii]=0.0;
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -1234,6 +1245,15 @@ void CReservoir::AddToDeliveredDemand(const int ii, const double &Qdel)
   _aQdelivered[ii]=Qdel;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief records return flow associated with  water demand ii (even if it doesnt return here)
+/// \param ii [in] local demand index
+/// \param Qret [in] returned flow [m3/s]
+//
+void CReservoir::RecordReturnFlow(const int ii, const double &Qret)
+{
+  _aQreturned[ii]=Qret;
+}
+//////////////////////////////////////////////////////////////////
 /// \brief updates rating curves based upon the time and assimilates lake stage
 /// \notes can later support quite generic temporal changes to treatmetn of outflow-volume-area-stage relations
 /// \param tt [in] current model time
@@ -1281,6 +1301,7 @@ void CReservoir::UpdateReservoir(const time_struct &tt, const optStruct &Options
   // reboot delivered amount to zero each tstep ------------------
   for (int ii=0; ii<_nWaterDemands; ii++){
     _aQdelivered[ii]=0.0;
+    _aQreturned [ii]=0.0;
   }
   return;
 }

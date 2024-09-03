@@ -1031,7 +1031,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
               for (int ii=0;ii<pSB->GetReservoir()->GetNumWaterDemands(); ii++){
                 double irr =pSB->GetReservoir()->GetWaterDemand(ii,tt.model_time);
                 double Qd  =pSB->GetReservoir()->GetDemandDelivery(ii);
-                double Qr  =0.0;//pSB->GetReservoir()->GetReturnFlow(ii); //TMP DEBUG!! 
+                double Qr  =pSB->GetReservoir()->GetReturnFlow(ii); 
                 double unmet=max(irr-Qd,0.0);
                 _DEMANDS<<","<<irr<<","<<Qd;
                 if (pSB->GetReservoir()->HasReturnFlow(ii)){
@@ -1593,7 +1593,7 @@ void CModel::RunDiagnostics(const optStruct &Options)
     {
       skip=false;
       string datatype=_pObservedTS[i]->GetName();
-      if((datatype=="HYDROGRAPH"          ) || (datatype=="RESERVOIR_STAGE") ||
+      if((datatype=="HYDROGRAPH"          ) || (datatype=="RESERVOIR_STAGE")     || (datatype=="LAKE_AREA")   ||
          (datatype=="RESERVOIR_INFLOW"    ) || (datatype=="RESERVOIR_NETINFLOW") || (datatype=="WATER_LEVEL") ||
          (datatype=="STREAM_CONCENTRATION") || (datatype=="STREAM_TEMPERATURE"))
       {
@@ -1692,7 +1692,7 @@ double CModel::CalculateAggDiagnostic(const int ii, const int j, const double &s
     skip=false;
     string datatype=_pObservedTS[i]->GetName();
     if (datatype!=agg_datatype){skip=true;}
-    else if((datatype=="HYDROGRAPH"          ) || (datatype=="RESERVOIR_STAGE") ||
+    else if((datatype=="HYDROGRAPH"          ) || (datatype=="RESERVOIR_STAGE")     || (datatype=="LAKE_AREA")   ||
             (datatype=="RESERVOIR_INFLOW"    ) || (datatype=="RESERVOIR_NETINFLOW") || (datatype=="WATER_LEVEL") ||
             (datatype=="STREAM_CONCENTRATION") || (datatype=="STREAM_TEMPERATURE")) //subbasin-linked metrics
     {

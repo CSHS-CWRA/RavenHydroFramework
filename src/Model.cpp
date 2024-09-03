@@ -2856,6 +2856,11 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
       pBasin=GetSubBasinByID(_pObservedTS[i]->GetLocID());
       value = pBasin->GetWaterLevel();
     }
+    else if (datatype == "LAKE_AREA")//========================================
+    {
+      pBasin=GetSubBasinByID(_pObservedTS[i]->GetLocID());
+      value = pBasin->GetReservoir()->GetSurfaceArea();
+    }
     else if (svtyp!=UNRECOGNIZED_SVTYPE)//==========================================
     { //State variable
       CHydroUnit *pHRU=NULL;
