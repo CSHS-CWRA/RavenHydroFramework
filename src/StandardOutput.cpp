@@ -402,7 +402,9 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         else                              { name=pSB->GetName(); }
         _DEMANDS<<","<<name<<" [m3/s]";
         _DEMANDS<<","<<name<<" (min.) [m3/s]";
-
+        _DEMANDS<<","<<name<<" (total dem.) [m3/s]";
+        _DEMANDS<<","<<name<<" (total del.) [m3/s]";
+        _DEMANDS<<","<<name<<" (total ret.) [m3/s]";
         for (int ii=0;ii<pSB->GetNumWaterDemands(); ii++){
           name=pSB->GetWaterDemandName(ii);
           _DEMANDS<<","<<name<<" (demand) [m3/s]";
@@ -1003,6 +1005,8 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
     //Demands.csv
     //----------------------------------------------------------------
+    double irr,Qd,Qr,Q,eF;
+    double demsum,delsum,retsum;
     if((Options.write_demandfile) && (Options.output_format!=OUTPUT_NONE))
     {
       if((Options.period_starting) && (t==0)) {}//don't write anything at time zero
@@ -1013,15 +1017,32 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
           pSB=_pSubBasins[p];
           if((pSB->IsEnabled()) && (pSB->IsGauged()) && (pSB->HasIrrigationDemand()))
           {
-            double Q   =pSB->GetOutflowRate     (); //AFTER irrigation removed -INSTANTANEOUS FLOW
-            double eF  =pSB->GetEnviroMinFlow   (tt.model_time);
+            Q   =pSB->GetOutflowRate     (); //AFTER irrigation removed -INSTANTANEOUS FLOW
+            eF  =pSB->GetEnviroMinFlow   (tt.model_time);
             _DEMANDS<<","<<Q<<","<<eF;
+
+            demsum=delsum=retsum=0.0;
             for (int ii=0;ii<pSB->GetNumWaterDemands();ii++)
             {
-              double irr =pSB->GetWaterDemand(ii,tt.model_time);
-              double Qd  =pSB->GetDemandDelivery(ii);
-              double Qr  =pSB->GetReturnFlow(ii);
-              double unmet=max(irr-Qd,0.0);
+              demsum+=pSB->GetWaterDemand(ii,tt.model_time);
+              delsum+=pSB->GetDemandDelivery(ii);
+              retsum+=pSB->GetReturnFlow(ii);
+            }
+            if (pSB->GetReservoir()!=NULL){
+              for (int ii=0;ii<pSB->GetReservoir()->GetNumWaterDemands(); ii++){
+                demsum =pSB->GetReservoir()->GetWaterDemand(ii,tt.model_time);
+                delsum =pSB->GetReservoir()->GetDemandDelivery(ii);
+                retsum =pSB->GetReservoir()->GetReturnFlow(ii); 
+              }
+            }
+            _DEMANDS<<","<<demsum<<","<<delsum<<","<<retsum;
+
+            for (int ii=0;ii<pSB->GetNumWaterDemands();ii++)
+            {
+              irr =pSB->GetWaterDemand(ii,tt.model_time);
+              Qd  =pSB->GetDemandDelivery(ii);
+              Qr  =pSB->GetReturnFlow(ii);
+              //double unmet=max(irr-Qd,0.0);
               _DEMANDS<<","<<irr<<","<<Qd;
               if (pSB->HasReturnFlow(ii)){
                 _DEMANDS<<","<<Qr;
@@ -1029,10 +1050,10 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
             }
             if (pSB->GetReservoir()!=NULL){
               for (int ii=0;ii<pSB->GetReservoir()->GetNumWaterDemands(); ii++){
-                double irr =pSB->GetReservoir()->GetWaterDemand(ii,tt.model_time);
-                double Qd  =pSB->GetReservoir()->GetDemandDelivery(ii);
-                double Qr  =pSB->GetReservoir()->GetReturnFlow(ii); 
-                double unmet=max(irr-Qd,0.0);
+                irr =pSB->GetReservoir()->GetWaterDemand(ii,tt.model_time);
+                Qd  =pSB->GetReservoir()->GetDemandDelivery(ii);
+                Qr  =pSB->GetReservoir()->GetReturnFlow(ii); 
+                //double unmet=max(irr-Qd,0.0);
                 _DEMANDS<<","<<irr<<","<<Qd;
                 if (pSB->GetReservoir()->HasReturnFlow(ii)){
                   _DEMANDS<<","<<Qr;

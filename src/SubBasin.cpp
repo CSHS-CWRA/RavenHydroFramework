@@ -809,6 +809,17 @@ int CSubBasin::GetNumWaterDemands() const
 /// \brief returns water/irrigation demand integer ID
 /// \return water/irrigation demand integer ID
 //
+CDemand *CSubBasin::GetWaterDemandObj (const int ii) const
+{
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CSubBasin::GetWaterDemandID: invalid index",RUNTIME_ERR);
+#endif
+  return _pWaterDemands[ii]; 
+}
+//////////////////////////////////////////////////////////////////
+/// \brief returns water/irrigation demand integer ID
+/// \return water/irrigation demand integer ID
+//
 int CSubBasin::GetWaterDemandID     (const int ii) const
 {
   //\todo[clean] - replace this and next 2 routines with GetWaterDemand() 
@@ -1486,7 +1497,7 @@ void CSubBasin::AddToReturnFlow(const double &Qret)
 }
 void CSubBasin::RecordReturnFlow(const int ii, const double& Qret) 
 {
-#ifdef _STRICTCHECK_"
+#ifdef _STRICTCHECK_
   ExitGracefullyIf((ii<0) || (ii>=_nWaterDemands),"CSubBasin::RecordReturnFlow: invalid demand index",RUNTIME_ERR);
 #endif 
   _aQreturned[ii]=Qret;

@@ -262,6 +262,7 @@ public:/*-------------------------------------------------------*/
   int             GetDiversionTargetIndex  (const int i) const;        // returns subbasin index p of diversion i
 
   CReservoir     *GetReservoir             () const;
+  CDemand        *GetWaterDemandObj        (const int ii) const;       //returns pointer to ith water demand 
 
   double          GetBasinProperties       (const string label) const;
 

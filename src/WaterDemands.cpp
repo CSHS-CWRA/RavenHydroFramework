@@ -19,6 +19,7 @@ CDemand::CDemand(int ID, string name, long SBID, bool is_res)
   _retType=RETURN_MAX;
 
   _loc_index=DOESNT_EXIST;
+  _global_index=DOESNT_EXIST;
   _unrestricted=0;
   _cumDelivDate=0; //Jan-1
   
@@ -59,6 +60,11 @@ int     CDemand::GetID() const
 string  CDemand::GetName() const 
 {
   return _name;
+}
+int     CDemand::GetGlobalIndex() const
+{
+  ExitGracefullyIf(_global_index==DOESNT_EXIST,"CDemand::GetLocalIndex(): didnt set local index",RUNTIME_ERR);
+  return _global_index; //d
 }
 int     CDemand::GetLocalIndex() const
 {
@@ -111,6 +117,10 @@ long    CDemand::GetTargetSBID() const {
 void    CDemand::SetLocalIndex(const int ii) 
 {
   _loc_index=ii;
+}
+void    CDemand::SetGlobalIndex(const int d) 
+{
+  _global_index=d;
 }
 void    CDemand::SetDemandPenalty(const double& P) 
 {

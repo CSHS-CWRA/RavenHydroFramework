@@ -632,6 +632,18 @@ int    CReservoir::GetNumWaterDemands() const {
   return _nWaterDemands;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief returns water/irrigation demand object
+/// \return water/irrigation demand object
+//
+CDemand* CReservoir::GetWaterDemandObj(const int ii) const 
+{
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CReservoir::GetWaterDemandObj: invalid index",RUNTIME_ERR);
+#endif
+  return _pWaterDemands[ii]; 
+}
+
+//////////////////////////////////////////////////////////////////
 /// \brief returns water/irrigation demand integer ID
 /// \return water/irrigation demand integer ID
 //

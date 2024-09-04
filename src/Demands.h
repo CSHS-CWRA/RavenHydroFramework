@@ -32,6 +32,7 @@ private:/*------------------------------------------------------*/
 
   long                 _SBID;         ///< subbasin ID 
   int                  _loc_index;    ///< local demand index ii (counter in each subbasin or reservoir) 
+  int                  _global_index; ///< global demand index d (from list of all demands in water management model)
   bool                 _is_reservoir; ///< true if withdrawal is from reservoir 
 
   double               _penalty;      ///< penalty for not satisfying demand [s/m3]
@@ -68,6 +69,7 @@ public:/*-------------------------------------------------------*/
   int     GetID() const;
   string  GetName() const;
   long    GetSubBasinID() const;
+  int     GetGlobalIndex() const; 
   int     GetLocalIndex() const;
   double  GetPenalty() const;
   bool    IsUnrestricted() const;
@@ -82,6 +84,7 @@ public:/*-------------------------------------------------------*/
 
   //Manipulators
   void    SetLocalIndex(const int ii);
+  void    SetGlobalIndex(const int d);
   void    SetDemandPenalty(const double &P);
   void    SetCumulDeliveryDate(const int date);
   void    SetAsUnrestricted();

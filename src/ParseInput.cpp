@@ -3008,7 +3008,6 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*LakeFreeze
        :LakeFreeze [string method] */
       if (Options.noisy){cout <<"Lake Freezing Process"<<endl;}
-      cout<<"LEN: "<<Len<<endl;
       if (Len<2){ImproperFormatWarning(":LakeFreeze",p,Options.noisy); break;}
       lakefreeze_type lf_type=LFREEZE_BASIC;
       if      (!strcmp(s[1],"LFREEZE_BASIC"    )){lf_type=LFREEZE_BASIC;}

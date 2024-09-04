@@ -201,6 +201,7 @@ public:/*-------------------------------------------------------*/
   double            GetSillElevation         (const int nn) const;//[m]
 
   int               GetNumWaterDemands       () const;
+  CDemand          *GetWaterDemandObj        (const int ii) const;
   int               GetWaterDemandID         (const int ii) const;
   string            GetWaterDemandName       (const int ii) const;
   bool              HasReturnFlow            (const int ii) const;

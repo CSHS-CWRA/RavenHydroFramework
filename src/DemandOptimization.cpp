@@ -603,6 +603,7 @@ void CDemandOptimizer::InitializeDemands(CModel* pModel, const optStruct& Option
     p=pModel->GetSubBasinByID(_pDemands[d]->GetSubBasinID())->GetGlobalIndex();
     pDV=new decision_var(_pDemands[d]->GetName(), p, DV_DELIVERY, d);
     pDV->dem_index=_pDemands[d]->GetLocalIndex(); //ii
+    _pDemands[d]->SetGlobalIndex(d);
 
     AddDecisionVar(pDV);
   }
@@ -1476,14 +1477,13 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
 
   // river routing mass balance constraints (WORKING)
   // ----------------------------------------------------------------
-  d=0; //counter for demands
   s=0; //counter for slack vars
 
-  double  U_0;
+  double  U_0,U_n;
   int     nInlets;
   long    SBID;
   int     p_in[10]; //assumes<10 inlets
-  int     p2;
+  int     p2,id;
   dv_type dvtype;
 
   for (int pp = 0; pp<pModel->GetNumSubBasins(); pp++)
@@ -1500,6 +1500,14 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
       U_0 =pSB->GetRoutingHydrograph()[0];
       SBID=pSB->GetID();
 
+      i=0;
+
+      // outflow term  =============================
+      col_ind[i]=GetDVColumnInd(DV_QOUT,_aSBIndices[p]);
+      row_val[i]=1.0;
+      i++;
+
+      // inflow terms  =============================
       nInlets=0;
       for (int ppp=0;ppp<pModel->GetNumSubBasins();ppp++) //todo[optimize] - pre-process this or otherwise speedup _aSBInlets[p][ppp], _aSBInletCount[p]
       {
@@ -1509,17 +1517,9 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
           nInlets++;
         }
       }
-
-      i=0;
-
-      col_ind[i]=GetDVColumnInd(DV_QOUT,_aSBIndices[p]);
-      row_val[i]=1.0;
-      i++;
-
-      int id;
       for (int in = 0; in < nInlets; in++)
       {
-        dvtype=DV_QOUT; id=_aSBIndices[p_in[in]];
+        dvtype=DV_QOUT;      id=_aSBIndices[p_in[in]];
         if (pModel->GetSubBasin(p_in[in])->GetReservoir() != NULL) {
           dvtype=DV_QOUTRES; id=_aResIndices[p_in[in]];
         }
@@ -1528,18 +1528,21 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
         row_val[i]=-U_0;
         i++;
       }
-      for (int dd = 0; dd<pSB->GetNumWaterDemands();dd++)
+      // demand terms  =================================
+      for (int ii = 0; ii<pSB->GetNumWaterDemands();ii++)
       {
+        d=pSB->GetWaterDemandObj(ii)->GetGlobalIndex();
         col_ind[i]=GetDVColumnInd(DV_DELIVERY,d);
         row_val[i]=1.0;
-        i++; d++; //todo: check if this counter is correct. 
+        i++; 
       }
-      
+     
+      // return flow terms =============================
       int r=0;
-      for (int ddd = 0; ddd < _nDemands; ddd++) 
+      for (int d = 0; d < _nDemands; d++) 
       {
-        if (_pDemands[ddd]->HasReturnFlow()){
-		      if ((_pDemands[ddd]->GetTargetSBID()==SBID)) {
+        if (_pDemands[d]->HasReturnFlow()){
+		      if ((_pDemands[d]->GetTargetSBID()==SBID)) {
             col_ind[i]=GetDVColumnInd(DV_RETURN,r);
             row_val[i]=-1.0;//added=-
             i++;
@@ -1547,9 +1550,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
 		      r++;
         }
       }
-      if (pSB->GetReservoir() != NULL) {
-        d+=pSB->GetReservoir()->GetNumWaterDemands();
-      }
+
 
       RHS=0;
       RHS+=pSB->GetSpecifiedInflow (t)*U_0;
@@ -1557,8 +1558,9 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
       RHS-=aDivGuess[p]; //diverted from (guess based upon last Q)
       RHS+=aDivert  [p]; //diverted to (delayed by one day, based upon yesterday's Q)
       for (int n = 1; n < pSB->GetInflowHistorySize(); n++) {
-        RHS+=pSB->GetRoutingHydrograph()[n]*pSB->GetInflowHistory()[n-1]; // [n-1] is because this inflow history has not yet been updated
-        RHS+=pSB->GetRoutingHydrograph()[n]*pSB->GetSpecifiedInflow(t-n*Options.timestep);
+        U_n=pSB->GetRoutingHydrograph()[n];
+        RHS+=U_n*pSB->GetInflowHistory()[n-1]; // [n-1] is because this inflow history has not yet been updated
+        RHS+=U_n*pSB->GetSpecifiedInflow(t-n*Options.timestep);
       }
       for (int n = 1; n < pSB->GetLatHistorySize(); n++) {
         RHS += pSB->GetUnitHydrograph()[n] * pSB->GetLatHistory()[n-1];   // [n-1] is because this inflow history has not yet been updated
@@ -1600,15 +1602,12 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
   double      Adt,ET,precip,seepage(0);
   double      h_old,dQdh,Qout_last,Qin_last;
   res_count=0;
-  d=0;
   for (int pp = 0; pp<pModel->GetNumSubBasins(); pp++)
   {
     p   =pModel->GetOrderedSubBasinIndex(pp);
     pSB =pModel->GetSubBasin(p);
     pRes=pSB->GetReservoir();
-    if (pSB->IsEnabled()){
-        d+=pSB->GetNumWaterDemands();
-    }
+
     if ((pSB->IsEnabled()) && (pRes != NULL))
     {
       // First constraint equation (mass balance):
@@ -1646,10 +1645,12 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
       row_val[i]=Adt;
       i++;
 
-      for (int dd = 0; dd<pSB->GetReservoir()->GetNumWaterDemands();dd++){
+      for (int ii = 0; ii<pSB->GetReservoir()->GetNumWaterDemands();ii++)
+      {   
+         d=pRes->GetWaterDemandObj(ii)->GetGlobalIndex();
          col_ind[i]=GetDVColumnInd(DV_DELIVERY  ,d);
          row_val[i]=+1.0;
-         i++; d++;
+         i++; 
       }
 
       RHS=(precip-ET)-seepage+Adt*h_old-0.5*Qout_last+0.5*Qin_last;
@@ -1936,6 +1937,8 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
     // ----------------------------------------------------------------
     // Solve the LP problem!
     // ----------------------------------------------------------------
+    //lp_lib::set_scaling(pLinProg, SCALE_CURTISREID+SCALE_EQUILIBRATE+SCALE_INTEGERS);
+
     retval = lp_lib::solve(pLinProg);
 
     // handle solve error
