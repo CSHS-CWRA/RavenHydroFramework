@@ -202,11 +202,9 @@ public:/*-------------------------------------------------------*/
 
   int               GetNumWaterDemands       () const;
   CDemand          *GetWaterDemandObj        (const int ii) const;
-  int               GetWaterDemandID         (const int ii) const;
-  string            GetWaterDemandName       (const int ii) const;
-  bool              HasReturnFlow            (const int ii) const;
-  double            GetWaterDemand           (const int ii,const double &t) const;  //[m3/s] iith demand from reservoir at point in time
-  double            GetDemandDelivery        (const int ii) const;                  //[m3/s] instantaneous delivery rate to demand ii
+
+  double            GetWaterDemand           (const int ii) const;  //[m3/s] iith current demand from reservoir
+  double            GetDemandDelivery        (const int ii) const;  //[m3/s] instantaneous delivery rate to demand ii
   double            GetReturnFlow            (const int ii) const;
 
   int               GetHRUIndex              () const;

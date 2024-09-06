@@ -642,46 +642,12 @@ CDemand* CReservoir::GetWaterDemandObj(const int ii) const
 #endif
   return _pWaterDemands[ii]; 
 }
-
-//////////////////////////////////////////////////////////////////
-/// \brief returns water/irrigation demand integer ID
-/// \return water/irrigation demand integer ID
-//
-int    CReservoir::GetWaterDemandID(const int ii) const
-{
-#ifdef _STRICTCHECK_
-  ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CReservoir::GetWaterDemandID: invalid index",RUNTIME_ERR);
-#endif
-  return _pWaterDemands[ii]->GetID(); //stores demand ID
-}
-//////////////////////////////////////////////////////////////////
-/// \brief returns water/irrigation demand name/alias
-/// \return water/irrigation demand name/alias
-//
-string CReservoir::GetWaterDemandName      (const int ii) const
-{
-#ifdef _STRICTCHECK_
-  ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CSubBasin::GetWaterDemandName: invalid index",RUNTIME_ERR);
-#endif
-  return _pWaterDemands[ii]->GetName();
-}
-//////////////////////////////////////////////////////////////////
-/// \brief returns true if water demand ii has return flow 
-/// \return true if water demand ii has return flow 
-//
-bool  CReservoir::HasReturnFlow(const int ii) const 
-{
-#ifdef _STRICTCHECK_
-  ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CSubBasin::HasReturnFlow: invalid index",RUNTIME_ERR);
-#endif
-  return _pWaterDemands[ii]->HasReturnFlow();
-}
 //////////////////////////////////////////////////////////////////
 /// \brief Returns specified irrigation/water use demand from reservoir at time t
 /// \param &t [in] Model time at which the demand from reservoir is to be determined
 /// \return specified demand from reservoir at time t
 //
-double CReservoir::GetWaterDemand           (const int ii,const double &t) const
+double CReservoir::GetWaterDemand           (const int ii) const
 {
 #ifdef _STRICTCHECK_
   ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CReservoir::GetWaterDemand: invalid index",RUNTIME_ERR);
@@ -1042,7 +1008,7 @@ void CReservoir::SetVolumeStageCurve(const double *a_ht,const double *a_V,const 
   for(int i=0;i<_Np;i++)
   {
     _aVolume[i]=InterpolateCurve(_aStage[i],a_ht,a_V,nPoints,false);
-    if((i > 0) && ((_aVolume[i] - _aVolume[i-1]) <= -REAL_SMALL)) {
+    if((i > 0) && ((_aVolume[i] - _aVolume[i-1]) <= -REAL_SMALL) && (_aVolume[i]!=0.0)) {
       string warn = "CReservoir::SetVolumeStageCurve: volume-stage relationships must be monotonically increasing for all stages. [bad reservoir: " + _name + " "+to_string(_SBID)+"]";
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
     }
@@ -1060,7 +1026,7 @@ void CReservoir::SetAreaStageCurve(const double *a_ht,const double *a_A,const in
   for(int i=0;i<_Np;i++)
   {
     _aArea[i]=InterpolateCurve(_aStage[i],a_ht,a_A,nPoints,false);
-    if((i > 0) && ((_aArea[i] - _aArea[i-1]) <= -REAL_SMALL)) {
+    if((i > 0) && ((_aArea[i] - _aArea[i-1]) <= -REAL_SMALL) && (_aArea[i]!=0.0)) {
       string warn = "CReservoir::SetAreaStageCurve: area-stage relationships must be monotonically increasing for all stages. [bad reservoir: " + _name + " "+to_string(_SBID)+"]";
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
     }
@@ -1527,7 +1493,7 @@ double  CReservoir::RouteWater(const double &Qin_old,
   // Downstream water demand sets minimum flow
   for(int i=0;i<_nDownDemands;i++) {
     if(IsInDateRange(tt.julian_day,_aDownDemands[i]->julian_start,_aDownDemands[i]->julian_end)){
-      Qmin+=(_aDownDemands[i]->pDownSB->GetTotalWaterDemand(tt.model_time)*_aDownDemands[i]->percent);
+      Qmin+=(_aDownDemands[i]->pDownSB->GetTotalWaterDemand()*_aDownDemands[i]->percent);
       Qmin+= _aDownDemands[i]->pDownSB->GetEnviroMinFlow   (tt.model_time)*1.0; //assume 100% of environmental min flow must be met
     }
   }

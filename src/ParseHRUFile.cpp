@@ -1429,7 +1429,6 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
         }
         else if(!strcmp(s[1],"LOOKUP_TABLE"))
         {
-          if(type!=CURVE_LAKE) { type = CURVE_DATA; } //enables :VolumeStageRelation to be used with lake-type
           p->Tokenize(s,Len);
           if(Len >= 1) { NV = s_to_i(s[0]); }
           aV    = new double[NV];
@@ -1477,7 +1476,6 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
         }
         else if(!strcmp(s[1],"LOOKUP_TABLE"))
         {
-//          type = CURVE_DATA;
           p->Tokenize(s,Len);
           if(Len >= 1) { NA = s_to_i(s[0]); }
           aA = new double[NA];
@@ -1909,8 +1907,8 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
      }
     }
 
-
     pRes=new CReservoir(name,SBID,weircoeff,cwidth,crestht,lakearea,max_depth);
+
   }
   else {
     ExitGracefully("CReservoir::Parse: only currently supporting linear, powerlaw, or data reservoir rules",STUB);

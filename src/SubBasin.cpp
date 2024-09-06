@@ -475,7 +475,7 @@ double CSubBasin::GetDownstreamInflow(const double &t) const
 /// \param &t [in] Model time at which the demand from SB is to be determined
 /// \return specified demand from subbasin at time t
 //
-double CSubBasin::GetTotalWaterDemand(const double &t) const
+double CSubBasin::GetTotalWaterDemand() const
 {
   double sum=0.0;
   for (int ii=0;ii<_nWaterDemands;ii++)
@@ -486,14 +486,14 @@ double CSubBasin::GetTotalWaterDemand(const double &t) const
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Returns specified irrigation/water use demand from subbasin at time t
+/// \brief Returns specified irrigation/water use demand from subbasin
 /// \param &t [in] Model time at which the demand from SB is to be determined
-/// \return specified demand from subbasin at time t
+/// \return specified demand from subbasin at current time 
 //
-double CSubBasin::GetWaterDemand(const int ii, const double &t) const
+double CSubBasin::GetWaterDemand(const int ii) const
 {
 #ifdef _STRICTCHECK_
-  ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CSubBasin::GetWaterDemandID: invalid index",RUNTIME_ERR);
+  ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CSubBasin::GetWaterDemand: invalid index",RUNTIME_ERR);
 #endif
 
   return _pWaterDemands[ii]->GetDemand();
@@ -549,7 +549,7 @@ double CSubBasin::GetReturnFlow(const int ii) const
 double CSubBasin::GetDownstreamIrrDemand(const double &t) const
 {
   double Qirr;
-  Qirr=GetTotalWaterDemand(t);
+  Qirr=GetTotalWaterDemand();
 
   if (_downstream_ID==DOESNT_EXIST){ return Qirr; }
   else                             { return _pDownSB->GetDownstreamIrrDemand(t)+Qirr; }
@@ -607,13 +607,13 @@ double CSubBasin::ApplyIrrigationDemand(const double &t,const double &Q,const bo
 
   //if using Management optimization, delivery determined by optimizer
   if (optimized) {
-    //cout<<setprecision(5)<< _Qdelivered<<" of "<<GetTotalWaterDemand(t)<<" applied ("<<setprecision(3)<<_Qdelivered/GetTotalWaterDemand(t)*100<<"%) ("<<_Qdelivered/Q*100<<"% of flow)" << endl;
+    //cout<<setprecision(5)<< _Qdelivered<<" of "<<GetTotalWaterDemand()<<" applied ("<<setprecision(3)<<_Qdelivered/GetTotalWaterDemand(t)*100<<"%) ("<<_Qdelivered/Q*100<<"% of flow)" << endl;
     return min(Q,_Qdelivered); //\todo[fix] - this min shouldnt be required.
     return _Qdelivered; //total delivered as calculated from management optimization
   }
 
   double Qdelivered;
-  double Qdemand=GetTotalWaterDemand(t);
+  double Qdemand=GetTotalWaterDemand();
   double Qmin   =GetEnviroMinFlow(t);
 
   Qdelivered=min(max((1.0-_unusable_flow_pct)*(Q-Qmin),0.0),Qdemand);
@@ -812,40 +812,9 @@ int CSubBasin::GetNumWaterDemands() const
 CDemand *CSubBasin::GetWaterDemandObj (const int ii) const
 {
 #ifdef _STRICTCHECK_
-  ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CSubBasin::GetWaterDemandID: invalid index",RUNTIME_ERR);
+  ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CSubBasin::GetWaterDemandObj: invalid index",RUNTIME_ERR);
 #endif
   return _pWaterDemands[ii]; 
-}
-//////////////////////////////////////////////////////////////////
-/// \brief returns water/irrigation demand integer ID
-/// \return water/irrigation demand integer ID
-//
-int CSubBasin::GetWaterDemandID     (const int ii) const
-{
-  //\todo[clean] - replace this and next 2 routines with GetWaterDemand() 
-#ifdef _STRICTCHECK_
-  ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CSubBasin::GetWaterDemandID: invalid index",RUNTIME_ERR);
-#endif
-  return _pWaterDemands[ii]->GetID(); //stores demand ID
-}
-//////////////////////////////////////////////////////////////////
-/// \brief returns water/irrigation demand name/alias
-/// \return water/irrigation demand name/alias
-//
-string CSubBasin::GetWaterDemandName   (const int ii) const
-{
-#ifdef _STRICTCHECK_
-  ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CSubBasin::GetWaterDemandName: invalid index",RUNTIME_ERR);
-#endif
-  return _pWaterDemands[ii]->GetName();
-}
-//////////////////////////////////////////////////////////////////
-/// \brief returns true if water demand ii has return flow 
-/// \return true if water demand ii has return flow 
-//
-bool  CSubBasin::HasReturnFlow(const int ii) const 
-{
-  return _pWaterDemands[ii]->HasReturnFlow();
 }
 
 //////////////////////////////////////////////////////////////////
@@ -2102,7 +2071,7 @@ void CSubBasin::UpdateOutflows   (const double         *aQo,    //[m3/s]
   _Qirr     =irrQ_act;
 
   if (!Options.management_optimization){
-    double total=GetTotalWaterDemand(tt.model_time);
+    double total=GetTotalWaterDemand();
     for (int ii = 0; ii < _nWaterDemands; ii++) {
       double demand=_pWaterDemands[ii]->GetDemand();
       _aQdelivered[ii]=_Qirr*(demand/total); //_aQirr may be less than total

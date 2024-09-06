@@ -213,9 +213,6 @@ public:/*-------------------------------------------------------*/
   double               GetTopWidth          () const;
   bool                 UseInFlowAssimilation() const;
   int                  GetNumWaterDemands   () const;
-  int                  GetWaterDemandID     (const int ii) const;
-  string               GetWaterDemandName   (const int ii) const;
-  bool                 HasReturnFlow        (const int ii) const;
   double               GetUnusableFlowPercentage() const;
 
   const double   *GetUnitHydrograph        () const;
@@ -249,8 +246,8 @@ public:/*-------------------------------------------------------*/
 
   double          GetSpecifiedInflow       (const double &t) const;    //[m3/s] to upstream end of channel at point in time
   double          GetDownstreamInflow      (const double &t) const;    //[m3/s] to downstream end of channel at point in time
-  double          GetTotalWaterDemand      (const double &t) const;    //[m3/s] total from downstream end of channel at point in time
-  double          GetWaterDemand           (const int ii,const double &t) const;  //[m3/s] iith demand from downstream end of channel at point in time
+  double          GetTotalWaterDemand      () const;                   //[m3/s] total from downstream end of channel at point in time
+  double          GetWaterDemand           (const int ii) const;       //[m3/s] iith demand from downstream end of channel at point in time
   double          GetTotalReturnFlow       () const;                   //[m3/s] total instantaneous return flow TO this basin
   double          GetReturnFlow            (const int ii) const;       //[m3/s] return flow associated with iith demand (may be redirected OUT of basin)
   double          GetDownstreamIrrDemand   (const double &t) const;    //[m3/s] cumulative downstream irrigation demand, including from this subbasin

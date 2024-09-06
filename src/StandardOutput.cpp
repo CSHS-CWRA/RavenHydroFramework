@@ -406,20 +406,20 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         _DEMANDS<<","<<name<<" (total del.) [m3/s]";
         _DEMANDS<<","<<name<<" (total ret.) [m3/s]";
         for (int ii=0;ii<pSB->GetNumWaterDemands(); ii++){
-          name=pSB->GetWaterDemandName(ii);
+          name=pSB->GetWaterDemandObj(ii)->GetName();
           _DEMANDS<<","<<name<<" (demand) [m3/s]";
           _DEMANDS<<","<<name<<" (delivery) [m3/s]";
-          if (pSB->HasReturnFlow(ii)){
+          if (pSB->GetWaterDemandObj(ii)->HasReturnFlow()){
           _DEMANDS<<","<<name<<" (return) [m3/s]";
           }
         }
 
         if (pSB->GetReservoir()!=NULL){
           for (int ii=0;ii<pSB->GetReservoir()->GetNumWaterDemands(); ii++){
-            name=pSB->GetReservoir()->GetWaterDemandName(ii);
+            name=pSB->GetReservoir()->GetWaterDemandObj(ii)->GetName();
             _DEMANDS<<","<<name<<" (res. demand) [m3/s]";
             _DEMANDS<<","<<name<<" (res. delivery) [m3/s]";
-            if (pSB->GetReservoir()->HasReturnFlow(ii)){
+            if (pSB->GetReservoir()->GetWaterDemandObj(ii)->HasReturnFlow()){
             _DEMANDS<<","<<name<<" (res. return) [m3/s]";
             }
           }
@@ -1003,7 +1003,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 			}
     }
 
-    //Demands.csv
+    // Demands.csv
     //----------------------------------------------------------------
     double irr,Qd,Qr,Q,eF;
     double demsum,delsum,retsum;
@@ -1024,13 +1024,13 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
             demsum=delsum=retsum=0.0;
             for (int ii=0;ii<pSB->GetNumWaterDemands();ii++)
             {
-              demsum+=pSB->GetWaterDemand(ii,tt.model_time);
+              demsum+=pSB->GetWaterDemand(ii);
               delsum+=pSB->GetDemandDelivery(ii);
               retsum+=pSB->GetReturnFlow(ii);
             }
             if (pSB->GetReservoir()!=NULL){
               for (int ii=0;ii<pSB->GetReservoir()->GetNumWaterDemands(); ii++){
-                demsum =pSB->GetReservoir()->GetWaterDemand(ii,tt.model_time);
+                demsum =pSB->GetReservoir()->GetWaterDemand(ii);
                 delsum =pSB->GetReservoir()->GetDemandDelivery(ii);
                 retsum =pSB->GetReservoir()->GetReturnFlow(ii); 
               }
@@ -1039,23 +1039,23 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
             for (int ii=0;ii<pSB->GetNumWaterDemands();ii++)
             {
-              irr =pSB->GetWaterDemand(ii,tt.model_time);
+              irr =pSB->GetWaterDemand(ii);
               Qd  =pSB->GetDemandDelivery(ii);
               Qr  =pSB->GetReturnFlow(ii);
               //double unmet=max(irr-Qd,0.0);
               _DEMANDS<<","<<irr<<","<<Qd;
-              if (pSB->HasReturnFlow(ii)){
+              if (pSB->GetWaterDemandObj(ii)->HasReturnFlow()){
                 _DEMANDS<<","<<Qr;
               }
             }
             if (pSB->GetReservoir()!=NULL){
               for (int ii=0;ii<pSB->GetReservoir()->GetNumWaterDemands(); ii++){
-                irr =pSB->GetReservoir()->GetWaterDemand(ii,tt.model_time);
+                irr =pSB->GetReservoir()->GetWaterDemand(ii);
                 Qd  =pSB->GetReservoir()->GetDemandDelivery(ii);
                 Qr  =pSB->GetReservoir()->GetReturnFlow(ii); 
                 //double unmet=max(irr-Qd,0.0);
                 _DEMANDS<<","<<irr<<","<<Qd;
-                if (pSB->GetReservoir()->HasReturnFlow(ii)){
+                if (pSB->GetReservoir()->GetWaterDemandObj(ii)->HasReturnFlow()){
                   _DEMANDS<<","<<Qr;
                 }
               }
