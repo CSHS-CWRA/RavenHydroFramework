@@ -41,3 +41,6 @@ Makefile
 # Runtime artifacts
 Raven
 Raven_errors.txt
+
+# Directories
+test/
