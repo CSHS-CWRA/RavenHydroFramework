@@ -304,7 +304,7 @@ double CEnthalpyModel::GetEnergyLossesFromLake(const int p, double &Q_sens, doub
   }
 
   Q_sens  =hstar* A_avg * (temp_air -0.5*(T_new+T_old));
-  Q_cond  =kdiff * A_avg * (0.5*(Ts_new+Ts_old)- 0.5*(T_new+T_old));
+  Q_cond  =ksed * A_avg * (0.5*(Ts_new+Ts_old)- 0.5*(T_new+T_old));
   Q_sw_in =(SW      )*A_avg;
   Q_lw_in =(LW_in   )*A_avg;
   Q_lw_out=(LW      )*A_avg;
@@ -314,7 +314,7 @@ double CEnthalpyModel::GetEnergyLossesFromLake(const int p, double &Q_sens, doub
   return -(Q_sens + Q_cond  + Q_sw_in + Q_lw_in + Q_lw_out +  Q_lat + Q_rain) * tstep; //[MJ]
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Calculates Res_mass (total reservoir energ) and ResSedMass (total sediment energy) in basin with reservoir at end of time step
+/// \brief Calculates Res_mass (total reservoir energy) and ResSedMass (total sediment energy) in basin with reservoir at end of time step
 ///
 /// \param p           [in]  subbasin index
 /// \param aMout_new[] [in]  Array of energy outflows at downstream end of each segment at end of current timestep [MJ/d] [size: nsegs]
@@ -324,7 +324,7 @@ double CEnthalpyModel::GetEnergyLossesFromLake(const int p, double &Q_sens, doub
 /// \param tt          [in]  Time structure
 //
 void   CEnthalpyModel::RouteMassInReservoir   (const int          p,          // SB index
-                                               const double      *aMout_new,  // [MJ/d][size: nsegs ]
+                                               const double      *aMout_new,  // [MJ/d][size: nsegs]
                                                      double      &Res_mass,   // [MJ]
                                                      double      &ResSedMass, // [MJ]
                                                const optStruct   &Options,
@@ -334,28 +334,30 @@ void   CEnthalpyModel::RouteMassInReservoir   (const int          p,          //
   CReservoir* pRes = _pModel->GetSubBasin(p)->GetReservoir();
   int nSegments    = _pModel->GetSubBasin(p)->GetNumSegments();
 
-  double V_new=pRes->GetStorage       ();
-  double V_old=pRes->GetOldStorage    ();
-  double Q_new=pRes->GetOutflowRate   ()*SEC_PER_DAY;
+  double V_new=pRes->GetStorage();
+  double V_old=pRes->GetOldStorage();
+  
+  if((V_old<=0.0) || (V_new<=0.0)) { Res_mass=ResSedMass=0.0; return;} //handles dried out reservoir/lake
+  
+  double V_h_new = pRes->GetHypolimnionStorage();
+  double V_h_old = pRes->GetOldHypolimnionStorage();
+  double V_e_new = V_new-V_h_new;
+  double V_e_old = V_old-V_h_old;
+  double Q_new=pRes->GetOutflowRate()*SEC_PER_DAY;
   double Q_old=pRes->GetOldOutflowRate()*SEC_PER_DAY;
   double A_new=pRes->GetSurfaceArea();
   double A_old=pRes->GetOldSurfaceArea();
   double A_avg=0.5*(A_new+A_old);
-  double tstep=Options.timestep;
-
-  if((V_old<=0.0) || (V_new<=0.0)) { Res_mass=ResSedMass=0.0; return;} //handles dried out reservoir/lake
-  
-  double V_h_new = pRes->GetHypolimnionStorage       ();
-  double V_h_old = pRes->GetOldHypolimnionStorage    ();
-  double V_e_new = V_new-V_h_new;
-  double V_e_old = V_old-V_h_old;
-  double Q_dn_new = 0;
-  double Q_dn_old = 0;
-  double Q_up_new = 0;
-  double Q_up_old = 0;
   double A_h_new = pRes->GetMixingArea();
   double A_h_old = pRes->GetOldMixingArea();
   double A_h_avg = 0.5 * (A_h_new + A_h_old);
+  
+  double Q_dn_new = 0.0;
+  double Q_dn_old = 0.0;
+  double Q_up_new = 0.0;
+  double Q_up_old = 0.0;
+  
+  double tstep=Options.timestep;
    
   CHydroUnit*   pHRU=_pModel->GetHydroUnit(pRes->GetHRUIndex());
 
@@ -367,13 +369,10 @@ void   CEnthalpyModel::RouteMassInReservoir   (const int          p,          //
   double hstar(0);
   if(pHRU!=NULL) { //otherwise only simulate advective mixing+ rain input
     Acorr    =pHRU->GetArea()*M2_PER_KM2/A_avg; //handles the fact that GetAET() returns mm/d normalized by HRU area, not actual area
-
     temp_air =pHRU->GetForcingFunctions()->temp_ave;           //[C]
     SW       =pHRU->GetForcingFunctions()->SW_radia_net;       //[MJ/m2/d]
     LW_in    =pHRU->GetForcingFunctions()->LW_incoming;        //[MJ/m2/d]
-
     LW       =-STEFAN_BOLTZ*EMISS_WATER*pow(T_old+ZERO_CELSIUS,4); //[MJ/m2/d] //TMP DEBUG -time-lagged - should include in the N-R formulation
-
     AET      =pRes->GetAET()*Acorr/ MM_PER_METER ;             //[m/d]
 //  Vsed     =pRes->GetLakebedThickness() * pHRU->GetArea()*M2_PER_KM2;
     hstar    =pRes->GetLakeConvectionCoeff(); //[MJ/m2/d/K]
@@ -382,7 +381,7 @@ void   CEnthalpyModel::RouteMassInReservoir   (const int          p,          //
 
   double Ts_old=ConvertVolumetricEnthalpyToTemperature(_aMsed_last[p]/V_h_old);
   
-  
+  // water density in each layer as a function of water temperature (Chapra, 2008)
   double dens_e,dens_h,vdiff,kdiff;
   
   double a0= 999.842594;
@@ -395,23 +394,24 @@ void   CEnthalpyModel::RouteMassInReservoir   (const int          p,          //
   dens_e = a0+a1*T_old + a2*pow(T_old,2) + a3*pow(T_old,3) +a4*pow(T_old,4)+a5*pow(T_old,5);
   dens_h = a0+a1*Ts_old + a2*pow(Ts_old,2) + a3*pow(Ts_old,3) +a4*pow(Ts_old,4)+a5*pow(Ts_old,5);
   
-  double N2;
-  
- if(dens_e<dens_h){
-	  N2 = -1*GRAVITY/dens_e*(dens_e-dens_h)/1.0;
+  // Brunt-Väisälä frequency at thermocline depth (assume dz = 1.0m) (Jennings et al. 2012)
+  double N2=1.0e-12; // value when dens_e >= dens_h
+  if(dens_e<dens_h){
+    N2 = -1*GRAVITY/dens_e*(dens_e-dens_h)/1.0;
   }
-double m = -0.65;
-double b = -3.1;
   
+  // Vertical convection coefficient as function of N2 (Quay et el. 1980; Figure 10)
+  double m = -0.65;
+  double b = -3.1;
   vdiff = pow(10,m*log10(N2)+b)/100/100;
   kdiff = vdiff*HCP_WATER*SEC_PER_DAY;
   
-  
-  // N-R solution of Crank-nicolson problem as set of two non-linear algebraic equations
+  // N-R solution of Crank-nicolson problem as set of two non-linear algebraic equations [A][E]=[B]
   // -----------------------------------------------------------------------------------------
-  //dE   /dt=Qh_in-Qh_out+(Rnet*A+P*hrain*A)-ET*rho*LH*A+k*(Tair-T(E))*A+ksed*(Tsed-T(E))*A     //[MJ/d]
-  //dEsed/dt=                                                           -ksed*(Tsed-T(E))*A     //[MJ/d]
+  //dEe/dt = Qh_in - Qh_out - Qdn*Ee/Ve + Qup*Eh/Vh + As*(Rnet+Phrain-ET*rho*LH) + As*k*(Tair-Te) + Ah*kdiff*(Th-Te)  // [MJ/d]
+  //dEh/dt =                  Qdn*Ee/Ve – Qup*Eh/Vh                                               + Ah*kdiff*(Te-Th)  // [MJ/d] 
   //
+  
   //Allocate memory
   double  *B=new double  [2];
   double  *R=new double  [2];
@@ -424,20 +424,24 @@ double b = -3.1;
     for (int j = 0; j < 2; j++) {A[i][j]=J[i][j]=0.0;}
   }
 
+  // constants matrix
   B[0] = 0.5*(aMout_new[nSegments-1]+_aMout[p][nSegments-1])*tstep; // inflow [MJ]
+  B[0]+=(1.0-0.5*tstep/V_e_old*Q_old)*_aMres_last[p];               // outflow [MJ]
   B[0]+=_aMresRain[p]*tstep;                                        // rainfall inputs [MJ]
-  B[0]+= A_avg *(SW+LW_in)*tstep;                                   // net incoming radiation [MJ]
-  B[0]+= A_avg *(LW      )*tstep;                                   // net outgoing radiation [MJ]
-  B[0]-= A_avg *(AET*DENSITY_WATER*LH_VAPOR)*tstep;                 // latent heat [MJ]
-  B[0]+= A_avg *(hstar*temp_air)*tstep;                             // sensible heat exhange [MJ]
+  B[0]+= A_avg*(SW+LW_in)*tstep;                                    // net incoming radiation [MJ]
+  B[0]+= A_avg*(LW      )*tstep;                                    // net outgoing radiation [MJ]
+  B[0]-= A_avg*(AET*DENSITY_WATER*LH_VAPOR)*tstep;                  // latent heat [MJ]
+  B[0]+= A_avg*hstar*(temp_air-0.5*T_old)*tstep;                    // sensible heat exhange [MJ]
+  //B[0]-=0.5*tstep*hstar*A_avg*T_old;                              // sensible heat exchange [MJ]
+  B[0]+=0.5*tstep*kdiff*A_h_avg*(Ts_old-T_old);                     // diffusive heat exchange [MJ]
+  //B[0]-=0.5*tstep*kdiff*A_h_avg*T_old;                            // diffusive heat exchange [MJ]
+  B[0]+=(1.0-0.5*tstep/V_e_old*Q_dn_old)*_aMres_last[p];            // downward advection [MJ]
+  B[0]+=0.5*tstep/V_h_old*Q_up_old*_aMsed_last[p];                  // upward advection [MJ]
 
-  B[0]+=(1.0-0.5*tstep/V_old*Q_old)*_aMres_last[p];
-  B[0]-=0.5*tstep*hstar*A_old*T_old;
-  B[0]-=0.5*tstep*kdiff *A_avg*T_old;
-  B[0]+=0.5*tstep*kdiff *A_avg*Ts_old;
-
-  B[1] =0.5*tstep*kdiff *A_avg*T_old;
-  B[1]+=_aMsed_last[p]-0.5*tstep*kdiff *A_avg*Ts_old;
+  B[1] =0.5*tstep*kdiff*A_h_avg*(T_old-Ts_old);                     // diffusive heat exchange [MJ]
+  //B[1]-=0.5*tstep*kdiff*A_h_avg*Ts_old;
+  B[1]+=0.5*tstep/V_e_old*Q_dn_old*_aMres_last[p];                  // downward advection [MJ]
+  B[1]+=(1-0.5*tstep/V_h_old*Q_up_old)*_aMsed_last[p];              // upward advection [MJ]
 
   int iter=0;
   double change=ALMOST_INF;
@@ -452,35 +456,35 @@ double b = -3.1;
     T_guess = ConvertVolumetricEnthalpyToTemperature(E_guess/V_e_new);
     Ts_guess= ConvertVolumetricEnthalpyToTemperature(Es_guess/V_h_new);
 
-    A[0][0] = 1.0 + 0.5 * tstep  * Q_new/V_new;
-    A[1][1] = 1.0;
-    A[1][0] = 0.0;
-    A[0][1] = 0.0;
+    A[0][0] = 1.0 + 0.5*tstep*(Q_new + Q_dn_new)/V_e_new;
+    A[1][1] = 1.0 + 0.5*tstep*Q_up_new/V_h_new;
+    A[1][0] = 0.5*tstep*Q_dn_new/V_e_new;
+    A[0][1] = 0.5*tstep*Q_up_new/V_h_new;
     if (E_guess!=0.0){
-      A[0][0]+= 0.5*tstep*hstar*A_new*T_guess/E_guess;
-      A[0][0]+= 0.5*tstep*kdiff *A_avg*T_guess/E_guess;  //[MJ/m2/d/K]*[m2]/[MJ/m3/K] = [m3/d]
-      A[1][0]-= 0.5*tstep*kdiff *A_avg*T_guess/E_guess;
+      A[0][0]+= 0.5*tstep*hstar*A_avg*  T_guess/E_guess;
+      A[0][0]+= 0.5*tstep*kdiff*A_h_avg*T_guess/E_guess;  //[MJ/m2/d/K]*[m2]/[MJ/m3/K] = [m3/d]
+      A[1][0]-= 0.5*tstep*kdiff*A_h_avg*T_guess/E_guess;
     }
     if (Es_guess!=0.0){
-      A[0][1]-= 0.5*tstep*kdiff *A_avg*Ts_guess/Es_guess;
-      A[1][1]+= 0.5*tstep*kdiff *A_avg*Ts_guess/Es_guess;
+      A[0][1]-= 0.5*tstep*kdiff*A_h_avg*Ts_guess/Es_guess;
+      A[1][1]+= 0.5*tstep*kdiff*A_h_avg*Ts_guess/Es_guess;
     }
 
     //J_ij=A_ij+E*dA_ij/dE = Jacobian
-    J[0][0]=A[0][0]+0.5*tstep*(hstar*A_new+kdiff*A_avg) * (TemperatureEnthalpyDerivative(E_guess /V_e_new)/ V_e_new);
-    J[0][1]=A[0][1]-0.5*tstep*(            kdiff*A_avg) * (TemperatureEnthalpyDerivative(Es_guess/V_h_new )/ V_h_new );
-    J[1][0]=A[1][0]-0.5*tstep*(            kdiff*A_avg) * (TemperatureEnthalpyDerivative(E_guess /V_e_new)/ V_e_new);
-    J[1][1]=A[1][1]+0.5*tstep*(            kdiff*A_avg) * (TemperatureEnthalpyDerivative(Es_guess/V_h_new )/ V_h_new );
+    J[0][0]=A[0][0]+0.5*tstep*(hstar*A_avg+kdiff*A_h_avg) * (TemperatureEnthalpyDerivative(E_guess /V_e_new)/V_e_new);
+    J[0][1]=A[0][1]+0.5*tstep*(            kdiff*A_h_avg) * (TemperatureEnthalpyDerivative(Es_guess/V_h_new)/V_h_new);
+    J[1][0]=A[1][0]-0.5*tstep*(            kdiff*A_h_avg) * (TemperatureEnthalpyDerivative(E_guess /V_e_new)/V_e_new);
+    J[1][1]=A[1][1]+0.5*tstep*(            kdiff*A_h_avg) * (TemperatureEnthalpyDerivative(Es_guess/V_h_new)/V_h_new);
 
-    R[0]   =-A[0][0]*E_guess-A[0][1]*Es_guess+B[0];
-    R[1]   =-A[1][0]*E_guess-A[1][1]*Es_guess+B[1];
+    R[0] = -A[0][0]*E_guess-A[0][1]*Es_guess+B[0];
+    R[1] = -A[1][0]*E_guess-A[1][1]*Es_guess+B[1];
 
     //invert 2x2 matrix analytically
     double den= (J[0][1]*J[1][0]-J[0][0]*J[1][1]);
     dE  = (J[0][1]*R[1]-J[1][1]*R[0])/den;
     dEs = (J[1][0]*R[0]-J[0][0]*R[1])/den;
 
-    change =sqrt(dE*dE+dEs*dEs)/ V_e_new / HCP_WATER; //convert to approx temp difference (for >0C water)
+    change =sqrt(dE*dE+dEs*dEs)/V_new/HCP_WATER; //convert to approx temp difference (for >0C water)
 
     E_guess  +=dE;
     Es_guess +=dEs;
@@ -494,6 +498,7 @@ double b = -3.1;
   delete [] R;
   for (int i=0;i<2;i++){delete [] A[i]; delete[] J[i]; } delete[] A; delete[] J;
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief returns total energy lost from subbasin reach over current time step [MJ]
 /// \param p [in] subbasin index
