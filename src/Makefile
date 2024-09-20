@@ -25,12 +25,12 @@ LDFLAGS  :=
 CXXFLAGS += -std=c++11 -fPIC
 
 # OPTION 1) include netcdf - uncomment following two commands (assumes netCDF path = /usr/local): 
-#CXXFLAGS += -Dnetcdf     
-#LDLIBS   += -L/usr/local -lnetcdf  
+CXXFLAGS += -Dnetcdf     
+LDLIBS   += -L/usr/local -lnetcdf  
 
 # OPTION 2) include lp_solve for water management optimization- uncomment following two commands (assumes liblpsolve55.a in ../lib/lp_solve_unix/ folder):
-CXXFLAGS += -D_LPSOLVE_ 
-LDLIBS   += -L../lib/lp_solve_unix -llpsolve55
+#CXXFLAGS += -D_LPSOLVE_ 
+#LDLIBS   += -L../lib/lp_solve_unix -llpsolve55
 
 # OPTION 3) if you use a OSX/BSD system, uncomment the LDFLAGS line below
 # this is to allow for use a 1Gb stack, see http://linuxtoosx.blogspot.ca/2010/10/stack-overflow-increasing-stack-limit.html

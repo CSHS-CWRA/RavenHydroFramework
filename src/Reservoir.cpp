@@ -18,7 +18,7 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
   _SBID=SubID;
 
   _pDownSB=NULL;
-
+ // _mixing_depth=1;
   _lakebed_thick=1.0;
   _lakebed_cond =0.0;
   _lake_convcoeff=2.0;
@@ -403,6 +403,14 @@ long  CReservoir::GetSubbasinID          () const { return _SBID; }
 //
 double  CReservoir::GetStorage           () const { return GetVolume(_stage); }
 
+/// \returns reservoir hypoliminion storage [m3]
+//
+double  CReservoir::GetHypolimnionStorage           () const { return GetVolume(_stage-_mixing_depth); }
+
+/// \returns reservoir old hypoliminion storage [m3]
+//
+double  CReservoir::GetOldHypolimnionStorage           () const { return GetVolume(_stage_last-_mixing_depth); }
+
 //////////////////////////////////////////////////////////////////
 /// \returns current stage [m]
 //
@@ -448,6 +456,16 @@ double  CReservoir::GetSurfaceArea       () const { return GetArea(_stage); }
 /// \returns start-of-timestep surface area [m2]
 //
 double  CReservoir::GetOldSurfaceArea    () const { return GetArea(_stage_last); }
+
+//////////////////////////////////////////////////////////////////
+/// \returns current mixing area [m2]
+//
+double  CReservoir::GetMixingArea       () const { return GetArea(_stage-_mixing_depth); }
+
+//////////////////////////////////////////////////////////////////
+/// \returns current old mixing area [m2]
+//
+double  CReservoir::GetOldMixingArea       () const { return GetArea(_stage_last-_mixing_depth); }
 
 //////////////////////////////////////////////////////////////////
 /// \returns lakebed thickness [m]

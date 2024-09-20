@@ -55,6 +55,7 @@ private:/*-------------------------------------------------------*/
   string       _name;                ///< reservoir name
   long         _SBID;                ///< subbasin ID
   double       _max_capacity;        ///< maximum reservoir capacity [m3]
+  double       _mixing_depth;
 
   double       _lakebed_thick;       ///< lakebed thickness [m]
   double       _lakebed_cond;        ///< lakebed thermal conductivity [MJ/m/K/d]
@@ -178,6 +179,8 @@ public:/*-------------------------------------------------------*/
 
   double            GetStorage               () const; //[m3]
   double            GetOldStorage            () const; //[m3]
+  double            GetHypolimnionStorage    () const; //[m3]
+  double            GetOldHypolimnionStorage () const; //[m3]
   double            GetOutflowRate           () const; //[m3/s]
   double            GetOldOutflowRate        () const; //[m3/s]
   double            GetIntegratedOutflow     (const double &tstep) const; //[m3]
@@ -191,6 +194,8 @@ public:/*-------------------------------------------------------*/
   double            GetOldStage              () const; //[m]
   double            GetSurfaceArea           () const; //[m2]
   double            GetOldSurfaceArea        () const; //[m2]
+  double            GetMixingArea            () const; //[m2]
+  double            GetOldMixingArea            () const; //[m2]
   double            GetLakebedThickness      () const; //[m]
   double            GetLakebedConductivity   () const; //[MJ/m/K/d]
   double            GetLakeConvectionCoeff   () const; //[MJ/m2/d/K]
