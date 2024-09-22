@@ -1438,7 +1438,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
             if(IsComment(s[0],Len)) { i--; }
             else {
               aV_ht[i] = s_to_d(s[0]);
-              aV[i] = s_to_d(s[1]);
+              aV   [i] = s_to_d(s[1]);
             }
           }
           p->Tokenize(s,Len); //:EndVolumeStageRelation
@@ -1924,7 +1924,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
   }
   if((type==CURVE_LAKE) && (aV!=NULL) && (aV_ht!=NULL))
   {
-    pRes->SetVolumeStageCurve(aV_ht,aV,NV);//allows user to override prismatic lake assumption
+    pRes->SetVolumeStageCurve(aV_ht,aV,NV, weircoeff, cwidth);//allows user to override prismatic lake assumption
   }
   if((type==CURVE_LAKE) && (aA!=NULL) && (aA_ht!=NULL))
   {

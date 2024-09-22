@@ -634,6 +634,15 @@ void CDemandOptimizer::InitializeDemands(CModel* pModel, const optStruct& Option
 
   _demands_initialized=true;
 }
+string ComparisonToString(comparison C) 
+{
+  if (C==COMPARE_IS_EQUAL){return "="; }
+  if (C==COMPARE_GREATERTHAN){return ">"; }
+  if (C==COMPARE_LESSTHAN){return "<"; }
+  if (C==COMPARE_BETWEEN){return "in_range"; }
+  if (C==COMPARE_NOT_EQUAL){return "!="; }
+  return "?";
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes Demand optimization instance
 /// \notes to be called after .rvm file read
@@ -826,14 +835,14 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
     cout<<" # Constraints/Goals: " <<_nGoals<<endl;
     for (int i = 0; i < _nGoals; i++) {
       if (_pGoals[i]->is_goal){tmpstr="[GOAL]      "; }
-      else                          {tmpstr="[CONSTRAINT]"; }
+      else                    {tmpstr="[CONSTRAINT]"; }
       cout<<"    "<<i<<" "<<tmpstr<<": "<<_pGoals[i]->name<<endl;
       for (int k=0; k<_pGoals[i]->nOperRegimes; k++)
       {
         comparison ctype=_pGoals[i]->pOperRegimes[k]->pExpression->compare;
         cout<<"      +oper regime: "<<_pGoals[i]->pOperRegimes[k]->reg_name<<endl;
         cout<<"        +expression: "<<_pGoals[i]->pOperRegimes[k]->pExpression->origexp<<endl;
-        cout<<"        +comp. type: "<<ctype<<endl;
+        cout<<"        +comp. type: "<<ComparisonToString(ctype)<<endl;
         if (ctype==COMPARE_IS_EQUAL){
         cout<<"        +penalty:    ("<<_pGoals[i]->pOperRegimes[k]->penalty_under<<","<<_pGoals[i]->pOperRegimes[k]->penalty_over<<")"<<endl;
         }
@@ -1619,7 +1628,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
 
       Qin_last =pSB->GetReservoirInflow();
       Qout_last=pRes->GetOutflowRate();
-      h_old    =pRes->GetResStage();
+      h_old    =pRes->GetResStage();//-h_ref
       Adt      =pRes->GetSurfaceArea()/Options.timestep/SEC_PER_DAY;
       k        =pRes->GetHRUIndex();
       ET=0.0;
@@ -1669,9 +1678,9 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
         double Q_guess;
         double h_sill;
 
-        Q_guess=pRes->GetDischargeFromStage(h_guess,nn);
-        dQdh   =pRes->GetStageDischargeDerivative(h_guess,nn);
-        h_sill =pRes->GetSillElevation(nn);
+        Q_guess=pRes->GetDischargeFromStage(h_guess,nn);//+h_ref
+        dQdh   =pRes->GetStageDischargeDerivative(h_guess,nn);//+h_ref
+        h_sill =pRes->GetSillElevation(nn);//-h_ref
         if (_stage_discharge_as_goal)
         {
           // -----------------------------------------------------------------------
@@ -1718,7 +1727,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
           //   Qout = 0                                if h<h_sill
           // handled via 6 constraint equations 
 
-          const double LARGE_NUMBER=1e7;
+          const double LARGE_NUMBER=5000;
 
           //------------------------------------------------------------------------
           //Eqns 1 & 2 : h^n+1 - M*(1-b) <= h_sill 
@@ -1938,6 +1947,10 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
     // Solve the LP problem!
     // ----------------------------------------------------------------
     //lp_lib::set_scaling(pLinProg, SCALE_CURTISREID+SCALE_EQUILIBRATE+SCALE_INTEGERS);
+    //lp_lib::set_scaling(pLinProg, SCALE_GEOMETRIC + SCALE_EQUILIBRATE + SCALE_INTEGERS +SCALE_DYNUPDATE);
+
+    //lp_lib::set_break_numeric_accuracy(pLinProg, 1e-6);
+    lp_lib::set_basiscrash(pLinProg, CRASH_MOSTFEASIBLE);
 
     retval = lp_lib::solve(pLinProg);
 
@@ -1945,7 +1958,23 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
     // ----------------------------------------------------------------
     if (retval!=OPTIMAL)
     {
+      cout<<"LP SOLVE CANNOT SOLVE OPTIMZIATION PROBLEM"<<endl;
       cout<<"lp_lib::solve error code: "<<retval<<endl; 
+      cout<<"date: "<<tt.date_string << endl;
+      cout<<"loop iteration: "<<iter<<" of "<<NUM_ITERATIONS<<endl;
+
+      /*lp_lib::get_variables  (pLinProg,soln);
+      lp_lib::get_constraints(pLinProg,constr); //constraint matrix * soln
+
+      for (int j=0;j<nrows;j++)
+      {
+        _aSolverRowNames [j]=to_string(lp_lib::get_row_name(pLinProg,j+1)); 
+        _aSolverResiduals[j]=constr[j]-lp_lib::get_rh(pLinProg,j+1); // LHS-RHS for each goal/constraint
+        ctyp=lp_lib::get_constr_type(pLinProg,j+1);
+        if (ctyp==LE){upperswap(_aSolverResiduals[j],0.0); }
+        if (ctyp==GE){lowerswap(_aSolverResiduals[j],0.0); _aSolverResiduals[j]*=-1; }
+        cout<<j<<" "<<_aSolverRowNames [j]<<" : "<<_aSolverResiduals[j] << endl;
+      }*/
       WriteLPSubMatrix(pLinProg,"overconstrained_lp_matrix.csv",Options);
       ExitGracefully("SolveDemandProblem: non-optimal solution found. Problem is over-constrained. Remove or adjust management constraints.",RUNTIME_ERR);
     }
@@ -1985,6 +2014,8 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
       if      (typ == DV_STAGE) {h_iter[p]=value;}
       else if (typ == DV_QOUT ) {Q_iter[p]=value;}
     }
+
+    //lp_lib::unscale(pLinProg);
 
     // update lp matrix for iterative solution of stage-discharge curve and flow diversions
     // ----------------------------------------------------------------

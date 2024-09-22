@@ -175,6 +175,7 @@ public:/*-------------------------------------------------------*/
 
   //Accessors
   long              GetSubbasinID            () const;
+  string            GetReservoirName         () const;
 
   double            GetStorage               () const; //[m3]
   double            GetOldStorage            () const; //[m3]
@@ -227,7 +228,7 @@ public:/*-------------------------------------------------------*/
   void              SetReservoirStage        (const double &ht, const double &ht_last);
   void              SetControlFlow           (const int i, const double &Q, const double &Qlast);
   void              SetOptimizedOutflow      (const double &Qout);
-  void              SetVolumeStageCurve      (const double *a_ht,const double *a_V,const int nPoints);
+  void              SetVolumeStageCurve      (const double *a_ht,const double *a_V,const int nPoints, double weircoeff, double crestwidth);
   void              SetAreaStageCurve        (const double *a_ht,const double *a_A,const int nPoints);
   void              SetGWParameters          (const double &coeff, const double &h_ref);
   void              SetCrestWidth            (const double &width);
