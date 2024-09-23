@@ -42,6 +42,7 @@ enum dv_type
   DV_QOUT,    //< outflow from reach
   DV_QOUTRES, //< outflow from reservoir
   DV_STAGE,   //< reservoir stage
+  DV_DSTAGE,  //< change in reservoir stage over time step
   DV_BINRES,  //< binary integer value for above/beneath stage-discharge sill
   DV_DELIVERY,//< delivery of water demand
   DV_RETURN,  //< return flows to reach 
