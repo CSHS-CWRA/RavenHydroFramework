@@ -311,13 +311,21 @@ void CModel::Initialize(const optStruct &Options)
       }
     }
   }
-  //--check for stage observations not linked to valid reservoir
+  //--check for stage or area observations not linked to valid reservoir
   for(i=0; i<_nObservedTS; i++){
     if(!strcmp(_pObservedTS[i]->GetName().c_str(),"RESERVOIR_STAGE"))
     {
       long SBID=_pObservedTS[i]->GetLocID();
       if(GetSubBasinByID(SBID)->GetReservoir()==NULL){
-        string warn="Observations supplied for non-existent reservoir in subbasin "+to_string(SBID);
+        string warn="Stage observations supplied for non-existent reservoir in subbasin "+to_string(SBID);
+        ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+      }
+    }
+    else if(!strcmp(_pObservedTS[i]->GetName().c_str(),"LAKE_AREA"))
+    {
+      long SBID=_pObservedTS[i]->GetLocID();
+      if(GetSubBasinByID(SBID)->GetReservoir()==NULL){
+        string warn="Lake area bservations supplied for non-existent reservoir in subbasin "+to_string(SBID);
         ExitGracefully(warn.c_str(),BAD_DATA_WARN);
       }
     }
@@ -370,6 +378,18 @@ void CModel::Initialize(const optStruct &Options)
     WriteWarning("CModelInitialize: the model time step and model start time is such that midnight does not correspond to a time step ending. This will cause issues with use of daily temperature forcings (and potentially other errors) throughout the simulation.", Options.noisy);
   }
 }
+
+//////////////////////////////////////////////////////////////////
+/// \brief Initializes SB demand members AFTER RVM FILE READ
+/// \param &Options [in] Global model options information
+//
+void CModel::InitializePostRVM(const optStruct& Options)
+{
+  for (int p=0;p<_nSubBasins;p++){
+    _pSubBasins[p]->InitializePostRVM(Options);
+  }
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates initial total system water storage, updates _initWater
 ///

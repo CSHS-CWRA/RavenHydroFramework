@@ -28,7 +28,7 @@ CXXFLAGS += -std=c++11 -fPIC
 #CXXFLAGS += -Dnetcdf
 #LDLIBS   += -L/usr/local -lnetcdf
 
-# OPTION 2) include lp_solve - uncomment following two commands (assumes liblpsolve55.a in ../lib/lp_solve_unix/ folder):
+# OPTION 2) include lp_solve for water management optimization- uncomment following two commands (assumes liblpsolve55.a in ../lib/lp_solve_unix/ folder):
 CXXFLAGS += -D_LPSOLVE_
 LDLIBS   += -L../lib/lp_solve_unix -llpsolve55
 
@@ -37,7 +37,7 @@ LDLIBS   += -L../lib/lp_solve_unix -llpsolve55
 # LDFLAGS  += -Wl,-stack_size,0x80000000,-stack_addr,0xf0000000
 
 # OPTION 4) uncomment for M1 and newer MacOS
-#CXXFLAGS := -Dfinite=isfinite
+#CXXFLAGS += -Dfinite=isfinite
 
 srcfiles := $(shell ls *.cpp)
 objects  := $(patsubst %.cpp, %.o, $(srcfiles))

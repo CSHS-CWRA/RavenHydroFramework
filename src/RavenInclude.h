@@ -379,7 +379,7 @@ enum flux_frequency
 enum flux_method
 {
   FLUX_EX_STANDARD,           ///< Regular process calculations
-  FLUX_EX_UFR,      ///< All fluxes are determined using rating curves
+  FLUX_EX_UFR,                ///< All fluxes are determined using rating curves
 };
 
 ////////////////////////////////////////////////////////////////////

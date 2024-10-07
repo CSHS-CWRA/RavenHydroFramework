@@ -666,9 +666,13 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         ExitGracefully("ParseInitialConditionsFile: bad basin index in :InitialReservoirFlow command (.rvc file)",BAD_DATA_WARN); break;
       }
       if(pBasin->GetReservoir()==NULL) {
-        ExitGracefully("ParseInitialConditionsFile: bad basin index in :InitialReservoirStage command (.rvc file), no reservoir exists in specified basin",BAD_DATA_WARN);break;
+        //warning to handle commented out reservoirs
+        string warn="ParseInitialConditionsFile: bad basin index in :InitialReservoirStage command (.rvc file), no reservoir exists in basin " +to_string(SBID)+". Command will be ignored.";
+        WriteWarning(warn.c_str(),Options.noisy);
       }
-      pBasin->GetReservoir()->SetReservoirStage(s_to_d(s[2]),s_to_d(s[2]));
+      else{
+        pBasin->GetReservoir()->SetReservoirStage(s_to_d(s[2]),s_to_d(s[2]));
+      }
       break;
     }
     case(10):  //----------------------------------------------

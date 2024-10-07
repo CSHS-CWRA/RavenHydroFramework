@@ -431,6 +431,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       bool isconc     =!strcmp(s[1], "STREAM_CONCENTRATION");
       bool istemp     =!strcmp(s[1], "STREAM_TEMPERATURE");
       bool islevel    =!strcmp(s[1], "WATER_LEVEL");
+      bool islakearea =!strcmp(s[1], "LAKE_AREA");
       bool invalidSB=(pModel->GetSubBasinByID(s_to_l(s[2]))==NULL);
 
       bool period_ending =ishyd;
@@ -472,6 +473,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         warn="ParseTimeSeries:: Invalid subbasin ID in observed water level time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
         WriteWarning(warn.c_str(),Options.noisy);  break;
       }
+      if(islakearea && invalidSB){
+        warn="ParseTimeSeries:: Invalid subbasin ID in observed lake area time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+        WriteWarning(warn.c_str(),Options.noisy); break;
+      }
       pModel->AddObservedTimeSeries(pTimeSer);
       break;
     }
@@ -503,6 +508,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       bool isconc     =!strcmp(s[1], "STREAM_CONCENTRATION");
       bool istemp     =!strcmp(s[1], "STREAM_TEMPERATURE");
       bool islevel    =!strcmp(s[1], "WATER_LEVEL");
+      bool islakearea =!strcmp(s[1], "LAKE_AREA");
       bool invalidSB=(pModel->GetSubBasinByID(s_to_l(s[2]))==NULL);
 
       pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),s_to_l(s[2]),"none",Options);
@@ -539,6 +545,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       if(islevel && invalidSB){
         warn="ParseTimeSeries:: Invalid subbasin ID in observed water level weights time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+        WriteWarning(warn.c_str(),Options.noisy);  break;
+      }
+      if(islakearea && invalidSB){
+        warn="ParseTimeSeries:: Invalid subbasin ID in observed lake area weights time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
         WriteWarning(warn.c_str(),Options.noisy);  break;
       }
       pModel->AddObservedWeightsTS(pTimeSer);
@@ -621,16 +631,17 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL))
       {
+	    has_irrig=true;
+
         pTimeSer=CTimeSeries::Parse(p,true,demand_name,SBID,"none",Options);
+        pTimeSer->SetIDTag(demand_ID);
 
         int ii=pSB->GetReservoir()->GetNumWaterDemands();
 
-        pTimeSer->SetIDTag(demand_ID);
-        pSB->GetReservoir()->AddDemandTimeSeries(pTimeSer);
-
+        CDemand *pDem=new CDemand(demand_ID,demand_name,SBID,true,pTimeSer);
+        pDem->SetLocalIndex(ii);
+        pSB->GetReservoir()->AddDemand(pDem);
         if (Options.management_optimization){
-		  CDemand *pDem=new CDemand(demand_ID,demand_name,SBID,true,pTimeSer);
-          pDem->SetLocalIndex(ii);
           pModel->GetDemandOptimizer()->AddWaterDemand(pDem);
         }
       }
@@ -908,11 +919,11 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     }
     case (63): //---------------------------------------------
     {/*:IrrigationDemand or :WaterDemand {long SBID} [int DemandID] [string demand_name/alias]
-     {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
-     {double Qin} x nMeasurements [m3/s]
+       {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+       {double Qin} x nMeasurements [m3/s]
      :EndIrrigationDemand or :EndWaterDemand
      */
-      if(Options.noisy) { cout <<"Irrigation/Water use demand"<<endl; }
+      if(Options.noisy) { cout <<"Irrigation/Water use demand time series "<<endl; }
       long SBID     =DOESNT_EXIST;
       int  demand_ID=DOESNT_EXIST;
       int  ii       =0;
@@ -928,13 +939,15 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (demand_name == "")           { demand_name = "D"+to_string(SBID)+"abcdefghijklmnopqrstuvwxyz"[ii];} //e.g., D120b; }
 
       pTimeSer = CTimeSeries::Parse(p, false, demand_name, SBID, "none", Options);
-      if(pSB!=NULL) {
-        pTimeSer->SetIDTag(demand_ID);
-        pSB->AddIrrigationDemand(pTimeSer); has_irrig=true;
+      pTimeSer->SetIDTag(demand_ID);
 
+      if(pSB!=NULL) {
+        has_irrig=true;
+
+        CDemand *pDem=new CDemand(demand_ID,demand_name,SBID,false,pTimeSer);
+        pDem->SetLocalIndex(ii);
+        pSB->AddWaterDemand(pDem);
         if (Options.management_optimization){
-		  CDemand *pDem=new CDemand(demand_ID,demand_name,SBID,false,pTimeSer);
-          pDem->SetLocalIndex(ii);
           pModel->GetDemandOptimizer()->AddWaterDemand(pDem);
         }
       }
@@ -1174,7 +1187,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       :EndUserTimeSeries
      */
       if(Options.noisy) { cout <<"User-specified Time Series"<<endl; }
-      pTimeSer=CTimeSeries::Parse(p,false,s[2], DOESNT_EXIST, "none", Options);
+      pTimeSer=CTimeSeries::Parse(p,false,s[1], DOESNT_EXIST, "none", Options);
       if(pModel->GetDemandOptimizer()!=NULL) {
         pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
       }

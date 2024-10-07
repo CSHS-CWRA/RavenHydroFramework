@@ -343,6 +343,9 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
       if (Options.noisy) {cout <<":Reservoir"<<endl;}
       CReservoir *pRes;
       long long int HRUID;
+      if (Len < 2) {
+        ExitGracefully("ParseHRUProps: No reservoir name provided in :Reservoir command ",BAD_DATA_WARN);
+      }
       pRes=ReservoirParse(pp,s[1],pModel,HRUID,Options);
       pSB=pModel->GetSubBasinByID(pRes->GetSubbasinID());
       if (HRUID!=DOESNT_EXIST){
@@ -1426,7 +1429,6 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
         }
         else if(!strcmp(s[1],"LOOKUP_TABLE"))
         {
-          if(type!=CURVE_LAKE) { type = CURVE_DATA; } //enables :VolumeStageRelation to be used with lake-type
           p->Tokenize(s,Len);
           if(Len >= 1) { NV = s_to_i(s[0]); }
           aV    = new double[NV];
@@ -1436,7 +1438,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
             if(IsComment(s[0],Len)) { i--; }
             else {
               aV_ht[i] = s_to_d(s[0]);
-              aV[i] = s_to_d(s[1]);
+              aV   [i] = s_to_d(s[1]);
             }
           }
           p->Tokenize(s,Len); //:EndVolumeStageRelation
@@ -1474,7 +1476,6 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
         }
         else if(!strcmp(s[1],"LOOKUP_TABLE"))
         {
-//          type = CURVE_DATA;
           p->Tokenize(s,Len);
           if(Len >= 1) { NA = s_to_i(s[0]); }
           aA = new double[NA];
@@ -1906,8 +1907,8 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
      }
     }
 
-
     pRes=new CReservoir(name,SBID,weircoeff,cwidth,crestht,lakearea,max_depth);
+
   }
   else {
     ExitGracefully("CReservoir::Parse: only currently supporting linear, powerlaw, or data reservoir rules",STUB);
@@ -1923,7 +1924,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
   }
   if((type==CURVE_LAKE) && (aV!=NULL) && (aV_ht!=NULL))
   {
-    pRes->SetVolumeStageCurve(aV_ht,aV,NV);//allows user to override prismatic lake assumption
+    pRes->SetVolumeStageCurve(aV_ht,aV,NV, weircoeff, cwidth);//allows user to override prismatic lake assumption
   }
   if((type==CURVE_LAKE) && (aA!=NULL) && (aA_ht!=NULL))
   {

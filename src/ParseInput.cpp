@@ -2907,8 +2907,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         }
         else {
           int Conns=1;
-          if(Len == 2) { Conns = 1; }
-          else if(Len == 3) { Conns = s_to_i(s[2]); } //GWMIGRATE - not sure what is happening here.
+          if(Len == 3) { Conns = s_to_i(s[2]); } //GWMIGRATE - not sure what is happening here.
           pMover = new CmvRecharge(rech_type, Conns, pModel);
         }
         AddProcess(pModel, pMover, pProcGroup);
@@ -3009,7 +3008,6 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*LakeFreeze
        :LakeFreeze [string method] */
       if (Options.noisy){cout <<"Lake Freezing Process"<<endl;}
-      cout<<"LEN: "<<Len<<endl;
       if (Len<2){ImproperFormatWarning(":LakeFreeze",p,Options.noisy); break;}
       lakefreeze_type lf_type=LFREEZE_BASIC;
       if      (!strcmp(s[1],"LFREEZE_BASIC"    )){lf_type=LFREEZE_BASIC;}

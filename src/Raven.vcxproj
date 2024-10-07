@@ -970,6 +970,7 @@
     <ClInclude Include="Diagnostics.h" />
     <ClInclude Include="EnergyTransport.h" />
     <ClInclude Include="EnKF.h" />
+    <ClInclude Include="Expression.h" />
     <ClInclude Include="FrozenGround.h" />
     <ClInclude Include="FrozenLake.h" />
     <ClInclude Include="GracefulEndBMI.h" />

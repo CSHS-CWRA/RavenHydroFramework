@@ -12,6 +12,7 @@
 #include "Model.h"
 #include "LookupTable.h"
 #include "Demands.h"
+#include "Expression.h"
 
 #ifdef _LPSOLVE_
 namespace lp_lib  {
@@ -32,25 +33,7 @@ enum exptype
   EXP_OP,  //< operator
   EXP_INV  //< inverse operator
 };
-///////////////////////////////////////////////////////////////////
-/// \brief different expression term types
-//
-enum termtype
-{
-  TERM_DV,        //< decision variable !Q123 or named
-  TERM_TS,        //< time series @ts(name,n)
-  TERM_LT,        //< lookup table @lookup(x)
-  TERM_HRU,       //< state variable @HRU_var(SNOW,2345)
-  TERM_SB,        //< state variable @SB_var(SNOW,234)
-  TERM_CONST,     //< constant
-  TERM_HISTORY,   //< bracketed - !Q123[-2]
-  TERM_MAX,       //< @max(x,y)
-  TERM_MIN,       //< @min(x,y)
-  TERM_CONVERT,   //< @convert(x,units)
-  TERM_CUMUL_TS,  //< @cumul(ts_name,duration) //MAY WANT @cumul(ts_name,duration,n) to handle time shift, e.g., 3 days to 10 days ago?
-  TERM_CUMUL,     //< cumulative delivery !C123
-  TERM_UNKNOWN    //< unknown
-};
+
 ///////////////////////////////////////////////////////////////////
 /// \brief decision variable types
 //
@@ -59,68 +42,15 @@ enum dv_type
   DV_QOUT,    //< outflow from reach
   DV_QOUTRES, //< outflow from reservoir
   DV_STAGE,   //< reservoir stage
+  DV_DSTAGE,  //< change in reservoir stage over time step
+  DV_BINRES,  //< binary integer value for above/beneath stage-discharge sill
   DV_DELIVERY,//< delivery of water demand
+  DV_RETURN,  //< return flows to reach
   DV_USER,    //< user specified decision variable
   DV_SLACK    //< slack variable for goal satisfaction
 };
 
-// -------------------------------------------------------------------
-// data structures used by CDemandOptimizer class:
-//   -expressionTerm
-//   -expressionStruct (built from expressionTerms)
-//   -decision_var
-//   -exp_condition (may be defined using expressionStruct)
-//   -op_regime (has conditions)
-//   -control_var (defined using expressionStruct)
-//   -manConstraint (built using multiple operating regimes)
-// -------------------------------------------------------------------
 
-//////////////////////////////////////////////////////////////////
-/// expression term
-///    individual term in expression
-//
-struct expressionTerm
-{
-  termtype      type;            //< type of expression
-  double        mult;            //< multiplier of expression (+/- 1, depending upon operator and location in exp)
-  bool          reciprocal;      //< true if term is in denominator
-
-  double        value;           //< constant value or conversion multiplier
-  CTimeSeries  *pTS;             //< pointer to time series, if this is a named time series
-  CLookupTable *pLT;             //< pointer to lookup table, if this is a named time series
-  bool          is_nested;       //< true if nested within (i.e., an argument to) another term
-  int           timeshift;       //< for time series (+ or -) or lookback value (+)
-  int           DV_ind;          //< index of decision variable
-  int           nested_ind1;     //< index k of first argument (e.g., for lookup table with term entry)
-  int           nested_ind2;     //< index k of second argument (e.g., for min/max functions)
-  string        nested_exp1;     //< contents of first argument to function - can be expression
-  string        nested_exp2;     //< contents of second argument to function
-
-  string        origexp;         //< original string expression
-  int           p_index;         //< subbasin index p (for history variables, e.g, !Q324[-2] or @SB_var() command )
-  int           HRU_index;       //< HRU index k (for @HRU_var command)
-  int           SV_index;        //< state variable index i (for @SB_var or @HRU_var command)
-
-  expressionTerm(); //defined in DemandExpressionHandling.cpp
-};
-
-//////////////////////////////////////////////////////////////////
-/// expression structure
-///   abstraction of (A*B*C)+(D*E)-(F)+(G*H) <= 0
-///   parenthetical collections are groups of terms -example has 4 groups with [3,2,1,2] terms per group
-//
-struct expressionStruct //full expression
-{
-  expressionTerm  ***pTerms;      //< 2D irregular array of pointers to expression terms size:[nGroups][nTermsPerGrp[j]]
-  int                nGroups;     //< total number of terms groups in expression
-  int               *nTermsPerGrp;//< number of terms per group [size: nGroups]
-  comparison         compare;     //< comparison operator (==, <, >)
-
-  string             origexp;     //< original string expression
-
-  expressionStruct();
-  ~expressionStruct();
-};
 
 //////////////////////////////////////////////////////////////////
 // decision variable
@@ -129,8 +59,8 @@ struct decision_var
 {
   string  name;      //< decision variable names: Qxxxx or Dxxxx where xxxx is SBID
   dv_type dvar_type; //< decision variable type: e.g., DV_QOUT or DV_DELIVERY
-  int     p_index;   //< raw subbasin index p (not SBID) of decision variable (or DOESNT_EXIST if not linked to SB)
-  int     dem_index; //< demand index in subbasin p (or DOESNT_EXIST if type not DV_DELIVERY) (ii..nDemands in SB p_index, usually <=1)
+  int     p_index;   //< raw subbasin index p (not SBID) of decision variable (or DOESNT_EXIST if not linked to SB) (target basin for DV_RETURN, source basin for DV_DELIVERY)
+  int     dem_index; //< demand index ii in subbasin p (or DOESNT_EXIST if type not DV_DELIVERY/DV_RETURN) (ii..nDemands in SB p_index, usually <=1)
   int     loc_index; //< local index (rescount or subbasincount or demand count)
   double  value;     //< solution value for decision variable
   double  min;       //< minimum bound (default=0)
@@ -175,43 +105,52 @@ struct op_regime
 {
   string            reg_name;             //< regime name
 
-  expressionStruct *pExpression;          //< constraint expression
+  expressionStruct *pExpression;          //< goal expression
 
   int               nConditions;          //< number of conditional statments
   exp_condition   **pConditions;          //< array of pointers to conditional statements
+
+  double            penalty_under;        //< penalty associated with not satisfying goal (or RAV_BLANK_DATA, if default is to be used)
+  double            penalty_over;         //< penalty associated with not satisfying goal (or RAV_BLANK_DATA, if default is to be used)
 
   op_regime(string name) {
     reg_name=name;
     pExpression=NULL;
     nConditions=0;
     pConditions=NULL;
+    penalty_under=RAV_BLANK_DATA;
+    penalty_over =RAV_BLANK_DATA;
   }
 };
 //////////////////////////////////////////////////////////////////
-// management constraint or goal (soft constraint) or DV definition (a special constraint defining a user specified DV)
+// management goal (or constraint) or DV definition (a special constraint defining a user specified DV)
 //
-struct manConstraint
+struct managementGoal
 {
   string            name;          //< goal or constraint name
 
   bool              is_goal;       //< true if constraint is soft (goal rather than constraint)
   int               priority;      //< priority (default==1, for goals only)
-  double            penalty_under; //< penalty if under specified value (for goals only)
-  double            penalty_over;  //< penalty if over value (for goals only)
+  double            penalty_under; //< DEFAULT penalty if under specified value (for goals only)
+  double            penalty_over;  //< DEFAULT penalty if over value (for goals only)
   int               slack_ind1;    //< slack index (0.._nSlackVars) of under/over slack index for goal, or DOESNT_EXIST if constraint
   int               slack_ind2;    //< slack index (0.._nSlackVars) of over slack index for target goal, or DOESNT_EXIST if constraint
 
-  double            penalty_value; //< (from solution) penalty incurred by not satisfying goal (or zero for constraint)
-
   op_regime       **pOperRegimes;  //< array of pointers to operating regimes, which are chosen from conditionals and determine active expression [size:nOperRegimes]
   int               nOperRegimes;  //< size of operating regime array
+
+  bool              overrides_SDcurve;    //< true if management goal should override local stage-discharge cuve in reservoir with reservoir_index
 
   int               active_regime;        //< currently active operating regime (or DOESNT_EXIST if none)
   bool              conditions_satisfied; //< true if any operating regime satisfied during current timestep
   bool              ever_satisfied;       //< true if any operating regime ever satisfied during simulation (for warning at end of sim)
 
-  manConstraint();
-  ~manConstraint();
+  bool              use_stage_units;      //< true if goal penalty needs to be converted to units of s/m3
+  double            units_correction;     //< penalty correction for units different than m3/s [default: 1]
+  int               reservoir_index;      //< p index of reservoir for stage conversion
+
+  managementGoal();
+  ~managementGoal();
   expressionStruct *GetCurrentExpression() const{return pOperRegimes[nOperRegimes-1]->pExpression; }
   void AddOperatingRegime(op_regime *pOR, bool first);
   void AddOpCondition(exp_condition *pCondition); //adds to most recent operating regime
@@ -244,17 +183,18 @@ private: /*------------------------------------------------------*/
   int              _nControlVars;       //< total number of control variables considered
   control_var    **_pControlVars;       //< array of pointers to control variables [size: _nControlVars]
 
-  int              _nConstraints;       //< number of user-defined enforced constraints/goals in management model
-  manConstraint  **_pConstraints;       //< array of pointers to user-defined enforced constraints/goals in management model
+  int              _nGoals;             //< number of user-defined enforced constraints/goals in management model
+  managementGoal  **_pGoals;            //< array of pointers to user-defined enforced constraints/goals in management model
 
   int              _nEnabledSubBasins;  //< number of enabled subbasins in model
   int             *_aSBIndices;         //< local index of enabled subbasins (0:_nEnabledSubBasins) [size: _nSubBasins]
 
-  int              _nReservoirs;        //< local storage of number of simulated lakes/reservoirs
+  int              _nReservoirs;        //< local storage of number of enabled lakes/reservoirs
   int             *_aResIndices;        //< storage of enabled reservoir indices (0:_nReservoirs or DOESNT_EXIST) [size:_nSubBasins]
 
   CDemand        **_pDemands;           //< array of pointers to water demand instances
-  int              _nDemands;           //< local storage of number of demand locations (:IrrigationDemand/:WaterDemand + :ReservoirExtraction time series)
+  int              _nDemands;           //< local storage of number of demand locations
+  int              _nReturns;           //< total number of demands with return flows (<=_nDemands)
 
   double          *_aDelivery;          //< array of delivered water for each water demand [m3/s] [size: _nDemands]
   double          *_aCumDelivery;       //< array of cumulative deliveries of demand since _aCumDivDate of this year [m3] [size: _nDemands]
@@ -265,6 +205,7 @@ private: /*------------------------------------------------------*/
   int              _nDemandGroups;      //< number of demand groups
   CDemandGroup   **_pDemandGroups;      //< array of pointers to demand groups
 
+  int              _nEnviroFlowGoals;   //< number of *active* environmental flow goals
   double          *_aSlackValues;       //< array of slack variable values [size: _nSlackVars]
   int              _nSlackVars;         //< number of slack variables
 
@@ -282,13 +223,21 @@ private: /*------------------------------------------------------*/
 
   int             _nHistoryItems;      //< size of flow/demand/stage history that needs to be stored (in time steps) (from :LookbackDuration)
   double        **_aQhist;             //< history of subbasin discharge [size: _nEnabledSBs * _nHistoryItems]
-  double        **_aDhist;             //< history of actual diversions [size: _nEnabledSBs * _nHistoryItems]
+  double        **_aDhist;             //< history of actual delivery [size: _nEnabledSBs * _nHistoryItems]
+  double        **_aIhist;             //< history of reservoir inflows [size: _nEnabledSBs * _nHistoryItems]
   double        **_ahhist;             //< history of actual reservoir stages  (or 0 for non-reservoir basins) [size: _nEnabledSBs * _nHistoryItems]
 
-  ofstream        _DEMANDOPT;          //< ofstream for DemandOptimization.csv
+  int             _nSolverResiduals;   //< number of residuals of solution (equal to lp_lib::nRows)
+  double         *_aSolverResiduals;   //< vector of residuals of solution [size: _nSolverResiduals]
+  string         *_aSolverRowNames;    //< vector of solver row names [size: _nSolverResiduals]
+
+  ofstream        _MANOPT;          //< ofstream for ManagementOptimization.csv
   ofstream        _GOALSAT;            //< ofstream for GoalSatisfaction.csv
+  ofstream        _RESID;              //< ofstream for OptimizationResidual.csv
 
   bool            _demands_initialized;//< true if demands have been initialized
+
+  bool            _stage_discharge_as_goal; //< TMP DEBUG - SET TO TRUE IF SD CURVE IS GOAL INSTEAD OF CONSTRAINT
 
   int             _do_debug_level;      //< =1 if debug info is to be printed to screen, =2 if LP matrix also printed (full debug), 0 for nothing
 
@@ -302,8 +251,12 @@ private: /*------------------------------------------------------*/
 
   bool         CheckGoalConditions(const int ii, const int k, const time_struct &tt,const optStruct &Options) const;
 
+
+
 #ifdef _LPSOLVE_
+  void            WriteLPSubMatrix(lp_lib::lprec *pLinProg, string filename, const optStruct &Options) const; //for debugging
   void           AddConstraintToLP(const int i, const int k, lp_lib::lprec *pLinProg, const time_struct &tt,int *col_ind, double *row_val) const;
+  void      IncrementAndSetRowName(lp_lib::lprec *pLinProg,int &rowcount,const string &name);
 #endif
 
 
@@ -317,19 +270,20 @@ public: /*------------------------------------------------------*/
   CDemandOptimizer(CModel *pMod);
   ~CDemandOptimizer();
 
-  int    GetDemandIndexFromName(const string dname) const;
-  double GetNamedConstant      (const string s) const;
-  int    GetUserDVIndex        (const string s) const;
-  double GetControlVariable    (const string s) const;
-  //double GetDemandDelivery     (const int p) const;
-  int    GetNumUserDVs         () const;
-  int    GetDebugLevel         () const;
-  int    GetIndexFromDVString  (string s) const;
-  CDemandGroup *GetDemandGroup (const int ii);
+  int           GetDemandIndexFromName(const string dname) const;
+  double        GetNamedConstant      (const string s) const;
+  int           GetUserDVIndex        (const string s) const;
+  double        GetControlVariable    (const string s) const;
+  //double      GetDemandDelivery     (const int p) const;
+  int           GetNumUserDVs         () const;
+  int           GetDebugLevel         () const;
+  int           GetIndexFromDVString  (string s) const;
+
+  CDemandGroup *GetDemandGroup        (const int ii);
   CDemandGroup *GetDemandGroupFromName(const string name);
-  int    GetNumDemandGroups    () const;
-  CDemand *GetWaterDemand      (const int d);
-  int    GetNumWaterDemands    () const;
+  int           GetNumDemandGroups    () const;
+  CDemand      *GetWaterDemand        (const int d);
+  int           GetNumWaterDemands    () const;
 
   bool   DemandsAreInitialized() const;
 
@@ -338,9 +292,7 @@ public: /*------------------------------------------------------*/
   void   SetDebugLevel         (const int lev);
   void   SetDemandAsUnrestricted(const string dname);
 
-  //manConstraint *AddGoalOrConstraint (const string name, const bool soft_constraint);
-
-  void   AddGoalOrConstraint   (const manConstraint *pConstraint);
+  void   AddGoalOrConstraint   (const managementGoal *pGoal);
   void   AddDecisionVar        (const decision_var *pDV);
   void   SetDecisionVarBounds  (const string name, const double &min, const double &max);
   void   AddUserConstant       (const string name, const double &val);
@@ -355,6 +307,8 @@ public: /*------------------------------------------------------*/
   //void MultiplyGroupDemand   (const string groupname, const double &mult);
   void SetDemandPenalty        (const string dname, const double &pen);
   //void SetDemandPriority     (const string dname, const int &prior);
+
+  double     EvaluateExpression(const expressionStruct* pE,const double &t,bool RHS_only) const;
 
   expressionStruct *ParseExpression(const char **s, const int Len, const int lineno, const string filename) const;
 

@@ -55,34 +55,37 @@ expressionStruct::~expressionStruct()
 }
 
 //////////////////////////////////////////////////////////////////
-/// constructor, destructor, and member functions of manConstraint structure
+/// constructor, destructor, and member functions of managementGoal structure
 //
-manConstraint::manConstraint()
+managementGoal::managementGoal()
 {
   name="";
 
   is_goal=false;
   penalty_under=1.0;
-  penalty_over=1.0;
+  penalty_over =1.0;
   slack_ind1=DOESNT_EXIST;
   slack_ind2=DOESNT_EXIST;
 
-  penalty_value=0;
-
   nOperRegimes=1;
   pOperRegimes=new op_regime* [1];
-  pOperRegimes[0]=new op_regime("default");
+  pOperRegimes[0] = new op_regime("[DEFAULT]");
 
   active_regime=DOESNT_EXIST;
   ever_satisfied=false;
   conditions_satisfied=false;
+
+  use_stage_units=false;
+  units_correction=1.0;
+  reservoir_index=DOESNT_EXIST;
+  overrides_SDcurve=false;
 }
-manConstraint::~manConstraint()
+managementGoal::~managementGoal()
 {
   delete [] pOperRegimes; nOperRegimes=0;
 }
 
-void manConstraint::AddOperatingRegime(op_regime* pOR, bool first)
+void managementGoal::AddOperatingRegime(op_regime* pOR, bool first)
 {
   if ((nOperRegimes==1) && (first)){
     pOperRegimes[0]->reg_name=pOR->reg_name;
@@ -93,16 +96,16 @@ void manConstraint::AddOperatingRegime(op_regime* pOR, bool first)
     }
   }
 }
-void manConstraint::AddOpCondition(exp_condition* pCond)
+void managementGoal::AddOpCondition(exp_condition* pCond)
 {
   if(!DynArrayAppend((void**&)(pOperRegimes[nOperRegimes-1]->pConditions),(void*)(pCond),pOperRegimes[nOperRegimes-1]->nConditions)) {
     ExitGracefully("management_constraint::AddOpCondition: adding NULL condition",BAD_DATA_WARN);
   }
 }
-void manConstraint::AddExpression(expressionStruct* pExp)
+void managementGoal::AddExpression(expressionStruct* pExp)
 {
   pOperRegimes[nOperRegimes-1]->pExpression=pExp;
-  ExitGracefullyIf(pExp==NULL,"manConstraint::AddExpression: NULL Expression",RUNTIME_ERR);
+  ExitGracefullyIf(pExp==NULL,"managementGoal::AddExpression: NULL Expression",RUNTIME_ERR);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -170,7 +173,7 @@ int CDemandOptimizer::GetIndexFromDVString(string s) const //String in format !Q
       return _pModel->GetSubBasinIndex(SBID);
     }
   }
-  else if ((s[1]=='D') || (s[1]=='C') || (s[1]=='d'))
+  else if ((s[1]=='D') || (s[1]=='C') || (s[1]=='R') || (s[1] == 'd'))
   {
     string demandID;
     if (s[2] == '.') {demandID=s.substr(3);} //!D.FarmerBobsDemand
@@ -208,12 +211,15 @@ string TermTypeToString(termtype t)
 }
 string DVTypeToString(dv_type t)
 {
-  if (t==DV_QOUT    ){return "DV_QOUT"; }
-  if (t==DV_QOUTRES ){return "DV_QOUTRES"; }
-  if (t==DV_STAGE   ){return "DV_STAGE"; }
+  if (t==DV_QOUT    ){return "DV_QOUT";     }
+  if (t==DV_QOUTRES ){return "DV_QOUTRES";  }
+  if (t==DV_STAGE   ){return "DV_STAGE";    }
+  if (t==DV_DSTAGE  ){return "DV_DSTAGE";   }
+  if (t==DV_BINRES  ){return "DV_BINRES";   }
   if (t==DV_DELIVERY){return "DV_DELIVERY"; }
-  if (t==DV_SLACK   ){return "DV_SLACK"; }
-  if (t==DV_USER    ){return "DV_USER"; }
+  if (t==DV_RETURN  ){return "DV_RETURN";   }
+  if (t==DV_SLACK   ){return "DV_SLACK";    }
+  if (t==DV_USER    ){return "DV_USER";     }
   return "DV_UNKNOWN";
 }
 //////////////////////////////////////////////////////////////////
@@ -274,7 +280,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     ExitGracefullyIf(n>=0,              "ConvertToExpressionTerm:: term in square brackets must be <0 for historical variables.",BAD_DATA_WARN);
     ExitGracefullyIf(n<-_nHistoryItems, "ConvertToExpressionTerm:: term in square brackets exceeds the magnitude of the :LookbackDuration", BAD_DATA_WARN);
 
-    if ((s[1] == 'Q') || (s[1] == 'D') || (s[1]=='h') || (s[1] == 'B') || (s[1] == 'E'))
+    if ((s[1] == 'Q') || (s[1] == 'D') || (s[1]=='I') || (s[1] == 'h') || (s[1] == 'B') || (s[1] == 'E'))
     {
       if (n<0)
       {
@@ -298,13 +304,13 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
       }
     }
     else {
-      warn="ConvertToExpression:: Unparseable term in history expression starting with !/$ - only !Q, !D, !h, $B, or $E currently supported. "+warnstring;
+      warn="ConvertToExpression:: Unparseable term in history expression starting with !/$ - only !Q, !I, !D, !h, $B, or $E currently supported. "+warnstring;
       ExitGracefully(warn.c_str(), BAD_DATA_WARN);
       return false;
     }
   }
   //----------------------------------------------------------------------
-  else if      (s[0]=='!')  //decision variable e.g., !Q234 or !D42a
+  else if      (s[0]=='!')  //decision variable e.g., !Q234, !I32, or !D42a
   {
     if ((s[1] == 'Q') || (s[1] == 'h') || (s[1]=='I')) //Subbasin-indexed
     {
@@ -354,7 +360,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
       }
       term->p_index=p;//not needed?
     }
-    else if ((s[1]=='D') || (s[1]=='C'))   //demand indexed
+    else if ((s[1]=='D') || (s[1]=='C') || (s[1]=='R'))   //demand indexed
     {
       int d=GetIndexFromDVString(s);
 
@@ -367,6 +373,10 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
       {
         term->DV_ind=GetDVColumnInd(DV_DELIVERY,d);
       }
+      else if (s[1]=='R')
+      {
+        term->DV_ind=GetDVColumnInd(DV_RETURN,d);
+      }
       else if (s[1]=='C')
       {
         term->type=TERM_CUMUL;
@@ -375,7 +385,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
       }
     }
     else{
-      warn="ConvertToExpression:: Unparseable term in expression starting with ! - only !Q, !I, !D, or !h currently supported. "+warnstring;
+      warn="ConvertToExpression:: Unparseable term in expression starting with ! - only !Q, !I, !D, !R, !C, or !h currently supported. "+warnstring;
       ExitGracefully(warn.c_str(), BAD_DATA_WARN);
     }
 
@@ -908,7 +918,7 @@ void SummarizeExpression(const char **s, const int Len, expressionStruct* exp)
 bool CDemandOptimizer::CheckGoalConditions(const int ii, const int k, const time_struct &tt, const optStruct &Options) const
 {
   double dv_value;
-  manConstraint *pC=_pConstraints[ii];
+  managementGoal *pC=_pGoals[ii];
 
   //Check if conditionals are satisfied
   for (int j = 0; j < pC->pOperRegimes[k]->nConditions; j++)
@@ -957,6 +967,9 @@ bool CDemandOptimizer::CheckGoalConditions(const int ii, const int k, const time
         else if (tmp == 'D') {
           dv_value=_pModel->GetSubBasinByID(_pDemands[ind]->GetSubBasinID())->GetDemandDelivery(_pDemands[ind]->GetLocalIndex());
         }
+        else if (tmp == 'R') {
+          dv_value=_pModel->GetSubBasinByID(_pDemands[ind]->GetSubBasinID())->GetReturnFlow(_pDemands[ind]->GetLocalIndex());
+        }
         //todo: support !q, !d, !B, !E, !F, !T
       }
       else {//handle user specified DVs and control variables
@@ -999,7 +1012,7 @@ bool CDemandOptimizer::CheckGoalConditions(const int ii, const int k, const time
 
       if (comp == COMPARE_BETWEEN)
       {
-        if (pCond->dv_name == "DAY_OF_YEAR") { //handles wraparound
+        if ((pCond->dv_name == "DAY_OF_YEAR") || (pCond->dv_name =="MONTH")) { //handles wraparound
           if ( v2 < v ){
             if ((dv_value > v ) && (dv_value < v2)){return false;}
           }
@@ -1018,10 +1031,10 @@ bool CDemandOptimizer::CheckGoalConditions(const int ii, const int k, const time
         if (dv_value > v){return false;}//don't apply condition
       }
       else if (comp == COMPARE_IS_EQUAL) {
-        if (fabs(dv_value - v) > REAL_SMALL){return false;}//usually integer value (e.g., month)
+        if (fabs(dv_value - v) > PRETTY_SMALL){return false;}//usually integer value (e.g., month)
       }
       else if (comp == COMPARE_NOT_EQUAL) {
-        if (fabs(dv_value - v) < REAL_SMALL){return false;}
+        if (fabs(dv_value - v) < PRETTY_SMALL){return false;}
       }
     }
   }
@@ -1030,15 +1043,15 @@ bool CDemandOptimizer::CheckGoalConditions(const int ii, const int k, const time
 
 //////////////////////////////////////////////////////////////////
 /// adds constraint ii to LP solve problem statement
-/// \params ii [in] - index of constraint in _pConstraints array
-/// \param k - index of operating regime in _pConstraints[ii]
+/// \params ii [in] - index of constraint in _pGoals array
+/// \param k - index of operating regime in _pGoals[ii]
 /// \param pLinProg [out] - pointer to valid lpsolve structure to be modified
 /// \param tt [in] - time structure
 /// \param *col_ind [in] - empty array (with memory reserved) for storing column indices
 /// \param *row_val [in] - empty array (with memory reserved) for storing row values
 //
 #ifdef _LPSOLVE_
-void CDemandOptimizer::AddConstraintToLP(const int ii, const int k, lp_lib::lprec* pLinProg, const time_struct &tt, int *col_ind, double *row_val) const
+void CDemandOptimizer::AddConstraintToLP(const int ii, const int kk, lp_lib::lprec* pLinProg, const time_struct &tt, int *col_ind, double *row_val) const
 {
   double coeff;
   int    i=0;
@@ -1050,49 +1063,68 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, const int k, lp_lib::lpre
 
   //int    nn=(int)((tt.model_time+TIME_CORRECTION)/1.0);//Options.timestep; //TMP DEBUG
 
-  manConstraint    *pC=_pConstraints[ii];
-  expressionStruct *pE= pC->pOperRegimes[k]->pExpression;
+  managementGoal    *pC=_pGoals[ii];
+  expressionStruct *pE;
 
-  RHS=0.0;
-  for (int j = 0; j < pE->nGroups; j++)
+  if (kk!=DOESNT_EXIST)
   {
-    coeff=1.0;
-    group_has_dv=false;
-    DV_ind=DOESNT_EXIST;
+    pE= pC->pOperRegimes[kk]->pExpression; //active expression
 
-    for (int k = 0; k < pE->nTermsPerGrp[j]; k++)
+    RHS=0.0;
+    for (int j = 0; j < pE->nGroups; j++)
     {
-      if (pE->pTerms[j][k]->type == TERM_DV)
-      {
-        DV_ind=pE->pTerms[j][k]->DV_ind;
-        group_has_dv=true;
-        coeff *= (pE->pTerms[j][k]->mult);
-      }
-      else if (!(pE->pTerms[j][k]->is_nested))
-      {
-        term=EvaluateTerm(pE->pTerms[j], k, tt.model_time);
+      coeff=1.0;
+      group_has_dv=false;
+      DV_ind=DOESNT_EXIST;
 
-        if (term==RAV_BLANK_DATA){constraint_valid=false;}
-        if (pE->pTerms[j][k]->reciprocal == true)
+      for (int k = 0; k < pE->nTermsPerGrp[j]; k++)
+      {
+        if (pE->pTerms[j][k]->type == TERM_DV)
         {
-          coeff /= (pE->pTerms[j][k]->mult) * term;
-          ExitGracefullyIf(term==0.0, "AddConstraintToLP: Divide by zero error in evaluating :Expression with division term",BAD_DATA);
+          DV_ind=pE->pTerms[j][k]->DV_ind;
+          group_has_dv=true;
+          coeff *= (pE->pTerms[j][k]->mult);
         }
-        else {
-          coeff *= (pE->pTerms[j][k]->mult) * term;
+        else if (!(pE->pTerms[j][k]->is_nested))
+        {
+          term=EvaluateTerm(pE->pTerms[j], k, tt.model_time);
+
+          if (term==RAV_BLANK_DATA){constraint_valid=false;}
+          if (pE->pTerms[j][k]->reciprocal == true)
+          {
+            coeff /= (pE->pTerms[j][k]->mult) * term;
+            ExitGracefullyIf(term==0.0, "AddConstraintToLP: Divide by zero error in evaluating :Expression with division term",BAD_DATA);
+          }
+          else {
+            coeff *= (pE->pTerms[j][k]->mult) * term;
+          }
         }
       }
-    }
 
-    if (!group_has_dv) {
-      RHS-=coeff; //term group goes on right hand side
-    }
-    else {        //term group multiplies decision variable
-      col_ind[i]=DV_ind;
-      row_val[i]=coeff;
-      i++;
+      if (!group_has_dv) {
+        RHS-=coeff; //term group goes on right hand side
+      }
+      else {        //term group multiplies decision variable
+        col_ind[i]=DV_ind;
+        row_val[i]=coeff;
+        i++;
+      }
     }
   }
+  else {
+    pE= pC->pOperRegimes[0]->pExpression; //inactive expression
+  }
+
+  if ((kk==DOESNT_EXIST) || (!constraint_valid)) // INACTIVE/INVALID GOAL/CONSTRAINT
+  {
+    if (!pC->is_goal) {
+      col_ind[i]=1;
+      row_val[i]=0.0;
+      i++;
+    }
+    RHS=0; //leads to inert equation s1-s2=0, s1>=0, or s1<=0 OR 0*dv1=0 if constraint
+  }
+
   int constr_type=ROWTYPE_EQ;
   int nSlack=1;
   coeff=1.0;
@@ -1111,7 +1143,6 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, const int k, lp_lib::lpre
       i++;
     }
   }
-  if (!constraint_valid){return;} //usually due to blank time series element - no constraint applied
 
   retval = lp_lib::add_constraintex(pLinProg,i,row_val,col_ind,constr_type,RHS);
   ExitGracefullyIf(retval==0,"AddConstraintToLP::Error adding user-specified constraint/goal",RUNTIME_ERR);
@@ -1119,14 +1150,15 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, const int k, lp_lib::lpre
 #endif
 
 //////////////////////////////////////////////////////////////////
-/// evaluates conditional expression
+/// evaluates difference between right hand side and left hand side of expression, or value of RHS if RHS_only==true and statement only has one term left of (in)equality
+/// does not support active decision variables in expression (only to be used for conditionals and demand/return expressions)
 /// \params pE [in] - conditional expression
 /// \param t [in] - current model time
 /// repeatedly calls EvaluateTerm()
-/// \returns true if expression is satisfied
+/// \returns RHS if RHS_only or RHS-LHS if !RHS_only
 //
 
-bool CDemandOptimizer::EvaluateConditionExp(const expressionStruct* pE,const double &t) const
+double CDemandOptimizer::EvaluateExpression(const expressionStruct* pE,const double &t,bool RHS_only) const
 {
   double coeff;
   double term;
@@ -1135,34 +1167,53 @@ bool CDemandOptimizer::EvaluateConditionExp(const expressionStruct* pE,const dou
   for (int j = 0; j < pE->nGroups; j++)
   {
     coeff=1.0;
-
-    for (int k = 0; k < pE->nTermsPerGrp[j]; k++)
-    {
-      if (pE->pTerms[j][k]->type == TERM_DV)
-      {
-        ExitGracefully("EvaluateConditionalExp: conditional expressions cannot contain decision variables",BAD_DATA);
-      }
-      else if (!(pE->pTerms[j][k]->is_nested))
-      {
-        term=EvaluateTerm(pE->pTerms[j], k, t);
-
-        if (term==RAV_BLANK_DATA){return true;} //condition assumed satisfied if no data in conditional
-        if (pE->pTerms[j][k]->reciprocal == true)
-        {
-          coeff /= (pE->pTerms[j][k]->mult) * term;
-          ExitGracefullyIf(term==0.0, "EvaluateConditionExp: Divide by zero error in evaluating :Condition expression with division term",BAD_DATA);
-        }
-        else {
-          coeff *= (pE->pTerms[j][k]->mult) * term;
-        }
-      }
+    if (RHS_only && j==0) {
+      //skip first term (assumes expression is of form  A = B + C - D /E, i.e., only one term on left
     }
-    RHS-=coeff; //term group goes on right hand side
-  }
+    else{
+      for (int k = 0; k < pE->nTermsPerGrp[j]; k++)
+      {
+        if (pE->pTerms[j][k]->type == TERM_DV)
+        {
+          ExitGracefully("EvaluateConditionalExp: conditional expressions or demand/return expressions cannot contain decision variables",BAD_DATA);
+        }
+        else if (!(pE->pTerms[j][k]->is_nested))
+        {
+          term=EvaluateTerm(pE->pTerms[j], k, t);
 
-  if      (pE->compare==COMPARE_IS_EQUAL)   {return (fabs(RHS)<REAL_SMALL);}
-  else if (pE->compare==COMPARE_LESSTHAN)   {return (RHS>0);}
-  else if (pE->compare==COMPARE_GREATERTHAN){return (RHS<0);}
+          if (term==RAV_BLANK_DATA){return RAV_BLANK_DATA;} //returns blank if missing data in expression
+          if (pE->pTerms[j][k]->reciprocal == true)
+          {
+            coeff /= (pE->pTerms[j][k]->mult) * term;
+            ExitGracefullyIf(term==0.0, "EvaluateConditionExp: Divide by zero error in evaluating :Condition or :DemandExpression expression with division term",BAD_DATA);
+          }
+          else {
+            coeff *= (pE->pTerms[j][k]->mult) * term;
+          }
+        }
+      }
+
+      RHS-=coeff; //term group goes on right hand side
+    }
+  }
+  return RHS;
+}
+
+//////////////////////////////////////////////////////////////////
+/// evaluates conditional expression
+/// \params pE [in] - conditional expression
+/// \param t [in] - current model time
+/// \returns true if conditional expression is satisfied
+//
+bool CDemandOptimizer::EvaluateConditionExp(const expressionStruct* pE,const double &t) const
+{
+
+  double RHSminusLHS=EvaluateExpression(pE,t,false);
+
+  if      (fabs(RHSminusLHS-RAV_BLANK_DATA)<REAL_SMALL) {return true;}//condition assumed satisfied if no data in conditional
+  if      (pE->compare==COMPARE_IS_EQUAL)               {return (fabs(RHSminusLHS)<REAL_SMALL);}
+  else if (pE->compare==COMPARE_LESSTHAN)               {return (RHSminusLHS>0);}
+  else if (pE->compare==COMPARE_GREATERTHAN)            {return (RHSminusLHS<0);}
   return false;
 }
 
@@ -1236,6 +1287,7 @@ double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const
     if      (tmp=='Q'){return _aQhist[_aSBIndices[p]][nshift]; }
     else if (tmp=='h'){return _ahhist[_aSBIndices[p]][nshift]; }
     else if (tmp=='D'){return _aDhist[_aSBIndices[p]][nshift]; }
+    else if (tmp=='I'){return _aIhist[_aSBIndices[p]][nshift]; }
     else if (tmp=='B'){return _pModel->GetSubBasin(p)->GetSpecifiedInflow(t+pT->timeshift*1.0); } //ASSUMES DAILY TIMESTEP!
     else if (tmp=='E'){return _pModel->GetSubBasin(p)->GetEnviroMinFlow  (t+pT->timeshift*1.0); } //ASSUMES DAILY TIMESTEP!
     else {
