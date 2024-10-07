@@ -28,12 +28,12 @@ class CDemand
 {
 private:/*------------------------------------------------------*/
   int                  _ID;           ///< unique integer identifier
-  string               _name;         ///< unique name/alias identifier 
+  string               _name;         ///< unique name/alias identifier
 
-  long                 _SBID;         ///< subbasin ID 
-  int                  _loc_index;    ///< local demand index ii (counter in each subbasin or reservoir) 
+  long                 _SBID;         ///< subbasin ID
+  int                  _loc_index;    ///< local demand index ii (counter in each subbasin or reservoir)
   int                  _global_index; ///< global demand index d (from list of all demands in water management model)
-  bool                 _is_reservoir; ///< true if withdrawal is from reservoir 
+  bool                 _is_reservoir; ///< true if withdrawal is from reservoir
 
   double               _penalty;      ///< penalty for not satisfying demand [s/m3]
 
@@ -41,17 +41,17 @@ private:/*------------------------------------------------------*/
 
   int                 _cumDelivDate;  ///< julian date to calculate cumulative deliveries from {default: Jan 1}
 
-  //Demand characterization 
-  demand_type         _demType;       ///< demand type 
-  double              _multiplier;    ///< multiplies time series or any other means of calculating demand 
+  //Demand characterization
+  demand_type         _demType;       ///< demand type
+  double              _multiplier;    ///< multiplies time series or any other means of calculating demand
   CTimeSeries        *_pDemandTS;     ///< pointer to time series of demands (or NULL, if calculated elsewise)
   //CLookupTable     *_pDemandLT;     ///< pointer to demand lookup table D(Qin+Runoff) (or NULL)
   expressionStruct   *_pDemandExp;    ///< return expression (or NULL, if calculated elsewise)
-  double              _demandFract;   ///< [0..1] percentage of flow demanded  
-  //double            _annualLicense; ///< annual maximum allocation    
-  // 
-  //Return flow variables 
-  return_type        _retType;       ///< return type 
+  double              _demandFract;   ///< [0..1] percentage of flow demanded
+  //double            _annualLicense; ///< annual maximum allocation
+  //
+  //Return flow variables
+  return_type        _retType;       ///< return type
   long               _targetSBID;    ///< subbasin id of return destination (defaults to _SBID, is -1 for irrigation to HRU group)
   int                _irrigHRUGroup; ///< index kk of HRU group on which withdrawn water is applied
   double             _returnPct;     ///< percentage of delivered demand which returns to stream or land
@@ -69,13 +69,13 @@ public:/*-------------------------------------------------------*/
   int     GetID() const;
   string  GetName() const;
   long    GetSubBasinID() const;
-  int     GetGlobalIndex() const; 
+  int     GetGlobalIndex() const;
   int     GetLocalIndex() const;
   double  GetPenalty() const;
   bool    IsUnrestricted() const;
   int     GetCumulDeliveryDate() const;
   bool    IsReservoirDemand() const;
-  bool    HasReturnFlow() const; 
+  bool    HasReturnFlow() const;
   long    GetTargetSBID() const;
   double  GetReturnFlowFraction() const;
 
@@ -91,7 +91,7 @@ public:/*-------------------------------------------------------*/
   void    SetMultiplier(const double &M);
   void    SetTargetSBID(const long ID);
   void    SetDemandFraction(const double &val);
-  void    SetReturnFraction(const double &val); 
+  void    SetReturnFraction(const double &val);
   void    SetDemandTimeSeries(CTimeSeries *pTS);
   void    SetReturnTimeSeries(CTimeSeries *pTS);
   void    SetDemandExpression(expressionStruct *pExp);

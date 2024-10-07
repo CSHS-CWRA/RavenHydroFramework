@@ -1834,7 +1834,7 @@ void quickSort(double arr[], int left, int right)
 }
 //////////////////////////////////////////////////////////////////
 /// \brief adds value v to end of integer array a[] of original size n, expands a[] to size n+1
-// 
+//
 void pushIntoIntArray(int*&a, const int &v, int &n)
 {
   int *tmp=new int [n+1];

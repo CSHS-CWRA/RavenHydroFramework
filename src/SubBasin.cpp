@@ -488,7 +488,7 @@ double CSubBasin::GetTotalWaterDemand() const
 //////////////////////////////////////////////////////////////////
 /// \brief Returns specified irrigation/water use demand from subbasin
 /// \param &t [in] Model time at which the demand from SB is to be determined
-/// \return specified demand from subbasin at current time 
+/// \return specified demand from subbasin at current time
 //
 double CSubBasin::GetWaterDemand(const int ii) const
 {
@@ -527,7 +527,7 @@ double CSubBasin::GetDemandDelivery(const int ii) const
 {
 #ifdef _STRICTCHECK_
   ExitGracefullyIf((ii<0) || (ii>=_nWaterDemands),"CSubBasin::GetDemandDelivery: invalid demand index",RUNTIME_ERR);
-#endif 
+#endif
   return _aQdelivered[ii];
 }
 //////////////////////////////////////////////////////////////////
@@ -538,7 +538,7 @@ double CSubBasin::GetReturnFlow(const int ii) const
 {
 #ifdef _STRICTCHECK_
   ExitGracefullyIf((ii<0) || (ii>=_nWaterDemands),"CSubBasin::GetDemandDelivery: invalid demand index",RUNTIME_ERR);
-#endif 
+#endif
   return _aQreturned[ii];
 }
 //////////////////////////////////////////////////////////////////
@@ -814,7 +814,7 @@ CDemand *CSubBasin::GetWaterDemandObj (const int ii) const
 #ifdef _STRICTCHECK_
   ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CSubBasin::GetWaterDemandObj: invalid index",RUNTIME_ERR);
 #endif
-  return _pWaterDemands[ii]; 
+  return _pWaterDemands[ii];
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1224,8 +1224,8 @@ void    CSubBasin::AddDownstreamInflow (CTimeSeries *pInflow)
   _pInflowHydro2=pInflow;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Adds water demand 
-/// \param *pDemand pointer to demand object to be added 
+/// \brief Adds water demand
+/// \param *pDemand pointer to demand object to be added
 //
 void    CSubBasin::AddWaterDemand(CDemand *pDemand)
 {
@@ -1435,7 +1435,7 @@ void CSubBasin::AddToDeliveredDemand(const int ii, const double &Qdel)
 {
 #ifdef _STRICTCHECK_
   ExitGracefullyIf((ii<0) || (ii>=_nWaterDemands),"CSubBasin::AddToDeliveredDemand: invalid demand index",RUNTIME_ERR);
-#endif 
+#endif
   _aQdelivered[ii]=Qdel;
   _Qdelivered+=Qdel;
 }
@@ -1444,13 +1444,13 @@ void CSubBasin::AddToDeliveredDemand(const int ii, const double &Qdel)
 /// \param &Options [in] Global model options information
 /// \param &tt [in] time structure at start of current time step
 //
-void CSubBasin::UpdateDemands(const optStruct& Options, const time_struct& tt) 
+void CSubBasin::UpdateDemands(const optStruct& Options, const time_struct& tt)
 {
   for (int ii = 0; ii < _nWaterDemands; ii++) {
     _pWaterDemands[ii]->UpdateDemand(Options,tt);
   }
   if (_pReservoir != NULL) {
-    _pReservoir->UpdateDemands(Options,tt); 
+    _pReservoir->UpdateDemands(Options,tt);
   }
 }
 
@@ -1464,11 +1464,11 @@ void CSubBasin::AddToReturnFlow(const double &Qret)
 {
   _Qreturn+=Qret;
 }
-void CSubBasin::RecordReturnFlow(const int ii, const double& Qret) 
+void CSubBasin::RecordReturnFlow(const int ii, const double& Qret)
 {
 #ifdef _STRICTCHECK_
   ExitGracefullyIf((ii<0) || (ii>=_nWaterDemands),"CSubBasin::RecordReturnFlow: invalid demand index",RUNTIME_ERR);
-#endif 
+#endif
   _aQreturned[ii]=Qret;
 }
 /////////////////////////////////////////////////////////////////
@@ -1657,9 +1657,9 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
   if(_pEnviroMinFlow != NULL) {
     _pEnviroMinFlow->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,false,Options.calendar);
   }
-  //must be initialized AFTER RVM FILE READ 
+  //must be initialized AFTER RVM FILE READ
 
-  
+
 
   //QA/QC check of Muskingum parameters, if necessary
   //------------------------------------------------------------------------
@@ -1691,7 +1691,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
 /// \brief Initializes SB demand members AFTER RVM FILE READ
 /// \param &Options [in] Global model options information
 //
-void CSubBasin::InitializePostRVM(const optStruct &Options) 
+void CSubBasin::InitializePostRVM(const optStruct &Options)
 {
   if (_nWaterDemands>0){
     _aQdelivered=new double [_nWaterDemands];
