@@ -217,6 +217,11 @@ protected:
   double               *_aMout_res;  ///< array storing reservoir mass outflow [mg/d] or heat loss [MJ/d] [size: nSubBasins]
   double          *_aMout_res_last;  ///< array storing reservoir mass outflow [mg/d] or enthalpy outflow  [MJ/d] at start of timestep  [size: nSubBasins]
   double               *_aMresRain;  ///< array storing reservoir rain inputs [mg/d] or enthalpy input [MJ/d] [size: nSubBasins]
+  
+  double               *_aMres_epo;  ///< array used for storing epolimnion layer masses [mg] or enthalpy [MJ] [size: nSubBasins]
+  double          *_aMres_epo_last;  ///< array used for storing epolimnion layer masses [mg] at start of timestep [size: nSubBasins]
+  double               *_aMres_hyp;  ///< array used for storing hypolimnion layer masses [mg] or enthalpy [MJ] [size: nSubBasins]
+  double          *_aMres_hyp_last;  ///< array used for storing hypolimnion layer masses [mg] at start of timestep [size: nSubBasins]
 
   // Mass balance tracking variables
   double         *_channel_storage;  ///< array storing channel storage [mg] or [MJ] [size: nSubBasins]

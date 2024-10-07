@@ -195,7 +195,7 @@ public:/*-------------------------------------------------------*/
   double            GetSurfaceArea           () const; //[m2]
   double            GetOldSurfaceArea        () const; //[m2]
   double            GetMixingArea            () const; //[m2]
-  double            GetOldMixingArea            () const; //[m2]
+  double            GetOldMixingArea         () const; //[m2]
   double            GetLakebedThickness      () const; //[m]
   double            GetLakebedConductivity   () const; //[MJ/m/K/d]
   double            GetLakeConvectionCoeff   () const; //[MJ/m2/d/K]
