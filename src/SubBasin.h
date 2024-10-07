@@ -141,7 +141,7 @@ private:/*------------------------------------------------------*/
   CTimeSeries  *_pInflowHydro2;   ///< pointer to time series of inflows/extractions ; at downstream end of basin reach
   CTimeSeries *_pEnviroMinFlow;   ///< pointer to time series of environmental minimum flow targets that force reduced irrigation demand (=0 by default)
 
-  int           _nWaterDemands;   ///< number of water demand objects 
+  int           _nWaterDemands;   ///< number of water demand objects
   CDemand     **_pWaterDemands;   ///< pointer to array of demand objects; demand applied at downstream end of basin reach [size: _nIrrigDemand]
 
   int             _nDiversions;   ///< number of flow diversions from basin
@@ -259,7 +259,7 @@ public:/*-------------------------------------------------------*/
   int             GetDiversionTargetIndex  (const int i) const;        // returns subbasin index p of diversion i
 
   CReservoir     *GetReservoir             () const;
-  CDemand        *GetWaterDemandObj        (const int ii) const;       //returns pointer to ith water demand 
+  CDemand        *GetWaterDemandObj        (const int ii) const;       //returns pointer to ith water demand
 
   double          GetBasinProperties       (const string label) const;
 
@@ -275,7 +275,7 @@ public:/*-------------------------------------------------------*/
                                             const double    &Qlat_avg,         //[m3/s]
                                             const double    &total_drain_area, //[km2]
                                             const optStruct &Options);
-  void            InitializePostRVM        (const optStruct &Options); 
+  void            InitializePostRVM        (const optStruct &Options);
   void            InitializeFlowStates     (const double& Qin_avg,const double& Qlat_avg,const optStruct &Options);
   void            AddInflowHydrograph      (CTimeSeries *pInflow);
   void            AddDownstreamInflow      (CTimeSeries *pInflow);
@@ -307,7 +307,7 @@ public:/*-------------------------------------------------------*/
   void            UpdateDemands            (const optStruct &Options,const time_struct &tt);
   void            AddToDeliveredDemand     (const int ii, const double &Qdel);
   void            RecordReturnFlow         (const int ii, const double& Qret);
-  void            AddToReturnFlow          (const double &Qret); 
+  void            AddToReturnFlow          (const double &Qret);
   void            UpdateInflow             (const double &Qin );//[m3/s]
   void            UpdateLateralInflow      (const double &Qlat);//[m3/s]
   void            UpdateSubBasin           (const time_struct &tt, const optStruct &Options);

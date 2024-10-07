@@ -56,7 +56,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
 
   CDemand    *pDemand=NULL;
   int  demand_ind=0;
-  long demandSBID; 
+  long demandSBID;
   int  demand_ID;
   string demand_name;
 
@@ -190,7 +190,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       for(i=1;i<Len;i++) { filename+=s[i]; if(i<Len-1) { filename+=' '; } }
       if(Options.noisy) { cout <<"Redirect to file: "<<filename<<endl; }
 
-      filename=CorrectForRelativePath(filename,Options.rvm_filename); 
+      filename=CorrectForRelativePath(filename,Options.rvm_filename);
 
       INPUT2.open(filename.c_str(),ios::binary); //binary enables tellg() to work correctly for Unix files in parseLib::Peek()
       if(INPUT2.fail()) {
@@ -422,7 +422,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           :Expression [expression]
           :Condition [condition]
           :Condition [condition]
-          :Penalty [value] {value2} #specific to goal 
+          :Penalty [value] {value2} #specific to goal
          :EndOperatingRegime
          :Penalty [value] {value2} #default penalty if outside op block
        :EndManagementGoal
@@ -584,7 +584,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           }
         }
         //----------------------------------------------
-        else if (!strcmp(s[0], ":Penalty")) 
+        else if (!strcmp(s[0], ":Penalty"))
         {
           if (Options.noisy){cout<<" Penalty "<<endl; }
           if (!pGoal->is_goal) {
@@ -607,17 +607,17 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           }
         }
         //----------------------------------------------
-        else if (!strcmp(s[0], ":Priority")) 
+        else if (!strcmp(s[0], ":Priority"))
         {
           if (Options.noisy){cout<<" Priority "<<endl; }
           pGoal->priority = s_to_i(s[1]); //for later
         }
         //----------------------------------------------
-        else if (!strcmp(s[0], ":UseStageUnitsCorrection")) 
+        else if (!strcmp(s[0], ":UseStageUnitsCorrection"))
         {
           if (Options.noisy){cout<<" Use Stage Units Correction "<<endl; }
           CSubBasin *pSB=pModel->GetSubBasinByID(s_to_l(s[1]));
-          
+
           ExitGracefullyIf(pSB->GetGlobalIndex()==DOESNT_EXIST,"ParseManagementFile: subbasin ID in :UseStageUnitsCorrection is invalid",BAD_DATA_WARN);
 
           if (pSB->GetReservoir()==NULL){
@@ -640,7 +640,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         else if (!strcmp(s[0], ":OverrideStageDischargeCurve")) {
           if (Options.noisy){cout<<"Override Stage Discharge Curve"<<endl; }
           CSubBasin *pSB=pModel->GetSubBasinByID(s_to_l(s[1]));
-          
+
           ExitGracefullyIf(pSB->GetGlobalIndex()==DOESNT_EXIST,"ParseManagementFile: subbasin ID in :OverrideStageDischargeCurve is invalid",BAD_DATA_WARN);
 
           if (pSB->GetReservoir()==NULL){
@@ -677,7 +677,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       if (!badgoal) {
         pDO->AddGoalOrConstraint(pGoal);
       }
-      
+
       break;
     }
     case(24):  //----------------------------------------------
@@ -760,7 +760,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       loopStartLine=pp->GetLineNumber();
 
       if       (!strcmp(s[1],"SB_GROUP"    ))
-      { 
+      {
         pLoopSBGroup=pModel->GetSubBasinGroup(s[2]);
         if (pLoopSBGroup == NULL) {
           ExitGracefully("ParseManagementFile: bad subbasin group name in :LoopThrough command",BAD_DATA_WARN);
@@ -769,7 +769,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           loopCount=0;
           aLoopVector[0]=new string [pLoopSBGroup->GetNumSubbasins()];
           aLoopVector[1]=new string [pLoopSBGroup->GetNumSubbasins()];
-          for (int p = 0; p < pLoopSBGroup->GetNumSubbasins(); p++) 
+          for (int p = 0; p < pLoopSBGroup->GetNumSubbasins(); p++)
           {
             long     SBID = pLoopSBGroup->GetSubBasin(p)->GetID();
             string SBName = pLoopSBGroup->GetSubBasin(p)->GetName();
@@ -787,15 +787,15 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         pLoopDemandGroup=pDO->GetDemandGroupFromName(s[2]);
         if (pLoopDemandGroup == NULL) {
           ExitGracefully("ParseManagementFile: bad demand group name in :LoopThrough command",BAD_DATA_WARN);
-        } 
+        }
         else {
           loopCount=0;
           aLoopVector[0]=new string [pLoopDemandGroup->GetNumDemands()];
           aLoopVector[1]=new string [pLoopDemandGroup->GetNumDemands()];
-          for (int p = 0; p < pLoopDemandGroup->GetNumDemands(); p++) 
+          for (int p = 0; p < pLoopDemandGroup->GetNumDemands(); p++)
           {
             long       ID = pLoopDemandGroup->GetDemand(loopCount)->GetID();
-            string  DName = pLoopDemandGroup->GetDemand(loopCount)->GetName(); 
+            string  DName = pLoopDemandGroup->GetDemand(loopCount)->GetName();
             aLoopVector[0][p]=to_string(ID);
             aLoopVector[1][p]=DName;
           }
@@ -805,7 +805,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           nWildcards=2;
         }
       }
-      else if (!strcmp(s[1], "LIST")) 
+      else if (!strcmp(s[1], "LIST"))
       {
         loopListSize=s_to_i(s[2]);
         loopCount=0;
@@ -818,18 +818,18 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     }
     case(41):  //----------------------------------------------
     { /*:EndLoopThrough   */
-      if(Options.noisy) { cout <<"End Loop"<<endl; } 
+      if(Options.noisy) { cout <<"End Loop"<<endl; }
       bool loopDone=false;
-      
+
       loopCount++;
 
-      if ((pLoopSBGroup!=NULL) && (loopCount == pLoopSBGroup->GetNumSubbasins()))//iterating  subbasin loop 
+      if ((pLoopSBGroup!=NULL) && (loopCount == pLoopSBGroup->GetNumSubbasins()))//iterating  subbasin loop
       {
         pLoopSBGroup=NULL;
         loopDone=true;
       }
       else if ((pLoopDemandGroup != NULL) && (loopCount == pLoopDemandGroup->GetNumDemands()))
-      {  
+      {
         pLoopDemandGroup=NULL;
         loopDone=true;
       }
@@ -848,14 +848,14 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         loopListSize    =0;
         pLoopSBGroup    =NULL;
         pLoopDemandGroup=NULL;
-      } 
-      else //not finished yet - update all wildcards and jump back to start of loop 
+      }
+      else //not finished yet - update all wildcards and jump back to start of loop
       {
         for (int j = 0; j < nWildcards; j++) {
           aWildcards[j][1]=aLoopVector[j][loopCount];
         }
 
-        // jump back to start of loop 
+        // jump back to start of loop
         pp->SetPosition(loopStartPos);
         pp->SetLineCounter(loopStartLine);
       }
@@ -890,7 +890,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     }
     case (50): //--------------------------------------------
     { /*
-      :WaterDemand [SBID] [ID] [Name] 
+      :WaterDemand [SBID] [ID] [Name]
          ...
       :EndWaterDemand
       */
@@ -899,7 +899,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         ExitGracefully("Incorrect number of terms in :WaterDemand command header.",BAD_DATA_WARN);
       }
       else{
-        demandSBID =s_to_l(s[1]); 
+        demandSBID =s_to_l(s[1]);
         demand_ID  =s_to_i(s[2]);
         demand_name=s[3];
         CSubBasin *pSB=pModel->GetSubBasinByID(demandSBID);
@@ -981,7 +981,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         }
         else {
           pDemand->SetIrrigationGroup(pGrp->GetGlobalIndex());
-        } 
+        }
       }
       break;
     }
@@ -1076,7 +1076,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           string warn ="Invalid expression in :DemandExpression command at line " + pp->GetLineNumber();
           WriteWarning(warn.c_str(),Options.noisy);
         }
-        
+
       }
       break;
     }

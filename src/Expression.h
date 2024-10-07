@@ -2,7 +2,7 @@
 #include "TimeSeries.h"
 #include "LookupTable.h"
 
-#pragma once 
+#pragma once
 ///////////////////////////////////////////////////////////////////
 /// \brief different expression term types
 //
