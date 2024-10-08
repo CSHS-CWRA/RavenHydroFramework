@@ -490,7 +490,7 @@ void MassEnergyBalance( CModel            *pModel,
         pModel->GetSubBasin(p)->GetReservoir()->SetPrecip(SWvol);//[SW is treated as precip on reservoir]
       }
       else{
-        aRouted[p]+=SWvol;             //surface water moved instantaneously from HRU to basin reach/channel storage
+        aRouted[p]+=SWvol;             //surface water moved from HRU to in-catchment routing
       }
       aPhinew[k][iRO]=aPhinew[k][iSW]; //track net runoff [mm]
       aPhinew[k][iSW]=0.0;             //zero out surface water storage

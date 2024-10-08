@@ -1497,11 +1497,14 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
       }
     }
 
-    //ensure slack counters are properly incremented
-    s++;
-    if (_pGoals[j]->pOperRegimes[0]->pExpression->compare == COMPARE_IS_EQUAL) //two slack variables
+    //ensure slack counters are properly incremented (only goals have slack vars)
+    if (_pGoals[j]->is_goal)
     {
       s++;
+      if (_pGoals[j]->pOperRegimes[0]->pExpression->compare == COMPARE_IS_EQUAL) //two slack variables
+      {
+        s++;
+      }
     }
   }
 
@@ -1804,22 +1807,22 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
           IncrementAndSetRowName(pLinProg,rowcount,"reserv_Q_B"+to_string(pSB->GetID()));
 
           //------------------------------------------------------------------------
-          // Eqns 3 & 4 : Q^n+1 >= -M(1-b)
+          // Eqns 3 & 4 : Q^n+1 >= -M(1-b) # THIS EQUATION IS REDUNDANT - ALWAYS TRUE IF Q>0, regardless of B
           //              Q^n+1 <=  M(1-b)
           // M must be >> Q 
           //------------------------------------------------------------------------
 
-          col_ind[0]=GetDVColumnInd(DV_QOUTRES,_aResIndices[p]); row_val[0]=1.0;
+          /*col_ind[0] = GetDVColumnInd(DV_QOUTRES, _aResIndices[p]); row_val[0] = 1.0;
           col_ind[1]=GetDVColumnInd(DV_BINRES ,_aResIndices[p]); row_val[1]=-LARGE_NUMBER;
           RHS       =-LARGE_NUMBER;
 
           retval = lp_lib::add_constraintex(pLinProg,2,row_val,col_ind,ROWTYPE_GE,RHS);
           ExitGracefullyIf(retval==0,"SolveDemandProblem::Error adding stage discharge constraint C",RUNTIME_ERR);
           IncrementAndSetRowName(pLinProg,rowcount,"reserv_Q_C"+to_string(pSB->GetID()));
-
-          col_ind[0]=GetDVColumnInd(DV_QOUTRES,_aResIndices[p]); row_val[0]=1.0;
-          col_ind[1]=GetDVColumnInd(DV_BINRES ,_aResIndices[p]); row_val[1]=+LARGE_NUMBER;
-          RHS       =+LARGE_NUMBER;
+          */
+          col_ind[0]=GetDVColumnInd(DV_QOUTRES,_aResIndices[p]); row_val[0]=1.0/sqrt(LARGE_NUMBER);
+          col_ind[1]=GetDVColumnInd(DV_BINRES ,_aResIndices[p]); row_val[1]=+sqrt(LARGE_NUMBER);
+          RHS       =+sqrt(LARGE_NUMBER);
 
           retval = lp_lib::add_constraintex(pLinProg,2,row_val,col_ind,ROWTYPE_LE,RHS);
           ExitGracefullyIf(retval==0,"SolveDemandProblem::Error adding stage discharge constraint D",RUNTIME_ERR);
@@ -1871,8 +1874,8 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
           IncrementAndSetRowName(pLinProg,rowcount,"reserv_Q_A"+to_string(pSB->GetID()));
           retval = lp_lib::add_constraintex(pLinProg,1,row_val,col_ind,ROWTYPE_LE,RHS);
           IncrementAndSetRowName(pLinProg,rowcount,"reserv_Q_B"+to_string(pSB->GetID()));
-          retval = lp_lib::add_constraintex(pLinProg,1,row_val,col_ind,ROWTYPE_LE,RHS);
-          IncrementAndSetRowName(pLinProg,rowcount,"reserv_Q_C"+to_string(pSB->GetID()));
+          //retval = lp_lib::add_constraintex(pLinProg,1,row_val,col_ind,ROWTYPE_LE,RHS);
+          //IncrementAndSetRowName(pLinProg,rowcount,"reserv_Q_C"+to_string(pSB->GetID()));
           retval = lp_lib::add_constraintex(pLinProg,1,row_val,col_ind,ROWTYPE_LE,RHS);
           IncrementAndSetRowName(pLinProg,rowcount,"reserv_Q_D"+to_string(pSB->GetID()));
           retval = lp_lib::add_constraintex(pLinProg,1,row_val,col_ind,ROWTYPE_LE,RHS);
@@ -1969,7 +1972,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
   // ----------------------------------------------------------------
   // ITERATIVELY SOLVE OPTIMIZATION PROBLEM WITH LP_SOLVE
   // ----------------------------------------------------------------  
-  const int NUM_ITERATIONS=7;
+  const int NUM_ITERATIONS=5;
 
   int     ctyp;
   int     nrows  =lp_lib::get_Nrows(pLinProg);
@@ -1996,7 +1999,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
     // ----------------------------------------------------------------
     // Solve the LP problem!
     // ----------------------------------------------------------------
-    //lp_lib::set_scaling  (pLinProg, CURTISREIDSCALE);  //May wish to look for scaling improvements
+    //lp_lib::set_scaling(pLinProg, SCALE_CURTISREID);  //May wish to look for scaling improvements
     //lp_lib::set_scaling(pLinProg, SCALE_CURTISREID+SCALE_EQUILIBRATE+SCALE_INTEGERS);
     //lp_lib::set_scaling(pLinProg, SCALE_GEOMETRIC + SCALE_EQUILIBRATE + SCALE_INTEGERS +SCALE_DYNUPDATE);
     //lp_lib::set_break_numeric_accuracy(pLinProg, 1e-6);
@@ -2021,7 +2024,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
     
     // assign decision variables
     // ----------------------------------------------------------------
-    lp_lib::get_variables  (pLinProg,soln);
+    lp_lib::get_variables  (pLinProg,soln  );
     lp_lib::get_constraints(pLinProg,constr); //constraint matrix * soln
 
     for (int i=0;i<_nDecisionVars;i++){
@@ -2032,13 +2035,12 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
     // ----------------------------------------------------------------
     for (int j=0;j<nrows;j++)
     {
-      if (j<_nSolverResiduals){ //tmp debug to avoid memory leak
-        _aSolverRowNames [j]=to_string(lp_lib::get_row_name(pLinProg,j+1)); 
-        _aSolverResiduals[j]=constr[j]-lp_lib::get_rh(pLinProg,j+1); // LHS-RHS for each goal/constraint
-        ctyp=lp_lib::get_constr_type(pLinProg,j+1);
-        if (ctyp==LE){upperswap(_aSolverResiduals[j],0.0); }
-        if (ctyp==GE){lowerswap(_aSolverResiduals[j],0.0); _aSolverResiduals[j]*=-1; }
-      }
+      _aSolverRowNames [j]=to_string(lp_lib::get_row_name(pLinProg,j+1)); 
+      _aSolverResiduals[j]=constr[j]-lp_lib::get_rh(pLinProg,j+1); // LHS-RHS for each goal/constraint
+        
+      ctyp=lp_lib::get_constr_type(pLinProg,j+1);
+      if (ctyp==LE){upperswap(_aSolverResiduals[j],0.0); }
+      if (ctyp==GE){lowerswap(_aSolverResiduals[j],0.0); _aSolverResiduals[j]*=-1; }
     }
 
     // grab and store improved estimate of reservoir stage + flow diversion
@@ -2259,7 +2261,6 @@ void CDemandOptimizer::WriteOutputFileHeaders(const optStruct &Options)
   }
   _GOALSAT<<endl;
 
-
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Writes minor output to file at the end of each timestep (or multiple thereof)
@@ -2374,7 +2375,7 @@ void CDemandOptimizer::WriteMinorOutput(const optStruct &Options,const time_stru
 //
 void CDemandOptimizer::CloseOutputStreams()
 {
-  if (_MANOPT.is_open()){_MANOPT.close();}
+  if (   _MANOPT.is_open()){   _MANOPT.close();}
   if (  _GOALSAT.is_open()){  _GOALSAT.close();}
   if (    _RESID.is_open()){    _RESID.close();}
 }
@@ -2393,7 +2394,7 @@ void CDemandOptimizer::WriteLPSubMatrix(lp_lib::lprec* pLinProg,string file, con
     ExitGracefully(("CConstituentModel::WriteOutputFileHeaders: Unable to open output file "+filename+" for writing.").c_str(),FILE_OPEN_ERR);
   }
   int nrows,ncols;
-  nrows=lp_lib::get_Nrows(pLinProg);
+  nrows=lp_lib::get_Nrows   (pLinProg);
   ncols=lp_lib::get_Ncolumns(pLinProg);
   
   LPMAT<<"rowname,";

@@ -1177,7 +1177,6 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
   :Reservoir ExampleReservoir
     :SubBasinID 23
     :HRUID 234
-    :Type RESROUTE_STANDARD
     :VolumeStageRelation POWER_LAW
       0.1 2.3
     :EndVolumeStageRelation
@@ -1192,7 +1191,6 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
   :Reservoir ExampleReservoir
     :SubBasinID 23
     :HRUID 234
-    :Type RESROUTE_STANDARD
     :StageRelations
       21 # number of points
       0.09 0 0 0.0  (h [m], Q [m3/s], V [m3], A [m2])
@@ -1206,7 +1204,6 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
   :Reservoir ExampleReservoir
     :SubBasinID 23
     :HRUID 234
-    :Type RESROUTE_TIMEVARYING
     :VaryingStageRelations
       21 # number of points
       [jul day1] [jul day2] [jul day3] ...
@@ -1221,7 +1218,6 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
   :Reservoir ExampleReservoir # 'lake type format'
     :SubBasinID 23
     :HRUID 234
-    :Type RESROUTE_STANDARD
     :WeirCoefficient 0.6
     :CrestWidth 10
     :MaxDepth 5.5 # relative to minimum weir crest elevation
@@ -1232,7 +1228,6 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
   :Reservoir ExampleReservoir # 'multiple control structure format'
     :SubBasinID [ID]
     :HRUID [ID]
-    :Type RESROUTE_STANDARD
     :StageRelations
       # these provide the base stage-storage-area-discharge curves for reservoir.
       # The 'main outflow' is still controlled as before and can only drain to the downstream basin.
