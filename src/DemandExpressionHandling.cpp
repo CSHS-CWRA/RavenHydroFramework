@@ -750,13 +750,15 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
   int              termspergrp[MAX_EXP_GROUPS];
   comparison       comp=COMPARE_BETWEEN;
   int              nComps=0;
+  size_t           strlen;
 
   //identify all strings as either operators or terms
   //determine nature of comparison =,<,>
   for (int i = 1; i < Len; i++) //starts at 1 - first term is :Expression or :DefineDecisionVariable
   {
+    strlen=to_string(s[i]).length();
     type[i]=EXP;
-    if ((s[i][0]=='+') || (s[i][0]=='-') || (s[i][0]=='*') || (s[i][0]=='/') || (s[i][0]=='=') || (s[i][0]=='<') || (s[i][0]=='>')){
+    if ((s[i][0]=='+') || ((strlen==1) && (s[i][0]=='-')) || (s[i][0]=='*') || (s[i][0]=='/') || (s[i][0]=='=') || (s[i][0]=='<') || (s[i][0]=='>')){ 
       type[i] = EXP_OP;
       if ((i > 1) && (type[i - 1] == EXP_OP)) {
         ExitGracefully("ParseExpression: cannot have consecutive math operators in an expression.",BAD_DATA_WARN);
