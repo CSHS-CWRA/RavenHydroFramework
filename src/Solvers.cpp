@@ -558,19 +558,19 @@ void MassEnergyBalance( CModel            *pModel,
     {
       pBasin->UpdateInflow(aQinnew[p]);              // from upstream, diversions, and specified flows
 
-      pBasin->UpdateLateralInflow(aRouted[p]/(tstep*SEC_PER_DAY));//[m3/d]->[m3/s] 
+      pBasin->UpdateLateralInflow(aRouted[p]/(tstep*SEC_PER_DAY));//[m3/d]->[m3/s]
 
       pBasin->RouteWater    (aQoutnew,Options,tt);
 
       irr_Q=pBasin->ApplyIrrigationDemand(t+tstep,aQoutnew[pBasin->GetNumSegments()-1],Options.management_optimization);
 
-      div_Q_total=0; 
+      div_Q_total=0;
       for(int i=0; i<pBasin->GetNumDiversions();i++) { //upstream of reservoir!
         div_Q=pBasin->GetDiversionFlow(i,pBasin->GetChannelOutflowRate(),Options,tt,pDivert); //diversions based upon flows at start of timestep (without diversions)
         div_Q_total+=div_Q;
       }
 
-      down_Q=pBasin->GetDownstreamInflow(t)+pBasin->GetTotalReturnFlow(); 
+      down_Q=pBasin->GetDownstreamInflow(t)+pBasin->GetTotalReturnFlow();
 
       aQoutnew[pBasin->GetNumSegments()-1]+=down_Q; //add return flows and Basin inflow hydrographs (type2)
 

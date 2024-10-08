@@ -632,7 +632,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL))
       {
 	    has_irrig=true;
-	  
+
         pTimeSer=CTimeSeries::Parse(p,true,demand_name,SBID,"none",Options);
         pTimeSer->SetIDTag(demand_ID);
 

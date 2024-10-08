@@ -302,7 +302,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
         return true;
 
       }
-    } 
+    }
     else {
       warn="ConvertToExpression:: Unparseable term in history expression starting with !/$ - only !Q, !I, !D, !h, $B, or $E currently supported. "+warnstring;
       ExitGracefully(warn.c_str(), BAD_DATA_WARN);
@@ -393,7 +393,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     return true;
   }
   //----------------------------------------------------------------------
-  else if (s[0] == '$') 
+  else if (s[0] == '$')
   {
     if ((s[1] == 'B') || (s[1] == 'E')) //Subbasin-indexed
     {
@@ -1115,7 +1115,7 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, const int kk, lp_lib::lpr
     pE= pC->pOperRegimes[0]->pExpression; //inactive expression
   }
 
-  if ((kk==DOESNT_EXIST) || (!constraint_valid)) // INACTIVE/INVALID GOAL/CONSTRAINT 
+  if ((kk==DOESNT_EXIST) || (!constraint_valid)) // INACTIVE/INVALID GOAL/CONSTRAINT
   {
     if (!pC->is_goal) {
       col_ind[i]=1;
@@ -1150,7 +1150,7 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, const int kk, lp_lib::lpr
 #endif
 
 //////////////////////////////////////////////////////////////////
-/// evaluates difference between right hand side and left hand side of expression, or value of RHS if RHS_only==true and statement only has one term left of (in)equality 
+/// evaluates difference between right hand side and left hand side of expression, or value of RHS if RHS_only==true and statement only has one term left of (in)equality
 /// does not support active decision variables in expression (only to be used for conditionals and demand/return expressions)
 /// \params pE [in] - conditional expression
 /// \param t [in] - current model time
@@ -1192,7 +1192,7 @@ double CDemandOptimizer::EvaluateExpression(const expressionStruct* pE,const dou
           }
         }
       }
-    
+
       RHS-=coeff; //term group goes on right hand side
     }
   }
@@ -1207,7 +1207,7 @@ double CDemandOptimizer::EvaluateExpression(const expressionStruct* pE,const dou
 //
 bool CDemandOptimizer::EvaluateConditionExp(const expressionStruct* pE,const double &t) const
 {
-  
+
   double RHSminusLHS=EvaluateExpression(pE,t,false);
 
   if      (fabs(RHSminusLHS-RAV_BLANK_DATA)<REAL_SMALL) {return true;}//condition assumed satisfied if no data in conditional

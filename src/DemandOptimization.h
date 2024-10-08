@@ -45,7 +45,7 @@ enum dv_type
   DV_DSTAGE,  //< change in reservoir stage over time step
   DV_BINRES,  //< binary integer value for above/beneath stage-discharge sill
   DV_DELIVERY,//< delivery of water demand
-  DV_RETURN,  //< return flows to reach 
+  DV_RETURN,  //< return flows to reach
   DV_USER,    //< user specified decision variable
   DV_SLACK    //< slack variable for goal satisfaction
 };
@@ -205,7 +205,7 @@ private: /*------------------------------------------------------*/
   int              _nDemandGroups;      //< number of demand groups
   CDemandGroup   **_pDemandGroups;      //< array of pointers to demand groups
 
-  int              _nEnviroFlowGoals;   //< number of *active* environmental flow goals 
+  int              _nEnviroFlowGoals;   //< number of *active* environmental flow goals
   double          *_aSlackValues;       //< array of slack variable values [size: _nSlackVars]
   int              _nSlackVars;         //< number of slack variables
 
@@ -237,7 +237,7 @@ private: /*------------------------------------------------------*/
 
   bool            _demands_initialized;//< true if demands have been initialized
 
-  bool            _stage_discharge_as_goal; //< TMP DEBUG - SET TO TRUE IF SD CURVE IS GOAL INSTEAD OF CONSTRAINT 
+  bool            _stage_discharge_as_goal; //< TMP DEBUG - SET TO TRUE IF SD CURVE IS GOAL INSTEAD OF CONSTRAINT
 
   int             _do_debug_level;      //< =1 if debug info is to be printed to screen, =2 if LP matrix also printed (full debug), 0 for nothing
 
@@ -254,7 +254,7 @@ private: /*------------------------------------------------------*/
 
 
 #ifdef _LPSOLVE_
-  void            WriteLPSubMatrix(lp_lib::lprec *pLinProg, string filename, const optStruct &Options) const; //for debugging 
+  void            WriteLPSubMatrix(lp_lib::lprec *pLinProg, string filename, const optStruct &Options) const; //for debugging
   void           AddConstraintToLP(const int i, const int k, lp_lib::lprec *pLinProg, const time_struct &tt,int *col_ind, double *row_val) const;
   void      IncrementAndSetRowName(lp_lib::lprec *pLinProg,int &rowcount,const string &name);
 #endif

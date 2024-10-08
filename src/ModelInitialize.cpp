@@ -383,7 +383,7 @@ void CModel::Initialize(const optStruct &Options)
 /// \brief Initializes SB demand members AFTER RVM FILE READ
 /// \param &Options [in] Global model options information
 //
-void CModel::InitializePostRVM(const optStruct& Options) 
+void CModel::InitializePostRVM(const optStruct& Options)
 {
   for (int p=0;p<_nSubBasins;p++){
     _pSubBasins[p]->InitializePostRVM(Options);
