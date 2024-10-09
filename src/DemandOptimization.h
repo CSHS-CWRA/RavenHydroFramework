@@ -71,7 +71,7 @@ struct decision_var
     name=nam;
     p_index=p;
     loc_index=loc_ind;
-    value=0.0;min=0.0;max=ALMOST_INF;dvar_type=typ;dem_index=DOESNT_EXIST;
+    value=0.0;min=-ALMOST_INF;max=ALMOST_INF;dvar_type=typ;dem_index=DOESNT_EXIST;
   }
 };
 //////////////////////////////////////////////////////////////////
