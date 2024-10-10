@@ -2305,7 +2305,6 @@ void CDemandOptimizer::WriteMinorOutput(const optStruct &Options,const time_stru
 
   //first slack terms are due to environmental flow constraints (_nEnviroFlowGoals) and reservoir outflow targets (2*_nReservoirs)
   //this is first index of user-specified slack variable
-
   int s=_nEnviroFlowGoals+2*_nReservoirs;
   if (!_stage_discharge_as_goal) {
     //s=_nEnviroFlowGoals; //No slack variables for reservoirs (currently retained regardless of stage discharge status)
