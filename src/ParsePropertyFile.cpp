@@ -463,9 +463,10 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           bool is_special=((!string(s[0]).compare("LAKE")) ||
                            (!string(s[0]).compare("GLACIER")) ||
                            (!string(s[0]).compare("PAVEMENT")) ||
+                           (!string(s[0]).compare("WATER")) ||
                            (!string(s[0]).compare("ROCK")));
           ExitGracefullyIf((nhoriz==0) && (!is_special),
-                           "ParseClassPropertiesFile:  only special soil profiles (LAKE,GLACIER,PAVEMENT, or ROCK) can have zero horizons",BAD_DATA);
+                           "ParseClassPropertiesFile:  only special soil profiles (LAKE,WATER,GLACIER,PAVEMENT, or ROCK) can have zero horizons",BAD_DATA);
 
           for (int m=0;m<nhoriz;m++)
           {
