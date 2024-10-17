@@ -404,7 +404,7 @@ void CGlobalParams::InitializeGlobalParameters(global_struct &g, bool is_templat
   g.max_snow_albedo     =DefaultParameterValue(is_template,true);
   g.min_snow_albedo     =DefaultParameterValue(is_template,true);
   g.alb_decay_cold      =DefaultParameterValue(is_template,true);
-  g.alb_decay_cold      =DefaultParameterValue(is_template,true);
+  g.alb_decay_melt      =DefaultParameterValue(is_template,true);
   g.bare_ground_albedo  =DefaultParameterValue(is_template,true);
   g.snowfall_albthresh  =DefaultParameterValue(is_template,true);
 
