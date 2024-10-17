@@ -653,6 +653,8 @@ void MassEnergyBalance( CModel            *pModel,
 
         pConstitModel->SetMassInflows    (p,aMinnew[p]);
         pConstitModel->SetLateralInfluxes(p,aRoutedMass[p]);
+        
+        pConstitModel->InCatchmentRoute  (p,Mlat_new,Options);//prepares, calculates, and updates Mlat_new
         pConstitModel->PrepareForRouting (p);
         pConstitModel->RouteMass         (p,aMoutnew,Mlat_new,ResMass,ResSedMass,Options,tt);  //Where everything happens!
         pConstitModel->UpdateMassOutflows(p,aMoutnew,Mlat_new,ResMass,ResSedMass,MassOutflow,Options,tt,false); //actually updates mass flow values here

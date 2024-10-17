@@ -218,7 +218,21 @@ void   CConstituentModel::SetLateralInfluxes(const int p,const double Mlat)
 void  CConstituentModel::PrepareForRouting(const int p) {
   //does nothing - interesting in child classes
 }
-//////////////////////////////////////////////////////////////////
+void  CConstituentModel::PrepareForInCatchmentRouting(const int p) {
+  //does nothing - interesting in child classes
+}
+void CConstituentModel::InCatchmentRoute(const int p, double &Mlat_new, const optStruct &Options) 
+{
+  PrepareForInCatchmentRouting(p);
+
+  const double * aUnitHydro =_pModel->GetSubBasin(p)->GetUnitHydrograph();
+  const double * aQlatHist  =_pModel->GetSubBasin(p)->GetLatHistory();
+  Mlat_new=ApplyInCatchmentRouting(p,aUnitHydro,aQlatHist,_aMlatHist[p],_nMlatHist[p], Options.timestep);
+  
+  _aMlocLast[p] = _aMlocal[p];
+  _aMlocal  [p] = Mlat_new;
+}
+    //////////////////////////////////////////////////////////////////
 /// \brief Creates aMoutnew [m^3/s], an array of point measurements for outflow at downstream end of each river segment
 /// \details Array represents measurements at the end of the current timestep. if (catchment_routing==distributed),
 /// lateral flow Qlat (e.g., runoff, interflow, or baseflow) is routed as part of channel routing routine otherwise,
@@ -240,22 +254,22 @@ void   CConstituentModel::RouteMass(const int          p,          // SB index
                                     const optStruct   &Options,
                                     const time_struct &tt) const
 {
-  const double * aUnitHydro =_pModel->GetSubBasin(p)->GetUnitHydrograph();
-  const double * aRouteHydro=_pModel->GetSubBasin(p)->GetRoutingHydrograph();
-  const double * aQinHist   =_pModel->GetSubBasin(p)->GetInflowHistory();
-  const double * aQlatHist  =_pModel->GetSubBasin(p)->GetLatHistory();
-
-  int nSegments   =_pModel->GetSubBasin(p)->GetNumSegments();
-  double seg_fraction=1.0/(double)(nSegments);
-
   //==============================================================
   // route from catchment
   //==============================================================
-  Mlat_new=ApplyInCatchmentRouting(p,aUnitHydro,aQlatHist,_aMlatHist[p],_nMlatHist[p], Options.timestep);
+  //const double * aUnitHydro =_pModel->GetSubBasin(p)->GetUnitHydrograph();
+  //const double * aQlatHist  =_pModel->GetSubBasin(p)->GetLatHistory();
+  //Mlat_new=ApplyInCatchmentRouting(p,aUnitHydro,aQlatHist,_aMlatHist[p],_nMlatHist[p], Options.timestep);
 
   //==============================================================
   // route along channel
   //==============================================================
+  const double * aRouteHydro=_pModel->GetSubBasin(p)->GetRoutingHydrograph();
+  const double * aQinHist   =_pModel->GetSubBasin(p)->GetInflowHistory();
+  
+  int nSegments   =_pModel->GetSubBasin(p)->GetNumSegments();
+  double seg_fraction=1.0/(double)(nSegments);
+
   if((Options.routing==ROUTE_PLUG_FLOW) || (Options.routing==ROUTE_DIFFUSIVE_WAVE))
   {
     // (sometimes fancy) convolution
@@ -270,7 +284,7 @@ void   CConstituentModel::RouteMass(const int          p,          // SB index
   else {
     ExitGracefully("Unrecognized or unsupported constiuent routing method (:Routing command must be ROUTE_NONE, ROUTE_PLUG_FLOW, or ROUTE_DIFFUSIVE_WAVE to support transport)",STUB);
   }
-
+  
   //all fluxes from catchment are routed directly to basin outlet (unless handled in convolution routing as source term)
   if ((!_lateral_via_convol) || (_pModel->GetSubBasin(p)->IsHeadwater())){
     aMout_new[nSegments-1]+=Mlat_new;
@@ -372,8 +386,6 @@ void   CConstituentModel::UpdateMassOutflows( const int     p,
   }
   MassOutflow=_aMout[p][pBasin->GetNumSegments()-1];// is now the new mass outflow from the channel
 
-  _aMlocLast[p] = _aMlocal[p];
-  _aMlocal  [p] = Mlat_new;
 
   //Update reservoir concentrations
   //-----------------------------------------------------
@@ -421,8 +433,10 @@ void   CConstituentModel::UpdateMassOutflows( const int     p,
   dM-=GetNetReachLosses(p);
 
   //mass change from lateral inflows
-  dM+=0.5*(Mlat_new+_aMlat_last[p])*dt;
-
+  if (!_lateral_via_convol){//elsewise, in get net reach losses
+    dM+=0.5*(Mlat_new+_aMlat_last[p])*dt;
+  }
+  
   _channel_storage[p]+=dM;//[mg] or [MJ]
 
   //Update rivulet storage
