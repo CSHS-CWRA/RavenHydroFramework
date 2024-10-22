@@ -17,6 +17,7 @@
 CStateVariable::CStateVariable()
 {
   this->Initialize();
+  _pTransportModel=NULL;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -24,9 +25,9 @@ CStateVariable::CStateVariable()
 //
 void CStateVariable::Initialize()
 {
-  this->_nAliases = 0;
-  this->_aAliases = NULL;
-  this->_aAliasReferences = NULL;
+  _nAliases = 0;
+  _aAliases = NULL;
+  _aAliasReferences = NULL;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -34,17 +35,14 @@ void CStateVariable::Initialize()
 //
 CStateVariable::~CStateVariable()
 {
-  this->Destroy();
+  delete [] _aAliases;
+  delete [] _aAliasReferences;
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Delete references to static alias arrays
 //
-void CStateVariable::Destroy()
-{
-  delete [] _aAliases;
-  delete [] _aAliasReferences;
-}
+void CStateVariable::Destroy(){}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Dynamically adds additional string, s, onto dynamic array of strings, pArr. Increments size of array by one
@@ -398,7 +396,7 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
 
   if ((typ==CONSTITUENT) && ((int)(tmp.find_first_of("|"))!=-1)) //only used if e.g., !Nitrogen|SOIL[1] (rather than CONSTITUENT[32] or !Nitrogen[32]) is used
   {
-    layer_index = this->_pTransportModel->GetLayerIndexFromName2(tmp, layer_index);
+    layer_index = _pTransportModel->GetLayerIndexFromName2(tmp, layer_index);
     if (layer_index==DOESNT_EXIST){typ=UNRECOGNIZED_SVTYPE;}
   }
 
