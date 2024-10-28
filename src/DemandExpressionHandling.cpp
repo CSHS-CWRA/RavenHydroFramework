@@ -690,6 +690,10 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
       if (units == "CMS_TO_ACREFTD") {term->value=ACREFTD_PER_CMS;       found=true;}
       if (units == "INCHES_TO_MM"  ) {term->value=MM_PER_INCH;           found=true;}
       if (units == "MM_TO_INCHES"  ) {term->value=1.0/MM_PER_INCH;       found=true;}
+      if (units == "FEET_TO_METER" ) {term->value=1.0/FEET_PER_METER;    found=true;}
+      if (units == "METER_TO_FEET" ) {term->value=FEET_PER_METER;        found=true;}
+      if (units == "CMS_TO_CFS"    ) {term->value=1.0/CFS_PER_CMS;       found=true;}
+      if (units == "CFS_TO_CMS"    ) {term->value=CFS_PER_CMS;           found=true;}
       term->nested_exp1 =x_in;
       term->type     =TERM_CONVERT;
       if (!found) {
