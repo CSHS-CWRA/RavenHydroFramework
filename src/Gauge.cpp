@@ -225,6 +225,7 @@ void CGauge::Initialize(const optStruct   &Options,
   WarnAboutForcing(Options.SW_radiation  ==SW_RAD_DATA,   F_SW_RADIA);
   WarnAboutForcing(Options.SW_radia_net  ==NETSWRAD_DATA, F_SW_RADIA_NET);
   WarnAboutForcing(Options.LW_radiation  ==LW_RAD_DATA,   F_LW_RADIA_NET);
+  WarnAboutForcing(Options.LW_incoming   ==LW_INC_DATA,   F_LW_INCOMING);
   WarnAboutForcing(Options.cloud_cover   ==CLOUDCOV_DATA, F_CLOUD_COVER);
   WarnAboutForcing(Options.ow_evaporation==PET_DATA,      F_OW_PET);
   WarnAboutForcing(Options.evaporation   ==PET_DATA,      F_PET);

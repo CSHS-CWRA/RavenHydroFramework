@@ -1045,7 +1045,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
 
     if (_type==DIAG_KLING_GUPTA_DEVIATION){Beta=1.0;} //remove penalty for difference in means
 
-    if (_type==DIAG_KGE_PRIME){Alpha/=Beta;}// Uses C.O.V. instead of std dev. from Kling et al. (2012) Runoff conditions in the upper Danube basin under an ensemble of climate change scenarios, Journal of Hydrology
+    if (_type==DIAG_KGE_PRIME){if (Beta!=0.0){Alpha/=Beta;}}// Uses C.O.V. instead of std dev. from Kling et al. (2012) Runoff conditions in the upper Danube basin under an ensemble of climate change scenarios, Journal of Hydrology
 
     if ((N>0) && ((ObsAvg!=0.0) || (Beta==1.0)) && (ObsStd!=0.0) && (ModStd!=0.0))
     {
