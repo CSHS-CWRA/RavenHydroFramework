@@ -124,12 +124,14 @@ double CDemandOptimizer::GetNamedConstant(const string s) const
 //////////////////////////////////////////////////////////////////
 /// \brief retrieves value of control variable from list of control variables
 /// \params s [in] - string
+/// \param index [out] - index of found control variable, or DOESNT_EXIST if not found
 /// \returns value of control var, or BLANK if not found
 //
-double CDemandOptimizer::GetControlVariable(const string s) const
+double CDemandOptimizer::GetControlVariable(const string s, int &index) const
 {
+  index=DOESNT_EXIST;
   for (int i = 0; i < _nControlVars; i++) {
-    if (s==_pControlVars[i]->name){return _pControlVars[i]->current_val; }
+    if (s==_pControlVars[i]->name){index=i; return _pControlVars[i]->current_val; }
   }
   return RAV_BLANK_DATA;
 }
@@ -200,6 +202,7 @@ string TermTypeToString(termtype t)
   if (t==TERM_HRU     ){return "TERM_HRU";}
   if (t==TERM_SB      ){return "TERM_SB"; }
   if (t==TERM_CONST   ){return "TERM_CONST"; }
+  if (t==TERM_CONTROL ){return "TERM_CONTROL"; }
   if (t==TERM_HISTORY ){return "TERM_HISTORY"; }
   if (t==TERM_MAX     ){return "TERM_MAX"; }
   if (t==TERM_MIN     ){return "TERM_MIN"; }
@@ -233,6 +236,7 @@ string expTypeToString(termtype &typ){
   case(TERM_TS):      return "TERM_TS"; break;
   case(TERM_LT):      return "TERM_LT"; break;
   case(TERM_CONST):   return "TERM_CONST"; break;
+  case(TERM_CONTROL): return "TERM_CONTROL"; break;
   case(TERM_HISTORY): return "TERM_HISTORY"; break;
   case(TERM_MAX):     return "TERM_MAX"; break;
   case(TERM_MIN):     return "TERM_MIN"; break;
@@ -259,6 +263,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
   string warn;
   string warnstring = " at line #" + to_string(lineno) + " in file "+filename;
 
+  int    index;
   string tmp(s);
   term->origexp=tmp;
   term->p_index=DOESNT_EXIST;
@@ -709,10 +714,12 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     term->value=GetNamedConstant(s);
   }
   //----------------------------------------------------------------------
-  else if (GetControlVariable(s) != RAV_BLANK_DATA) // control variable
+  else if (GetControlVariable(s,index) != RAV_BLANK_DATA) // control variable
   {
-    term->type=TERM_CONST;
-    term->value=GetControlVariable(s);
+    
+    term->type=TERM_CONTROL;
+    term->value=GetControlVariable(s,index);// initially zero
+    term->DV_ind=index;
   }
   //----------------------------------------------------------------------
   else if (GetUserDVIndex(s)!=DOESNT_EXIST) // user-defined decision variable
@@ -1181,7 +1188,8 @@ double CDemandOptimizer::EvaluateExpression(const expressionStruct* pE,const dou
       {
         if (pE->pTerms[j][k]->type == TERM_DV)
         {
-          ExitGracefully("EvaluateConditionalExp: conditional expressions or demand/return expressions cannot contain decision variables",BAD_DATA);
+          string warn="EvaluateConditionalExp: conditional expressions or demand/return expressions cannot contain decision variables. Problematic command: "+pE->origexp;
+          ExitGracefully(warn.c_str(), BAD_DATA);
         }
         else if (!(pE->pTerms[j][k]->is_nested))
         {
@@ -1274,9 +1282,14 @@ double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const
     int p=pT->p_index;
     return _pModel->GetSubBasin(p)->GetAvgStateVar(i);
   }
-  else if (pT->type == TERM_CONST) /*also handles control variables*/
+  else if (pT->type == TERM_CONST) 
   {
     return pT->value;
+  }
+  else if (pT->type == TERM_CONTROL)
+  {
+    int i=pT->DV_ind;
+    return _pControlVars[i]->current_val;
   }
   else if (pT->type == TERM_CUMUL)  //!C123
   {

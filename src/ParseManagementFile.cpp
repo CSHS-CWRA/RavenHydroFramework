@@ -55,10 +55,15 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
   bool        in_ifmode_statement=false;
 
   CDemand    *pDemand=NULL;
-  int  demand_ind=0;
-  long demandSBID;
-  int  demand_ID;
-  string demand_name;
+  int         demand_ind=0;
+  long        demandSBID; 
+  int         demand_ID;
+  string      demand_name;
+
+  ifstream    INPUT2;                //For Secondary input
+  CParser    *pMainParser=NULL;      //for storage of main parser while reading secondary files
+  //ifstream    INPUT3;                //For tertiary input 
+  //CParser    *pSecondaryParser=NULL; //for storage of secondary parser while reading tertiary files 
 
   ifstream    RVM;
   RVM.open(Options.rvm_filename.c_str(),ios::binary);
@@ -66,18 +71,17 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     cout << "ERROR opening model management file: "<<Options.rvm_filename<<endl; return false;
   }
 
-  int   Len,line(0),code;
-  char *s[MAXINPUTITEMS];
+  string  firstword;
+  int     Len,line(0),code;
+  char   *s[MAXINPUTITEMS];
   CParser *pp=new CParser(RVM,Options.rvm_filename,line);
 
-  ifstream INPUT2;           //For Secondary input
-  CParser *pMainParser=NULL; //for storage of main parser while reading secondary files
+  // - looping variables --------------------------------------------
+  const int       MAX_WILDCARDS=10;
 
-  const int MAX_WILDCARDS=10;
-
-  int loopCount=0;
-  streampos loopStartPos;
-  int       loopStartLine;
+  int             loopCount=0;
+  streampos       loopStartPos;
+  int             loopStartLine;
   CSubbasinGroup *pLoopSBGroup=NULL;
   CDemandGroup   *pLoopDemandGroup=NULL;
   int             loopListSize=0;
@@ -100,7 +104,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     cout <<"Parsing Model Management File " << Options.rvm_filename <<"..."<<endl;
     cout <<"======================================================"<<endl;
   }
-  string firstword;
+
   //--Sift through file-----------------------------------------------
   firstword=pp->Peek();
   if ((firstword == ":DefineDecisionVariable") || (firstword == ":DemandExpression") || (firstword == ":ReturnExpression"))
@@ -199,6 +203,19 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         ExitGracefully(warn.c_str(),BAD_DATA);
       }
       else {
+        //if ((pMainParser != NULL) && (pSecondaryParser != NULL)){
+        //  ExitGracefully("ParseEnsembleFile::nested :RedirectToFile commands are not allowed to be nested more than two levels (e.g., rvm file to rvm file to rvm file to rvm file)",BAD_DATA);
+        //}
+        //if (pMainParser != NULL) { 
+        //  pSecondaryParser=pp
+        //  pp=new CParser(INPUT3,filename,line);//open new parser
+        //} //from already redirected .rvm file 
+        //else { 
+        //  pMainParser=pp;     
+        //  pp=new CParser(INPUT2,filename,line);//open new parser
+        //} //from base .rvm file 
+        //
+
         if (pMainParser != NULL) {
           ExitGracefully("ParseEnsembleFile::nested :RedirectToFile commands (in already redirected files) are not allowed.",BAD_DATA);
         }
@@ -692,6 +709,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     { /*:DefineControlVariable [name] = [expressionRHS] */
       if(Options.noisy) { cout <<"Define Control Variable"<<endl; }
       expressionStruct *pExp;
+      pDO->AddControlVariable(s[1]);
       pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
 
       if (pDO->GetDebugLevel()>=1){
@@ -699,7 +717,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       }
 
       if (pExp!=NULL){
-        pDO->AddControlVariable(s[1],pExp);
+        pDO->TieExpToControlVar(pExp);
       }
       else {
         string warn ="Invalid expression in :DefineControlVariable command at line " + pp->GetLineNumber();
@@ -1136,17 +1154,30 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     end_of_file=pp->Tokenize(s,Len);
     swapWildcards((const char**)(s),Len,aWildcards,nWildcards);
 
-    //return after file redirect, if in secondary file
-    if((end_of_file) && (pMainParser!=NULL))
+     //return after file redirect, if in tertiary file
+    /*if ((end_of_file) && (pSecondaryParser != NULL))
     {
-      INPUT2.clear();
-      INPUT2.close();
+      INPUT3.clear();
+      INPUT3.close();
       delete pp;
-      pp=pMainParser;
-      pMainParser=NULL;
+      pp=pSecondaryParser;
+      pSecondaryParser=NULL;
       end_of_file=pp->Tokenize(s,Len);
       swapWildcards((const char**)(s),Len,aWildcards,nWildcards);
     }
+    else{*/
+      //return after file redirect, if in secondary file
+      if((end_of_file) && (pMainParser!=NULL))
+      {
+        INPUT2.clear();
+        INPUT2.close();
+        delete pp;
+        pp=pMainParser;
+        pMainParser=NULL;
+        end_of_file=pp->Tokenize(s,Len);
+        swapWildcards((const char**)(s),Len,aWildcards,nWildcards);
+      }
+    //}
   } //end while !end_of_file
   RVM.close();
 

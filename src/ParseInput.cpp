@@ -3154,6 +3154,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       pMover = new CmvMassLoading(s[1], pModel->GetTransportModel(), pModel);
       AddProcess(pModel,pMover,pProcGroup);
 
+      pStateVar->SetTransportModel(pModel->GetTransportModel());
+
       if(ctype==ENTHALPY) {//add precipitation source condition, by default - Tprecip=Tair
         //\todo [funct] implement this by default
         //int iAtmPrecip=pModel->GetStateVarIndex(ATMOS_PRECIP);
@@ -3576,7 +3578,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 
   pModel->GetTransportModel()->InitializeParams(Options);
   pModel->SetStateVarInfo(pStateVar);
-  pStateVar->SetTransportModel(pModel->GetTransportModel());
+
 
   delete p; p=NULL;
   delete [] tmpS;

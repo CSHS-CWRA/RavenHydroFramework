@@ -14,6 +14,7 @@ enum termtype
   TERM_HRU,       //< state variable @HRU_var(SNOW,2345)
   TERM_SB,        //< state variable @SB_var(SNOW,234)
   TERM_CONST,     //< constant
+  TERM_CONTROL,   //< control variable (constant updated each time step)
   TERM_HISTORY,   //< bracketed - !Q123[-2]
   TERM_MAX,       //< @max(x,y)
   TERM_MIN,       //< @min(x,y)

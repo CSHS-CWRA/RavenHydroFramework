@@ -273,7 +273,7 @@ public: /*------------------------------------------------------*/
   int           GetDemandIndexFromName(const string dname) const;
   double        GetNamedConstant      (const string s) const;
   int           GetUserDVIndex        (const string s) const;
-  double        GetControlVariable    (const string s) const;
+  double        GetControlVariable    (const string s, int &index) const;
   //double      GetDemandDelivery     (const int p) const;
   int           GetNumUserDVs         () const;
   int           GetDebugLevel         () const;
@@ -296,7 +296,8 @@ public: /*------------------------------------------------------*/
   void   AddDecisionVar        (const decision_var *pDV);
   void   SetDecisionVarBounds  (const string name, const double &min, const double &max);
   void   AddUserConstant       (const string name, const double &val);
-  void   AddControlVariable    (const string name, expressionStruct* pExp);
+  void   AddControlVariable    (const string name);
+  void   TieExpToControlVar    (expressionStruct* pExp);
   void   AddUserTimeSeries     (const CTimeSeries *pTS);
   void   AddUserLookupTable    (const CLookupTable *pLUT);
 

@@ -355,7 +355,7 @@ void CDemandOptimizer::AddUserConstant(const string name, const double& val)
 //////////////////////////////////////////////////////////////////
 /// \brief adds control variable
 //
-void   CDemandOptimizer::AddControlVariable(const string name, expressionStruct* pExp)
+void   CDemandOptimizer::AddControlVariable(const string name)
 {
   if (VariableNameExists(name)) {
     string warn="CDemandOptimizer::AddControlVariable: control variable name "+name+" is already in use.";
@@ -364,13 +364,19 @@ void   CDemandOptimizer::AddControlVariable(const string name, expressionStruct*
 
   control_var *pCV = new control_var();
   pCV->name=name;
-  pCV->pExpression=pExp;
-  pCV->current_val=RAV_BLANK_DATA;
+  pCV->pExpression=NULL;
+  pCV->current_val=0.0;
 
   if (!DynArrayAppend((void**&)(_pControlVars),(void*)(pCV),_nControlVars)){
    ExitGracefully("CDemandOptimizer::AddControlVariable: adding NULL CV",BAD_DATA);}
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief ties expression to most recently created control variable
+//
+void   CDemandOptimizer::TieExpToControlVar(expressionStruct* pExp)
+{
+  _pControlVars[_nControlVars-1]->pExpression=pExp;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief adds user time series
 void CDemandOptimizer::AddUserTimeSeries(const CTimeSeries *pTS)
@@ -1139,7 +1145,7 @@ void CDemandOptimizer::UpdateControlVariables(const time_struct &tt)
 {
   double t=tt.model_time;
   for (int i = 0; i < _nControlVars; i++) {
-    _pControlVars[i]->current_val=EvaluateConditionExp(_pControlVars[i]->pExpression, t);
+    _pControlVars[i]->current_val=EvaluateExpression(_pControlVars[i]->pExpression, t,true);
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -1246,13 +1252,13 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
   double *Q_iter =new double [_pModel->GetNumSubBasins()];
   int    *lprow  =new int    [_pModel->GetNumSubBasins()]; //index of goal equation for non-linear reservoir stage discharge curve in subbasin p
 
-  // evaluates value of all control variables for this time step
-  // ----------------------------------------------------------------
-  UpdateControlVariables(tt);
-
   // update history arrays from previous timestep
   // ----------------------------------------------------------------
   UpdateHistoryArrays();
+
+  // evaluates value of all control variables for this time step
+  // ----------------------------------------------------------------
+  UpdateControlVariables(tt);
 
   // instantiate linear programming solver
   // ----------------------------------------------------------------

@@ -713,7 +713,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
       if(!strcmp(s[0],":FileNameNC"    )){ FileNameNC = s[1]; FileNameNC = CorrectForRelativePath(FileNameNC ,Options.rvt_filename); }
       if(!strcmp(s[0],":VarNameNC"     )){ VarNameNC  = s[1]; }
       if(!strcmp(s[0],":PeriodEndingNC")){ shift_from_per_ending=true;}
-      if(!strcmp(s[0],":DimNamesNC")) {
+      if(!strcmp(s[0],":DimNamesNC"    )){
         if(Len == 2) {
           DimNamesNC_stations = "None";
           DimNamesNC_time     = s[1];
@@ -877,8 +877,8 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
   {
     bool step=false;
     if (Len >= 2) {
-      if(!strcmp(s[0],"INTERPOLATE")){step=false;}
-      if(!strcmp(s[0],"STEP"       )){step=true;}
+      if(!strcmp(s[1],"INTERPOLATE")){step=false;}
+      if(!strcmp(s[1],"STEP"       )){step=true;}
     }
 
     int    *days=new int    [(int)(DAYS_PER_YEAR)+1]; //sized for max # of events
@@ -925,7 +925,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
         for(int i=0;i<nEvents-1;i++) {
           if ((tt.julian_day>=days[i]) && (tt.julian_day<days[i+1])){
             lastval=vals[i];  lastday=days[i];
-            nextval=vals[i+1];nextday=days[i];
+            nextval=vals[i+1];nextday=days[i+1];
           }
         }
         if (tt.julian_day > days[nEvents - 1]) {
@@ -934,6 +934,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
         }
         if ((nextday-lastday)==0){aVal[n]=lastval; }
         else{
+
           aVal[n]=(tt.julian_day-lastday)/(nextday-lastday)*(nextval-lastval)+lastval;
         }
       }
