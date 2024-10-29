@@ -57,7 +57,8 @@ string CDiagnostic::GetName() const
   case(DIAG_RSR):               {return "DIAG_RSR";}
   case(DIAG_R2):                {return "DIAG_R2";}
   case(DIAG_LOG_NASH):          {return "DIAG_LOG_NASH";}
-  case(DIAG_KLING_GUPTA):       {return "DIAG_KLING_GUPTA";}
+  case(DIAG_KLING_GUPTA):       {return "DIAG_KLING_GUPTA";}       
+  case(DIAG_KGE_PRIME):         {return "DIAG_KGE_PRIME";}
   case(DIAG_DAILY_KGE):         {return "DIAG_DAILY_KGE";}
   case(DIAG_NASH_SUTCLIFFE_DER):{return "DIAG_NASH_SUTCLIFFE_DER"; }
   case(DIAG_RMSE_DER):          {return "DIAG_RMSE_DER"; }
@@ -999,6 +1000,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     }
   }
   case(DIAG_KLING_GUPTA)://-----------------------------------------
+  case(DIAG_KGE_PRIME)://-------------------------------------------
   case(DIAG_KLING_GUPTA_DEVIATION)://-------------------------------
   {
     double ObsAvg = 0;
@@ -1042,6 +1044,8 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     double Alpha = ModStd / ObsStd;
 
     if (_type==DIAG_KLING_GUPTA_DEVIATION){Beta=1.0;} //remove penalty for difference in means
+
+    if (_type==DIAG_KGE_PRIME){Alpha/=Beta;}// Uses C.O.V. instead of std dev. from Kling et al. (2012) Runoff conditions in the upper Danube basin under an ensemble of climate change scenarios, Journal of Hydrology
 
     if ((N>0) && ((ObsAvg!=0.0) || (Beta==1.0)) && (ObsStd!=0.0) && (ModStd!=0.0))
     {
@@ -1495,6 +1499,7 @@ diag_type StringToDiagnostic(string distring)
   else if (!distring.compare("R2"                   )){return DIAG_R2;}
   else if (!distring.compare("LOG_NASH"             )){return DIAG_LOG_NASH;}
   else if (!distring.compare("KLING_GUPTA"          )){return DIAG_KLING_GUPTA;}
+  else if (!distring.compare("KGE_PRIME"            )){return DIAG_KGE_PRIME;}
   else if (!distring.compare("DAILY_KGE"            )){return DIAG_DAILY_KGE;}
   else if (!distring.compare("NASH_SUTCLIFFE_DER"   )){return DIAG_NASH_SUTCLIFFE_DER;}
   else if (!distring.compare("RMSE_DER"             )){return DIAG_RMSE_DER;}
