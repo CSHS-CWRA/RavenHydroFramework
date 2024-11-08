@@ -122,6 +122,23 @@ double CDemandOptimizer::GetNamedConstant(const string s) const
 }
 
 //////////////////////////////////////////////////////////////////
+/// \brief retrieves value of named constant from list of user constants
+/// \params s [in] - string
+/// \returns value of unit conversion multiplier, or BLANK if not found
+//
+double CDemandOptimizer::GetUnitConversion(const string s) const
+{
+  if (s == "ACREFTD_TO_CMS") {return 1.0/ACREFTD_PER_CMS;}
+  if (s == "CMS_TO_ACREFTD") {return ACREFTD_PER_CMS;    }
+  if (s == "INCHES_TO_MM"  ) {return MM_PER_INCH;        }
+  if (s == "MM_TO_INCHES"  ) {return 1.0/MM_PER_INCH;    }
+  if (s == "FEET_TO_METER" ) {return 1.0/FEET_PER_METER; }
+  if (s == "METER_TO_FEET" ) {return FEET_PER_METER;     }
+  if (s == "CMS_TO_CFS"    ) {return 1.0/CFS_PER_CMS;    }
+  if (s == "CFS_TO_CMS"    ) {return CFS_PER_CMS;        }
+  return RAV_BLANK_DATA;
+}
+//////////////////////////////////////////////////////////////////
 /// \brief retrieves value of control variable from list of control variables
 /// \params s [in] - string
 /// \param index [out] - index of found control variable, or DOESNT_EXIST if not found
@@ -157,11 +174,12 @@ int CDemandOptimizer::GetUserDVIndex(const string s) const
 /// \brief retrieves index of native decision variable starting with !
 /// \params s [in] - string
 /// \returns index of named decision variable, or DOESNT_EXIST if not found
-/// supports !Qxxx, !Q.name, !hxxx, !Ixxx, !Dxxx, !Cxxx, $Bxxx, $Exxx
+/// index is subbasin index p for subbasin-based DVs, or demand index ii for demand-linked DVs
+/// supports !Qxxx, !Q.name, !hxxx, !Ixxx, !Dxxx, !Cxxx, $Bxxx, $Exxx, !dxxx, !Rxxx
 //
 int CDemandOptimizer::GetIndexFromDVString(string s) const //String in format !Qxxx or !Q.name but not !Qxx[n]
 {
-  if ((s[1] == 'Q') || (s[1] == 'h') || (s[1]=='I') || (s[1]=='B') || (s[1]=='E')) //Subbasin-indexed
+  if ((s[1] == 'Q') || (s[1] == 'h') || (s[1]=='I') || (s[1]=='B') || (s[1]=='E')) //Subbasin-indexed \todo[funct] - support q = dQ/dt
   {
     if (s[2] == '.') {
       string name=s.substr(3);
@@ -188,7 +206,8 @@ int CDemandOptimizer::GetIndexFromDVString(string s) const //String in format !Q
 //////////////////////////////////////////////////////////////////
 /// \brief returns number of user-specified decision variables
 //
-int CDemandOptimizer::GetNumUserDVs() const{
+int CDemandOptimizer::GetNumUserDVs() const
+{
   return _nUserDecisionVars;
 }
 //////////////////////////////////////////////////////////////////
@@ -232,25 +251,25 @@ string DVTypeToString(dv_type t)
 string expTypeToString(termtype &typ){
   switch (typ)
   {
-  case(TERM_DV):      return "TERM_DV"; break;
-  case(TERM_TS):      return "TERM_TS"; break;
-  case(TERM_LT):      return "TERM_LT"; break;
-  case(TERM_CONST):   return "TERM_CONST"; break;
-  case(TERM_CONTROL): return "TERM_CONTROL"; break;
-  case(TERM_HISTORY): return "TERM_HISTORY"; break;
-  case(TERM_MAX):     return "TERM_MAX"; break;
-  case(TERM_MIN):     return "TERM_MIN"; break;
-  case(TERM_CONVERT): return "TERM_CONVERT"; break;
-  case(TERM_CUMUL):   return "TERM_CUMUL"; break;
-  case(TERM_UNKNOWN): return "TERM_UNKNOWN"; break;
+    case(TERM_DV):      return "TERM_DV"; break;
+    case(TERM_TS):      return "TERM_TS"; break;
+    case(TERM_LT):      return "TERM_LT"; break;
+    case(TERM_CONST):   return "TERM_CONST"; break;
+    case(TERM_CONTROL): return "TERM_CONTROL"; break;
+    case(TERM_HISTORY): return "TERM_HISTORY"; break;
+    case(TERM_MAX):     return "TERM_MAX"; break;
+    case(TERM_MIN):     return "TERM_MIN"; break;
+    case(TERM_CONVERT): return "TERM_CONVERT"; break;
+    case(TERM_CUMUL):   return "TERM_CUMUL"; break;
+    case(TERM_UNKNOWN): return "TERM_UNKNOWN"; break;
   }
   return "?";
 }
 //////////////////////////////////////////////////////////////////
 /// \brief parses individual expression string and converts to expression term structure
-/// \param s [in] - string
-/// \param term [out] - expression structure
-/// \param lineno [in] - line number of original expression in input file filename, referenced in errors
+/// \param s        [in] - string
+/// \param term    [out] - expression structure
+/// \param lineno   [in] - line number of original expression in input file filename, referenced in errors
 /// \param filename [in] - name of input file, referenced in errors
 /// \returns expression term, false if entire expression should be ignored
 /// only called during parse of expression term by ParseExpression() - no need to optimize
@@ -315,9 +334,9 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     }
   }
   //----------------------------------------------------------------------
-  else if      (s[0]=='!')  //decision variable e.g., !Q234, !I32, or !D42a
+  else if      (s[0]=='!')  //decision variable e.g., !Q234, !I32, or !D.Matts_Brewery
   {
-    if ((s[1] == 'Q') || (s[1] == 'h') || (s[1]=='I')) //Subbasin-indexed
+    if ((s[1] == 'Q') || (s[1] == 'h') || (s[1]=='I')) //Subbasin-indexed 
     {
       int p=GetIndexFromDVString(s);
       if (p == DOESNT_EXIST) {
@@ -365,7 +384,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
       }
       term->p_index=p;//not needed?
     }
-    else if ((s[1]=='D') || (s[1]=='C') || (s[1]=='R'))   //demand indexed
+    else if ((s[1]=='D') || (s[1]=='C') || (s[1]=='R') || (s[1]=='d'))   //demand indexed
     {
       int d=GetIndexFromDVString(s);
 
@@ -374,7 +393,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
         WriteWarning(warn.c_str(),true);
         return false;
       }
-      if      (s[1]=='D')
+      if      (s[1]=='D') //Delivery
       {
         term->DV_ind=GetDVColumnInd(DV_DELIVERY,d);
       }
@@ -388,9 +407,15 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
         term->p_index=d;
         return true;
       }
+      else if (s[1] == 'd') //Demand
+      {
+        term->type=TERM_CONST;
+        term->value=_pDemands[d]->GetDemand();
+        return true;
+      }
     }
     else{
-      warn="ConvertToExpression:: Unparseable term in expression starting with ! - only !Q, !I, !D, !R, !C, or !h currently supported. "+warnstring;
+      warn="ConvertToExpression:: Unparseable term in expression starting with ! - only !Q, !I, !D, !d, !R, !C, or !h currently supported. "+warnstring;
       ExitGracefully(warn.c_str(), BAD_DATA_WARN);
     }
 
@@ -400,7 +425,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
   //----------------------------------------------------------------------
   else if (s[0] == '$')
   {
-    if ((s[1] == 'B') || (s[1] == 'E')) //Subbasin-indexed
+    if ((s[1] == 'B') || (s[1] == 'E')) //Subbasin-indexed linked to time series
     {
       int p=GetIndexFromDVString(s);
       if (p == DOESNT_EXIST) {
@@ -425,13 +450,13 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     }
   }
   //----------------------------------------------------------------------
-  else if (s.find("@ts(") != NPOS) //time series (e.g., @ts(my_time_series,n)
+  else if (s.substr(0, 4) == "@ts(")//time series (e.g., @ts(my_time_series,n)
   {
     string name;
     int    index;
     size_t is = s.find("@ts(");
     size_t ie = s.find(",",is);
-    size_t ip = s.find(")",ie);
+    size_t ip = s.find_last_of(")");
     if (ie == NPOS) {
       warn="ConvertToExpressionTerm: missing comma in @ts expression"+warnstring;
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
@@ -461,13 +486,13 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     }
   }
   //----------------------------------------------------------------------
-  else if (s.find("@cumul(") != NPOS) //cumulative time series (e.g., @cumul(my_time_series,duration))
+  else if (s.substr(0, 7) == "@cumul(") //cumulative time series (e.g., @cumul(my_time_series,duration))
   {
     string name;
     int    index;
     size_t is = s.find("@cumul(");
     size_t ie = s.find(",",is);
-    size_t ip = s.find(")",ie);
+    size_t ip = s.find_last_of(")");
     if (ie == NPOS) {
       warn="ConvertToExpressionTerm: missing comma in @cumul expression"+warnstring;
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
@@ -497,19 +522,19 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     }
   }
   //----------------------------------------------------------------------
-  else if (s.find("@lookup(") != NPOS) //lookup table (e.g., @lookup(my_table,EXPRESSION)
+  else if (s.substr(0, 8) == "@lookup(")//lookup table (e.g., @lookup(my_table,EXPRESSION) -NOW SUPPORTS NESTED FUNCTIONS
   {
     string name;
     string x_in;
     size_t is = s.find("@lookup(");
     size_t ie = s.find(",",is);
-    size_t ip = s.find(")",ie);
+    size_t ip = s.find_last_of(")");
     if (ie == NPOS) {
       warn="ConvertToExpressionTerm: missing comma in @lookup expression"+warnstring;
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
     }
     if (ip == NPOS) {
-      warn="ConvertToExpressionTerm: missing end paretheses in @lookup expression"+warnstring;
+      warn="ConvertToExpressionTerm: missing end parentheses in @lookup expression"+warnstring;
       ExitGracefully(warn.c_str(), BAD_DATA_WARN);
     }
     if ((is != NPOS) && (ie != NPOS))
@@ -534,19 +559,19 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     }
   }
  //----------------------------------------------------------------------
-  else if (s.find("@HRU_var(") != NPOS) // HRU state var (e.g., @HRU_var(SNOW,[id])
+ else if (s.substr(0, 9) == "@HRU_var(") // HRU state var (e.g., @HRU_var(SNOW,[id])
   {
     string sv_name;
     long long int HRUID;
     size_t is = s.find("@HRU_var(");
     size_t ie = s.find(",",is);
-    size_t ip = s.find(")",ie);
+    size_t ip = s.find_last_of(")");
     if (ie == NPOS) {
       warn="ConvertToExpressionTerm: missing comma in @HRU_var expression"+warnstring;
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
     }
     if (ip == NPOS) {
-      warn="ConvertToExpressionTerm: missing end paretheses in @HRU_var expression"+warnstring;
+      warn="ConvertToExpressionTerm: missing end parentheses in @HRU_var expression"+warnstring;
       ExitGracefully(warn.c_str(), BAD_DATA_WARN);
     }
     if ((is != NPOS) && (ie != NPOS))
@@ -573,14 +598,14 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
       term->type=TERM_HRU;
     }
   }
- //----------------------------------------------------------------------
-  else if (s.find("@SB_var(") != NPOS) // SubBasin state var (e.g., @SB_var(SNOW,[id])
+  //----------------------------------------------------------------------
+  else if (s.substr(0, 8) == "@SB_var(") // SubBasin state var (e.g., @SB_var(SNOW,[id])
   {
     string sv_name;
     long   SBID;
     size_t is = s.find("@SB_var(");
     size_t ie = s.find(",",is);
-    size_t ip = s.find_last_of(")",ie);
+    size_t ip = s.find_last_of(")");
     if (ie == NPOS) {
       warn="ConvertToExpressionTerm: missing comma in @SB_var expression"+warnstring;
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
@@ -614,20 +639,20 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     }
   }
   //----------------------------------------------------------------------
-  else if (s.find("@max(") != NPOS) //max function (e.g., @max(exp1,exp2)
+  else if (s.substr(0, 5) == "@max(") //max function (e.g., @max(exp1,exp2)
   {
     string name;
     string x_in,y_in;
     size_t is = s.find("@max(");
     size_t ie = s.find(",",is);
-    size_t ip = s.find_last_of(")",ie);
+    size_t ip = s.find_last_of(")");
     if (ie == NPOS) {
       warn="ConvertToExpressionTerm: missing comma in @max expression"+warnstring;
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
       return false;
     }
     if (ip == NPOS) {
-      warn="ConvertToExpressionTerm: missing end paretheses in @max expression"+warnstring;
+      warn="ConvertToExpressionTerm: missing end parentheses in @max expression"+warnstring;
       ExitGracefully(warn.c_str(), BAD_DATA_WARN);
       return false;
     }
@@ -641,20 +666,20 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     }
   }
   //----------------------------------------------------------------------
-  else if (s.find("@min(") != NPOS) //max function (e.g., @min(exp1,exp2)
+  else if (s.substr(0, 5) == "@min(") //max function (e.g., @min(exp1,exp2)
   {
     string name;
     string x_in,y_in;
     size_t is = s.find("@min(");
-    size_t ie = s.find(",",is);
-    size_t ip = s.find(")",ie);
+    size_t ie = s.find(",",is); //\todo[funct] - handle nested functions as first argument (this only works with second argument)
+    size_t ip = s.find_last_of(")");
     if (ie == NPOS) {
       warn="ConvertToExpressionTerm: missing comma in @min expression"+warnstring;
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
       return false;
     }
     if (ip == NPOS) {
-      warn="ConvertToExpressionTerm: missing end paretheses in @min expression"+warnstring;
+      warn="ConvertToExpressionTerm: missing end parentheses in @min expression"+warnstring;
       ExitGracefully(warn.c_str(), BAD_DATA_WARN);
       return false;
     }
@@ -668,44 +693,10 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     }
   }
   //----------------------------------------------------------------------
-  else if (s.find("@convert(") != NPOS) //conversion (e.g., @convert(x,ACREFTPERDAY_TO_CMS)
+  else if (GetUnitConversion(s)!=RAV_BLANK_DATA) // named unit conversion
   {
-    string x_in;
-    string units;
-    size_t is = s.find("@convert(");
-    size_t ie = s.find(",",is);
-    size_t ip = s.find(")",ie);
-    if (ie == NPOS) {
-      warn="ConvertToExpressionTerm: missing comma in @convert expression"+warnstring;
-      ExitGracefully(warn.c_str(),BAD_DATA_WARN);
-      return false;
-    }
-    if (ip == NPOS) {
-      warn="ConvertToExpressionTerm: missing end parentheses in @convert expression"+warnstring;
-      ExitGracefully(warn.c_str(), BAD_DATA_WARN);
-      return false;
-    }
-    if ((is != NPOS) && (ie != NPOS))
-    {
-      bool found=false;
-      x_in  = s.substr(is+9,ie-(is+9));
-      units = s.substr(ie+1,ip-(ie+1));
-
-      if (units == "ACREFTD_TO_CMS") {term->value=1.0/ACREFTD_PER_CMS;   found=true;}
-      if (units == "CMS_TO_ACREFTD") {term->value=ACREFTD_PER_CMS;       found=true;}
-      if (units == "INCHES_TO_MM"  ) {term->value=MM_PER_INCH;           found=true;}
-      if (units == "MM_TO_INCHES"  ) {term->value=1.0/MM_PER_INCH;       found=true;}
-      if (units == "FEET_TO_METER" ) {term->value=1.0/FEET_PER_METER;    found=true;}
-      if (units == "METER_TO_FEET" ) {term->value=FEET_PER_METER;        found=true;}
-      if (units == "CMS_TO_CFS"    ) {term->value=1.0/CFS_PER_CMS;       found=true;}
-      if (units == "CFS_TO_CMS"    ) {term->value=CFS_PER_CMS;           found=true;}
-      term->nested_exp1 =x_in;
-      term->type     =TERM_CONVERT;
-      if (!found) {
-        warn="ConvertToExpression: unrecognized time series name in @convert command"+warnstring;
-        ExitGracefully(warn.c_str(), BAD_DATA_WARN);
-      }
-    }
+    term->type=TERM_CONST;
+    term->value=GetUnitConversion(s);
   }
   //----------------------------------------------------------------------
   else if (GetNamedConstant(s)!=RAV_BLANK_DATA) // named constant
@@ -744,9 +735,9 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
 
 //////////////////////////////////////////////////////////////////
 /// \brief Parses demand constraint expression of form (e.g.,) A * B(x) * C + D * E - F = G * H(t) [NO PARENTHESES!]
-/// \params s [in] - array of strings of [size: Len]
-/// \param Len [in] - length of string array
-/// \param lineno [in] - line number of original expression in input file filename, referenced in errors
+/// \param s        [in] - array of strings of [size: Len]
+/// \param Len      [in] - length of string array
+/// \param lineno   [in] - line number of original expression in input file filename, referenced in errors
 /// \param filename [in] - name of input file, referenced in errors
 /// \returns expressionStruct: a 2D array of pointers to grouped terms (e.g., [0]:[A,B,C], [1]:[D,E], [2]:[F], [3]:[G,H] for above example)
 //
@@ -983,7 +974,13 @@ bool CDemandOptimizer::CheckGoalConditions(const int ii, const int k, const time
         else if (tmp == 'R') {
           dv_value=_pModel->GetSubBasinByID(_pDemands[ind]->GetSubBasinID())->GetReturnFlow(_pDemands[ind]->GetLocalIndex());
         }
-        //todo: support !q, !d, !B, !E, !F, !T
+        else if (tmp == 'd') {
+          dv_value=_pDemands[ind]->GetDemand();
+        }
+        else {
+          ExitGracefully("Invalid decision variable in condition statement (letter after ! not supported)",BAD_DATA);
+        }
+        //todo: support !q, !B, !E, !F, !T
       }
       else {//handle user specified DVs and control variables
         int i=GetUserDVIndex(pCond->dv_name);
@@ -1074,9 +1071,7 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, const int kk, lp_lib::lpr
   int    DV_ind;
   bool   constraint_valid=true;
 
-  //int    nn=(int)((tt.model_time+TIME_CORRECTION)/1.0);//Options.timestep; //TMP DEBUG
-
-  managementGoal    *pC=_pGoals[ii];
+  managementGoal   *pC=_pGoals[ii];
   expressionStruct *pE;
 
   if (kk!=DOESNT_EXIST)
@@ -1167,10 +1162,10 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, const int kk, lp_lib::lpr
 /// does not support active decision variables in expression (only to be used for conditionals and demand/return expressions)
 /// \params pE [in] - conditional expression
 /// \param t [in] - current model time
+/// \param RHS_only [in] - true if only Right hand side of expression is to be evaluated, else RHS-LHS is returned
 /// repeatedly calls EvaluateTerm()
-/// \returns RHS if RHS_only or RHS-LHS if !RHS_only
+/// \returns RHS if RHS_only or RHS-LHS if !RHS_only; returns BLANK if any expression is blank (usually time series with blank value)
 //
-
 double CDemandOptimizer::EvaluateExpression(const expressionStruct* pE,const double &t,bool RHS_only) const
 {
   double coeff;

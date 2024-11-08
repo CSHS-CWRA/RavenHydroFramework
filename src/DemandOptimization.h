@@ -237,8 +237,6 @@ private: /*------------------------------------------------------*/
 
   bool            _demands_initialized;//< true if demands have been initialized
 
-  bool            _stage_discharge_as_goal; //< TMP DEBUG - SET TO TRUE IF SD CURVE IS GOAL INSTEAD OF CONSTRAINT
-
   int             _do_debug_level;      //< =1 if debug info is to be printed to screen, =2 if LP matrix also printed (full debug), 0 for nothing
 
   //Called during simualtion
@@ -272,9 +270,9 @@ public: /*------------------------------------------------------*/
 
   int           GetDemandIndexFromName(const string dname) const;
   double        GetNamedConstant      (const string s) const;
+  double        GetUnitConversion     (const string s) const;
   int           GetUserDVIndex        (const string s) const;
   double        GetControlVariable    (const string s, int &index) const;
-  //double      GetDemandDelivery     (const int p) const;
   int           GetNumUserDVs         () const;
   int           GetDebugLevel         () const;
   int           GetIndexFromDVString  (string s) const;

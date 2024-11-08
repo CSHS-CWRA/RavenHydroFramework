@@ -278,7 +278,7 @@ void CTimeSeries::Initialize( const double model_start_day,   //julian day
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Resamples time series to regular intervals of 1 timestep (tstep) over model duration
+/// \brief Resamples time series to regular intervals of 1 timestep (tstep) over model duration, starting with timestep 0 from 0..dt
 ///
 /// \param &tstep [in] Model timestep (in days)
 /// \param &model_duration [in] Model simulation duration (in days)
@@ -384,7 +384,7 @@ double CTimeSeries::GetAvgValue(const double &t, const double &tstep) const
   //t_loc+tstep is now between n2*_interval and (n2+1)*_interval
   double inc;
   double blank = 0;
-  if (t_loc < -TIME_CORRECTION) {return RAV_BLANK_DATA; }
+  if (t_loc < -TIME_CORRECTION)   {return RAV_BLANK_DATA; }
   if (t_loc > _nPulses*_interval) {return RAV_BLANK_DATA; }
   if (_pulse){
     if (n1 == n2){ return _aVal[n1]; }
@@ -404,6 +404,7 @@ double CTimeSeries::GetAvgValue(const double &t, const double &tstep) const
     }
   }
   else{
+
     ExitGracefully("CTimeSeries::GetAvgValue (non-pulse)", STUB);
   }
   if (blank / tstep > 0.001){return RAV_BLANK_DATA;}
@@ -465,7 +466,7 @@ void   CTimeSeries::Multiply     (const double &factor)
   }
 }
 ///////////////////////////////////////////////////////////////////
-/// \brief Returns average value of time series during timestep nn of model simulation
+/// \brief Returns average value of time series during timestep nn of model simulation (nn=0..nSteps-1)
 /// \notes must be called after resampling
 ///
 /// \param nn [in] time step number (measured from simulation start)

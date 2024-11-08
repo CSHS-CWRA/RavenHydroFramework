@@ -107,7 +107,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
 
   //--Sift through file-----------------------------------------------
   firstword=pp->Peek();
-  if ((firstword == ":DefineDecisionVariable") || (firstword == ":DemandExpression") || (firstword == ":ReturnExpression"))
+  if ((firstword == ":DefineDecisionVariable") || (firstword == ":DemandExpression") || (firstword == ":ReturnExpression") || (firstword == ":DefineControlVariable"))
   {
     pp->NextIsMathExp();
   }
@@ -175,6 +175,9 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     else if(!strcmp(s[0],":DemandLookupTable"))           { code=61; }
     else if(!strcmp(s[0],":DemandExpression"))            { code=62; }
     //else if(!strcmp(s[0],":AnnualLicense"))             { code=63; }
+    else if(!strcmp(s[0],":ReservoirWaterDemand"))        { code=64; }
+    else if(!strcmp(s[0],":EndReservoirWaterDemand"))     { code=65; } 
+    else if(!strcmp(s[0],":IsUnrestricted"))              { code=66; } 
 
     else if(!strcmp(s[0],":UserTimeSeries"))              { code=70; }
 
@@ -519,14 +522,15 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           //TODO: Would it be better to support @date(), @between, @day_of_year() in general expression??
           //:Condition !Q32[0] < 300 + @ts(myTs,0)
           //:Condition DATE IS_BETWEEN 1975-01-02 and 2010-01-02
-          //:Condition DATE > @date(1975-01-02) //[NOT YET SUPPORTED]
-          //:Condition DATE < @date(2010-01-02) //[NOT YET SUPPORTED]
+          //:Condition DATE > @date(1975-01-02) //\todo [NOT YET SUPPORTED]
+          //:Condition DATE < @date(2010-01-02) //\todo [NOT YET SUPPORTED]
           //:Condition MONTH = 2
           //:Condition DAY_OF_YEAR IS_BETWEEN 173 and 210
           //:Condition DAY_OF_YEAR > 174
           //:Condition DAY_OF_YEAR < 210
           //:Condition DAY_OF_YEAR IS_BETWEEN 300 20 //wraps around
-          //:Condition @is_between(DAY_OF_YEAR,300,20) = 1  //[NOT YET SUPPORTED]
+          //:Condition DAY_OF_YEAR IS_BETWEEN Apr-1 Aug-1 //\todo [NOT YET SUPPORTED]
+          //:Condition @is_between(DAY_OF_YEAR,300,20) = 1  // \todo [NOT YET SUPPORTED]
           if (pGoal!=NULL){
             bool badcond=false;
             exp_condition *pCond = new exp_condition();
@@ -976,7 +980,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       break;
     }
     case (54): //--------------------------------------------
-    {/*:ReturnDestination [SBID]*/
+    {/*:ReturnDestination [SBID] */
       if(Options.noisy) { cout <<"Return destination ID"<<endl; }
       if (pDemand==NULL){
         ExitGracefully(":ReturnTimeSeries must be between :WaterDemand and :EndWaterDemand commands.",BAD_DATA_WARN);
@@ -1072,6 +1076,16 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       }
       break;
     }
+    case (61): //--------------------------------------------
+    {/*:DemandLookupTable 
+       N
+       {Q_i D_i} x N
+       :EndDemandLookupTable
+     */
+      if(Options.noisy) { cout <<"Demand flow fraction"<<endl; }
+      ExitGracefully(":DemandLookupTable.",STUB);
+      break;
+    }
     case (62): //--------------------------------------------
     {/*:DemandExpression [expression]*/
       if(Options.noisy) { cout <<"Demand expression"<<endl; }
@@ -1098,6 +1112,59 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       }
       break;
     }
+    case (63): //--------------------------------------------
+    { /*
+      :ReservoirWaterDemand [SBID] [ID] [Name]
+         ...
+      :EndReservoirWaterDemand
+      */
+      if(Options.noisy) { cout <<"Reservoir Water demand object"<<endl; }
+      if (Len<4){
+        ExitGracefully("Incorrect number of terms in :ReservoirWaterDemand command header.",BAD_DATA_WARN);
+      }
+      else{
+        demandSBID =s_to_l(s[1]);
+        demand_ID  =s_to_i(s[2]);
+        demand_name=s[3];
+        CSubBasin *pSB=pModel->GetSubBasinByID(demandSBID);
+        if (pSB!=NULL) {
+          if (pSB->GetReservoir() != NULL) {
+            demand_ind=pSB->GetReservoir()->GetNumWaterDemands();
+            pDemand=new CDemand(demand_ID,demand_name,demandSBID,true);
+            pDemand->SetLocalIndex(demand_ind);
+            pSB->GetReservoir()->AddDemand(pDemand);
+            pModel->GetDemandOptimizer()->AddWaterDemand(pDemand);
+          }
+          else
+          {
+            ExitGracefully("There is no reservoir in the subbasin specified within the :ReservoirWaterDemand command header.",BAD_DATA_WARN);
+            break;
+          }
+        }
+        else {
+           ExitGracefully("Invalid subbasin ID in :ReservoirWaterDemand command header.",BAD_DATA_WARN);
+           break;
+        }
+      }
+      break;
+    }
+    case (64): //--------------------------------------------
+    {/*:EndReservoirWaterDemand*/
+      if(Options.noisy) { cout <<"..end reservoir water demand object"<<endl; }
+      pDemand=NULL;
+      break;
+    }
+    case (65): //--------------------------------------------
+    {/*:IsUnrestricted*/
+      if(Options.noisy) { cout <<"Set demand as Unrestricted"<<endl; }
+      if (pDemand == NULL) {
+        ExitGracefully(":IsUnrestricted command must be between :WaterDemand and :EndWaterDemand commands.",BAD_DATA_WARN);
+      }
+      else{
+        pDO->SetDemandAsUnrestricted(pDemand->GetName());
+      }
+      break;
+    }
     case (70): //---------------------------------------------
     {/*:UserTimeSeries {name} [units]
         {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
@@ -1106,7 +1173,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
      */
       CTimeSeries *pTimeSer;
       if(Options.noisy) { cout <<"User-specified Time Series"<<endl; }
-      pTimeSer=CTimeSeries::Parse(pp,false,s[1], DOESNT_EXIST, "none", Options);
+      pTimeSer=CTimeSeries::Parse(pp,true,s[1], DOESNT_EXIST, "none", Options);
       pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
       break;
     }
@@ -1146,7 +1213,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     }//end switch(code)
 
     firstword=pp->Peek();
-    if ((firstword == ":DefineDecisionVariable") || (firstword == ":DemandExpression") || (firstword == ":ReturnExpression"))
+    if ((firstword == ":DefineDecisionVariable") || (firstword == ":DemandExpression") || (firstword == ":ReturnExpression") || (firstword == ":DefineControlVariable"))
     {
       pp->NextIsMathExp();
     }

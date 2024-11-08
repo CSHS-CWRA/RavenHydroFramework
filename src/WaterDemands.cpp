@@ -223,10 +223,10 @@ void    CDemand::UpdateDemand(const optStruct &Options,const time_struct& tt)
   }
   else if (_demType == DEMAND_EXPRESSION)
   {
-    //double val=pModel->GetDO->EvaluateExpression(pExp,tt.model_time);
+    //double val=_pModel->GetDO->EvaluateExpression(pExp,tt.model_time);
     //if (fabs(val-RAV_BLANK_DATA)<REAL_SMALL){_currentDemand=0.0;}
     //else                                    {_currentDemand=val;}
-    ExitGracefully("UpdateDEmand::DEMAND_PCT",STUB);
+    ExitGracefully("UpdateDEmand::DEMAND_EXPRESSION",STUB);
   }
   /*
   else if (_demType == DEM_SOIL_MOISTURE) {
@@ -253,7 +253,7 @@ void    CDemand::UpdateDemand(const optStruct &Options,const time_struct& tt)
     }
     else if (_retType == RETURN_EXPRESSION)
     {
-
+      ExitGracefully("UpdateDEmand::RETURN_EXPRESSION",STUB);
     }
     _currentRetTarget=min(_currentRetTarget,_currentDemand); //this is likely unnecessary
   }

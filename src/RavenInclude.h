@@ -148,6 +148,7 @@ const double  MJ_PER_M2_LANGLEY       =0.04184;                                 
 const double  INCH_PER_METER          =39.37;                                   ///< [m] to [in]
 const double  FEET_PER_METER          =3.28;                                    ///< [m] to [ft]
 const double  ACREFTD_PER_CMS         =70.0456;                                 ///< [acre-ft/d] to [m3/s]
+const double  ACREFT_PER_M3           =0.000810714;                             ///< [acre-ft] to [m3]
 const double  CFS_PER_CMS             =0.0283168;                               ///< [ft3/s] to [m3/s]
 const double  CDM_PER_DAY_PER_CMS     =86.4;                                    ///< [cdm/day] to [m3/s]
 const double  MPH_PER_KPH             =1.609;                                   ///< [kph] to [mph]
