@@ -20,8 +20,8 @@ void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid
 CTimeSeries::CTimeSeries(string Name, long loc_ID, double one_value)
   :CTimeSeriesABC(TS_REGULAR,Name,loc_ID,"")
 {
-  _start_day=0.0;
-  _start_year=1900;
+  _start_day =0.0;
+  _start_year=0000;
   _nPulses  =2;
   _interval =ALMOST_INF;
   _aVal     =new double [_nPulses];

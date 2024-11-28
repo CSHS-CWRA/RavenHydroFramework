@@ -826,21 +826,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
                 }
             }
         }
-        else if(!strcmp(s[4],"UPSTREAM_OF"))
-        {
-          int SBID=s_to_l(s[5]);
-          int iter=0;
-          for(int p=0;p<pModel->GetNumSubBasins();p++)
-          {
-            if(pModel->IsSubBasinUpstream(pModel->GetSubBasin(p)->GetID(),SBID)) {
-              pSBGroup->AddSubbasin(pModel->GetSubBasin(p));
-              advice=advice+to_string(pModel->GetSubBasin(p)->GetID())+" ";
-              iter++;
-              if(iter%40==0) { advice=advice+"\n      "; }
-            }
-          }
-        }
-        else if(!strcmp(s[4],"UPSTREAM_OF_INCLUSIVE"))
+        else if(!strcmp(s[4],"UPSTREAM_OF")) /*inclusive of basin*/
         {
           int SBID=s_to_l(s[5]);
           int iter=0;
@@ -855,7 +841,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             }
           }
         }
-        else if(!strcmp(s[4],"DOWNSTREAM_OF"))
+        else if(!strcmp(s[4],"DOWNSTREAM_OF"))/*not inclusive of basin*/
         {
           CSubBasin *pBasin=pModel->GetSubBasinByID(s_to_l(s[5]));
           if(pBasin==NULL) {

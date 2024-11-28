@@ -1529,7 +1529,7 @@ void CConstituentModel::WriteNetCDFMinorOutput(const optStruct& Options,const ti
 
   CEnthalpyModel *pEnthalpyModel=NULL; //Necessary evil to reduce code duplication rather than having an entirely separate WriteMinorOutput for Enthalpy
   if (_type==ENTHALPY){
-    CEnthalpyModel *pEnthalpyModel=(CEnthalpyModel*)(this);
+    pEnthalpyModel=(CEnthalpyModel*)(this);
   }
 
   if((Options.suppressICs) && (tt.model_time==0.0)) { return; }
