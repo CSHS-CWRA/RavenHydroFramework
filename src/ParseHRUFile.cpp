@@ -1657,6 +1657,9 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
       if (pContStruct != NULL) {
         ExitGracefully("ReservoirParse: new control structure started before finishing earlier one with :EndOutflowControlStructure",BAD_DATA_WARN);
       }
+
+      string name="unnamed";
+      if (Len>1){name=s[1];}
       long downID=pModel->GetSubBasinByID(SBID)->GetDownstreamID(); //default target basin
       pContStruct=new CControlStructure(s[1],SBID,downID);//assumes SBID appears first
     }

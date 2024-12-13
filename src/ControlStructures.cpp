@@ -283,7 +283,7 @@ bool      COutflowRegime::AreConditionsMet(const time_struct& tt) const
 //////////////////////////////////////////////////////////////////
 /// \brief returns outflow from control structure for given stage, with prioritized constraints applied
 /// \param h [in] stage, in [m]
-/// \param Q_start [in] total outflow at start of timestep [m3/s]
+/// \param Q_start [in] control structure outflow at start of timestep [m3/s]
 /// \returns outflow, in [m3/s]
 //
 double          COutflowRegime::GetOutflow(const double &h, const double &h_start, const double &Q_start, const long &target_SBID, const double &drefelev) const
@@ -293,7 +293,7 @@ double          COutflowRegime::GetOutflow(const double &h, const double &h_star
 
   double Q = _pCurve->GetDischarge(h, h_start, Q_start, rivdepth, drefelev);
 
-  double dQdt = (Q-Q_start)/tstep;
+  double dQdt = (Q-Q_start)/tstep; //m3/s/d
 
   //apply constraints here
   for (int j = _nConstraints-1; j >=0; j--) //priority from first to last

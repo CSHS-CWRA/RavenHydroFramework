@@ -184,16 +184,11 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         ExitGracefully(("CModel::WriteOutputFileHeaders: unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
       }
 
-      int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP);
+      int iCumPrecip=GetStateVarIndex(ATMOS_PRECIP);
       _STORAGE<<"time [d],date,hour,rainfall [mm/day],snowfall [mm/d SWE],Channel Storage [mm],Reservoir Storage [mm],Rivulet Storage [mm]";
       for (i=0;i<GetNumStateVars();i++){
-        if (CStateVariable::IsWaterStorage(_aStateVarType[i])){
-          if (i!=iAtmPrecip){
-            _STORAGE << "," << CStateVariable::GetStateVarLongName(_aStateVarType[i],
-                                                                   _aStateVarLayer[i],
-                                                                   _pTransModel) << " [mm]";
-            //_STORAGE<<","<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i])<<" [mm]";
-          }
+        if ((CStateVariable::IsWaterStorage(_aStateVarType[i]) && (i!=iCumPrecip))){
+            _STORAGE << "," << CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i],_pTransModel) << " [mm]";
         }
       }
       _STORAGE<<", Total [mm], Cum. Inputs [mm], Cum. Outflow [mm], MB Error [mm]"<<endl;
@@ -596,16 +591,11 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       if (HRUSTOR.fail()){
         ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
       }
-      int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP);
+      int iCumPrecip=GetStateVarIndex(ATMOS_PRECIP);
       HRUSTOR<<"time,date,hour,rainfall [mm/day],snowfall [mm/d SWE]";
       for (i=0;i<GetNumStateVars();i++){
-        if (CStateVariable::IsWaterStorage(_aStateVarType[i])){
-          if (i!=iAtmPrecip){
-            HRUSTOR << "," << CStateVariable::GetStateVarLongName(_aStateVarType[i],
-                                                                  _aStateVarLayer[i],
-                                                                  _pTransModel) << " [mm]";
-            //HRUSTOR<<","<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i])<<" [mm]";
-          }
+        if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iCumPrecip)){
+            HRUSTOR << "," << CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i],_pTransModel) << " [mm]";
         }
       }
       HRUSTOR<<", Total [mm]"<<endl;
@@ -1761,7 +1751,7 @@ void CModel::WriteEnsimStandardHeaders(const optStruct &Options)
 
   //WatershedStorage.tb0
   //--------------------------------------------------------------
-  int iAtmPrecip = GetStateVarIndex(ATMOS_PRECIP);
+  int iCumPrecip = GetStateVarIndex(ATMOS_PRECIP);
   string tmpFilename;
 
   if (Options.write_watershed_storage)
@@ -1800,7 +1790,7 @@ void CModel::WriteEnsimStandardHeaders(const optStruct &Options)
     _STORAGE<<":ColumnMetaData"<<endl;
     _STORAGE<<"  :ColumnName rainfall snowfall \"Channel storage\" \"Rivulet storage\"";
     for (i=0;i<GetNumStateVars();i++){
-      if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip)){
+      if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iCumPrecip)){
   	_STORAGE<<" \""<<CStateVariable::GetStateVarLongName(_aStateVarType[i],
                                                          _aStateVarLayer[i],
                                                          _pTransModel)<<"\"";}}
@@ -1808,17 +1798,17 @@ void CModel::WriteEnsimStandardHeaders(const optStruct &Options)
 
     _STORAGE<<"  :ColumnUnits mm/d mm/d mm mm ";
     for (i=0;i<GetNumStateVars();i++){
-    if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip)){_STORAGE<<" mm";}}
+    if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iCumPrecip)){_STORAGE<<" mm";}}
     _STORAGE<<" mm mm mm mm"<<endl;
 
     _STORAGE<<"  :ColumnType float float float float";
     for (i=0;i<GetNumStateVars();i++){
-      if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip)){_STORAGE<<" float";}}
+      if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iCumPrecip)){_STORAGE<<" float";}}
     _STORAGE<<" float float float float"<<endl;
 
     _STORAGE << "  :ColumnFormat -1 -1 0 0";
     for (i = 0; i < GetNumStateVars(); i++){
-      if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i != iAtmPrecip)){
+      if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i != iCumPrecip)){
 	    _STORAGE << " 0";
       }
     }
@@ -2109,9 +2099,9 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"reservoir_storage","Reservoir Storage","mm");
     varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"rivulet_storage","Rivulet Storage","mm");
 
-    int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP);
+    int iCumPrecip=GetStateVarIndex(ATMOS_PRECIP);
     for(int i=0;i<_nStateVars;i++){
-      if((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip)){
+      if((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iCumPrecip)){
 	      string name = GetStateVarInfo()->GetStateVarLongName(_aStateVarType[i],
                                                               _aStateVarLayer[i],
                                                               GetTransportModel());
@@ -2588,10 +2578,10 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
 
     double currentWater=0.0;
     double S;string short_name;
-    int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP);
+    int iCumPrecip=GetStateVarIndex(ATMOS_PRECIP);
     for (int i=0;i<GetNumStateVars();i++)
     {
-      if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip))
+      if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iCumPrecip))
 	  {
 	    S=FormatDouble(GetAvgStateVar(i));
 	    short_name = GetStateVarInfo()->GetStateVarLongName(_aStateVarType[i],

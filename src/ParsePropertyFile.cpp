@@ -217,7 +217,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     }
   }
 
-  if (Options.create_rvp_template){
+  if (Options.create_rvp_template){ //can proceed even if .rvp doesnt exist.
     CreateRVPTemplate(aPmaster,aPCmaster,nPmaster,Options);
     ExitGracefully("Template RVP File Created.",SIMULATION_DONE);
   }

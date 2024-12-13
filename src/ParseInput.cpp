@@ -108,8 +108,10 @@ bool ParseInputFiles (CModel      *&pModel,
     }
     ExitGracefully("Cannot find or read .rvi file",BAD_DATA);return false;
   }
-  if (!ParseNetCDFRunInfoFile(pModel, Options, runname_overridden,runmode_overridden)){
-    ExitGracefully("Cannot find or read NetCDF runinfo file", BAD_DATA); return false;
+  if (!Options.create_rvp_template) {//otherwise, jump right to parse rvp, where template is created  
+    if (!ParseNetCDFRunInfoFile(pModel, Options, runname_overridden,runmode_overridden)){
+      ExitGracefully("Cannot find or read NetCDF runinfo file", BAD_DATA); return false;
+    }
   }
 
   // Class Property file (.rvp)
@@ -3531,6 +3533,13 @@ bool ParseMainInputFile (CModel     *&pModel,
   } //end while (!end_of_file)
   INPUT.close();
 
+  // Add TOTAL_SWE state variable if any snow is simulated 
+  if (pModel->GetStateVarIndex(SNOW) != -1) {
+    tmpS[0] = TOTAL_SWE; tmpLev[0]=0; tmpN=1;
+    pModel->AddStateVariables(tmpS,tmpLev,tmpN);
+  }
+  
+
   //===============================================================================================
   //Check input quality
   //===============================================================================================
@@ -3538,8 +3547,6 @@ bool ParseMainInputFile (CModel     *&pModel,
                    "ParseMainInputFile::Must have a postitive time step",BAD_DATA);
   ExitGracefullyIf(Options.duration<0,
                    "ParseMainInputFile::Model duration less than zero. Make sure :EndDate is after :StartDate.",BAD_DATA_WARN);
-  ExitGracefullyIf((pModel->GetStateVarIndex(CONVOLUTION,0)!=DOESNT_EXIST) && (pModel->GetTransportModel()->GetNumConstituents()>0),
-                   "ParseMainInputFile: cannot currently perform transport with convolution processes",BAD_DATA);
 
   if((Options.nNetCDFattribs>0) && (Options.output_format!=OUTPUT_NETCDF)){
     WriteAdvisory("ParseMainInputFile: NetCDF attributes were specified but output format is not NetCDF.",Options.noisy);

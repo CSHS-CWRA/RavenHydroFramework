@@ -1218,7 +1218,7 @@ void  CReservoir::UpdateStage(const double &new_stage,const double &res_outflow,
   _Qout      =res_outflow;
   for (int i = 0; i < _nControlStructures; i++) {
     _aQstruct_last[i]=_aQstruct[i];
-    _aQstruct[i]=aQstruct_new[i];
+    _aQstruct     [i]=aQstruct_new[i];
   }
 
   _DAscale_last=_DAscale;
@@ -1428,7 +1428,7 @@ void  CReservoir::SetInitialFlow(const double &initQ,const double &initQlast,con
 //
 void CReservoir::SetControlFlow(const int i, const double& Q, const double& Qlast)
 {
-  _aQstruct[i]=Q;
+  _aQstruct     [i]=Q;
   _aQstruct_last[i]=Qlast;
 }
 

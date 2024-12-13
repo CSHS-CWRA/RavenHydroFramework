@@ -330,8 +330,8 @@ const bool    DESTRUCTOR_DEBUG    =false;       ///< if true, screen output is g
 const int     MAX_SV_LAYERS       =160;         ///< Max number of layers per state variable (greater than MAX_SOILLAYERS)
 const int     MAX_SOILLAYERS      =50;          ///< Max number of soil layers in profile
 const int     MAX_STATE_VAR_TYPES =100;         ///< Max number of *types* of state variables in model
-const int     MAX_STATE_VARS      =200;         ///< Max number of simulated state variables manipulable by one process (CAdvection worst offender)
-const int     MAX_CONNECTIONS     =200;         ///< Max number of to/from connections in any single process (CAdvection worst offender)
+const int     MAX_STATE_VARS      =500;         ///< Max number of simulated state variables manipulable by one process (CAdvection worst offender)
+const int     MAX_CONNECTIONS     =650;         ///< Max number of to/from connections in any single process (CAdvection worst offender)
 const int     MAX_LAT_CONNECTIONS =4000;        ///< Max number of lateral HRU flow connections
 const int     MAX_SOIL_PROFILES   =200;         ///< Max number of soil profiles
 const int     MAX_VEG_CLASSES     =200;         ///< Max number of vegetation classes
@@ -862,6 +862,7 @@ enum sv_type
   SNOW,                    ///< [mm] frozen snow depth (mm SWE : snow water equivalent)
   NEW_SNOW,                ///< [mm] new snowfall waiting to be handled by snow balance (as SWE)
   SNOW_LIQ,                ///< [mm] liquid water content of snowpack
+  TOTAL_SWE,               ///< [mm] equivalent to SNOW[0]+SNOW[1]+...+SNOW_LIQ[0]..
   WETLAND,                 ///< [mm] deep wetland depression storage
   GLACIER,                 ///< [mm] Glacier melt/reservoir storage
   GLACIER_ICE,             ///< [mm] Glacier ice - typically assumed to be infinite reservoir.

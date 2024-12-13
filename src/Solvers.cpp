@@ -23,6 +23,7 @@ void MassEnergyBalance( CModel            *pModel,
   int NS,NB,nHRUs,nConnections=0,nProcesses;   //array sizes (local copies)
   int nConstituents;                           //
   int iSW, iAtm, iAET, iGW, iRO;               //Surface water, atmospheric precip, used PET, runoff indices
+  int iTotalSWE;                               //total SWE index
 
   int                iFrom          [MAX_CONNECTIONS]; //arrays used to pass values through GetRatesOfChange routines
   int                iTo            [MAX_CONNECTIONS];
@@ -143,8 +144,9 @@ void MassEnergyBalance( CModel            *pModel,
     }
   }
 
-  iSW  =pModel->GetStateVarIndex(SURFACE_WATER);
-  iAtm =pModel->GetStateVarIndex(ATMOS_PRECIP);
+  iSW      =pModel->GetStateVarIndex(SURFACE_WATER);
+  iAtm     =pModel->GetStateVarIndex(ATMOS_PRECIP);
+  iTotalSWE=pModel->GetStateVarIndex(TOTAL_SWE);
 
   // Used PET and runoff reboots to zero every timestep==============
   iAET=pModel->GetStateVarIndex(AET);
@@ -207,7 +209,7 @@ void MassEnergyBalance( CModel            *pModel,
                 aPhinew[k][iFrom[q]]-=rates_of_change[q]*tstep;//mass/energy balance maintained
                 aPhinew[k][iTo  [q]]+=rates_of_change[q]*tstep;//change is an exchange of energy or mass, which must be preserved
               }
-              else if (CStateVariable::IsWaterStorage(typ) && (typ!=CONVOLUTION)){
+              else if (CStateVariable::IsWaterStorage(typ) && (typ!=CONVOLUTION)){ //or IsWaterStorage(typ,false)
                 rates_of_change[q]=0.0;
                 aPhinew[k][iTo  [q]]+=0.0; //likely from redirect - water moves back to itself
               }
@@ -602,6 +604,9 @@ void MassEnergyBalance( CModel            *pModel,
   }//end for pp...
   delete [] res_Qstruct;
 
+   
+
+
   //-----------------------------------------------------------------
   //      CONSTITUENT (MASS OR ENERGY) ROUTING
   //-----------------------------------------------------------------
@@ -671,8 +676,21 @@ void MassEnergyBalance( CModel            *pModel,
   //update state variable values=====================================
   for (k=0;k<nHRUs;k++){
     pHRU=pModel->GetHydroUnit(k);
+    
     if(pHRU->IsEnabled())
     {
+      //update total SWE variable
+      if (iTotalSWE != DOESNT_EXIST) {
+        aPhinew[k][iTotalSWE] =0.0;
+        for (int i = 0; i < NS; i++) 
+        {
+          sv_type typ=pModel->GetStateVarType(i);
+          if ((typ == SNOW) || (typ == SNOW_LIQ)) {
+            aPhinew[k][iTotalSWE] += aPhinew[k][i];
+          }
+        }
+      }
+    
       for(i=0;i<NS;i++){
         pHRU->SetStateVarValue(i,aPhinew[k][i]);
       }
