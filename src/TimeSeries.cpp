@@ -882,8 +882,8 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
       if(!strcmp(s[1],"STEP"       )){step=true;}
     }
 
-    int    *days=new int    [(int)(DAYS_PER_YEAR)+1]; //sized for max # of events
-    double *vals=new double [(int)(DAYS_PER_YEAR)+1];
+    int    *days=new int    [366]; //sized for max # of events
+    double *vals=new double [366];
     int nEvents=0;
 
     p->Tokenize(s,Len);
@@ -896,7 +896,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
         days[nEvents]=GetJulianDayFromMonthYear(date_str,Options.calendar);
         vals[nEvents]=s_to_d(s[1]);
         nEvents++;
-        ExitGracefullyIf(nEvents>(int)(DAYS_PER_YEAR),"CTimeSeries::Parse: exceeded maximum number of items in :AnnualPattern command",BAD_DATA);
+        ExitGracefullyIf(nEvents>365,"CTimeSeries::Parse: exceeded maximum number of items in :AnnualPattern command",BAD_DATA);
       }
       else            { p->ImproperFormat(s); break; }
       bool eof=p->Tokenize(s,Len);
@@ -919,7 +919,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
         }
       }
       else { //interpolate with wraparound
-        double lastday=days[nEvents-1]-(int)(DAYS_PER_YEAR);
+        double lastday=days[nEvents-1]-365;
         double nextday=days[0];
         double lastval=vals[nEvents-1];
         double nextval=vals[0];
@@ -929,13 +929,12 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
             nextval=vals[i+1];nextday=days[i+1];
           }
         }
-        if (tt.julian_day > days[nEvents - 1]) {
+        if (tt.julian_day >= days[nEvents - 1]) {
           lastval=vals[nEvents - 1];  lastday=days[nEvents - 1];
-          nextval=vals[0];            nextday=days[0]+(int)(DAYS_PER_YEAR);
+          nextval=vals[0];            nextday=days[0]+365;
         }
         if ((nextday-lastday)==0){aVal[n]=lastval; }
         else{
-
           aVal[n]=(tt.julian_day-lastday)/(nextday-lastday)*(nextval-lastval)+lastval;
         }
       }

@@ -32,8 +32,10 @@ void CmvPrecipitation::Initialize()
 
   int N=13;
 
-  if (pModel->StateVarExists(ICE_THICKNESS)){N+=3;}
-
+  if (pModel->StateVarExists(ICE_THICKNESS)){
+    N+=3;
+    if (pModel->StateVarExists(DEPRESSION)){N+=3;}
+  }
   CHydroProcessABC::DynamicSpecifyConnections(N);
 
   iFrom[0]=iAtmos; iTo[0]=pModel->GetStateVarIndex(PONDED_WATER);
@@ -62,9 +64,11 @@ void CmvPrecipitation::Initialize()
     iFrom[13]=pModel->GetStateVarIndex(SNOW);         iTo[13]=pModel->GetLakeStorageIndex();
     iFrom[14]=pModel->GetStateVarIndex(SNOW_LIQ);     iTo[14]=pModel->GetLakeStorageIndex();
     iFrom[15]=pModel->GetStateVarIndex(PONDED_WATER); iTo[15]=pModel->GetLakeStorageIndex();
-    iFrom[16]=pModel->GetStateVarIndex(SNOW);         iTo[16]=pModel->GetStateVarIndex(DEPRESSION);
-    iFrom[17]=pModel->GetStateVarIndex(SNOW_LIQ);     iTo[17]=pModel->GetStateVarIndex(DEPRESSION);
-    iFrom[18]=pModel->GetStateVarIndex(PONDED_WATER); iTo[18]=pModel->GetStateVarIndex(DEPRESSION);
+    if (pModel->StateVarExists(DEPRESSION)){
+      iFrom[16]=pModel->GetStateVarIndex(SNOW);         iTo[16]=pModel->GetStateVarIndex(DEPRESSION);
+      iFrom[17]=pModel->GetStateVarIndex(SNOW_LIQ);     iTo[17]=pModel->GetStateVarIndex(DEPRESSION);
+      iFrom[18]=pModel->GetStateVarIndex(PONDED_WATER); iTo[18]=pModel->GetStateVarIndex(DEPRESSION);
+    }
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -347,14 +351,11 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
   }
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Applies constraints to baseflow
-/// \details For all methods, ensures that rate of flow cannot drain "from" compartment over timestep.
-///
 /// \param *state_vars [in] array of state variable values for this HRU (of size CModel::_nStateVars)
 /// \param *pHRU [in] Pointer to HRU object
 /// \param &Options [in] Global model options information
 /// \param &tt [in] Current input time structure
-/// \param *rates [out] Rates of change of state variables (of size MAX_CONNECTIONS)
+/// \param *rates [out] Rates of change of state variables
 //
 void   CmvPrecipitation::ApplyConstraints(const double     *state_vars,
                                           const CHydroUnit *pHRU,
