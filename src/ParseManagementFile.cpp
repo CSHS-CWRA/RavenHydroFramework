@@ -56,14 +56,14 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
 
   CDemand    *pDemand=NULL;
   int         demand_ind=0;
-  long        demandSBID; 
+  long        demandSBID;
   int         demand_ID;
   string      demand_name;
 
   ifstream    INPUT2;                //For Secondary input
   CParser    *pMainParser=NULL;      //for storage of main parser while reading secondary files
-  //ifstream    INPUT3;                //For tertiary input 
-  //CParser    *pSecondaryParser=NULL; //for storage of secondary parser while reading tertiary files 
+  //ifstream    INPUT3;                //For tertiary input
+  //CParser    *pSecondaryParser=NULL; //for storage of secondary parser while reading tertiary files
 
   ifstream    RVM;
   RVM.open(Options.rvm_filename.c_str(),ios::binary);
@@ -176,8 +176,8 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     else if(!strcmp(s[0],":DemandExpression"))            { code=62; }
     //else if(!strcmp(s[0],":AnnualLicense"))             { code=63; }
     else if(!strcmp(s[0],":ReservoirWaterDemand"))        { code=64; }
-    else if(!strcmp(s[0],":EndReservoirWaterDemand"))     { code=65; } 
-    else if(!strcmp(s[0],":IsUnrestricted"))              { code=66; } 
+    else if(!strcmp(s[0],":EndReservoirWaterDemand"))     { code=65; }
+    else if(!strcmp(s[0],":IsUnrestricted"))              { code=66; }
 
     else if(!strcmp(s[0],":UserTimeSeries"))              { code=70; }
 
@@ -209,14 +209,14 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         //if ((pMainParser != NULL) && (pSecondaryParser != NULL)){
         //  ExitGracefully("ParseEnsembleFile::nested :RedirectToFile commands are not allowed to be nested more than two levels (e.g., rvm file to rvm file to rvm file to rvm file)",BAD_DATA);
         //}
-        //if (pMainParser != NULL) { 
+        //if (pMainParser != NULL) {
         //  pSecondaryParser=pp
         //  pp=new CParser(INPUT3,filename,line);//open new parser
-        //} //from already redirected .rvm file 
-        //else { 
-        //  pMainParser=pp;     
+        //} //from already redirected .rvm file
+        //else {
+        //  pMainParser=pp;
         //  pp=new CParser(INPUT2,filename,line);//open new parser
-        //} //from base .rvm file 
+        //} //from base .rvm file
         //
 
         if (pMainParser != NULL) {
@@ -1077,7 +1077,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       break;
     }
     case (61): //--------------------------------------------
-    {/*:DemandLookupTable 
+    {/*:DemandLookupTable
        N
        {Q_i D_i} x N
        :EndDemandLookupTable

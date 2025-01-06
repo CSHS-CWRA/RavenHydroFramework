@@ -57,7 +57,7 @@ string CDiagnostic::GetName() const
   case(DIAG_RSR):               {return "DIAG_RSR";}
   case(DIAG_R2):                {return "DIAG_R2";}
   case(DIAG_LOG_NASH):          {return "DIAG_LOG_NASH";}
-  case(DIAG_KLING_GUPTA):       {return "DIAG_KLING_GUPTA";}       
+  case(DIAG_KLING_GUPTA):       {return "DIAG_KLING_GUPTA";}
   case(DIAG_KGE_PRIME):         {return "DIAG_KGE_PRIME";}
   case(DIAG_DAILY_KGE):         {return "DIAG_DAILY_KGE";}
   case(DIAG_NASH_SUTCLIFFE_DER):{return "DIAG_NASH_SUTCLIFFE_DER"; }

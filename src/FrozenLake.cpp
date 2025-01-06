@@ -66,7 +66,7 @@ void CmvFrozenLake::GetParticipatingParamList(string  *aP , class_type *aPC , in
   }
   else if (_type == LFREEZE_THERMAL)
   {
-    
+
   }
   else
   {
@@ -105,7 +105,7 @@ void   CmvFrozenLake::GetRatesOfChange( const double      *state_vars,
                                           const time_struct &tt,
                                                 double      *rates) const
 {
-  if ((pHRU->GetHRUType()!=HRU_LAKE) && 
+  if ((pHRU->GetHRUType()!=HRU_LAKE) &&
       (pHRU->GetHRUType()!=HRU_WETLAND)){return;}//Lakes and wetlands only (includes reservoirs)
 
   double ice_thick=state_vars[iFrom[0]];

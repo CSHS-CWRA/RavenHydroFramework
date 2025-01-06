@@ -604,7 +604,7 @@ void MassEnergyBalance( CModel            *pModel,
   }//end for pp...
   delete [] res_Qstruct;
 
-   
+
 
 
   //-----------------------------------------------------------------
@@ -658,7 +658,7 @@ void MassEnergyBalance( CModel            *pModel,
 
         pConstitModel->SetMassInflows    (p,aMinnew[p]);
         pConstitModel->SetLateralInfluxes(p,aRoutedMass[p]);
-        
+
         pConstitModel->InCatchmentRoute  (p,Mlat_new,Options);//prepares, calculates, and updates Mlat_new
         pConstitModel->PrepareForRouting (p);
         pConstitModel->RouteMass         (p,aMoutnew,Mlat_new,ResMass,ResSedMass,Options,tt);  //Where everything happens!
@@ -676,13 +676,13 @@ void MassEnergyBalance( CModel            *pModel,
   //update state variable values=====================================
   for (k=0;k<nHRUs;k++){
     pHRU=pModel->GetHydroUnit(k);
-    
+
     if(pHRU->IsEnabled())
     {
       //update total SWE variable
       if (iTotalSWE != DOESNT_EXIST) {
         aPhinew[k][iTotalSWE] =0.0;
-        for (int i = 0; i < NS; i++) 
+        for (int i = 0; i < NS; i++)
         {
           sv_type typ=pModel->GetStateVarType(i);
           if ((typ == SNOW) || (typ == SNOW_LIQ)) {
@@ -690,7 +690,7 @@ void MassEnergyBalance( CModel            *pModel,
           }
         }
       }
-    
+
       for(i=0;i<NS;i++){
         pHRU->SetStateVarValue(i,aPhinew[k][i]);
       }

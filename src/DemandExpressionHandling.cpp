@@ -336,7 +336,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
   //----------------------------------------------------------------------
   else if      (s[0]=='!')  //decision variable e.g., !Q234, !I32, or !D.Matts_Brewery
   {
-    if ((s[1] == 'Q') || (s[1] == 'h') || (s[1]=='I')) //Subbasin-indexed 
+    if ((s[1] == 'Q') || (s[1] == 'h') || (s[1]=='I')) //Subbasin-indexed
     {
       int p=GetIndexFromDVString(s);
       if (p == DOESNT_EXIST) {
@@ -707,7 +707,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
   //----------------------------------------------------------------------
   else if (GetControlVariable(s,index) != RAV_BLANK_DATA) // control variable
   {
-    
+
     term->type=TERM_CONTROL;
     term->value=GetControlVariable(s,index);// initially zero
     term->DV_ind=index;
@@ -760,7 +760,7 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
   {
     strlen=to_string(s[i]).length();
     type[i]=EXP;
-    if ((s[i][0]=='+') || ((strlen==1) && (s[i][0]=='-')) || (s[i][0]=='*') || (s[i][0]=='/') || (s[i][0]=='=') || (s[i][0]=='<') || (s[i][0]=='>')){ 
+    if ((s[i][0]=='+') || ((strlen==1) && (s[i][0]=='-')) || (s[i][0]=='*') || (s[i][0]=='/') || (s[i][0]=='=') || (s[i][0]=='<') || (s[i][0]=='>')){
       type[i] = EXP_OP;
       if ((i > 1) && (type[i - 1] == EXP_OP)) {
         ExitGracefully("ParseExpression: cannot have consecutive math operators in an expression.",BAD_DATA_WARN);
@@ -1277,7 +1277,7 @@ double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const
     int p=pT->p_index;
     return _pModel->GetSubBasin(p)->GetAvgStateVar(i);
   }
-  else if (pT->type == TERM_CONST) 
+  else if (pT->type == TERM_CONST)
   {
     return pT->value;
   }
