@@ -135,14 +135,14 @@ int CDemandOptimizer::GetDemandIndexFromName(const string demand_tag) const
 //////////////////////////////////////////////////////////////////
 /// \brief gets demand from index
 //
-CDemand* CDemandOptimizer::GetWaterDemand(const int d) 
+CDemand* CDemandOptimizer::GetWaterDemand(const int d)
 {
   return _pDemands[d];
 }
 //////////////////////////////////////////////////////////////////
 /// \brief gets number of enabled water demands
 //
-int CDemandOptimizer::GetNumWaterDemands() const 
+int CDemandOptimizer::GetNumWaterDemands() const
 {
   return _nDemands;
 }
@@ -420,7 +420,7 @@ bool CDemandOptimizer::VariableNameExists(const string &name) const
   for (int i = 0; i < _nUserConstants; i++) {
     if (_aUserConstNames[i]==name){return true;}
   }
-  
+
   if (GetUnitConversion(name)!=RAV_BLANK_DATA){return true;}
 
   return false;
@@ -771,7 +771,7 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
   {
     // ASSUMES ALL EXPRESSIONS IN GOAL/CONSTRAINT ARE EITHER == or >/<, NEVER MIXED.
     if (_pGoals[j]->is_goal) {
-      if (_pGoals[j]->pOperRegimes[0]->pExpression->compare == COMPARE_IS_EQUAL) 
+      if (_pGoals[j]->pOperRegimes[0]->pExpression->compare == COMPARE_IS_EQUAL)
       {
         _pGoals[j]->slack_ind1=_nSlackVars;
         pDV =  new decision_var("SL+" + to_string(j), p, DV_SLACK,_nSlackVars);
@@ -790,7 +790,7 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
         AddDecisionVar(pDV);
         _nSlackVars++;
       }
-      else 
+      else
       {
         _pGoals[j]->slack_ind1=_nSlackVars;
         pDV =  new decision_var("SL+"+ to_string(j), p, DV_SLACK,_nSlackVars);
@@ -1782,7 +1782,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
         retval = lp_lib::add_constraintex(pLinProg,3,row_val,col_ind,ROWTYPE_LE,RHS);
         ExitGracefullyIf(retval==0,"SolveDemandProblem::Error adding stage discharge constraint F",RUNTIME_ERR);
         IncrementAndSetRowName(pLinProg,rowcount,"reserv_Q_F"+to_string(pSB->GetID()));
-        
+
       }
       else /* if (aDisableSDCurve[p])*/ //keep same rows - make inert equations
       {
@@ -1798,7 +1798,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
         IncrementAndSetRowName(pLinProg,rowcount,"reserv_Q_E"+to_string(pSB->GetID()));
         retval = lp_lib::add_constraintex(pLinProg,1,row_val,col_ind,ROWTYPE_LE,RHS);
         IncrementAndSetRowName(pLinProg,rowcount,"reserv_Q_F"+to_string(pSB->GetID()));
-        
+
         s+=2; //to ensure EnvMin counter is working
       }
       res_count++;
@@ -1887,7 +1887,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
 
   // ----------------------------------------------------------------
   // ITERATIVELY SOLVE OPTIMIZATION PROBLEM WITH LP_SOLVE
-  // ----------------------------------------------------------------  
+  // ----------------------------------------------------------------
   const int NUM_ITERATIONS=5;
 
   int     ctyp;
@@ -1953,7 +1953,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
     {
       _aSolverRowNames [j]=to_string(lp_lib::get_row_name(pLinProg,j+1));
       _aSolverResiduals[j]=constr[j]-lp_lib::get_rh(pLinProg,j+1); // LHS-RHS for each goal/constraint
-        
+
       ctyp=lp_lib::get_constr_type(pLinProg,j+1);
       if (ctyp==LE){upperswap(_aSolverResiduals[j],0.0); }
       if (ctyp==GE){lowerswap(_aSolverResiduals[j],0.0); _aSolverResiduals[j]*=-1; }
@@ -2211,8 +2211,8 @@ void CDemandOptimizer::WriteMinorOutput(const optStruct &Options,const time_stru
 
   _GOALSAT<<tt.model_time <<","<<usedate<<","<<usehour;
 
-  //first slack terms are due to environmental flow constraints (_nEnviroFlowGoals) 
-  
+  //first slack terms are due to environmental flow constraints (_nEnviroFlowGoals)
+
   int s=_nEnviroFlowGoals; //this is first index of user-specified slack variable
 
   for (int i = 0; i < _nGoals; i++)

@@ -73,7 +73,7 @@ public:/*-------------------------------------------------------*/
 
   //Manipulators (inherited from CConstitModel)
   void   Initialize              (const optStruct& Options);
-  
+
   void   PrepareForInCatchmentRouting(const int p);
   void   PrepareForRouting       (const int p);
   double ApplyInCatchmentRouting (const int p,

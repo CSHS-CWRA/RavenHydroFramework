@@ -280,7 +280,7 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
        rates[qSnLiqToDep]+=state_vars[iSnLiq]/Options.timestep;
     }
   }
-  else if (pHRU->GetHRUType() == HRU_WATER) 
+  else if (pHRU->GetHRUType() == HRU_WATER)
   {
     rates[qSW] =snowthru + rainthru; //all water goes to surface water
   }

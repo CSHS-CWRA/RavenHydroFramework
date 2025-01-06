@@ -138,7 +138,7 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
   case(SNOW):               {name="Snow";                       break;}
   case(NEW_SNOW):           {name="New Snow";                   break;}
   case(SNOW_LIQ):           {name="Snow Melt (Liquid)";         break;}
-  case(TOTAL_SWE):          {name="Total SWE";                  break;} 
+  case(TOTAL_SWE):          {name="Total SWE";                  break;}
   case(WETLAND):            {name="Wetlands";                   break;}
   case(CUM_INFIL):          {name="Cumulative infiltration";    break;}
   case(GA_MOISTURE_INIT):   {name="Green Ampt initial soil Water"; break;}
@@ -594,7 +594,7 @@ bool  CStateVariable::IsWaterStorage (sv_type      typ, bool conv_coverup)
   case(GLACIER):         {return true;}
   case(GLACIER_ICE):     {return true;}
   case(CONVOLUTION):     {return conv_coverup;}
-  case(CONV_STOR):       {return !conv_coverup;} 
+  case(CONV_STOR):       {return !conv_coverup;}
   case(NEW_SNOW):        {return true;}
   case(LATERAL_EXCHANGE):{return true;}
   case(SNOW_DRIFT):      {return true;}

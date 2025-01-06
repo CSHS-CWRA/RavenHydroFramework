@@ -531,7 +531,7 @@ void CEnthalpyModel::Initialize(const optStruct& Options)
     A=_pModel->GetSubBasin(p)->GetReferenceXSectArea();
     tr=L*A/Q/SEC_PER_DAY;
     if (tr<0.33*Options.timestep){_aMinResTime    [p]=tr;}
-    else                         {_aMinResTime    [p]=0.333*Options.timestep; } 
+    else                         {_aMinResTime    [p]=0.333*Options.timestep; }
   }
 
   // initialize stream temperatures if init_stream_temp is given
@@ -834,7 +834,7 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
       Q_sens   +=dA*hstar *(temp_air-Tbar_km);   //[m2]*[MJ/m2/d/K]*[K]=[MJ/d]
       Q_cond   +=dA*kbed  *(temp_bed-Tbar_km);
       Q_lw_out +=dA*klin  *(0.75*temp_lin-(Tbar_km+ZERO_CELSIUS)); //linearized - works except at T~0
-      Q_lateral+=dA*qlat *dbar/Ax*HCP_WATER*(temp_lat-Tbar_km);    
+      Q_lateral+=dA*qlat *dbar/Ax*HCP_WATER*(temp_lat-Tbar_km);
 
       temp_average+=dA/As*Tbar_km;
       if (As == 0.0) {temp_average=0.0;}

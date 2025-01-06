@@ -52,7 +52,7 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, CModelABC *pModel)
     iSoil     =pModel->GetStateVarIndex(SOIL,0);
     iPond     =pModel->GetStateVarIndex(PONDED_WATER);
 
-    CHydroProcessABC::DynamicSpecifyConnections(5); 
+    CHydroProcessABC::DynamicSpecifyConnections(5);
 
     iFrom[0]=iSnow;       iTo[0]=iSnowLiq;       //rates[0]: SNOW->SNOW_LIQ
     iFrom[1]=iSnow;       iTo[1]=iSoil;          //rates[1]: SNOW->SOIL
