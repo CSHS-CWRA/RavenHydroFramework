@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 
 #include "RavenInclude.h"
@@ -280,6 +280,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.keepUBCWMbugs           =false;
   Options.suppressCompetitiveET   =false;
   Options.snow_suppressPET        =false;
+  Options.allow_soil_overfill     =false;
   Options.pavics                  =false;
   Options.deltaresFEWS            =false;
   Options.res_overflowmode        =OVERFLOW_ALL;
@@ -429,6 +430,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":EnsembleMode"              )){code=47; }
     else if  (!strcmp(s[0],":SuppressCompetitiveET"     )){code=48; }
     else if  (!strcmp(s[0],":SnowSuppressesPET"         )){code=49; }
+    else if  (!strcmp(s[0],":AllowSoilOverfill"         )){code=491;}
+
 	//---I/O------------------------------------------------------
     else if  (!strcmp(s[0],":DebugMode"                 )){code=50; }
     else if  (!strcmp(s[0],":BenchmarkingMode"          )){code=51; }
@@ -498,6 +501,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":WriteForcingFunctions"     )){code=171;}
     else if  (!strcmp(s[0],":WriteEnergyStorage"        )){code=172;}// OBSOLETE?
     else if  (!strcmp(s[0],":WriteReservoirMBFile"      )){code=173;}
+    else if  (!strcmp(s[0],":WriteSubBasinFile"         )){code=174;}
     else if  (!strcmp(s[0],":WriteSubbasinFile"         )){code=174;}
     else if  (!strcmp(s[0],":WriteDemandFile"           )){code=175;}
     else if  (!strcmp(s[0],":WriteChannelInfo"          )){code=176;}
@@ -1386,6 +1390,12 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:SnowSuppressesPET */
       if(Options.noisy) { cout <<"Suppressing PET if snow on ground"<<endl; }
       Options.snow_suppressPET =true;
+      break;
+    }
+    case(491): //--------------------------------------------
+    {/*:AllowSoilOverfill */
+      if(Options.noisy) { cout <<"Allow soil compartments to overfill"<<endl; }
+      Options.allow_soil_overfill =true;
       break;
     }
     case(50):  //--------------------------------------------

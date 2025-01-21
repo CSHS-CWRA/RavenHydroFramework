@@ -207,19 +207,19 @@ CReservoir::CReservoir(const string Name, const long SubID,
     // QA/QC:
     if ((i > 0) && ((_aStage[i]-_aStage[i-1])<0)){
       warn = "CReservoir::constructor: stage relations must be specified in order of increasing stage. [bad reservoir: " + _name + " "+to_string(SubID)+"]";
-      ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+      ExitGracefully(warn.c_str(),BAD_DATA_WARN);return;
     }
     if ((i > 0) && ((_aVolume[i] - _aVolume[i-1]) <= -REAL_SMALL)){
       warn = "CReservoir::constructor: volume-stage relationships must be monotonically increasing for all stages. [bad reservoir: " + _name + " "+to_string(SubID)+"]";
-      ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+      ExitGracefully(warn.c_str(),BAD_DATA_WARN);return;
     }
     if ((i > 0) && ((_aQ[i] - _aQ[i-1]) < -REAL_SMALL)){
       warn = "CReservoir::constructor: stage-discharge relationships must be increasing or flat for all stages. [bad reservoir: " + _name + " "+to_string(SubID)+ "]";
-      ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+      ExitGracefully(warn.c_str(),BAD_DATA_WARN);return;
     }
     if ((i > 0) && ((_aQunder[i] - _aQunder[i-1]) < -REAL_SMALL)){
       warn = "CReservoir::constructor: stage-discharge (underflow) relationships must be increasing or flat for all stages. [bad reservoir: " + _name + " "+to_string(SubID)+ "]";
-      ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+      ExitGracefully(warn.c_str(),BAD_DATA_WARN);return;
     }
   }
   _max_capacity=_aVolume[_Np-1];
@@ -871,7 +871,7 @@ void    CReservoir::AddMinQTimeSeries(CTimeSeries *pQmin) {
 //
 void    CReservoir::AddMaxQTimeSeries(CTimeSeries *pQmax) {
   ExitGracefullyIf(_pQmaxTS!=NULL,
-    "CReservoir::AddMinQTimeSeries: only one minimum flow time series may be specified per reservoir",BAD_DATA_WARN);
+    "CReservoir::AddMaxQTimeSeries: only one minimum flow time series may be specified per reservoir",BAD_DATA_WARN);
   _pQmaxTS=pQmax;
 }
 //////////////////////////////////////////////////////////////////
@@ -986,7 +986,7 @@ void CReservoir::SetLakeConvectionCoeff(const double& conv) {
 string CReservoir::GetCurrentConstraint() const {
   switch(_constraint)
   {
-  case(RC_MAX_STAGE):         {return "MAX_STAGE"; }
+  case(RC_MAX_STAGE):         {return "RC_MAX_STAGE"; }
   case(RC_MIN_STAGE):         {return "RC_MIN_STAGE"; }
   case(RC_NATURAL):           {return "RC_NATURAL"; }
   case(RC_TARGET):            {return "RC_TARGET"; }

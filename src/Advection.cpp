@@ -25,7 +25,9 @@ CmvAdvection::CmvAdvection(string constit_name,
   _constit_ind=pTransModel->GetConstituentIndex(constit_name);
 
   int nAdvConnections    =pTransModel->GetNumAdvConnections();
+  int nWaterStores       =pTransModel->GetNumWaterCompartments();
   CHydroProcessABC::DynamicSpecifyConnections(3*nAdvConnections+1);//+2 once GW added
+  //CHydroProcessABC::DynamicSpecifyConnections(nAdvConnections+nWaterStores+1);//+2 once GW added
 
   for (int q=0;q<nAdvConnections;q++) //for regular advection
   {
@@ -42,11 +44,20 @@ CmvAdvection::CmvAdvection(string constit_name,
     iFrom[2*nAdvConnections+q]=pModel->GetStateVarIndex(CONSTITUENT_SRC,_constit_ind);
     iTo  [2*nAdvConnections+q]=iTo[q];
   }
+  //for Dirichlet source corrections
+  //for (int ii = 0; ii < nWaterStores; ii++) {
+  //  iFrom[nAdvConnections+ii]=pModel->GetStateVarIndex(CONSTITUENT_SRC,_constit_ind);
+  //  iTo  [nAdvConnections+ii]=pTransModel->GetStorWaterIndex(ii);
+  // }
+
   //advection into surface water
   int iSW=pModel->GetStateVarIndex(SURFACE_WATER);
   int   m=pTransModel->GetLayerIndex(_constit_ind,iSW);
   iFrom[3*nAdvConnections]=pModel->GetStateVarIndex(CONSTITUENT,m);
   iTo  [3*nAdvConnections]=pModel->GetStateVarIndex(CONSTITUENT_SW,0);
+
+  //iFrom[nAdvConnections+nWaterStores]=pModel->GetStateVarIndex(CONSTITUENT,m);
+  //iTo  [nAdvConnections+nWaterStores]=pModel->GetStateVarIndex(CONSTITUENT_SW,0);
 
   //advection into groundwater
   //int iGW=pModel->GetStateVarIndex(GROUNDWATER);
@@ -54,6 +65,8 @@ CmvAdvection::CmvAdvection(string constit_name,
   //iFrom[3*nAdvConnections+1]=pModel->GetStateVarIndex(CONSTITUENT,m);
   //iTo  [3*nAdvConnections+1]=pModel->GetStateVarIndex(CONSTITUENT_GW,0);
 
+  //iFrom[nAdvConnections+nWaterStores+1]=pModel->GetStateVarIndex(CONSTITUENT,m);
+  //iTo  [nAdvConnections+nWaterStores+1]=pModel->GetStateVarIndex(CONSTITUENT_SW,0);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -223,6 +236,8 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
       mass          =sv[iFrom[q]];
       dirichlet_mass=Cs*sv[iFromWater]; //Cs*V
       rates[nAdvConnections+q]+=(dirichlet_mass-mass)/Options.timestep; //From CONSTITUENT_SRC
+      //iiFromWater=pTransModel->GetWaterStorIndexFromSVIndex(iFromWater);
+      //rates[nAdvConnections+iiFromWater]+=(dirichlet_mass-mass)/Options.timestep; //From CONSTITUENT_SRC //JRC: Reduced memory edit (or _aStorIndex[iFromWater])
       sv[iFrom[q]]=dirichlet_mass;      //override previous mass/enthalpy
     }
 
@@ -237,6 +252,8 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
       mass          =sv[iTo[q]];
       dirichlet_mass=Cs*sv[iToWater]; //C*V
       rates[2*nAdvConnections+q]+=(dirichlet_mass-mass)/Options.timestep; //From CONSTITUENT_SRC
+      //iiToWater=pTransModel->GetWaterStorIndexFromSVIndex(iToWater);
+      //rates[nAdvConnections+iiToWater]+=(dirichlet_mass-mass)/Options.timestep; //From CONSTITUENT_SRC //JRC: Reduced memory edit (or _aStorIndex[iFromWater] of size _nWaterStores)
       sv[iTo[q]]=dirichlet_mass;      //override previous mass/enthalpy
     }
 

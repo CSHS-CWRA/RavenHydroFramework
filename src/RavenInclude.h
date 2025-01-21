@@ -1113,6 +1113,7 @@ struct optStruct
   bool               keepUBCWMbugs;           ///< true if peculiar UBCWM bugs are retained (only really for BC Hydro use)
   bool               suppressCompetitiveET;   ///< true if competitive ET should be suppressed (for backward compatibility)
   bool               snow_suppressPET;        ///< true if presence of snow should set PET to zero
+  bool               allow_soil_overfill;     ///< true if soil can be filled above capacity (to be handled using overflow routine)
 
   // Soil model information
   int                num_soillayers;          ///< number of soil layers

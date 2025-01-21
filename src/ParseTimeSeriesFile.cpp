@@ -1,6 +1,6 @@
 ﻿/*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -40,8 +40,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
   bool is_3D            = false;  // true if gridded forcing is 3D
 
   ifstream RVT;
-  ifstream INPUT2;           //For Secondary input
-  CParser* pMainParser=NULL; //for storage of main parser while reading secondary files
+  ifstream INPUT2;                //For Secondary input
+  CParser* pMainParser=NULL;      //for storage of main parser while reading secondary files
+  ifstream INPUT3;                //For tertiary input 
+  CParser *pSecondaryParser=NULL; //for storage of secondary parser while reading tertiary files 
 
   if (Options.in_bmi_mode && (strcmp(Options.rvt_filename.c_str(), "") == 0)) {  // an RVT may not be specified for a BMI run
     return (true);
@@ -185,18 +187,29 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
       filename =CorrectForRelativePath(filename ,Options.rvt_filename);
 
-      INPUT2.open(filename.c_str());
-      if (INPUT2.fail()){
-        warn=":RedirectToFile: Cannot find file "+filename;
-        ExitGracefully(warn.c_str(),BAD_DATA);
+      if (pSecondaryParser != NULL){
+        ExitGracefully("ParseEnsembleFile::nested :RedirectToFile commands are not allowed to be nested more than two levels (e.g., rvm file to rvm file to rvm file to rvm file)",BAD_DATA);
       }
-      else{
-        if (pMainParser != NULL) {
-          ExitGracefully("ParseTimeSeriesFile::nested :RedirectToFile commands (in already redirected files) are not allowed.",BAD_DATA);
+      if (pMainParser == NULL) { //from base .rvt file 
+        INPUT2.open(filename.c_str()); 
+        if(INPUT2.fail()) {
+          string warn;
+          warn=":RedirectToFile (from .rvt): Cannot find file "+filename;
+          ExitGracefully(warn.c_str(),BAD_DATA);
         }
-        pMainParser=p;    //save pointer to primary parser
+        pMainParser=p;     
         p=new CParser(INPUT2,filename,line);//open new parser
-      }
+      } 
+      else { //from already redirected .rvt file 
+        INPUT3.open(filename.c_str()); 
+        if(INPUT3.fail()) {
+          string warn;
+          warn=":RedirectToFile (from .rvt): Cannot find file "+filename;
+          ExitGracefully(warn.c_str(),BAD_DATA);
+        }
+        pSecondaryParser=p;
+        p=new CParser(INPUT3,filename,line);//open new parser
+      } 
       break;
     }
     case(-4):  //----------------------------------------------
@@ -2072,8 +2085,16 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
     end_of_file=p->Tokenize(s,Len);
 
-    //return after file redirect, if in secondary file
-    if ((end_of_file) && (pMainParser!=NULL))
+    if ((end_of_file) && (pSecondaryParser != NULL))//return after file redirect, if in tertiary file
+    {
+      INPUT3.clear();
+      INPUT3.close();
+      delete p;
+      p=pSecondaryParser;
+      pSecondaryParser=NULL;
+      end_of_file=p->Tokenize(s,Len);
+    }
+    else if ((end_of_file) && (pMainParser!=NULL))//return after file redirect, if in secondary file
     {
       INPUT2.clear();
       INPUT2.close();

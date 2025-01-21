@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2024 the Raven Development Team
+Copyright (c) 2008-2025 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -56,14 +56,14 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
 
   CDemand    *pDemand=NULL;
   int         demand_ind=0;
-  long        demandSBID;
+  long        demandSBID; 
   int         demand_ID;
   string      demand_name;
 
   ifstream    INPUT2;                //For Secondary input
   CParser    *pMainParser=NULL;      //for storage of main parser while reading secondary files
-  //ifstream    INPUT3;                //For tertiary input
-  //CParser    *pSecondaryParser=NULL; //for storage of secondary parser while reading tertiary files
+  ifstream    INPUT3;                //For tertiary input 
+  CParser    *pSecondaryParser=NULL; //for storage of secondary parser while reading tertiary files 
 
   ifstream    RVM;
   RVM.open(Options.rvm_filename.c_str(),ios::binary);
@@ -107,7 +107,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
 
   //--Sift through file-----------------------------------------------
   firstword=pp->Peek();
-  if ((firstword == ":DefineDecisionVariable") || (firstword == ":DemandExpression") || (firstword == ":ReturnExpression") || (firstword == ":DefineControlVariable"))
+  if ((firstword == ":DefineDecisionVariable") || (firstword == ":DemandExpression") || (firstword == ":ReturnExpression") || (firstword == ":DefineWorkflowVariable"))
   {
     pp->NextIsMathExp();
   }
@@ -154,8 +154,10 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     else if(!strcmp(s[0],":ManagementConstraint"))        { code=23; is_goal=false; }
     else if(!strcmp(s[0],":ManagementGoal"))              { code=23; is_goal=true;  }
     else if(!strcmp(s[0],":DeclareDecisionVariable"))     { code=24; }
-    else if(!strcmp(s[0],":DefineControlVariable"))       { code=25; }
+    else if(!strcmp(s[0],":DefineWorkflowVariable"))      { code=25; }
+    else if(!strcmp(s[0],":WorkflowVarDefinition"))       { code=26; }
     else if(!strcmp(s[0],":LookupTable"))                 { code=30; }
+    else if(!strcmp(s[0],":OverrideStageDischargeCurve")) { code=31; }
 
     else if(!strcmp(s[0],":LoopThrough"))                 { code=40; }
     else if(!strcmp(s[0],":EndLoopThrough"))              { code=41; }
@@ -198,34 +200,30 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       if(Options.noisy) { cout <<"Redirect to file: "<<filename<<endl; }
 
       filename=CorrectForRelativePath(filename,Options.rvm_filename);
-
-      INPUT2.open(filename.c_str(),ios::binary); //binary enables tellg() to work correctly for Unix files in parseLib::Peek()
-      if(INPUT2.fail()) {
-        string warn;
-        warn=":RedirectToFile (from .rvm): Cannot find file "+filename;
-        ExitGracefully(warn.c_str(),BAD_DATA);
+      
+      if (pSecondaryParser != NULL){
+        ExitGracefully("ParseEnsembleFile::nested :RedirectToFile commands are not allowed to be nested more than two levels (e.g., rvm file to rvm file to rvm file to rvm file)",BAD_DATA);
       }
-      else {
-        //if ((pMainParser != NULL) && (pSecondaryParser != NULL)){
-        //  ExitGracefully("ParseEnsembleFile::nested :RedirectToFile commands are not allowed to be nested more than two levels (e.g., rvm file to rvm file to rvm file to rvm file)",BAD_DATA);
-        //}
-        //if (pMainParser != NULL) {
-        //  pSecondaryParser=pp
-        //  pp=new CParser(INPUT3,filename,line);//open new parser
-        //} //from already redirected .rvm file
-        //else {
-        //  pMainParser=pp;
-        //  pp=new CParser(INPUT2,filename,line);//open new parser
-        //} //from base .rvm file
-        //
-
-        if (pMainParser != NULL) {
-          ExitGracefully("ParseEnsembleFile::nested :RedirectToFile commands (in already redirected files) are not allowed.",BAD_DATA);
+      if (pMainParser == NULL) { 
+        INPUT2.open(filename.c_str(),ios::binary); //binary enables tellg() to work correctly for Unix files in parseLib::Peek()
+        if(INPUT2.fail()) {
+          string warn;
+          warn=":RedirectToFile (from .rvm): Cannot find file "+filename;
+          ExitGracefully(warn.c_str(),BAD_DATA);
         }
-        pMainParser=pp;   //save pointer to primary parser
+        pMainParser=pp;     
         pp=new CParser(INPUT2,filename,line);//open new parser
-      }
-
+      } //from base .rvm file 
+      else { 
+        INPUT3.open(filename.c_str(),ios::binary); //binary enables tellg() to work correctly for Unix files in parseLib::Peek()
+        if(INPUT3.fail()) {
+          string warn;
+          warn=":RedirectToFile (from .rvm): Cannot find file "+filename;
+          ExitGracefully(warn.c_str(),BAD_DATA);
+        }
+        pSecondaryParser=pp;
+        pp=new CParser(INPUT3,filename,line);//open new parser
+      } //from already redirected .rvm file 
       break;
     }
     case(-4):  //----------------------------------------------
@@ -519,90 +517,12 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         else if (!strcmp(s[0], ":Condition"))
         {
           if (Options.noisy){cout<<" Condition "<<endl; }
-          //TODO: Would it be better to support @date(), @between, @day_of_year() in general expression??
-          //:Condition !Q32[0] < 300 + @ts(myTs,0)
-          //:Condition DATE IS_BETWEEN 1975-01-02 and 2010-01-02
-          //:Condition DATE > @date(1975-01-02) //\todo [NOT YET SUPPORTED]
-          //:Condition DATE < @date(2010-01-02) //\todo [NOT YET SUPPORTED]
-          //:Condition MONTH = 2
-          //:Condition DAY_OF_YEAR IS_BETWEEN 173 and 210
-          //:Condition DAY_OF_YEAR > 174
-          //:Condition DAY_OF_YEAR < 210
-          //:Condition DAY_OF_YEAR IS_BETWEEN 300 20 //wraps around
-          //:Condition DAY_OF_YEAR IS_BETWEEN Apr-1 Aug-1 //\todo [NOT YET SUPPORTED]
-          //:Condition @is_between(DAY_OF_YEAR,300,20) = 1  // \todo [NOT YET SUPPORTED]
-          if (pGoal!=NULL){
-            bool badcond=false;
-            exp_condition *pCond = new exp_condition();
-            pCond->dv_name=s[1];
-            bool is_exp=false;
-            for (int i = 0; i < Len; i++) {
-              if ((s[i][0]=='+') || (s[i][0]=='-') || (s[i][0]=='*') || (s[i][0]=='/') || (s[i][0]=='=') || (s[i][0]=='<') || (s[i][0]=='>')){
-                is_exp=true;
-              }
-            }
-            if (is_exp) {
-              pCond->pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
-              pGoal->AddOpCondition(pCond);
-            }
-            else{
-              if      (!strcmp(s[2],"IS_BETWEEN"     )){pCond->compare=COMPARE_BETWEEN;}
-              else if (!strcmp(s[2],"IS_GREATER_THAN")){pCond->compare=COMPARE_GREATERTHAN;}
-              else if (!strcmp(s[2],"IS_LESS_THAN"   )){pCond->compare=COMPARE_LESSTHAN;}
-              else if (!strcmp(s[2],"IS_EQUAL_TO"    )){pCond->compare=COMPARE_IS_EQUAL;}
-              else if (!strcmp(s[2],"IS_NOT_EQUAL_TO")){pCond->compare=COMPARE_NOT_EQUAL;}
-              else {
-                ExitGracefully("ParseManagementFile: unrecognized comparison operator in :Condition statement",BAD_DATA_WARN);
-                break;
-              }
-              pCond->value=s_to_d(s[3]);
-              if (Len>=5){
-                pCond->value2 = s_to_d(s[4]);
-              }
-              if      (!strcmp(s[1],"DATE"     )){
-                pCond->date_string=s[3];
-                if (Len>=5){
-                  pCond->date_string2 = s[4];
-                }
-              }
-
-              if (pCond->dv_name[0] == '!') { //decision variable
-                char   tmp =pCond->dv_name[1];
-                string tmp2=pCond->dv_name.substr(2);
-                char code=pCond->dv_name[1];
-                if ((code=='Q') || (code=='h') || (code=='I')){
-                  long SBID=s_to_l(tmp2.c_str());
-                  if (pModel->GetSubBasinByID(SBID) == NULL) {
-                    ExitGracefully("ParseManagementFile: Subbasin ID in :Condition statement is invalid.",BAD_DATA_WARN);
-                  }
-                  else if (!pModel->GetSubBasinByID(SBID)->IsEnabled()) {
-                    WriteWarning("ParseManagementFile: Subbasin in :Condition statement is disabled in this model configuration. Conditional will be assumed true.",Options.noisy);
-                    badcond=true;
-                  }
-                  else if ((code == 'h') || (code == 'I')) {
-                    if (pModel->GetSubBasinByID(SBID)->GetReservoir() == NULL) {
-                      ExitGracefully("ParseManagementFile: !h or !I used in :Condition statement for subbasin without lake or reservoir",BAD_DATA_WARN);
-                    }
-                  }
-                }
-                else { //demand
-                  int d=pDO->GetDemandIndexFromName(tmp2);
-                  if (d == DOESNT_EXIST) {
-                    WriteWarning("ParseManagementFile: !D or !C used in :Condition statement has invalid or disabled demand ID. Conditional will be assumed true.",Options.noisy);
-                    badcond=true;
-                  }
-                }
-              }
-              if (!badcond)
-              {
-                pCond->p_index=pDO->GetIndexFromDVString(pCond->dv_name);
-                pGoal->AddOpCondition(pCond);
-              }
-            }
-          }
-          else{
+          if (pGoal==NULL){
             ExitGracefully("ParseManagementFile: :Condition statement must appear after valid :Expression in :ManagementConstraint command",BAD_DATA_WARN);
           }
+          exp_condition *pCond;
+          pCond=pDO->ParseCondition((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
+          pGoal->AddOpCondition(pCond);
         }
         //----------------------------------------------
         else if (!strcmp(s[0], ":Penalty"))
@@ -658,22 +578,6 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           }
         }
         //----------------------------------------------
-        else if (!strcmp(s[0], ":OverrideStageDischargeCurve")) {
-          if (Options.noisy){cout<<"Override Stage Discharge Curve"<<endl; }
-          CSubBasin *pSB=pModel->GetSubBasinByID(s_to_l(s[1]));
-
-          ExitGracefullyIf(pSB->GetGlobalIndex()==DOESNT_EXIST,"ParseManagementFile: subbasin ID in :OverrideStageDischargeCurve is invalid",BAD_DATA_WARN);
-
-          if (pSB->GetReservoir()==NULL){
-            string advice="ParseManagementFile:The reservoir in subbasin "+to_string(pSB->GetID()) + " doesnt exist and stage discharge curve cannot be overridden.";
-            ExitGracefully(advice.c_str(), BAD_DATA_WARN);
-          }
-          else{
-            pGoal->overrides_SDcurve=true;
-            pGoal->reservoir_index=pSB->GetGlobalIndex(); //must be consistent with UseStageUnitsCorrection reservoir
-          }
-        }
-        //----------------------------------------------
         else if (!strcmp(s[0], ":EndManagementGoal")) {
           if (Options.noisy){cout<<endl; }
           break;
@@ -684,7 +588,8 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           break;
         }
         else {
-          WriteWarning("ParseManagementFile: Unrecognized command in :ManagementConstraint command block",Options.noisy);
+          string warn="ParseManagementFile: Unrecognized command "+to_string(s[0]) + " in :ManagementConstraint command block";
+          WriteWarning(warn.c_str(), Options.noisy);
         }
         firstword=pp->Peek();
         if (firstword == ":Expression") {pp->NextIsMathExp();}
@@ -710,22 +615,138 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       break;
     }
     case(25):  //----------------------------------------------
-    { /*:DefineControlVariable [name] = [expressionRHS] */
-      if(Options.noisy) { cout <<"Define Control Variable"<<endl; }
+    { /*:DefineWorkflowVariable [name] = [expressionRHS] */
+      if(Options.noisy) { cout <<"Define Workflow Variable"<<endl; }
       expressionStruct *pExp;
-      pDO->AddControlVariable(s[1]);
+      workflowVar *pWV=new workflowVar();
+      pWV->name=to_string(s[1]);
+      pDO->AddWorkflowVariable(pWV);
       pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
 
+      if (pExp==NULL){
+        string warn ="Invalid expression in :DefineWorkflowVariable command at line " + pp->GetLineNumber();
+        WriteWarning(warn.c_str(),Options.noisy);
+        break;
+      }
+      pWV->AddExpression(pExp);
+      //pWV->pExpression=pExp;
+      
       if (pDO->GetDebugLevel()>=1){
         SummarizeExpression((const char**)(s),Len,pExp);
       }
 
-      if (pExp!=NULL){
-        pDO->TieExpToControlVar(pExp);
+      break;
+    }
+    case(26):  //----------------------------------------------
+    {/*:WorkflowVarDefinition [name]
+         :OperatingRegime A
+           :Expression [name] = [expression]
+           :Condition [condition]
+           :Condition [condition]
+         :EndOperatingRegime
+         :OperatingRegime B
+           :Expression [expression]
+         :EndOperatingRegime
+       :EndWorkflowVarDefinition
+       or
+       :WorkflowVarDefinition [name]
+         :Expression [name] = [expression]
+       :EndWorkflowVarDefinition
+     */
+      if(Options.noisy) { cout <<"Workflow Variable Definition Statement"<<endl; }
+
+      workflowVar *pWV =new workflowVar();
+      pWV->name=to_string(s[1]);
+      pDO->AddWorkflowVariable(pWV);
+
+      expressionStruct *pExp;
+      bool is_first=true;
+      bool in_op_block=false;
+      firstword=pp->Peek();
+      if (firstword == ":Expression") {pp->NextIsMathExp();}
+      if (firstword == ":Condition")  {pp->NextIsMathExp();}
+
+      while(!pp->Tokenize(s,Len))
+      {
+        swapWildcards((const char**)(s),Len,aWildcards,nWildcards);
+
+        if(Options.noisy) { cout << "-->reading line " << pp->GetLineNumber() << ": "; }
+
+        if     (Len == 0)             { if(Options.noisy) { cout << "#" << endl; } }//Do nothing
+        else if (IsComment(s[0],Len)) { if(Options.noisy) { cout << "#" << endl; } }
+        //----------------------------------------------
+        else if (!strcmp(s[0], ":OperatingRegime"))
+        {
+          if (Options.noisy){cout<<" Operating regime "<<endl; }
+          if (Len < 2) {
+            ExitGracefully("ParseManagementFile: OperatingRegime name missing.",BAD_DATA_WARN);
+          }
+          op_regime *pOR=new op_regime(s[1]);
+          pWV->AddOperatingRegime(pOR,is_first);
+          is_first=false;
+          in_op_block=true;
+        }
+        //----------------------------------------------
+        else if (!strcmp(s[0], ":EndOperatingRegime"))
+        {
+          if (Options.noisy){cout<<" End operating regime "<<endl; }
+          in_op_block=false;
+        }
+        //----------------------------------------------
+        else if(!strcmp(s[0], ":Expression"))
+        {
+          if (Options.noisy){cout<<" Expression "<<endl; }
+          if (pWV->GetCurrentExpression() != NULL) {
+            ExitGracefully("ParseManagementFile: only one :Expression allowed in each :OperatingRegime command block (or only one if no :OperatingRegime blocks used).",BAD_DATA_WARN);
+            break;
+          }
+          pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
+          if (pExp!=NULL){
+            pWV->AddExpression(pExp);
+          }
+          else {
+            string warn ="Invalid expression in :Expression command at line " + to_string(pp->GetLineNumber());
+            WriteWarning(warn.c_str(),Options.noisy);
+          }
+          if (pDO->GetDebugLevel()>=1){
+            SummarizeExpression((const char**)(s),Len,pExp);
+          }
+        }
+        //----------------------------------------------
+        else if (!strcmp(s[0], ":Condition"))
+        {
+          if (Options.noisy){cout<<" Condition "<<endl; }
+          
+          exp_condition *pCond;
+          if (pWV!=NULL){
+            pCond=pDO->ParseCondition((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
+            if (pCond != NULL) {
+              pWV->AddOpCondition(pCond);
+            }
+          }
+          else{
+            ExitGracefully("ParseManagementFile: :Condition statement must appear after valid :Expression in :WorkflowVarDefinition command",BAD_DATA_WARN);
+          }
+        }
+        //----------------------------------------------
+        else if (!strcmp(s[0], ":EndWorkflowVarDefinition")) {
+          if (Options.noisy){cout<<endl; }
+          break;
+        }
+        else {
+          WriteWarning("ParseManagementFile: Unrecognized command in :WorkflowVarDefinition command block",Options.noisy);
+        }
+        firstword=pp->Peek();
+        if (firstword == ":Expression") {pp->NextIsMathExp();}
+        if (firstword == ":Condition")  {pp->NextIsMathExp();}
       }
-      else {
-        string warn ="Invalid expression in :DefineControlVariable command at line " + pp->GetLineNumber();
-        WriteWarning(warn.c_str(),Options.noisy);
+      //any invalid expressions have to shut down simulation
+      bool baddef=false;
+      for (int k = 0; k < pWV->nOperRegimes; k++) {
+        if (pWV->pOperRegimes[k]->pExpression == NULL) { baddef=true;}
+      }
+      if (baddef) {
+        ExitGracefully("ParseManagementFile: Bad or missing :Expression in one or more operating regimes within workflow variable definition",BAD_DATA_WARN);
       }
       break;
     }
@@ -767,6 +788,24 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       pDO->AddUserLookupTable(pLUT);
       delete [] aX;
       delete [] aY;
+      break;
+    }
+    case(31):  //----------------------------------------------
+    { /*:OverrideStageDischargeCurve [SBID]  */
+
+      if (Options.noisy){cout<<"Override Stage Discharge Curve"<<endl; }
+      CSubBasin *pSB=pModel->GetSubBasinByID(s_to_l(s[1]));
+
+      ExitGracefullyIf(pSB->GetGlobalIndex()==DOESNT_EXIST,"ParseManagementFile: subbasin ID in :OverrideStageDischargeCurve is invalid",BAD_DATA_WARN);
+
+      if (pSB->GetReservoir()==NULL){
+        string advice="ParseManagementFile:The reservoir in subbasin "+to_string(pSB->GetID()) + " doesnt exist and stage discharge curve cannot be overridden.";
+        ExitGracefully(advice.c_str(), BAD_DATA_WARN);
+      }
+      else{
+        pDO->OverrideSDCurve(pSB->GetGlobalIndex());
+      }
+        
       break;
     }
     case(40):  //----------------------------------------------
@@ -1213,7 +1252,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     }//end switch(code)
 
     firstword=pp->Peek();
-    if ((firstword == ":DefineDecisionVariable") || (firstword == ":DemandExpression") || (firstword == ":ReturnExpression") || (firstword == ":DefineControlVariable"))
+    if ((firstword == ":DefineDecisionVariable") || (firstword == ":DemandExpression") || (firstword == ":ReturnExpression") || (firstword == ":DefineWorkflowVariable"))
     {
       pp->NextIsMathExp();
     }
@@ -1222,7 +1261,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     swapWildcards((const char**)(s),Len,aWildcards,nWildcards);
 
      //return after file redirect, if in tertiary file
-    /*if ((end_of_file) && (pSecondaryParser != NULL))
+    if ((end_of_file) && (pSecondaryParser != NULL))
     {
       INPUT3.clear();
       INPUT3.close();
@@ -1232,7 +1271,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       end_of_file=pp->Tokenize(s,Len);
       swapWildcards((const char**)(s),Len,aWildcards,nWildcards);
     }
-    else{*/
+    else{
       //return after file redirect, if in secondary file
       if((end_of_file) && (pMainParser!=NULL))
       {
@@ -1244,7 +1283,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         end_of_file=pp->Tokenize(s,Len);
         swapWildcards((const char**)(s),Len,aWildcards,nWildcards);
       }
-    //}
+    }
   } //end while !end_of_file
   RVM.close();
 

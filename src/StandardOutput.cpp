@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
 
   Includes CModel routines for writing output headers and contents:
     CModel::CloseOutputStreams()
@@ -1388,13 +1388,15 @@ void CModel::WriteMajorOutput(const time_struct &tt, string solfile, bool final)
   //--------------------------------------------------------------
   if (Options->write_basinfile){
     ofstream BAS;
+    bool has_obs;
     tmpFilename=FilenamePrepare("SubbasinProperties.csv",*_pOptStruct);
     BAS.open(tmpFilename.c_str());
     if(BAS.fail()) {
       WriteWarning(("CModel::WriteMinorOutput: Unable to open output file "+tmpFilename+" for writing.").c_str(),Options->noisy);
     }
-    BAS<<"ID,Qref[m3/s],reach_length[m],area[km2],drainage_area[km2],t_conc[d],t_peak[d],gamma_sh,gamma_sc[1/d],celerity[m/s],diffusivity[m2/s],N,UH[0],UH[1],UH[2],..."<<endl;
+    BAS<<"ID,Qref[m3/s],reach_length[m],area[km2],drainage_area[km2],t_conc[d],t_peak[d],gamma_sh,gamma_sc[1/d],celerity[m/s],diffusivity[m2/s],has observed flow,N,UH[0],UH[1],UH[2],..."<<endl;
     for(int pp=0;pp<_nSubBasins;pp++) {
+      has_obs=false;
       BAS<<_pSubBasins[pp]->GetID()<<",  "<<_pSubBasins[pp]->GetReferenceFlow();
       BAS<<","<<_pSubBasins[pp]->GetReachLength();
       BAS<<","<<_pSubBasins[pp]->GetBasinArea();
@@ -1405,6 +1407,13 @@ void CModel::WriteMajorOutput(const time_struct &tt, string solfile, bool final)
       BAS<<","<<_pSubBasins[pp]->GetBasinProperties("GAMMA_SCALE");
       BAS<<","<<_pSubBasins[pp]->GetBasinProperties("CELERITY");
       BAS<<","<<_pSubBasins[pp]->GetBasinProperties("DIFFUSIVITY");
+      //Has flow observations 
+      for (i = 0; i < _nObservedTS; i++){
+        if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[pp]->GetID())) {has_obs=true;}
+      }
+      if (has_obs){BAS<<", TRUE";}
+      else        {BAS<<",FALSE";}
+      
       BAS<<","<<_pSubBasins[pp]->GetLatHistorySize();
       for (int i = 0; i < _pSubBasins[pp]->GetLatHistorySize(); i++) {
         BAS<<","<<_pSubBasins[pp]->GetUnitHydrograph()[i];

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "DemandOptimization.h"
 
@@ -78,7 +78,6 @@ managementGoal::managementGoal()
   use_stage_units=false;
   units_correction=1.0;
   reservoir_index=DOESNT_EXIST;
-  overrides_SDcurve=false;
 }
 managementGoal::~managementGoal()
 {
@@ -92,14 +91,14 @@ void managementGoal::AddOperatingRegime(op_regime* pOR, bool first)
   }
   else{
     if(!DynArrayAppend((void**&)(pOperRegimes),(void*)(pOR),nOperRegimes)) {
-      ExitGracefully("management_constraint::AddOperatingRegime: adding NULL operating regime",BAD_DATA_WARN);
+      ExitGracefully("managementGoal::AddOperatingRegime: adding NULL operating regime",BAD_DATA_WARN);
     }
   }
 }
 void managementGoal::AddOpCondition(exp_condition* pCond)
 {
   if(!DynArrayAppend((void**&)(pOperRegimes[nOperRegimes-1]->pConditions),(void*)(pCond),pOperRegimes[nOperRegimes-1]->nConditions)) {
-    ExitGracefully("management_constraint::AddOpCondition: adding NULL condition",BAD_DATA_WARN);
+    ExitGracefully("managementGoal::AddOpCondition: adding NULL condition",BAD_DATA_WARN);
   }
 }
 void managementGoal::AddExpression(expressionStruct* pExp)
@@ -108,6 +107,49 @@ void managementGoal::AddExpression(expressionStruct* pExp)
   ExitGracefullyIf(pExp==NULL,"managementGoal::AddExpression: NULL Expression",RUNTIME_ERR);
 }
 
+//////////////////////////////////////////////////////////////////
+/// constructor, destructor, and member functions of workflowVar structure
+//
+workflowVar::workflowVar()
+{
+  name="";
+  current_val=0.0;
+
+  nOperRegimes=1;
+  pOperRegimes=new op_regime* [1];
+  pOperRegimes[0] = new op_regime("[DEFAULT]");
+
+  //active_regime=DOESNT_EXIST;
+  //ever_satisfied=false;
+  //conditions_satisfied=false;
+}
+workflowVar::~workflowVar()
+{
+  delete [] pOperRegimes; nOperRegimes=0;
+}
+
+void workflowVar::AddOperatingRegime(op_regime* pOR, bool first)
+{
+  if ((nOperRegimes==1) && (first)){
+    pOperRegimes[0]->reg_name=pOR->reg_name;
+  }
+  else{
+    if(!DynArrayAppend((void**&)(pOperRegimes),(void*)(pOR),nOperRegimes)) {
+      ExitGracefully("workflowVar::AddOperatingRegime: adding NULL operating regime",BAD_DATA_WARN);
+    }
+  }
+}
+void workflowVar::AddOpCondition(exp_condition* pCond)
+{
+  if(!DynArrayAppend((void**&)(pOperRegimes[nOperRegimes-1]->pConditions),(void*)(pCond),pOperRegimes[nOperRegimes-1]->nConditions)) {
+    ExitGracefully("workflowVar::AddOpCondition: adding NULL condition",BAD_DATA_WARN);
+  }
+}
+void workflowVar::AddExpression(expressionStruct* pExp)
+{
+  pOperRegimes[nOperRegimes-1]->pExpression=pExp;
+  ExitGracefullyIf(pExp==NULL,"workflowVar::AddExpression: NULL Expression",RUNTIME_ERR);
+}
 //////////////////////////////////////////////////////////////////
 /// \brief retrieves value of named constant from list of user constants
 /// \params s [in] - string
@@ -139,16 +181,16 @@ double CDemandOptimizer::GetUnitConversion(const string s) const
   return RAV_BLANK_DATA;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief retrieves value of control variable from list of control variables
+/// \brief retrieves value of workflow variable from list of workflow variables
 /// \params s [in] - string
-/// \param index [out] - index of found control variable, or DOESNT_EXIST if not found
-/// \returns value of control var, or BLANK if not found
+/// \param index [out] - index of found workflow variable, or DOESNT_EXIST if not found
+/// \returns value of workflow var, or BLANK if not found
 //
-double CDemandOptimizer::GetControlVariable(const string s, int &index) const
+double CDemandOptimizer::GetWorkflowVariable(const string s, int &index) const
 {
   index=DOESNT_EXIST;
-  for (int i = 0; i < _nControlVars; i++) {
-    if (s==_pControlVars[i]->name){index=i; return _pControlVars[i]->current_val; }
+  for (int i = 0; i < _nWorkflowVars; i++) {
+    if (s==_pWorkflowVars[i]->name){index=i; return _pWorkflowVars[i]->current_val; }
   }
   return RAV_BLANK_DATA;
 }
@@ -221,7 +263,7 @@ string TermTypeToString(termtype t)
   if (t==TERM_HRU     ){return "TERM_HRU";}
   if (t==TERM_SB      ){return "TERM_SB"; }
   if (t==TERM_CONST   ){return "TERM_CONST"; }
-  if (t==TERM_CONTROL ){return "TERM_CONTROL"; }
+  if (t==TERM_WORKFLOW){return "TERM_WORKFLOW"; }
   if (t==TERM_HISTORY ){return "TERM_HISTORY"; }
   if (t==TERM_MAX     ){return "TERM_MAX"; }
   if (t==TERM_MIN     ){return "TERM_MIN"; }
@@ -255,7 +297,7 @@ string expTypeToString(termtype &typ){
     case(TERM_TS):      return "TERM_TS"; break;
     case(TERM_LT):      return "TERM_LT"; break;
     case(TERM_CONST):   return "TERM_CONST"; break;
-    case(TERM_CONTROL): return "TERM_CONTROL"; break;
+    case(TERM_WORKFLOW):return "TERM_WORKFLOW"; break;
     case(TERM_HISTORY): return "TERM_HISTORY"; break;
     case(TERM_MAX):     return "TERM_MAX"; break;
     case(TERM_MIN):     return "TERM_MIN"; break;
@@ -705,11 +747,11 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     term->value=GetNamedConstant(s);
   }
   //----------------------------------------------------------------------
-  else if (GetControlVariable(s,index) != RAV_BLANK_DATA) // control variable
+  else if (GetWorkflowVariable(s,index) != RAV_BLANK_DATA) // workflow variable
   {
-
-    term->type=TERM_CONTROL;
-    term->value=GetControlVariable(s,index);// initially zero
+    
+    term->type=TERM_WORKFLOW;
+    term->value=GetWorkflowVariable(s,index);// initially zero
     term->DV_ind=index;
   }
   //----------------------------------------------------------------------
@@ -894,8 +936,105 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
 
   return tmp;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Parses :Condition within management goal or workflow variable definition 
+/// \param s        [in] - array of strings of [size: Len]
+/// \param Len      [in] - length of string array
+/// \param lineno   [in] - line number of original expression in input file filename, referenced in errors
+/// \param filename [in] - name of input file, referenced in errors
+/// \returns exp_condition: a pointer to an expression condition variable
+/// 
+/// \todo[funct]: Would it be better to support @date(), @between, @day_of_year() in general expression??
+/// :Condition !Q32[0] < 300 + @ts(myTs,0)
+/// :Condition DATE IS_BETWEEN 1975-01-02 and 2010-01-02
+/// :Condition DATE > @date(1975-01-02) //\todo [NOT YET SUPPORTED]
+/// :Condition DATE < @date(2010-01-02) //\todo [NOT YET SUPPORTED]
+/// :Condition MONTH = 2
+/// :Condition DAY_OF_YEAR IS_BETWEEN 173 and 210
+/// :Condition DAY_OF_YEAR > 174
+/// :Condition DAY_OF_YEAR < 210
+/// :Condition DAY_OF_YEAR IS_BETWEEN 300 20 //wraps around
+/// :Condition DAY_OF_YEAR IS_BETWEEN Apr-1 Aug-1 //\todo [NOT YET SUPPORTED]
+/// :Condition @is_between(DAY_OF_YEAR,300,20) = 1  // \todo [NOT YET SUPPORTED]
+//
+exp_condition* CDemandOptimizer::ParseCondition(const char** s, const int Len, const int lineno, const string filename) const 
+{
+  bool badcond=false;
+  exp_condition *pCond = new exp_condition();
+  pCond->dv_name=s[1];
+  const optStruct *Options=_pModel->GetOptStruct();
+  
+  bool is_exp=false;
+  for (int i = 2; i < Len; i++) {
+    if ((s[i][0]=='+') || (s[i][0]=='-') || (s[i][0]=='*') || (s[i][0]=='/') || (s[i][0]=='=') || (s[i][0]=='<') || (s[i][0]=='>')){
+      is_exp=true;
+    }
+  }
+  if (is_exp) {
+    pCond->pExp=this->ParseExpression((const char**)(s),Len,lineno,filename);
+    return pCond;
+  }
+  else
+  {
+    if      (!strcmp(s[2],"IS_BETWEEN"     )){pCond->compare=COMPARE_BETWEEN;}
+    else if (!strcmp(s[2],"IS_GREATER_THAN")){pCond->compare=COMPARE_GREATERTHAN;}
+    else if (!strcmp(s[2],"IS_LESS_THAN"   )){pCond->compare=COMPARE_LESSTHAN;}
+    else if (!strcmp(s[2],"IS_EQUAL_TO"    )){pCond->compare=COMPARE_IS_EQUAL;}
+    else if (!strcmp(s[2],"IS_NOT_EQUAL_TO")){pCond->compare=COMPARE_NOT_EQUAL;}
+    else {
+      ExitGracefully("CDemandOptimizer::ParseCondition: unrecognized comparison operator in :Condition statement",BAD_DATA_WARN);
+      return NULL;
+    }
+    pCond->value=s_to_d(s[3]);
+    if (Len>=5){
+      pCond->value2 = s_to_d(s[4]);
+    }
+    if      (!strcmp(s[1],"DATE"     )){
+      pCond->date_string=s[3];
+      if (Len>=5){
+        pCond->date_string2 = s[4];
+      }
+    }
 
-
+    if (pCond->dv_name[0] == '!') { //decision variable
+      char   tmp =pCond->dv_name[1];
+      string tmp2=pCond->dv_name.substr(2);
+      char code=pCond->dv_name[1];
+      if ((code=='Q') || (code=='h') || (code=='I')) //subbasin state decision variable 
+      {
+        long SBID=s_to_l(tmp2.c_str());
+        if (_pModel->GetSubBasinByID(SBID) == NULL) {
+          ExitGracefully("ParseManagementFile: Subbasin ID in :Condition statement is invalid.",BAD_DATA_WARN);
+        }
+        else if (!_pModel->GetSubBasinByID(SBID)->IsEnabled()) {
+          WriteWarning("ParseManagementFile: Subbasin in :Condition statement is disabled in this model configuration. Conditional will be assumed true.",Options->noisy);
+          badcond=true;
+        }
+        else if ((code == 'h') || (code == 'I')) {
+          if (_pModel->GetSubBasinByID(SBID)->GetReservoir() == NULL) {
+            ExitGracefully("ParseManagementFile: !h or !I used in :Condition statement for subbasin without lake or reservoir",BAD_DATA_WARN);
+            badcond=true;
+          }
+        }
+      }
+      else { //demand variable
+        int d=this->GetDemandIndexFromName(tmp2);
+        if (d == DOESNT_EXIST) {
+          WriteWarning("ParseManagementFile: !D or !C used in :Condition statement has invalid or disabled demand ID. Conditional will be assumed true.",Options->noisy);
+          badcond=true;
+        }
+      }
+    }
+    if (!badcond)
+    {
+      pCond->p_index=this->GetIndexFromDVString(pCond->dv_name);
+      return pCond;
+    }
+    else {
+      return NULL;
+    }
+  }
+}
 //////////////////////////////////////////////////////////////////
 /// \brief writes out explicit details about expressionStructure contents
 /// called in ParseManagementFile under Noisy mode
@@ -919,15 +1058,14 @@ void SummarizeExpression(const char **s, const int Len, expressionStruct* exp)
 /// \brief checks if conditions of operating regime k or goal ii are satisfied
 /// returns true if *all* conditions of operating regime k of goal ii are satisfied
 ///
-bool CDemandOptimizer::CheckGoalConditions(const int ii, const int k, const time_struct &tt, const optStruct &Options) const
+bool CDemandOptimizer::CheckOpRegimeConditions(const op_regime *pOperRegime, const time_struct &tt, const optStruct &Options) const
 {
   double dv_value;
-  managementGoal *pC=_pGoals[ii];
 
   //Check if conditionals are satisfied
-  for (int j = 0; j < pC->pOperRegimes[k]->nConditions; j++)
+  for (int j = 0; j < pOperRegime->nConditions; j++)
   {
-    exp_condition *pCond=pC->pOperRegimes[k]->pConditions[j];
+    exp_condition *pCond=pOperRegime->pConditions[j];
     if (pCond->pExp != NULL) {
       if(!EvaluateConditionExp(pCond->pExp,tt.model_time))
       {
@@ -982,24 +1120,26 @@ bool CDemandOptimizer::CheckGoalConditions(const int ii, const int k, const time
         }
         //todo: support !q, !B, !E, !F, !T
       }
-      else {//handle user specified DVs and control variables
+      else {//handle user specified DVs and workflow variables
         int i=GetUserDVIndex(pCond->dv_name);
-        if (i == DOESNT_EXIST) {
+        if (i != DOESNT_EXIST) //decision variable 
+        {
+          dv_value =_pDecisionVars[i]->value;
+        }
+        else //workflow variable
+        {
           bool found=false;
-          for (int j = 0; j < _nControlVars; j++) {
-            if (_pControlVars[j]->name == pCond->dv_name) {
-              dv_value =_pControlVars[i]->current_val;
+          for (int j = 0; j < _nWorkflowVars; j++) {
+            if (_pWorkflowVars[j]->name == pCond->dv_name) {
+              dv_value =_pWorkflowVars[i]->current_val;
               found=true;
             }
           }
 
           if (!found){
-            ExitGracefully("CheckGoalConditions: Unrecognized varible on left hand side of :Condition statement ",BAD_DATA_WARN);
+            ExitGracefully("CheckOpRegimeConditions: Unrecognized varible on left hand side of :Condition statement ",BAD_DATA_WARN);
             return false;
           }
-        }
-        else {
-          dv_value =_pDecisionVars[i]->value;
         }
       }
 
@@ -1054,7 +1194,7 @@ bool CDemandOptimizer::CheckGoalConditions(const int ii, const int k, const time
 //////////////////////////////////////////////////////////////////
 /// adds constraint ii to LP solve problem statement
 /// \params ii [in] - index of constraint in _pGoals array
-/// \param k - index of operating regime in _pGoals[ii]
+/// \param kk - index of operating regime in _pGoals[ii]
 /// \param pLinProg [out] - pointer to valid lpsolve structure to be modified
 /// \param tt [in] - time structure
 /// \param *col_ind [in] - empty array (with memory reserved) for storing column indices
@@ -1281,10 +1421,10 @@ double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const
   {
     return pT->value;
   }
-  else if (pT->type == TERM_CONTROL)
+  else if (pT->type == TERM_WORKFLOW)
   {
     int i=pT->DV_ind;
-    return _pControlVars[i]->current_val;
+    return _pWorkflowVars[i]->current_val;
   }
   else if (pT->type == TERM_CUMUL)  //!C123
   {

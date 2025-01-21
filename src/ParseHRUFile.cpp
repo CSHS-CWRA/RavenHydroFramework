@@ -45,8 +45,10 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
   string            aParamStrings[MAXINPUTITEMS];
   int               nParamStrings=0;
 
-  ifstream INPUT2;           //For Secondary input
-  CParser *pMainParser=NULL; //for storage of main parser while reading secondary files
+  ifstream INPUT2;                //For Secondary input
+  CParser* pMainParser=NULL;      //for storage of main parser while reading secondary files
+  ifstream INPUT3;                //For tertiary input 
+  CParser *pSecondaryParser=NULL; //for storage of secondary parser while reading tertiary files 
 
   if (Options.noisy){
     cout <<"======================================================"<<endl;
@@ -115,18 +117,29 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
 
       filename=CorrectForRelativePath(filename,Options.rvt_filename);
 
-      INPUT2.open(filename.c_str());
-      if (INPUT2.fail()){
-        string warn=":RedirectToFile: Cannot find file "+filename;
-        ExitGracefully(warn.c_str(),BAD_DATA);
+      if (pSecondaryParser != NULL){
+        ExitGracefully("ParseEnsembleFile::nested :RedirectToFile commands are not allowed to be nested more than two levels (e.g., rvm file to rvm file to rvm file to rvm file)",BAD_DATA);
       }
-      else{
-        if (pMainParser != NULL) {
-          ExitGracefully("ParseHRUPropsFile::nested :RedirectToFile commands (in already redirected files) are not allowed.",BAD_DATA);
+      if (pMainParser == NULL) { //from base .rvh file 
+        INPUT2.open(filename.c_str()); 
+        if(INPUT2.fail()) {
+          string warn;
+          warn=":RedirectToFile (from .rvh): Cannot find file "+filename;
+          ExitGracefully(warn.c_str(),BAD_DATA);
         }
-        pMainParser=pp;   //save pointer to primary parser
+        pMainParser=pp;     
         pp=new CParser(INPUT2,filename,line);//open new parser
-      }
+      } 
+      else { //from already redirected .rvh file 
+        INPUT3.open(filename.c_str()); 
+        if(INPUT3.fail()) {
+          string warn;
+          warn=":RedirectToFile (from .rvh): Cannot find file "+filename;
+          ExitGracefully(warn.c_str(),BAD_DATA);
+        }
+        pSecondaryParser=pp;
+        pp=new CParser(INPUT3,filename,line);//open new parser
+      } 
       break;
     }
     case(-4):  //----------------------------------------------
@@ -808,23 +821,23 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
         }
         else if (!strcmp(s[4], "WITHIN"))
         {
-            CSubbasinGroup* pSBGroup2 = NULL;
-            pSBGroup2 = pModel->GetSubBasinGroup(s[5]);
-            if (pSBGroup2 == NULL) {
-                ExitGracefully(":PopulateSubBasinGroup: invalid SB group reference used in command", BAD_DATA_WARN);
+          CSubbasinGroup* pSBGroup2 = NULL;
+          pSBGroup2 = pModel->GetSubBasinGroup(s[5]);
+          if (pSBGroup2 == NULL) {
+            ExitGracefully(":PopulateSubBasinGroup: invalid SB group reference used in command", BAD_DATA_WARN);
+          }
+          else {
+            int iter=0;
+            for (int p = 0; p < pModel->GetNumSubBasins(); p++)
+            {
+              if (pSBGroup2->IsInGroup(pModel->GetSubBasin(p)->GetID())) {
+                pSBGroup->AddSubbasin(pModel->GetSubBasin(p));
+                advice=advice+to_string(pModel->GetSubBasin(p)->GetID())+" ";
+                iter++;
+                if(iter%40==0) { advice=advice+"\n     "; }
+              }
             }
-            else {
-                int iter=0;
-                for (int p = 0; p < pModel->GetNumSubBasins(); p++)
-                {
-                    if (pSBGroup2->IsInGroup(pModel->GetSubBasin(p)->GetID())) {
-                        pSBGroup->AddSubbasin(pModel->GetSubBasin(p));
-                        advice=advice+to_string(pModel->GetSubBasin(p)->GetID())+" ";
-                        iter++;
-                        if(iter%40==0) { advice=advice+"\n     "; }
-                    }
-                }
-            }
+          }
         }
         else if(!strcmp(s[4],"UPSTREAM_OF")) /*inclusive of basin*/
         {
@@ -1039,35 +1052,37 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     }
     case(20):  //----------------------------------------------
     { /*
-        :GaugedSubBasinGroup {SubBasinGroup}
-        e.g.,
-        :GaugedSubBasinGroup KeyGauges
+      :GaugedSubBasinGroup {SubBasinGroup}
+      e.g.,
+      :GaugedSubBasinGroup KeyGauges
       */
-        if (Options.noisy) { cout << "   GaugedSubBasinGroup..." << endl; }
+      if (Options.noisy) { cout << "   GaugedSubBasinGroup..." << endl; }
 
-        if (Len != 2) {
-            ExitGracefully(":GaugedSubBasinGroup: invalid syntax used in attempting to provide a gauged subbasin group", BAD_DATA_WARN);
-        }
-
-        CSubbasinGroup* pSBGroup = NULL;
-        pSBGroup = pModel->GetSubBasinGroup(s[1]);
-        if (pSBGroup == NULL) {
-            ExitGracefully(":GaugedSubBasinGroup: invalid SB group reference used in attempting to provide a gauged subbasin group", BAD_DATA_WARN);
-        }
-
-        for (int p = 0; p < pModel->GetNumSubBasins(); p++)
-        {
-            if (pSBGroup->IsInGroup(pModel->GetSubBasin(p)->GetID())) {
-                pModel->GetSubBasin(p)->SetGauged(true);
-            }
-            else {
-                pModel->GetSubBasin(p)->SetGauged(false);
-            }
-        }
-
-        string advice = "Number of gauged subbasins to to " + to_string(pSBGroup->GetNumSubbasins());
-        WriteAdvisory(advice, Options.noisy);
+      if (Len != 2) {
+        ExitGracefully(":GaugedSubBasinGroup: invalid syntax used in attempting to provide a gauged subbasin group", BAD_DATA_WARN);
         break;
+      }
+
+      CSubbasinGroup* pSBGroup = NULL;
+      pSBGroup = pModel->GetSubBasinGroup(s[1]);
+      if (pSBGroup == NULL) {
+        ExitGracefully(":GaugedSubBasinGroup: invalid SB group reference used in attempting to provide a gauged subbasin group", BAD_DATA_WARN);
+        break;
+      }
+
+      for (int p = 0; p < pModel->GetNumSubBasins(); p++)
+      {
+        if (pSBGroup->IsInGroup(pModel->GetSubBasin(p)->GetID())) {
+          pModel->GetSubBasin(p)->SetGauged(true);
+        }
+        else {
+          pModel->GetSubBasin(p)->SetGauged(false);
+        }
+      }
+
+      string advice = "Number of gauged subbasins to to " + to_string(pSBGroup->GetNumSubbasins());
+      WriteAdvisory(advice, Options.noisy);
+      break;
     }
     default://------------------------------------------------
     {
@@ -1101,8 +1116,16 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
 
     end_of_file=pp->Tokenize(s,Len);
 
-    //return after file redirect, if in secondary file
-    if ((end_of_file) && (pMainParser!=NULL))
+    if ((end_of_file) && (pSecondaryParser != NULL))//return after file redirect, if in tertiary file
+    {
+      INPUT3.clear();
+      INPUT3.close();
+      delete pp;
+      pp=pSecondaryParser;
+      pSecondaryParser=NULL;
+      end_of_file=pp->Tokenize(s,Len);
+    }
+    else if ((end_of_file) && (pMainParser!=NULL))//return after file redirect, if in secondary file
     {
       INPUT2.clear();
       INPUT2.close();
