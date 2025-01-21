@@ -397,7 +397,7 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
     }
 
     for(j=0;j<_nObsDatapoints;j++) {
-       _output_matrix[e][j]=0; //filled during simulation
+       _output_matrix[e][j]=0; //filled during simulation in CloseTimeStepOps
     }
   }
 
@@ -439,7 +439,7 @@ void CEnKFEnsemble::CloseTimeStepOps(CModel* pModel,optStruct& Options,const tim
     AddToStateMatrix(pModel,Options,e);
   }
 
- //Build output Matrix
+  //Build output Matrix
   //----------------------------------------------------------
   int curr_nn=(int)((tt.model_time+TIME_CORRECTION)/Options.timestep);//current timestep index
 
@@ -461,6 +461,9 @@ void CEnKFEnsemble::CloseTimeStepOps(CModel* pModel,optStruct& Options,const tim
         j++;
       }
     }
+  }
+  if (j!=_nObsDatapoints){
+    ExitGracefully("Indexing issue in EnKF::CloseTimeStepOps: This shouldnt happen.",RUNTIME_ERR);
   }
 }
 //////////////////////////////////////////////////////////////////

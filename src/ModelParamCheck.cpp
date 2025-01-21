@@ -407,7 +407,7 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   {
     // timeseries at gauge
   }
-  else if(Options.rainsnow==RAINSNOW_DINGMAN)
+  else if((Options.rainsnow==RAINSNOW_DINGMAN) || (Options.rainsnow == RAINSNOW_HSPF))
   {
     aP[nP]="RAINSNOW_TEMP"; aPC[nP]=CLASS_GLOBAL; nP++;
   }

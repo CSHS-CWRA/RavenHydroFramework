@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------
   DemandOptimization.h
   ----------------------------------------------------------------*/
@@ -71,7 +71,7 @@ struct decision_var
     name=nam;
     p_index=p;
     loc_index=loc_ind;
-    value=0.0;min=0.0;max=ALMOST_INF;dvar_type=typ;dem_index=DOESNT_EXIST;
+    value=0.0;min=-ALMOST_INF;max=ALMOST_INF;dvar_type=typ;dem_index=DOESNT_EXIST;
   }
 };
 //////////////////////////////////////////////////////////////////
@@ -139,8 +139,6 @@ struct managementGoal
   op_regime       **pOperRegimes;  //< array of pointers to operating regimes, which are chosen from conditionals and determine active expression [size:nOperRegimes]
   int               nOperRegimes;  //< size of operating regime array
 
-  bool              overrides_SDcurve;    //< true if management goal should override local stage-discharge cuve in reservoir with reservoir_index
-
   int               active_regime;        //< currently active operating regime (or DOESNT_EXIST if none)
   bool              conditions_satisfied; //< true if any operating regime satisfied during current timestep
   bool              ever_satisfied;       //< true if any operating regime ever satisfied during simulation (for warning at end of sim)
@@ -158,14 +156,24 @@ struct managementGoal
 };
 
 //////////////////////////////////////////////////////////////////
-// control variable definition
+// workflow variable definition
 //
-struct control_var
+struct workflowVar
 {
-  string            name;          //< control variable name
-  expressionStruct *pExpression;   //< expression defining control variable
+  string            name;          //< workflow variable name
+  //expressionStruct *pExpression;   //< expression defining workflow variable
 
-  double            current_val;   //< current value of control variable (evaluated at start of time step)
+  double            current_val;   //< current value of workflow variable (evaluated at start of time step)
+
+  op_regime       **pOperRegimes;  //< array of pointers to operating regimes, which are chosen from conditionals and determine active expression [size:nOperRegimes]
+  int               nOperRegimes;  //< size of operating regime array
+
+  workflowVar();
+  ~workflowVar();
+  expressionStruct *GetCurrentExpression() const{return pOperRegimes[nOperRegimes-1]->pExpression; }
+  void AddOperatingRegime(op_regime *pOR, bool first);
+  void AddOpCondition(exp_condition *pCondition); //adds to most recent operating regime
+  void AddExpression (expressionStruct *pExp);   //adds to most recent operating regime
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -180,14 +188,16 @@ private: /*------------------------------------------------------*/
   int              _nDecisionVars;      //< total number of decision variables considered
   decision_var   **_pDecisionVars;      //< array of pointers to decision variable structures [size:_nDecisionVars]
 
-  int              _nControlVars;       //< total number of control variables considered
-  control_var    **_pControlVars;       //< array of pointers to control variables [size: _nControlVars]
+  int              _nWorkflowVars;      //< total number of workflow variables considered
+  workflowVar    **_pWorkflowVars;      //< array of pointers to workflow variables [size: _nWorkflowVars]
 
   int              _nGoals;             //< number of user-defined enforced constraints/goals in management model
-  managementGoal  **_pGoals;            //< array of pointers to user-defined enforced constraints/goals in management model
+  managementGoal **_pGoals;             //< array of pointers to user-defined enforced constraints/goals in management model
 
   int              _nEnabledSubBasins;  //< number of enabled subbasins in model
   int             *_aSBIndices;         //< local index of enabled subbasins (0:_nEnabledSubBasins) [size: _nSubBasins]
+
+  bool            *_aDisableSDCurve;    //< array of booleans to determine whether reservoir stage-discharge curve is overridden [size: _nSubBasins]
 
   int              _nReservoirs;        //< local storage of number of enabled lakes/reservoirs
   int             *_aResIndices;        //< storage of enabled reservoir indices (0:_nReservoirs or DOESNT_EXIST) [size:_nSubBasins]
@@ -237,20 +247,17 @@ private: /*------------------------------------------------------*/
 
   bool            _demands_initialized;//< true if demands have been initialized
 
-  bool            _stage_discharge_as_goal; //< TMP DEBUG - SET TO TRUE IF SD CURVE IS GOAL INSTEAD OF CONSTRAINT
-
   int             _do_debug_level;      //< =1 if debug info is to be printed to screen, =2 if LP matrix also printed (full debug), 0 for nothing
 
   //Called during simualtion
   void         UpdateHistoryArrays();
-  void      UpdateControlVariables(const time_struct &tt);
+  void     UpdateWorkflowVariables(const time_struct &tt,const optStruct &Options);
   bool     ConvertToExpressionTerm(const string s, expressionTerm* term, const int lineno, const string filename)  const;
   int               GetDVColumnInd(const dv_type typ, const int counter) const;
   double              EvaluateTerm(expressionTerm **pTerms,const int k, const double &t) const;
   bool        EvaluateConditionExp(const expressionStruct* pE,const double &t) const;
 
-  bool         CheckGoalConditions(const int ii, const int k, const time_struct &tt,const optStruct &Options) const;
-
+  bool     CheckOpRegimeConditions(const op_regime *pOperRegime, const time_struct &tt, const optStruct &Options) const;
 
 
 #ifdef _LPSOLVE_
@@ -272,9 +279,9 @@ public: /*------------------------------------------------------*/
 
   int           GetDemandIndexFromName(const string dname) const;
   double        GetNamedConstant      (const string s) const;
+  double        GetUnitConversion     (const string s) const;
   int           GetUserDVIndex        (const string s) const;
-  double        GetControlVariable    (const string s) const;
-  //double      GetDemandDelivery     (const int p) const;
+  double        GetWorkflowVariable   (const string s, int &index) const;
   int           GetNumUserDVs         () const;
   int           GetDebugLevel         () const;
   int           GetIndexFromDVString  (string s) const;
@@ -291,12 +298,13 @@ public: /*------------------------------------------------------*/
   void   SetCumulativeDate     (const int julian_date, const string demandID);
   void   SetDebugLevel         (const int lev);
   void   SetDemandAsUnrestricted(const string dname);
+  void   OverrideSDCurve       (const int p);
 
   void   AddGoalOrConstraint   (const managementGoal *pGoal);
   void   AddDecisionVar        (const decision_var *pDV);
   void   SetDecisionVarBounds  (const string name, const double &min, const double &max);
   void   AddUserConstant       (const string name, const double &val);
-  void   AddControlVariable    (const string name, expressionStruct* pExp);
+  void   AddWorkflowVariable   (const workflowVar *pCV);
   void   AddUserTimeSeries     (const CTimeSeries *pTS);
   void   AddUserLookupTable    (const CLookupTable *pLUT);
 
@@ -311,6 +319,7 @@ public: /*------------------------------------------------------*/
   double     EvaluateExpression(const expressionStruct* pE,const double &t,bool RHS_only) const;
 
   expressionStruct *ParseExpression(const char **s, const int Len, const int lineno, const string filename) const;
+  exp_condition    *ParseCondition (const char **s, const int Len, const int lineno, const string filename) const;
 
   void   Initialize            (CModel *pModel, const optStruct &Options);
   void   InitializePostRVMRead (CModel *pModel, const optStruct &Options);

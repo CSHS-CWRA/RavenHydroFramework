@@ -108,10 +108,12 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
     case(LW_INC_DATA):
     {
       LW_incoming=F->LW_incoming;
+      break;
     }
     case(LW_INC_DEFAULT):
     {
       LW_incoming=0.0; //calculated below with LW_DEFAULT, or not at all for algorithms which can calculate net LW only
+      break;
     }
     //--------------------------------------------------------
     case(LW_INC_SICART):
@@ -139,6 +141,7 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
       L_F = epsilon_s*STEFAN_BOLTZ*pow(Tair,4.0); // eqn 6 of Sicart et al (2005)
 
       LW_incoming = svf*L_0 + (1.0-svf)*L_F;
+      break;
     }
     //--------------------------------------------------------
     case (LW_INC_SKYVIEW):
@@ -162,6 +165,7 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
 
       LW_incoming =  epsilon_s   * (1 - svf) * STEFAN_BOLTZ * pow(Tair,4);
       LW_incoming += epsilon_air * (    svf) * STEFAN_BOLTZ * pow(Tair,4);
+      break;
     }
     //--------------------------------------------------------
     case (LW_INC_DINGMAN):
@@ -186,6 +190,7 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
       eps_at=(1-forest_cover)*eps_at+(forest_cover)*1.0; //treats forest as blackbody - neglects sky view factor
 
       LW_incoming=STEFAN_BOLTZ*eps_at*pow(Tair,4);
+      break;
     }
   }
 

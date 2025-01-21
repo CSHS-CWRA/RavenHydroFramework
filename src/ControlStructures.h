@@ -78,7 +78,7 @@ public:/*-------------------------------------------------------*/
   void   AddRegimeConstraint(RegimeConstraint *pCond);
 
   bool      AreConditionsMet(const time_struct &tt) const;
-  double          GetOutflow(const double &h, const double &Qstart, const double &hstart, const long &target_SBID, const double &drefelev) const;
+  double          GetOutflow(const double &h, const double &hstart, const double &Qstart, const long &target_SBID, const double &drefelev) const;
 };
 
 

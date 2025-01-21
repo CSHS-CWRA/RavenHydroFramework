@@ -325,7 +325,7 @@ void CModel::Initialize(const optStruct &Options)
     {
       long SBID=_pObservedTS[i]->GetLocID();
       if(GetSubBasinByID(SBID)->GetReservoir()==NULL){
-        string warn="Lake area bservations supplied for non-existent reservoir in subbasin "+to_string(SBID);
+        string warn="Lake area observations supplied for non-existent reservoir in subbasin "+to_string(SBID);
         ExitGracefully(warn.c_str(),BAD_DATA_WARN);
       }
     }
@@ -348,7 +348,7 @@ void CModel::Initialize(const optStruct &Options)
 		  long SBID = _pObservedTS[i]->GetLocID();
 		  if (GetSubBasinByID(SBID)->GetReservoir() == NULL) {
 			  string warn = "Net inflow Observations supplied for non-existent reservoir in subbasin " + to_string(SBID);
-			  ExitGracefully(warn.c_str(), BAD_DATA);
+			  ExitGracefully(warn.c_str(), BAD_DATA_WARN);
 		  }
 	  }
   }

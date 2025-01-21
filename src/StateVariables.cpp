@@ -17,6 +17,7 @@
 CStateVariable::CStateVariable()
 {
   this->Initialize();
+  _pTransportModel=NULL;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -24,9 +25,9 @@ CStateVariable::CStateVariable()
 //
 void CStateVariable::Initialize()
 {
-  this->_nAliases = 0;
-  this->_aAliases = NULL;
-  this->_aAliasReferences = NULL;
+  _nAliases = 0;
+  _aAliases = NULL;
+  _aAliasReferences = NULL;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -34,17 +35,14 @@ void CStateVariable::Initialize()
 //
 CStateVariable::~CStateVariable()
 {
-  this->Destroy();
+  delete [] _aAliases;
+  delete [] _aAliasReferences;
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Delete references to static alias arrays
 //
-void CStateVariable::Destroy()
-{
-  delete [] _aAliases;
-  delete [] _aAliasReferences;
-}
+void CStateVariable::Destroy(){}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Dynamically adds additional string, s, onto dynamic array of strings, pArr. Increments size of array by one
@@ -140,6 +138,7 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
   case(SNOW):               {name="Snow";                       break;}
   case(NEW_SNOW):           {name="New Snow";                   break;}
   case(SNOW_LIQ):           {name="Snow Melt (Liquid)";         break;}
+  case(TOTAL_SWE):          {name="Total SWE";                  break;}
   case(WETLAND):            {name="Wetlands";                   break;}
   case(CUM_INFIL):          {name="Cumulative infiltration";    break;}
   case(GA_MOISTURE_INIT):   {name="Green Ampt initial soil Water"; break;}
@@ -250,6 +249,7 @@ string CStateVariable::GetStateVarUnits(const sv_type typ)
   case(SNOW):             {units="mm"; break;}
   case(NEW_SNOW):         {units="mm"; break;}
   case(SNOW_LIQ):         {units="mm"; break;}
+  case(TOTAL_SWE):        {units="mm"; break;}
   case(WETLAND):          {units="mm"; break;}
   case(CUM_INFIL):        {units="mm"; break;}
   case(GA_MOISTURE_INIT): {units="mm"; break;}
@@ -350,6 +350,7 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
   else if (!tmp.compare("NEW_SNOW"        )){typ=NEW_SNOW;}
   else if (!tmp.compare("SNOWLIQ"         )){typ=SNOW_LIQ;}
   else if (!tmp.compare("SNOW_LIQ"        )){typ=SNOW_LIQ;}
+  else if (!tmp.compare("TOTAL_SWE"       )){typ=TOTAL_SWE;}
   else if (!tmp.compare("SNOW_DEPTH"      )){typ=SNOW_DEPTH;}
   else if (!tmp.compare("SNOW_TEMP"       )){typ=SNOW_TEMP;}
   else if (!tmp.compare("COLD_CONTENT"    )){typ=COLD_CONTENT;}
@@ -398,7 +399,7 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
 
   if ((typ==CONSTITUENT) && ((int)(tmp.find_first_of("|"))!=-1)) //only used if e.g., !Nitrogen|SOIL[1] (rather than CONSTITUENT[32] or !Nitrogen[32]) is used
   {
-    layer_index = this->_pTransportModel->GetLayerIndexFromName2(tmp, layer_index);
+    layer_index = _pTransportModel->GetLayerIndexFromName2(tmp, layer_index);
     if (layer_index==DOESNT_EXIST){typ=UNRECOGNIZED_SVTYPE;}
   }
 
@@ -435,6 +436,7 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
     case(SNOW):               {name="SNOW";                     break;}
     case(NEW_SNOW):           {name="NEW_SNOW";                 break;}
     case(SNOW_LIQ):           {name="SNOW_LIQ";                 break;}
+    case(TOTAL_SWE):          {name="TOTAL_SWE";                break;}
     case(WETLAND):            {name="WETLAND";                  break;}
     case(CUM_INFIL):          {name="CUM_INFIL";                break;}
     case(GA_MOISTURE_INIT):   {name="GA_MOISTURE_INIT";         break;}
@@ -570,8 +572,9 @@ string CStateVariable::SVStringBreak(const string s, int &num)
 //////////////////////////////////////////////////////////////////
 /// \brief Returns true if the state variable is a water storage unit
 /// \param typ [in] State variable identifier
+/// \param conv_coverup [in] [default=true] - reports CONVOLUTION as water storage, but NOT CONV_STOR (for simplified reporting) - false for transport calcs
 /// \return Boolean indicating if the passed state variable is a water storage unit
-bool  CStateVariable::IsWaterStorage (sv_type      typ)
+bool  CStateVariable::IsWaterStorage (sv_type      typ, bool conv_coverup)
 {
   switch(typ)
   {
@@ -590,13 +593,13 @@ bool  CStateVariable::IsWaterStorage (sv_type      typ)
   case(WETLAND):         {return true;}
   case(GLACIER):         {return true;}
   case(GLACIER_ICE):     {return true;}
-  case(CONVOLUTION):     {return true;}
+  case(CONVOLUTION):     {return conv_coverup;}
+  case(CONV_STOR):       {return !conv_coverup;}
   case(NEW_SNOW):        {return true;}
   case(LATERAL_EXCHANGE):{return true;}
   case(SNOW_DRIFT):      {return true;}
   case(LAKE_STORAGE):    {return true;}
-    //case(CONV_STOR):    {return true;} // \todo [fix hack] strictly speaking, is water storage (and should be treated as such for transport), but duplicated in CONVOLUTION
-    //..
+  //..
   default:
   {
     return false;

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2024 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef STATEVARIABLE_H
 #define STATEVARIABLE_H
@@ -31,22 +31,22 @@ public:/*-------------------------------------------------------*/
 
   static string        SVStringBreak       (const string s, int &num);
 
-  void          Initialize          ();
-  void          Destroy             ();
+  void                 Initialize          ();
+  void                 Destroy             ();
 
-  void          AddAlias            (const string s1, const string s2);
+  void                 AddAlias            (const string s1, const string s2);
 
-  void          SetTransportModel   (CTransportModel *pTransportModel);
+  void                 SetTransportModel   (CTransportModel *pTransportModel);
 
   //static functions
   static string        GetStateVarLongName (sv_type               typ,
                                             const int             layer_index,
                                             const CTransportModel *pTransportModel);
   static string        GetStateVarUnits    (sv_type      typ);                         // can be kept static
-  sv_type       StringToSVType      (const string s, int &layer_index, bool strict);
-  string        SVTypeToString      (const sv_type typ, const int layerindex);
+  sv_type              StringToSVType      (const string  s, int &layer_index, bool strict);
+  string               SVTypeToString      (const sv_type typ, const int layerindex);
 
-  static bool          IsWaterStorage      (sv_type      typ);
+  static bool          IsWaterStorage      (sv_type      typ,bool conv_coverup=true);
   static bool          IsEnergyStorage     (sv_type      typ);
 };
 #endif

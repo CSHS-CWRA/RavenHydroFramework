@@ -20,8 +20,8 @@ void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid
 CTimeSeries::CTimeSeries(string Name, long loc_ID, double one_value)
   :CTimeSeriesABC(TS_REGULAR,Name,loc_ID,"")
 {
-  _start_day=0.0;
-  _start_year=1900;
+  _start_day =0.0;
+  _start_year=0000;
   _nPulses  =2;
   _interval =ALMOST_INF;
   _aVal     =new double [_nPulses];
@@ -278,7 +278,7 @@ void CTimeSeries::Initialize( const double model_start_day,   //julian day
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Resamples time series to regular intervals of 1 timestep (tstep) over model duration
+/// \brief Resamples time series to regular intervals of 1 timestep (tstep) over model duration, starting with timestep 0 from 0..dt
 ///
 /// \param &tstep [in] Model timestep (in days)
 /// \param &model_duration [in] Model simulation duration (in days)
@@ -384,7 +384,7 @@ double CTimeSeries::GetAvgValue(const double &t, const double &tstep) const
   //t_loc+tstep is now between n2*_interval and (n2+1)*_interval
   double inc;
   double blank = 0;
-  if (t_loc < -TIME_CORRECTION) {return RAV_BLANK_DATA; }
+  if (t_loc < -TIME_CORRECTION)   {return RAV_BLANK_DATA; }
   if (t_loc > _nPulses*_interval) {return RAV_BLANK_DATA; }
   if (_pulse){
     if (n1 == n2){ return _aVal[n1]; }
@@ -404,6 +404,7 @@ double CTimeSeries::GetAvgValue(const double &t, const double &tstep) const
     }
   }
   else{
+
     ExitGracefully("CTimeSeries::GetAvgValue (non-pulse)", STUB);
   }
   if (blank / tstep > 0.001){return RAV_BLANK_DATA;}
@@ -465,7 +466,7 @@ void   CTimeSeries::Multiply     (const double &factor)
   }
 }
 ///////////////////////////////////////////////////////////////////
-/// \brief Returns average value of time series during timestep nn of model simulation
+/// \brief Returns average value of time series during timestep nn of model simulation (nn=0..nSteps-1)
 /// \notes must be called after resampling
 ///
 /// \param nn [in] time step number (measured from simulation start)
@@ -713,7 +714,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
       if(!strcmp(s[0],":FileNameNC"    )){ FileNameNC = s[1]; FileNameNC = CorrectForRelativePath(FileNameNC ,Options.rvt_filename); }
       if(!strcmp(s[0],":VarNameNC"     )){ VarNameNC  = s[1]; }
       if(!strcmp(s[0],":PeriodEndingNC")){ shift_from_per_ending=true;}
-      if(!strcmp(s[0],":DimNamesNC")) {
+      if(!strcmp(s[0],":DimNamesNC"    )){
         if(Len == 2) {
           DimNamesNC_stations = "None";
           DimNamesNC_time     = s[1];
@@ -877,12 +878,12 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
   {
     bool step=false;
     if (Len >= 2) {
-      if(!strcmp(s[0],"INTERPOLATE")){step=false;}
-      if(!strcmp(s[0],"STEP"       )){step=true;}
+      if(!strcmp(s[1],"INTERPOLATE")){step=false;}
+      if(!strcmp(s[1],"STEP"       )){step=true;}
     }
 
-    int    *days=new int    [(int)(DAYS_PER_YEAR)+1]; //sized for max # of events
-    double *vals=new double [(int)(DAYS_PER_YEAR)+1];
+    int    *days=new int    [366]; //sized for max # of events
+    double *vals=new double [366];
     int nEvents=0;
 
     p->Tokenize(s,Len);
@@ -895,7 +896,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
         days[nEvents]=GetJulianDayFromMonthYear(date_str,Options.calendar);
         vals[nEvents]=s_to_d(s[1]);
         nEvents++;
-        ExitGracefullyIf(nEvents>(int)(DAYS_PER_YEAR),"CTimeSeries::Parse: exceeded maximum number of items in :AnnualPattern command",BAD_DATA);
+        ExitGracefullyIf(nEvents>365,"CTimeSeries::Parse: exceeded maximum number of items in :AnnualPattern command",BAD_DATA);
       }
       else            { p->ImproperFormat(s); break; }
       bool eof=p->Tokenize(s,Len);
@@ -918,19 +919,19 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
         }
       }
       else { //interpolate with wraparound
-        double lastday=days[nEvents-1]-(int)(DAYS_PER_YEAR);
+        double lastday=days[nEvents-1]-365;
         double nextday=days[0];
         double lastval=vals[nEvents-1];
         double nextval=vals[0];
         for(int i=0;i<nEvents-1;i++) {
           if ((tt.julian_day>=days[i]) && (tt.julian_day<days[i+1])){
             lastval=vals[i];  lastday=days[i];
-            nextval=vals[i+1];nextday=days[i];
+            nextval=vals[i+1];nextday=days[i+1];
           }
         }
-        if (tt.julian_day > days[nEvents - 1]) {
+        if (tt.julian_day >= days[nEvents - 1]) {
           lastval=vals[nEvents - 1];  lastday=days[nEvents - 1];
-          nextval=vals[0];            nextday=days[0]+(int)(DAYS_PER_YEAR);
+          nextval=vals[0];            nextday=days[0]+365;
         }
         if ((nextday-lastday)==0){aVal[n]=lastval; }
         else{

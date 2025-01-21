@@ -730,7 +730,7 @@ void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options)
     _OUTPUT<<", sensible (r) "<<kg<<", conductive (r) " << kg << ", latent (r) "<<kg<<", GW mixing (r) "<<kg<<", radiant (r) "<<kg<<", friction (r)"<<kg<< endl;//TMP DEBUG
   }
 
-  //Pollutograph / stream temperatures file
+  // Pollutograph / stream temperatures file
   //--------------------------------------------------------------------
   if(!_is_passive) {
     if(_type!=ENTHALPY) { filename=_name+"Pollutographs.csv"; }
@@ -1262,14 +1262,14 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
 
   double latent_flux=0;
   double Q_sens(0.0),Q_cond(0.0),Q_lat(0.0),Q_GW(0.0),Q_rad(0.0),Q_fric(0.0);
-  double Qs,Qc,Ql,Qg,Qr,Qlw,Qlw_in,Qf,Tave;
+  double Qs,Qc,Ql,Qg,Qr,Qlw,Qlw_in,Qltrl,Qf,Tave;
   if(_type==ENTHALPY)
   {
     pEnthalpyModel=(CEnthalpyModel*)(this);
     latent_flux =pEnthalpyModel->GetAvgLatentHeatFlux()*(area*M2_PER_KM2)*Options.timestep; // [MJ] (loss term)t)
 
     for(int p=0;p<_pModel->GetNumSubBasins();p++) {
-      pEnthalpyModel->GetEnergyLossesFromReach(p,Qs,Qc,Ql,Qg,Qr,Qlw_in,Qlw,Qf,Tave);
+      pEnthalpyModel->GetEnergyLossesFromReach(p,Qs,Qc,Ql,Qg,Qr,Qlw_in,Qlw,Qltrl,Qf,Tave);
       Q_sens+=Qs;Q_cond+=Qc;Q_lat+=Ql;Q_GW+=Qg;Q_rad+=Qr+Qlw+Qlw_in; Q_fric+=Qf;
     }
   }
@@ -1529,7 +1529,7 @@ void CConstituentModel::WriteNetCDFMinorOutput(const optStruct& Options,const ti
 
   CEnthalpyModel *pEnthalpyModel=NULL; //Necessary evil to reduce code duplication rather than having an entirely separate WriteMinorOutput for Enthalpy
   if (_type==ENTHALPY){
-    CEnthalpyModel *pEnthalpyModel=(CEnthalpyModel*)(this);
+    pEnthalpyModel=(CEnthalpyModel*)(this);
   }
 
   if((Options.suppressICs) && (tt.model_time==0.0)) { return; }

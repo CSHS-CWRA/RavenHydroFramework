@@ -219,7 +219,6 @@ class CmvPercolation: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
   perc_type type;        ///< Model of percolation selected
-  int       nSoilLayers; ///< number of soil layers subject to percolation
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:

@@ -50,7 +50,7 @@ string GetProcessName(process_type p)
   case(SNOWSQUEEZE):        {name="Liquid snow release";      break;}
   case(REFREEZE):           {name="Snow Refreeze";            break;}
   case(SUBLIMATION):        {name="Sublimation";              break;}
-  case(SNOW_BALANCE):       {name="Snow Melt & Refreeze";     break;}
+  case(SNOW_BALANCE):       {name="Snow Balance";             break;}
   case(GLACIER_MELT):       {name="Glacier Melt";             break;}
   case(GLACIER_RELEASE):    {name="Glacier Release";          break;}
   case(GLACIER_INFIL):      {name="Glacier Infiltration";     break;}

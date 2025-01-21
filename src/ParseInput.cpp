@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 
 #include "RavenInclude.h"
@@ -108,8 +108,10 @@ bool ParseInputFiles (CModel      *&pModel,
     }
     ExitGracefully("Cannot find or read .rvi file",BAD_DATA);return false;
   }
-  if (!ParseNetCDFRunInfoFile(pModel, Options, runname_overridden,runmode_overridden)){
-    ExitGracefully("Cannot find or read NetCDF runinfo file", BAD_DATA); return false;
+  if (!Options.create_rvp_template) {//otherwise, jump right to parse rvp, where template is created
+    if (!ParseNetCDFRunInfoFile(pModel, Options, runname_overridden,runmode_overridden)){
+      ExitGracefully("Cannot find or read NetCDF runinfo file", BAD_DATA); return false;
+    }
   }
 
   // Class Property file (.rvp)
@@ -278,6 +280,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.keepUBCWMbugs           =false;
   Options.suppressCompetitiveET   =false;
   Options.snow_suppressPET        =false;
+  Options.allow_soil_overfill     =false;
   Options.pavics                  =false;
   Options.deltaresFEWS            =false;
   Options.res_overflowmode        =OVERFLOW_ALL;
@@ -427,6 +430,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":EnsembleMode"              )){code=47; }
     else if  (!strcmp(s[0],":SuppressCompetitiveET"     )){code=48; }
     else if  (!strcmp(s[0],":SnowSuppressesPET"         )){code=49; }
+    else if  (!strcmp(s[0],":AllowSoilOverfill"         )){code=491;}
+
 	//---I/O------------------------------------------------------
     else if  (!strcmp(s[0],":DebugMode"                 )){code=50; }
     else if  (!strcmp(s[0],":BenchmarkingMode"          )){code=51; }
@@ -496,6 +501,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":WriteForcingFunctions"     )){code=171;}
     else if  (!strcmp(s[0],":WriteEnergyStorage"        )){code=172;}// OBSOLETE?
     else if  (!strcmp(s[0],":WriteReservoirMBFile"      )){code=173;}
+    else if  (!strcmp(s[0],":WriteSubBasinFile"         )){code=174;}
     else if  (!strcmp(s[0],":WriteSubbasinFile"         )){code=174;}
     else if  (!strcmp(s[0],":WriteDemandFile"           )){code=175;}
     else if  (!strcmp(s[0],":WriteChannelInfo"          )){code=176;}
@@ -1384,6 +1390,12 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:SnowSuppressesPET */
       if(Options.noisy) { cout <<"Suppressing PET if snow on ground"<<endl; }
       Options.snow_suppressPET =true;
+      break;
+    }
+    case(491): //--------------------------------------------
+    {/*:AllowSoilOverfill */
+      if(Options.noisy) { cout <<"Allow soil compartments to overfill"<<endl; }
+      Options.allow_soil_overfill =true;
       break;
     }
     case(50):  //--------------------------------------------
@@ -3154,6 +3166,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       pMover = new CmvMassLoading(s[1], pModel->GetTransportModel(), pModel);
       AddProcess(pModel,pMover,pProcGroup);
 
+      pStateVar->SetTransportModel(pModel->GetTransportModel());
+
       if(ctype==ENTHALPY) {//add precipitation source condition, by default - Tprecip=Tair
         //\todo [funct] implement this by default
         //int iAtmPrecip=pModel->GetStateVarIndex(ATMOS_PRECIP);
@@ -3529,6 +3543,13 @@ bool ParseMainInputFile (CModel     *&pModel,
   } //end while (!end_of_file)
   INPUT.close();
 
+  // Add TOTAL_SWE state variable if any snow is simulated
+  if (pModel->GetStateVarIndex(SNOW) != -1) {
+    tmpS[0] = TOTAL_SWE; tmpLev[0]=0; tmpN=1;
+    pModel->AddStateVariables(tmpS,tmpLev,tmpN);
+  }
+
+
   //===============================================================================================
   //Check input quality
   //===============================================================================================
@@ -3536,8 +3557,6 @@ bool ParseMainInputFile (CModel     *&pModel,
                    "ParseMainInputFile::Must have a postitive time step",BAD_DATA);
   ExitGracefullyIf(Options.duration<0,
                    "ParseMainInputFile::Model duration less than zero. Make sure :EndDate is after :StartDate.",BAD_DATA_WARN);
-  ExitGracefullyIf((pModel->GetStateVarIndex(CONVOLUTION,0)!=DOESNT_EXIST) && (pModel->GetTransportModel()->GetNumConstituents()>0),
-                   "ParseMainInputFile: cannot currently perform transport with convolution processes",BAD_DATA);
 
   if((Options.nNetCDFattribs>0) && (Options.output_format!=OUTPUT_NETCDF)){
     WriteAdvisory("ParseMainInputFile: NetCDF attributes were specified but output format is not NetCDF.",Options.noisy);
@@ -3576,7 +3595,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 
   pModel->GetTransportModel()->InitializeParams(Options);
   pModel->SetStateVarInfo(pStateVar);
-  pStateVar->SetTransportModel(pModel->GetTransportModel());
+
 
   delete p; p=NULL;
   delete [] tmpS;

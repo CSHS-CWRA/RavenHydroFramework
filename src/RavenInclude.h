@@ -148,6 +148,8 @@ const double  MJ_PER_M2_LANGLEY       =0.04184;                                 
 const double  INCH_PER_METER          =39.37;                                   ///< [m] to [in]
 const double  FEET_PER_METER          =3.28;                                    ///< [m] to [ft]
 const double  ACREFTD_PER_CMS         =70.0456;                                 ///< [acre-ft/d] to [m3/s]
+const double  ACREFT_PER_M3           =0.000810714;                             ///< [acre-ft] to [m3]
+const double  CFS_PER_CMS             =0.0283168;                               ///< [ft3/s] to [m3/s]
 const double  CDM_PER_DAY_PER_CMS     =86.4;                                    ///< [cdm/day] to [m3/s]
 const double  MPH_PER_KPH             =1.609;                                   ///< [kph] to [mph]
 const double  MPH_PER_MPS             =2.237;                                   ///< [m/s] to [mph]
@@ -328,8 +330,8 @@ const bool    DESTRUCTOR_DEBUG    =false;       ///< if true, screen output is g
 const int     MAX_SV_LAYERS       =160;         ///< Max number of layers per state variable (greater than MAX_SOILLAYERS)
 const int     MAX_SOILLAYERS      =50;          ///< Max number of soil layers in profile
 const int     MAX_STATE_VAR_TYPES =100;         ///< Max number of *types* of state variables in model
-const int     MAX_STATE_VARS      =200;         ///< Max number of simulated state variables manipulable by one process (CAdvection worst offender)
-const int     MAX_CONNECTIONS     =200;         ///< Max number of to/from connections in any single process (CAdvection worst offender)
+const int     MAX_STATE_VARS      =500;         ///< Max number of simulated state variables manipulable by one process (CAdvection worst offender)
+const int     MAX_CONNECTIONS     =650;         ///< Max number of to/from connections in any single process (CAdvection worst offender)
 const int     MAX_LAT_CONNECTIONS =4000;        ///< Max number of lateral HRU flow connections
 const int     MAX_SOIL_PROFILES   =200;         ///< Max number of soil profiles
 const int     MAX_VEG_CLASSES     =200;         ///< Max number of vegetation classes
@@ -860,6 +862,7 @@ enum sv_type
   SNOW,                    ///< [mm] frozen snow depth (mm SWE : snow water equivalent)
   NEW_SNOW,                ///< [mm] new snowfall waiting to be handled by snow balance (as SWE)
   SNOW_LIQ,                ///< [mm] liquid water content of snowpack
+  TOTAL_SWE,               ///< [mm] equivalent to SNOW[0]+SNOW[1]+...+SNOW_LIQ[0]..
   WETLAND,                 ///< [mm] deep wetland depression storage
   GLACIER,                 ///< [mm] Glacier melt/reservoir storage
   GLACIER_ICE,             ///< [mm] Glacier ice - typically assumed to be infinite reservoir.
@@ -1110,6 +1113,7 @@ struct optStruct
   bool               keepUBCWMbugs;           ///< true if peculiar UBCWM bugs are retained (only really for BC Hydro use)
   bool               suppressCompetitiveET;   ///< true if competitive ET should be suppressed (for backward compatibility)
   bool               snow_suppressPET;        ///< true if presence of snow should set PET to zero
+  bool               allow_soil_overfill;     ///< true if soil can be filled above capacity (to be handled using overflow routine)
 
   // Soil model information
   int                num_soillayers;          ///< number of soil layers
