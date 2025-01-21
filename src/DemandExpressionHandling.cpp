@@ -749,7 +749,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
   //----------------------------------------------------------------------
   else if (GetWorkflowVariable(s,index) != RAV_BLANK_DATA) // workflow variable
   {
-    
+
     term->type=TERM_WORKFLOW;
     term->value=GetWorkflowVariable(s,index);// initially zero
     term->DV_ind=index;
@@ -937,13 +937,13 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
   return tmp;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Parses :Condition within management goal or workflow variable definition 
+/// \brief Parses :Condition within management goal or workflow variable definition
 /// \param s        [in] - array of strings of [size: Len]
 /// \param Len      [in] - length of string array
 /// \param lineno   [in] - line number of original expression in input file filename, referenced in errors
 /// \param filename [in] - name of input file, referenced in errors
 /// \returns exp_condition: a pointer to an expression condition variable
-/// 
+///
 /// \todo[funct]: Would it be better to support @date(), @between, @day_of_year() in general expression??
 /// :Condition !Q32[0] < 300 + @ts(myTs,0)
 /// :Condition DATE IS_BETWEEN 1975-01-02 and 2010-01-02
@@ -957,13 +957,13 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
 /// :Condition DAY_OF_YEAR IS_BETWEEN Apr-1 Aug-1 //\todo [NOT YET SUPPORTED]
 /// :Condition @is_between(DAY_OF_YEAR,300,20) = 1  // \todo [NOT YET SUPPORTED]
 //
-exp_condition* CDemandOptimizer::ParseCondition(const char** s, const int Len, const int lineno, const string filename) const 
+exp_condition* CDemandOptimizer::ParseCondition(const char** s, const int Len, const int lineno, const string filename) const
 {
   bool badcond=false;
   exp_condition *pCond = new exp_condition();
   pCond->dv_name=s[1];
   const optStruct *Options=_pModel->GetOptStruct();
-  
+
   bool is_exp=false;
   for (int i = 2; i < Len; i++) {
     if ((s[i][0]=='+') || (s[i][0]=='-') || (s[i][0]=='*') || (s[i][0]=='/') || (s[i][0]=='=') || (s[i][0]=='<') || (s[i][0]=='>')){
@@ -1000,7 +1000,7 @@ exp_condition* CDemandOptimizer::ParseCondition(const char** s, const int Len, c
       char   tmp =pCond->dv_name[1];
       string tmp2=pCond->dv_name.substr(2);
       char code=pCond->dv_name[1];
-      if ((code=='Q') || (code=='h') || (code=='I')) //subbasin state decision variable 
+      if ((code=='Q') || (code=='h') || (code=='I')) //subbasin state decision variable
       {
         long SBID=s_to_l(tmp2.c_str());
         if (_pModel->GetSubBasinByID(SBID) == NULL) {
@@ -1122,7 +1122,7 @@ bool CDemandOptimizer::CheckOpRegimeConditions(const op_regime *pOperRegime, con
       }
       else {//handle user specified DVs and workflow variables
         int i=GetUserDVIndex(pCond->dv_name);
-        if (i != DOESNT_EXIST) //decision variable 
+        if (i != DOESNT_EXIST) //decision variable
         {
           dv_value =_pDecisionVars[i]->value;
         }

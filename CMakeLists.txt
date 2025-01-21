@@ -18,6 +18,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 # Find NetCDF
 find_package(NetCDF) #may also be 'netCDF'
 find_package(netCDF)
+
 # find header & source
 file(GLOB HEADER "src/*.h")
 file(GLOB SOURCE "src/*.cpp")
@@ -54,9 +55,6 @@ if(COMPILE_EXE)
   endif()
 endif()
 
-source_group("Header Files" FILES ${HEADER})
-source_group("Source Files" FILES ${SOURCE})
-
 if(NETCDF_FOUND)
   add_definitions(-Dnetcdf)
   include_directories(${NetCDF_INCLUDE_DIRS})
@@ -66,6 +64,9 @@ elseif(netCDF_FOUND)
   include_directories(${NetCDF_INCLUDE_DIRS})
   target_link_libraries(Raven netcdf)
 endif()
+
+source_group("Header Files" FILES ${HEADER})
+source_group("Source Files" FILES ${SOURCE})
 
 # unset cmake variables to avoid polluting the cache
 unset(COMPILE_LIB CACHE)

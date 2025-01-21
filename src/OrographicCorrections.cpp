@@ -399,8 +399,8 @@ void CModel::CorrectPET(const optStruct &Options,
     if(iSnow!=DOESNT_EXIST) { SWE     =pHRU->GetStateVarValue(iSnow); }
     if(iSC  !=DOESNT_EXIST) { snow_cov=pHRU->GetStateVarValue(iSC); }
 
-    if(SWE>0.1) { 
-      F.PET   *=(1.0-snow_cov);  
+    if(SWE>0.1) {
+      F.PET   *=(1.0-snow_cov);
       F.OW_PET*=(1.0-snow_cov);
     }
   }
