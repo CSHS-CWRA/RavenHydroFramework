@@ -316,7 +316,7 @@ void CDemandOptimizer::AddDecisionVar(const decision_var* pDV)
 //////////////////////////////////////////////////////////////////
 /// \brief disables stage discharge curve handling for reservoir in subbasin p
 //
-void CDemandOptimizer::OverrideSDCurve(const int p) 
+void CDemandOptimizer::OverrideSDCurve(const int p)
 {
   _aDisableSDCurve[p]=true;
  }
@@ -417,7 +417,7 @@ bool CDemandOptimizer::VariableNameExists(const string &name) const
   for (int i = 0; i < _nUserConstants; i++) {
     if (_aUserConstNames[i]==name){return true;}
   }
-  
+
   if (GetUnitConversion(name)!=RAV_BLANK_DATA){return true;}
 
   return false;
@@ -877,7 +877,7 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
       cout<<"    "<<i<<" [WORKFLOWVAR]: "<<_pWorkflowVars[i]->name<<endl;
       for (int k=0; k<_pWorkflowVars[i]->nOperRegimes; k++)
       {
-        
+
         cout<<"      +oper regime: "<<_pWorkflowVars[i]->pOperRegimes[k]->reg_name<<endl;
         cout<<"        +expression: "<<_pWorkflowVars[i]->pOperRegimes[k]->pExpression->origexp<<endl;
         comparison ctype=_pWorkflowVars[i]->pOperRegimes[k]->pExpression->compare;
