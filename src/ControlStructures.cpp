@@ -11,7 +11,7 @@
 /// \param downID [in] downstream subbasin
 /// \notes assumes SBID basin has valid reservoir
 //
-CControlStructure::CControlStructure(string name, const long SBID,const long downID) {
+CControlStructure::CControlStructure(string name, const long long SBID,const long long downID) {
   _name=name;
   _SBID=SBID;
   _target_SBID=downID;
@@ -37,13 +37,13 @@ string CControlStructure::GetName         () const {return _name;}
 /// \brief returns target subbasin ID to which outflow is directed
 /// \returns target subbasin ID
 //
-long   CControlStructure::GetTargetBasinID() const {return _target_SBID;}
+long long CControlStructure::GetTargetBasinID() const {return _target_SBID;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief sets target subbasin ID to which outflow is directed
 /// \param SBID [in] - valid subbasin ID (or DOESNT_EXIST, if flow is directed outside model)
 //
-void   CControlStructure::SetTargetBasin(const long SBID)
+void   CControlStructure::SetTargetBasin(const long long SBID)
 {
   _target_SBID=SBID;
 }
@@ -228,7 +228,7 @@ bool      COutflowRegime::AreConditionsMet(const time_struct& tt) const
   for (int i = 0; i < _nConditions; i++)
   {
     comparison comp=_pConditions[i]->compare;
-    long SBID=_pConditions[i]->basinID;
+    long long  SBID=_pConditions[i]->basinID;
     double v1=_pConditions[i]->compare_val1;
     double v2=_pConditions[i]->compare_val2;
     string var=_pConditions[i]->variable;
@@ -286,7 +286,7 @@ bool      COutflowRegime::AreConditionsMet(const time_struct& tt) const
 /// \param Q_start [in] control structure outflow at start of timestep [m3/s]
 /// \returns outflow, in [m3/s]
 //
-double          COutflowRegime::GetOutflow(const double &h, const double &h_start, const double &Q_start, const long &target_SBID, const double &drefelev) const
+double          COutflowRegime::GetOutflow(const double &h, const double &h_start, const double &Q_start, const long long &target_SBID, const double &drefelev) const
 {
   double tstep    = _pModel->GetOptStruct()->timestep;
   double rivdepth = _pModel->GetSubBasinByID(target_SBID)->GetRiverDepth();

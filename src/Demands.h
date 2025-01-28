@@ -8,6 +8,7 @@
 #include "RavenInclude.h"
 #include "TimeSeries.h"
 #include "Expression.h"
+#include "Model.h"
 
 enum demand_type{
   DEMAND_TIME_SERIES,
@@ -27,10 +28,12 @@ enum return_type{
 class CDemand
 {
 private:/*------------------------------------------------------*/
-  int                  _ID;           ///< unique integer identifier
+  long long            _ID;           ///< unique long long integer identifier
   string               _name;         ///< unique name/alias identifier
 
-  long                 _SBID;         ///< subbasin ID
+  const CModel        *_pModel;       ///< pointer to model object
+
+  long long            _SBID;         ///< subbasin ID
   int                  _loc_index;    ///< local demand index ii (counter in each subbasin or reservoir)
   int                  _global_index; ///< global demand index d (from list of all demands in water management model)
   bool                 _is_reservoir; ///< true if withdrawal is from reservoir
@@ -52,7 +55,7 @@ private:/*------------------------------------------------------*/
   //
   //Return flow variables
   return_type        _retType;       ///< return type
-  long               _targetSBID;    ///< subbasin id of return destination (defaults to _SBID, is -1 for irrigation to HRU group)
+  long long          _targetSBID;    ///< subbasin id of return destination (defaults to _SBID, is -1 for irrigation to HRU group)
   int                _irrigHRUGroup; ///< index kk of HRU group on which withdrawn water is applied
   double             _returnPct;     ///< percentage of delivered demand which returns to stream or land
   CTimeSeries       *_pReturnTS;     ///< pointer to time series of target return flows (or NULL, if calculated elsewise)
@@ -62,46 +65,46 @@ private:/*------------------------------------------------------*/
   double             _currentRetTarget;///< (time-variable) return flow target in current time step [m3/s]
 
 public:/*-------------------------------------------------------*/
-  CDemand(int ID, string name, long SBID, bool is_res);
-  CDemand(int ID, string name, long SBID, bool is_res, CTimeSeries *pTS);
+  CDemand(long long ID, string name, long long SBID, bool is_res, const CModel *pMod);
+  CDemand(long long ID, string name, long long SBID, bool is_res, CTimeSeries *pTS, const CModel *pMod);
   ~CDemand();
 
-  int     GetID() const;
-  string  GetName() const;
-  long    GetSubBasinID() const;
-  int     GetGlobalIndex() const;
-  int     GetLocalIndex() const;
-  double  GetPenalty() const;
-  bool    IsUnrestricted() const;
-  int     GetCumulDeliveryDate() const;
-  bool    IsReservoirDemand() const;
-  bool    HasReturnFlow() const;
-  long    GetTargetSBID() const;
-  double  GetReturnFlowFraction() const;
+  long long GetDemandID() const;
+  string    GetName() const;
+  long long GetSubBasinID() const;
+  int       GetGlobalIndex() const;
+  int       GetLocalIndex() const;
+  double    GetPenalty() const;
+  bool      IsUnrestricted() const;
+  int       GetCumulDeliveryDate() const;
+  bool      IsReservoirDemand() const;
+  bool      HasReturnFlow() const;
+  long long GetTargetSBID() const;
+  double    GetReturnFlowFraction() const;
 
-  double  GetDemand() const;
-  double  GetReturnFlowTarget() const;
+  double    GetDemand() const;
+  double    GetReturnFlowTarget() const;
 
   //Manipulators
-  void    SetLocalIndex(const int ii);
-  void    SetGlobalIndex(const int d);
-  void    SetDemandPenalty(const double &P);
-  void    SetCumulDeliveryDate(const int date);
-  void    SetAsUnrestricted();
-  void    SetMultiplier(const double &M);
-  void    SetTargetSBID(const long ID);
-  void    SetDemandFraction(const double &val);
-  void    SetReturnFraction(const double &val);
-  void    SetDemandTimeSeries(CTimeSeries *pTS);
-  void    SetReturnTimeSeries(CTimeSeries *pTS);
-  void    SetDemandExpression(expressionStruct *pExp);
-  void    SetReturnExpression(expressionStruct *pExp);
-  void    SetIrrigationGroup(const int kk);
+  void      SetLocalIndex(const int ii);
+  void      SetGlobalIndex(const int d);
+  void      SetDemandPenalty(const double &P);
+  void      SetCumulDeliveryDate(const int date);
+  void      SetAsUnrestricted();
+  void      SetMultiplier(const double &M);
+  void      SetTargetSBID(const long long ID);
+  void      SetDemandFraction(const double &val);
+  void      SetReturnFraction(const double &val);
+  void      SetDemandTimeSeries(CTimeSeries *pTS);
+  void      SetReturnTimeSeries(CTimeSeries *pTS);
+  void      SetDemandExpression(expressionStruct *pExp);
+  void      SetReturnExpression(expressionStruct *pExp);
+  void      SetIrrigationGroup(const int kk);
 
-  void    Initialize(const optStruct &Options);
+  void      Initialize(const optStruct &Options);
 
   //Called during simulation
-  void    UpdateDemand(const optStruct &Options,const time_struct &tt);
+  void      UpdateDemand(const optStruct &Options,const time_struct &tt);
 };
 ///////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for irrigation or other water demand
@@ -127,7 +130,7 @@ public:/*-------------------------------------------------------*/
   int               GetNumDemands      () const;
   int               GetGlobalIndex     () const;
   CDemand          *GetDemand          (const int ii_local) const;
-  bool              IsInGroup          (const int demandID) const;
+  bool              IsInGroup          (const long long demandID) const;
 };
 
 #endif

@@ -116,8 +116,8 @@ void   CConstituentModel::SetMassInflows(const int p,const double Minnew)
 void   CConstituentModel::ApplySpecifiedMassInflows(const int p,const double t,double &Minnew)
 {
   double C;
-  long   SBID=_pModel->GetSubBasin(p)->GetID();
-  double    Q=_pModel->GetSubBasin(p)->GetOutflowRate()*SEC_PER_DAY; //[m3/d] Flow at end of time step
+  long long SBID=_pModel->GetSubBasin(p)->GetID();
+  double       Q=_pModel->GetSubBasin(p)->GetOutflowRate()*SEC_PER_DAY; //[m3/d] Flow at end of time step
 
   //Handle additional mass/energy inflows
   for(int i=0; i<_nMassLoadingTS; i++) {
@@ -150,7 +150,7 @@ void   CConstituentModel::ApplySpecifiedMassInflows(const int p,const double t,d
 double   CConstituentModel::GetMassAddedFromInflowSources(const double &t,const double &tstep) const
 {
   double C,Q,Qold;
-  long SBID,SBID_down;
+  long long SBID,SBID_down;
   double mass=0; //[mg] or [MJ]
 
   // remove mass which is overridden by specified mass inflow

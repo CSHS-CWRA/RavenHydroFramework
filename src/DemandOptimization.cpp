@@ -129,8 +129,8 @@ CDemandOptimizer::~CDemandOptimizer()
 int CDemandOptimizer::GetDemandIndexFromName(const string demand_tag) const
 {
   for (int d = 0; d < _nDemands; d++) {
-    if      (s_to_i(demand_tag.c_str()) == _pDemands[d]->GetID()  ){return d;}
-    else if (demand_tag                 == _pDemands[d]->GetName()){return d;}
+    if      (s_to_ll(demand_tag.c_str())== _pDemands[d]->GetDemandID()){return d;}
+    else if (demand_tag                 == _pDemands[d]->GetName()    ){return d;}
   }
   return DOESNT_EXIST;
 }
@@ -284,7 +284,7 @@ void   CDemandOptimizer::AddDemandGroup(const string groupname)
 //
 void  CDemandOptimizer::AddWaterDemand(CDemand* pDem)
 {
-  long SBID=pDem->GetSubBasinID();
+  long long SBID=pDem->GetSubBasinID();
   if (_pModel->GetSubBasinByID(SBID)->IsEnabled())
   {
     if (!DynArrayAppend((void**&)(_pDemands),(void*)(pDem),_nDemands)){
@@ -552,7 +552,7 @@ void CDemandOptimizer::Initialize(CModel* pModel, const optStruct& Options)
 //
 void  CDemandOptimizer::IdentifyUpstreamDemands()
 {
-  long SBID;
+  long long SBID;
 
   _aUpCount        =new int  [_pModel->GetNumSubBasins()];
   _aUpstreamDemands=new int *[_pModel->GetNumSubBasins()];
@@ -842,7 +842,7 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
     for (int d=0; d<_nDemands;d++){
       int ndem=_pModel->GetSubBasinByID(_pDemands[d]->GetSubBasinID())->GetNumWaterDemands();
       int ii  =_pDemands[d]->GetLocalIndex();
-      cout << "    " <<setw(4)<< d << ": ID="<<setw(6) << _pDemands[d]->GetID() << " (alias: "<<setw(60)<<_pDemands[d]->GetName()<<") in basin "<<setw(3)<< _pDemands[d]->GetSubBasinID() <<" ("<<ii+1<<" of "<< ndem<<")"<<endl;
+      cout << "    " <<setw(4)<< d << ": ID="<<setw(6) << _pDemands[d]->GetDemandID() << " (alias: "<<setw(60)<<_pDemands[d]->GetName()<<") in basin "<<setw(3)<< _pDemands[d]->GetSubBasinID() <<" ("<<ii+1<<" of "<< ndem<<")"<<endl;
     }
 
     string tmpstr,tmpstr2;
@@ -928,7 +928,7 @@ void CDemandOptimizer::AddReservoirConstraints()
   int               p;
   CSubBasin        *pSB;
   string            TSname,SBIDs;
-  long              SBID;
+  long long         SBID;
   expressionStruct *exp;
   managementGoal   *pGoal=NULL;
   string            expString;
@@ -1532,7 +1532,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
 
   double  U_0,U_n;
   int     nInlets;
-  long    SBID;
+  long long SBID;
   int     p_in[10]; //assumes<10 inlets
   int     p2,id;
   dv_type dvtype;
@@ -1881,7 +1881,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
       retval = lp_lib::add_constraintex(pLinProg,2,row_val,col_ind,ROWTYPE_LE,RHS);
       ExitGracefullyIf(retval==0,"SolveDemandProblem::Error adding return flow constraint",RUNTIME_ERR);
 
-      IncrementAndSetRowName(pLinProg,rowcount,"return_"+to_string(_pDemands[d]->GetID()));
+      IncrementAndSetRowName(pLinProg,rowcount,"return_"+to_string(_pDemands[d]->GetDemandID()));
       r++;
     }
   }

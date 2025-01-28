@@ -363,7 +363,7 @@ void CHydroUnit::Enable(){_Disabled=false;}
 //////////////////////////////////////////////////////////////////
 /// \brief links HRU to reservoir
 //
-void CHydroUnit::LinkToReservoir(const long SBID){_res_linked=true;}
+void CHydroUnit::LinkToReservoir(const long long SBID){_res_linked=true;}
 
 
 //////////////////////////////////////////////////////////////////

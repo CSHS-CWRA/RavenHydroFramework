@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2022 the Raven Development Team
+Copyright (c) 2008-2025 the Raven Development Team
 ----------------------------------------------------------------
 Constituent Transport/Tracer Model class
 coordinates information about constituent storage
@@ -12,7 +12,7 @@ coordinates information about constituent storage
 #include "Transport.h"
 #include "EnergyTransport.h"
 
-bool IsContinuousConcObs(const CTimeSeriesABC *pObs,const long SBID,const int c); //Defined in StandardOutput.cpp
+bool IsContinuousConcObs(const CTimeSeriesABC *pObs,const long long SBID,const int c); //Defined in StandardOutput.cpp
 void WriteNetCDFGlobalAttributes(const int out_ncid,const optStruct& Options,const string descript);
 int  NetCDFAddMetadata     (const int fileid,const int time_dimid,string shortname,string longname,string units);
 int  NetCDFAddMetadata2D   (const int fileid,const int time_dimid,int nbasins_dimid,string shortname,string longname,string units);

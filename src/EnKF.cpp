@@ -6,7 +6,7 @@ Copyright (c) 2008-2024 the Raven Development Team
 #include "EnKF.h"
 #include "Matrix.h"
 
-bool IsContinuousFlowObs(const CTimeSeriesABC* pObs,long SBID);
+bool IsContinuousFlowObs(const CTimeSeriesABC* pObs,long long SBID);
 bool ParseInitialConditions(CModel*& pModel,const optStruct& Options);
 bool ParseTimeSeriesFile(CModel*& pModel,const optStruct& Options);
 
@@ -320,7 +320,7 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
   for(int i=0; i<pModel->GetNumObservedTS();i++)
   {
     const CTimeSeriesABC *pTSObs=pModel->GetObservedTS(i);
-    long SBID=pTSObs->GetLocID();
+    long long SBID=pTSObs->GetLocID();
     CSubBasin *pSB=pModel->GetSubBasinByID(SBID);
     good= ((pSB!=NULL) && (pSB->UseInFlowAssimilation()));
 

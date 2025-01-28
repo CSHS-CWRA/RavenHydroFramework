@@ -179,6 +179,7 @@ struct workflowVar
 ///////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for demand optimization
 //
+class CDemandGroup;
 class CDemandOptimizer
 {
 private: /*------------------------------------------------------*/

@@ -56,8 +56,8 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
 
   CDemand    *pDemand=NULL;
   int         demand_ind=0;
-  long        demandSBID; 
-  int         demand_ID;
+  long long   demandSBID; 
+  long long   demand_ID;
   string      demand_name;
 
   ifstream    INPUT2;                //For Secondary input
@@ -557,7 +557,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         else if (!strcmp(s[0], ":UseStageUnitsCorrection"))
         {
           if (Options.noisy){cout<<" Use Stage Units Correction "<<endl; }
-          CSubBasin *pSB=pModel->GetSubBasinByID(s_to_l(s[1]));
+          CSubBasin *pSB=pModel->GetSubBasinByID(s_to_ll(s[1]));
 
           ExitGracefullyIf(pSB->GetGlobalIndex()==DOESNT_EXIST,"ParseManagementFile: subbasin ID in :UseStageUnitsCorrection is invalid",BAD_DATA_WARN);
 
@@ -629,7 +629,6 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         break;
       }
       pWV->AddExpression(pExp);
-      //pWV->pExpression=pExp;
       
       if (pDO->GetDebugLevel()>=1){
         SummarizeExpression((const char**)(s),Len,pExp);
@@ -794,7 +793,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     { /*:OverrideStageDischargeCurve [SBID]  */
 
       if (Options.noisy){cout<<"Override Stage Discharge Curve"<<endl; }
-      CSubBasin *pSB=pModel->GetSubBasinByID(s_to_l(s[1]));
+      CSubBasin *pSB=pModel->GetSubBasinByID(s_to_ll(s[1]));
 
       ExitGracefullyIf(pSB->GetGlobalIndex()==DOESNT_EXIST,"ParseManagementFile: subbasin ID in :OverrideStageDischargeCurve is invalid",BAD_DATA_WARN);
 
@@ -832,7 +831,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           aLoopVector[1]=new string [pLoopSBGroup->GetNumSubbasins()];
           for (int p = 0; p < pLoopSBGroup->GetNumSubbasins(); p++)
           {
-            long     SBID = pLoopSBGroup->GetSubBasin(p)->GetID();
+            long long SBID = pLoopSBGroup->GetSubBasin(p)->GetID();
             string SBName = pLoopSBGroup->GetSubBasin(p)->GetName();
             aLoopVector[0][p]=to_string(SBID);
             aLoopVector[1][p]=SBName;
@@ -855,7 +854,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           aLoopVector[1]=new string [pLoopDemandGroup->GetNumDemands()];
           for (int p = 0; p < pLoopDemandGroup->GetNumDemands(); p++)
           {
-            long       ID = pLoopDemandGroup->GetDemand(loopCount)->GetID();
+            long long  ID = pLoopDemandGroup->GetDemand(loopCount)->GetDemandID();
             string  DName = pLoopDemandGroup->GetDemand(loopCount)->GetName();
             aLoopVector[0][p]=to_string(ID);
             aLoopVector[1][p]=DName;
@@ -960,13 +959,13 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         ExitGracefully("Incorrect number of terms in :WaterDemand command header.",BAD_DATA_WARN);
       }
       else{
-        demandSBID =s_to_l(s[1]);
+        demandSBID =s_to_ll(s[1]);
         demand_ID  =s_to_i(s[2]);
         demand_name=s[3];
         CSubBasin *pSB=pModel->GetSubBasinByID(demandSBID);
         if (pSB!=NULL) {
           demand_ind=pSB->GetNumWaterDemands();
-          pDemand=new CDemand(demand_ID,demand_name,demandSBID,false);
+          pDemand=new CDemand(demand_ID,demand_name,demandSBID,false,pModel);
           pDemand->SetLocalIndex(demand_ind);
           pSB->AddWaterDemand(pDemand);
           pModel->GetDemandOptimizer()->AddWaterDemand(pDemand);
@@ -996,7 +995,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       }
       else {
         CTimeSeries *pTS = CTimeSeries::Parse(pp, false, demand_name, demandSBID, "none", Options);
-        pTS->SetIDTag(demand_ID);
+        pTS->SetDemandID(demand_ID);
         pDemand->SetDemandTimeSeries(pTS);
       }
       break;
@@ -1013,7 +1012,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       }
       else {
         CTimeSeries *pTS = CTimeSeries::Parse(pp, false, demand_name, demandSBID, "none", Options);
-        pTS->SetIDTag(demand_ID);
+        pTS->SetDemandID(demand_ID);
         pDemand->SetReturnTimeSeries(pTS);
       }
       break;
@@ -1025,7 +1024,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         ExitGracefully(":ReturnTimeSeries must be between :WaterDemand and :EndWaterDemand commands.",BAD_DATA_WARN);
       }
       else {
-        pDemand->SetTargetSBID(s_to_l(s[1]));
+        pDemand->SetTargetSBID(s_to_ll(s[1]));
       }
       break;
     }
@@ -1047,13 +1046,14 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       break;
     }
     case (56): //--------------------------------------------
-    {/*:ResetDate [Mmm-dd]*/
+    {/*:ResetDate [julian_day]*/
       if(Options.noisy) { cout <<"Demand reset date"<<endl; }
       if (pDemand==NULL){
         ExitGracefully(":ResetDate must be between :WaterDemand and :EndWaterDemand commands.",BAD_DATA_WARN);
       }
       else {
-        pDO->SetCumulativeDate(demand_ID, s[1]);
+        
+        pDO->SetCumulativeDate(s_to_i(s[1]), to_string(demand_ID));
       }
       break;
     }
@@ -1162,14 +1162,14 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         ExitGracefully("Incorrect number of terms in :ReservoirWaterDemand command header.",BAD_DATA_WARN);
       }
       else{
-        demandSBID =s_to_l(s[1]);
-        demand_ID  =s_to_i(s[2]);
+        demandSBID =s_to_ll(s[1]);
+        demand_ID  =s_to_ll(s[2]);
         demand_name=s[3];
         CSubBasin *pSB=pModel->GetSubBasinByID(demandSBID);
         if (pSB!=NULL) {
           if (pSB->GetReservoir() != NULL) {
             demand_ind=pSB->GetReservoir()->GetNumWaterDemands();
-            pDemand=new CDemand(demand_ID,demand_name,demandSBID,true);
+            pDemand=new CDemand(demand_ID,demand_name,demandSBID,true,pModel);
             pDemand->SetLocalIndex(demand_ind);
             pSB->GetReservoir()->AddDemand(pDemand);
             pModel->GetDemandOptimizer()->AddWaterDemand(pDemand);

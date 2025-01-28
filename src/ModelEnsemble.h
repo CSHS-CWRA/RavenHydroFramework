@@ -107,7 +107,7 @@ private:
   int          _nParamDists; ///< number of parameter distributions for sampling
   param_dist **_pParamDists; ///< array of pointers to parameter distributions
 
-  long         _calib_SBID;  ///< observation hydrograph subbasin ID
+  long long    _calib_SBID;  ///< observation hydrograph subbasin ID
   diag_type    _calib_Obj;   ///< diagnostic used as objective function (e.g., DIAG_NASH_SUTCLIFFE)
   string       _calib_Period;///< name of calibration period (e.g., CALIB)
 
@@ -122,7 +122,7 @@ public:
   ~CDDSEnsemble();
 
   void SetPerturbationValue(const double &perturb);
-  void SetCalibrationTarget(const long SBID, const diag_type object_diag, const string period);
+  void SetCalibrationTarget(const long long SBID, const diag_type object_diag, const string period);
   void AddParamDist(const param_dist *dist);
 
   void Initialize(const CModel* pModel,const optStruct &Options);

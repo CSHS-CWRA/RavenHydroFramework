@@ -53,7 +53,7 @@ class CReservoir
 {
 private:/*-------------------------------------------------------*/
   string       _name;                ///< reservoir name
-  long         _SBID;                ///< subbasin ID
+  long long    _SBID;                ///< subbasin ID
   double       _max_capacity;        ///< maximum reservoir capacity [m3]
 
   double       _lakebed_thick;       ///< lakebed thickness [m]
@@ -143,7 +143,7 @@ private:/*-------------------------------------------------------*/
   double       _seepage_const;       ///< seepage constant [m3/s/m] for groundwater losses Q=k*(h-h_loc)
   double       _local_GW_head;       ///< local head [m] (same  for groundwater losses Q=k*(h-h_loc)
 
-  void       BaseConstructor(const string Name,const long SubID); //because some versions of c++ don't like delegating constructors
+  void       BaseConstructor(const string Name,const long long SBID); //because some versions of c++ don't like delegating constructors
 
   double     GetVolume (const double &ht) const;
   double     GetArea   (const double &ht) const;
@@ -155,26 +155,26 @@ private:/*-------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors:
-  CReservoir(const string Name, const long SubID);
-  CReservoir(const string name, const long SubID, //Power law constructor
+  CReservoir(const string Name, const long long SBID);
+  CReservoir(const string name, const long long SBID, //Power law constructor
              const double a_v, const double b_v,
              const double a_Q, const double b_Q,
              const double a_A, const double b_A,
              const double crestht, const double depth);
-  CReservoir(const string name, const long SubID,
+  CReservoir(const string name, const long long SBID,
              const double *a_ht,
              const double *a_Q, const double *aQ_und,const double *a_A, const double *a_V,
              const int     nPoints);
-  CReservoir(const string Name, const long SubID,
+  CReservoir(const string Name, const long long SBID,
              const int nDates, const int *aDates, const double *a_ht,
              double **a_QQ, const double *aQ_und, const double *a_A, const double *a_V,
              const int     nPoints);
-  CReservoir(const string Name, const long SubID, const double weircoeff, //Lake constructor
+  CReservoir(const string Name, const long long SBID, const double weircoeff, //Lake constructor
              const double crestw, const double crestht, const double A, const double depth);
   ~CReservoir();
 
   //Accessors
-  long              GetSubbasinID            () const;
+  long long         GetSubbasinID            () const;
   string            GetReservoirName         () const;
 
   double            GetStorage               () const; //[m3]
@@ -216,7 +216,7 @@ public:/*-------------------------------------------------------*/
   int               GetNumControlStructures  () const;
   double            GetAET                   () const; //[mm/d]
   string            GetRegimeName            (const int i, const time_struct &tt) const;
-  long              GetControlFlowTarget     (const int i) const;
+  long long         GetControlFlowTarget     (const int i) const;
   string            GetControlName           (const int i) const;
 
   int               GetNumDryTimesteps       () const;

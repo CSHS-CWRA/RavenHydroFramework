@@ -231,7 +231,7 @@ int CDemandOptimizer::GetIndexFromDVString(string s) const //String in format !Q
       return DOESNT_EXIST;
     }
     else{
-      long   SBID=s_to_l(s.substr(2).c_str());
+      long long  SBID=s_to_ll(s.substr(2).c_str());
       return _pModel->GetSubBasinIndex(SBID);
     }
   }
@@ -644,7 +644,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
   else if (s.substr(0, 8) == "@SB_var(") // SubBasin state var (e.g., @SB_var(SNOW,[id])
   {
     string sv_name;
-    long   SBID;
+    long long SBID;
     size_t is = s.find("@SB_var(");
     size_t ie = s.find(",",is);
     size_t ip = s.find_last_of(")");
@@ -660,7 +660,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     {
       bool found=false;
       sv_name = s.substr(is+8,ie-(is+8));
-      SBID    = s_to_l(s.substr(ie+1,ip-(ie+1)).c_str());
+      SBID    = s_to_ll(s.substr(ie+1,ip-(ie+1)).c_str());
 
       int lay=DOESNT_EXIST;
       sv_type sv=_pModel->GetStateVarInfo()->StringToSVType(sv_name,lay,false);
@@ -1002,7 +1002,7 @@ exp_condition* CDemandOptimizer::ParseCondition(const char** s, const int Len, c
       char code=pCond->dv_name[1];
       if ((code=='Q') || (code=='h') || (code=='I')) //subbasin state decision variable 
       {
-        long SBID=s_to_l(tmp2.c_str());
+        long long SBID=s_to_ll(tmp2.c_str());
         if (_pModel->GetSubBasinByID(SBID) == NULL) {
           ExitGracefully("ParseManagementFile: Subbasin ID in :Condition statement is invalid.",BAD_DATA_WARN);
         }

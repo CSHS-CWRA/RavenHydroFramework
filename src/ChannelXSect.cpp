@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "ChannelXSect.h"
 void TestManningsInfluence(const CChannelXSect *pChan,const double &Qref);
@@ -403,7 +403,7 @@ double CChannelXSect::GetDiffusivity(const double &Q, const double &SB_slope, co
 /// \param SB_n [in] subbasin mannings  (or AUTO_COMPUTE, if channel mannings to be used)
 /// \param SBID [in] subbasin identifier
 //
-void  CChannelXSect::CheckReferenceFlow(const double& Qref,const double& SB_slope,const double& SB_n,const long SBID) const
+void  CChannelXSect::CheckReferenceFlow(const double& Qref,const double& SB_slope,const double& SB_n,const long long SBID) const
 {
   string warn;
   double junk,Q_mult;

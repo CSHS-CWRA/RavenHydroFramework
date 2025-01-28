@@ -34,7 +34,7 @@ void WriteNetCDFBasinList       (const int ncid,const int varid,const CModel* pM
 /// \param pObs [in] observation time series
 /// \param SBID [in] subbasin ID
 //
-bool IsContinuousFlowObs(const CTimeSeriesABC *pObs,long SBID)
+bool IsContinuousFlowObs(const CTimeSeriesABC *pObs,long long SBID)
 {
  // clears up  terribly ugly repeated if statements
   if (pObs==NULL)                                   { return false; }
@@ -47,7 +47,7 @@ bool IsContinuousFlowObs(const CTimeSeriesABC *pObs,long SBID)
 /// \param pObs [in] observation time series
 /// \param SBID [in] subbasin ID
 //
-bool IsContinuousLevelObs(const CTimeSeriesABC *pObs,long SBID)
+bool IsContinuousLevelObs(const CTimeSeriesABC *pObs,long long SBID)
 {
  // clears up  terribly ugly repeated if statements
   if (pObs==NULL)                                   { return false; }
@@ -60,7 +60,7 @@ bool IsContinuousLevelObs(const CTimeSeriesABC *pObs,long SBID)
 /// \param pObs [in] observation time series
 /// \param SBID [in] subbasin ID
 //
-bool IsContinuousConcObs(const CTimeSeriesABC *pObs,const long SBID, const int c)
+bool IsContinuousConcObs(const CTimeSeriesABC *pObs,const long long SBID, const int c)
 {
  // clears up  terribly ugly repeated if statements
   if (pObs==NULL)                                   { return false; }
@@ -75,7 +75,7 @@ bool IsContinuousConcObs(const CTimeSeriesABC *pObs,const long SBID, const int c
 /// \param pObs [in] observation time series
 /// \param SBID [in] subbasin ID
 //
-bool IsContinuousStageObs(CTimeSeriesABC *pObs,long SBID)
+bool IsContinuousStageObs(CTimeSeriesABC *pObs,long long SBID)
 {
  // clears up  terribly ugly repeated if statements
   if (pObs==NULL)                                   { return false; }
@@ -88,7 +88,7 @@ bool IsContinuousStageObs(CTimeSeriesABC *pObs,long SBID)
 /// \param pObs [in] observation time series
 /// \param SBID [in] subbasin ID
 //
-bool IsContinuousInflowObs(CTimeSeriesABC *pObs, long SBID)
+bool IsContinuousInflowObs(CTimeSeriesABC *pObs, long long SBID)
 {
   if (pObs==NULL)                                   { return false; }
   if (pObs->GetLocID() != SBID)                     { return false; }
@@ -100,7 +100,7 @@ bool IsContinuousInflowObs(CTimeSeriesABC *pObs, long SBID)
 /// \param pObs [in] observation time series
 /// \param SBID [in] subbasin ID
 //
-bool IsContinuousNetInflowObs(CTimeSeriesABC *pObs, long SBID)
+bool IsContinuousNetInflowObs(CTimeSeriesABC *pObs, long long SBID)
 {
   if (pObs==NULL)                                   { return false; }
   if (pObs->GetLocID() != SBID)                     { return false; }
@@ -1058,7 +1058,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
     //ReservoirMassBalance.csv
     //----------------------------------------------------------------
-    if((Options.write_reservoirMB) && (Options.output_format!=OUTPUT_NONE))
+    if((Options.write_reservoirMB) && (Options.output_format==OUTPUT_STANDARD))
     {
       if((Options.period_starting) && (t==0)){}//don't write anything at time zero
       else{
@@ -1721,7 +1721,8 @@ double CModel::CalculateAggDiagnostic(const int ii, const int j, const double &s
       if ((pBasin!=NULL) && (kk!=DOESNT_EXIST) && (!IsInSubBasinGroup(pBasin->GetID(),_pSBGroups[kk]->GetName()))){skip=true;}
     }
     else{ //HRU-linked
-      if ((kk!=DOESNT_EXIST) && (!IsInHRUGroup(_pObservedTS[i]->GetLocID(),_pHRUGroups[kk]->GetName()))){skip=true;}
+      int global_k=GetHRUByID(_pObservedTS[i]->GetLocID())->GetGlobalIndex();
+      if ((kk!=DOESNT_EXIST) && (!IsInHRUGroup(global_k,_pHRUGroups[kk]->GetName()))){skip=true;}
     }
 
     if (!skip)
@@ -3015,7 +3016,7 @@ void WriteNetCDFBasinList(const int ncid,const int varid,const CModel* pModel,bo
 /// \param &calib_SBID [in] target subbasin ID
 /// \param &calib_Obj [in] calibration objective diagnostics (e.g., NSE)
 //
-double CModel::GetObjFuncVal(long calib_SBID,diag_type calib_Obj, const string calib_period) const
+double CModel::GetObjFuncVal(long long calib_SBID,diag_type calib_Obj, const string calib_period) const
 {
   double starttime=0.0;
   double endtime  =0.0;

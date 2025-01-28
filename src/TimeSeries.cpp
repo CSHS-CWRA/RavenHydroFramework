@@ -17,7 +17,7 @@ void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid
 /// \brief Implementation of the time series constructor when time series is single constant value
 /// \param one_value [in] Constant value of time series
 //
-CTimeSeries::CTimeSeries(string Name, long loc_ID, double one_value)
+CTimeSeries::CTimeSeries(string Name, long long loc_ID, double one_value)
   :CTimeSeriesABC(TS_REGULAR,Name,loc_ID,"")
 {
   _start_day =0.0;
@@ -46,7 +46,7 @@ CTimeSeries::CTimeSeries(string Name, long loc_ID, double one_value)
 /// \param is_pulse_type [in] Flag determining time-series type (pulse-based vs. piecewise-linear)
 //
 CTimeSeries::CTimeSeries(string     Name,
-                         long       loc_ID,
+                         long long  loc_ID,
                          string     filename,
                          double     strt_day,
                          int        start_yr,
@@ -88,7 +88,7 @@ CTimeSeries::CTimeSeries(string     Name,
 /// \brief Implementation of the time series constructor for empty time series used to store model generated data
 ///
 CTimeSeries::CTimeSeries(string     Name,
-                         long       loc_ID,
+                         long long  loc_ID,
                          string     filename,
                          double     strt_day,
                          int        start_yr,
@@ -669,7 +669,7 @@ CTimeSeries  *CTimeSeries::Sum(CTimeSeries *pTS1, CTimeSeries *pTS2, string name
 //    :LinearTransform 1.0 0.0
 // :EndReadFromNetCDF
 //
-CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc_ID, string gauge_name,const optStruct &Options, bool shift_to_per_ending)
+CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long long loc_ID, string gauge_name,const optStruct &Options, bool shift_to_per_ending)
 {
 
   char   *s[MAXINPUTITEMS];
@@ -1364,7 +1364,7 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
 /// \return array (size nTS) of pointers to time series
 //
 CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, string name,
-                                                   long loc_ID, string gauge_name,bool shift_to_per_ending, bool shift_from_per_ending, string FileNameNC, string VarNameNC,
+                                                   long long loc_ID, string gauge_name,bool shift_to_per_ending, bool shift_from_per_ending, string FileNameNC, string VarNameNC,
                                                    string DimNamesNC_stations, string DimNamesNC_time,
                                                    int StationIdx, double TimeShift, double LinTrans_a, double LinTrans_b)
 {
@@ -1608,7 +1608,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
       int     stat_dimid;
       int     stat_varid;
       int     nStations;
-      long   *aStations    =NULL;
+      long   *aStations    =NULL; // \todo[funct]: support NetCDF stations with long long type.
       string *aStat_strings=NULL;
       GetNetCDFStationArray(ncid, FileNameNC,stat_dimid,stat_varid, aStations,aStat_strings, nStations);
       if (loc_ID!=DOESNT_EXIST) // Time series linked to SubBasin or HRU

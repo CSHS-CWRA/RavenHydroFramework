@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2022 the Raven Development Team
+Copyright (c) 2008-2025 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -935,7 +935,7 @@ void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid
   for (int k = 0; k < nStations; k++)
   {
     str="";
-	aStat_string[k]="";
+	  aStat_string[k]="";
     for (int j = 0; j < charsize; j++) {
       tmp = ID_chars[k * charsize + j];
       if (isdigit(tmp)) {str += tmp;}
