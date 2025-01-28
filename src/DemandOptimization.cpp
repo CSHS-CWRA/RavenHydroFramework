@@ -1163,6 +1163,7 @@ void CDemandOptimizer::UpdateWorkflowVariables(const time_struct &tt,const optSt
       op_is_active=CheckOpRegimeConditions(_pWorkflowVars[i]->pOperRegimes[k],tt, Options);
       if (op_is_active){
         active_regime=k;
+        break;
       }
     }
     if (active_regime!=DOESNT_EXIST){
