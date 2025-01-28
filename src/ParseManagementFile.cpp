@@ -567,7 +567,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           }
           else{
             int k=pSB->GetReservoir()->GetHRUIndex();
-            if (k!=DOESNT_EXIST){
+            if (k==DOESNT_EXIST){
                 string advice="ParseManagementFile:The reservoir in subbasin "+to_string(pSB->GetID()) + " doesnt have an :HRUID and cannot be used to calculate a stage units correction.";
                 ExitGracefully(advice.c_str(), BAD_DATA_WARN);
             }
