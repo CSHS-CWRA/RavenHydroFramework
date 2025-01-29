@@ -1162,11 +1162,11 @@ bool CDemandOptimizer::CheckOpRegimeConditions(const op_regime *pOperRegime, con
 
       if (comp == COMPARE_BETWEEN)
       {
-        if ((pCond->dv_name == "DAY_OF_YEAR") || (pCond->dv_name =="MONTH")) { //handles wraparound
-          if ( v2 < v ){
-            if ((dv_value > v ) && (dv_value < v2)){return false;}
+        if ((pCond->dv_name == "DAY_OF_YEAR") || (pCond->dv_name =="MONTH") || (pCond->dv_name=="YEAR")) { //handles wraparound
+          if ( v2 < v ){ // wraparound
+            if ((dv_value < v ) && (dv_value > v2)){return false;} //integer values - this is inclusive of end dates
           }
-          else {
+          else { //regular
             if ((dv_value > v2) || (dv_value < v )){return false;}
           }
         }
