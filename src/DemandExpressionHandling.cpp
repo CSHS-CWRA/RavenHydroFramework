@@ -1083,6 +1083,10 @@ bool CDemandOptimizer::CheckOpRegimeConditions(const op_regime *pOperRegime, con
       {
         dv_value=(double)(tt.month);
       }
+      else if (pCond->dv_name == "YEAR")
+      {
+        dv_value = (double)(tt.year);
+      }
       else if (pCond->dv_name == "DATE")
       {
         dv_value=0;

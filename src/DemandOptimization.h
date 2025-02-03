@@ -79,7 +79,7 @@ struct decision_var
 //
 struct exp_condition
 {
-  string      dv_name;      //< decision variable name (e.g., Q1023) or "MONTH" or "DATE" or "DAY_OF_YEAR"
+  string      dv_name;      //< decision variable name (e.g., Q1023) or "MONTH" or "DATE" or "DAY_OF_YEAR" or "YEAR"
   double      value;        //< conditional value
   double      value2;       //< second conditional (if COMPARE_BETWEEN)
   string      date_string;  //< conditional value (if date)

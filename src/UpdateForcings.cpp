@@ -599,7 +599,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       // Irrigation
       //-------------------------------------------------------------------
       F.irrigation=0.0; //FOR NOW
-      //F.irrigation=GetDemandOptimizer()->EstimateIrrigation(F,_pHydroUnits[k],Options,tt);
+      //F.irrigation=GetManagementOptimizer()->EstimateIrrigation(F,_pHydroUnits[k],Options,tt);
 
       //-------------------------------------------------------------------
       // Direct evaporation of rainfall / irrigation

@@ -439,7 +439,7 @@ public:/*-------------------------------------------------------*/
   CTransportModel     *GetTransportModel              () const;
   CGroundwaterModel   *GetGroundwaterModel            () const;
   CEnsemble           *GetEnsemble                    () const;
-  CDemandOptimizer    *GetDemandOptimizer             () const;
+  CDemandOptimizer    *GetManagementOptimizer         () const;
 
   void              GetParticipatingParamList         (string *aP,
                                                        class_type *aPC,

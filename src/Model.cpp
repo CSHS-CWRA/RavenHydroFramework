@@ -976,7 +976,7 @@ CEnsemble  *CModel::GetEnsemble() const { return _pEnsemble; }
 /// \brief Returns demand optimizer
 /// \return pointer to demand optimizer
 //
-CDemandOptimizer  *CModel::GetDemandOptimizer() const { return _pDO; }
+CDemandOptimizer  *CModel::GetManagementOptimizer() const { return _pDO; }
 
 /*****************************************************************
    Watershed Diagnostic Functions

@@ -223,7 +223,7 @@ void    CDemand::UpdateDemand(const optStruct &Options,const time_struct& tt)
   }
   else if (_demType == DEMAND_EXPRESSION)
   {
-    double val=_pModel->GetDemandOptimizer()->EvaluateExpression(_pDemandExp, tt.model_time,true);
+    double val=_pModel->GetManagementOptimizer()->EvaluateExpression(_pDemandExp, tt.model_time,true);
     if (fabs(val-RAV_BLANK_DATA)<REAL_SMALL){_currentDemand=0.0;}
     else                                    {_currentDemand=val;}
   }

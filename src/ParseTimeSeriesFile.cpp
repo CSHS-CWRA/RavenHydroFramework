@@ -656,7 +656,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         pDem->SetLocalIndex(ii);
         pSB->GetReservoir()->AddDemand(pDem);
         if (Options.management_optimization){
-          pModel->GetDemandOptimizer()->AddWaterDemand(pDem);
+          pModel->GetManagementOptimizer()->AddWaterDemand(pDem);
         }
       }
       else
@@ -701,8 +701,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,true,"_MaxStage_"+to_string(SBID),SBID,"none",Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
-        if (pModel->GetDemandOptimizer() != NULL) {
-          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        if (pModel->GetManagementOptimizer() != NULL) {
+          pModel->GetManagementOptimizer()->AddUserTimeSeries(pTimeSer);
         }
         else {
           pSB->GetReservoir()->AddMaxStageTimeSeries(pTimeSer);
@@ -728,8 +728,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,true,"_MinStage_"+to_string(SBID),SBID,"none",Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
-        if (pModel->GetDemandOptimizer() != NULL) {
-          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        if (pModel->GetManagementOptimizer() != NULL) {
+          pModel->GetManagementOptimizer()->AddUserTimeSeries(pTimeSer);
         }
         else {
           pSB->GetReservoir()->AddMinStageTimeSeries(pTimeSer);
@@ -755,8 +755,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,true,"_MinStageFlow_"+to_string(SBID),SBID,"none",Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
-        if (pModel->GetDemandOptimizer() != NULL) {
-          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        if (pModel->GetManagementOptimizer() != NULL) {
+          pModel->GetManagementOptimizer()->AddUserTimeSeries(pTimeSer);
         }
         else {
           pSB->GetReservoir()->AddMinStageFlowTimeSeries(pTimeSer);
@@ -782,8 +782,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,true,"_TargetStage_"+to_string(SBID),SBID,"none",Options);
       if((pSB!=NULL) && (pSB->GetReservoir()!=NULL)) {
-        if (pModel->GetDemandOptimizer() != NULL) {
-          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        if (pModel->GetManagementOptimizer() != NULL) {
+          pModel->GetManagementOptimizer()->AddUserTimeSeries(pTimeSer);
         }
         else {
           pSB->GetReservoir()->AddTargetStageTimeSeries(pTimeSer);
@@ -809,8 +809,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,true,"_MaxQDelta_"+to_string(SBID),SBID,"none",Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
-        if (pModel->GetDemandOptimizer() != NULL) {
-          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        if (pModel->GetManagementOptimizer() != NULL) {
+          pModel->GetManagementOptimizer()->AddUserTimeSeries(pTimeSer);
         }
         else {
           pSB->GetReservoir()->AddMaxQIncreaseTimeSeries(pTimeSer);
@@ -836,8 +836,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pSB=pModel->GetSubBasinByID(SBID);
       if((pSB!=NULL) && (pSB->GetReservoir()!=NULL)) {
         pTimeSer=CTimeSeries::Parse(p,true,"_MaxQDecrease_"+to_string(SBID),SBID,"none",Options);
-        if (pModel->GetDemandOptimizer() != NULL) {
-          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        if (pModel->GetManagementOptimizer() != NULL) {
+          pModel->GetManagementOptimizer()->AddUserTimeSeries(pTimeSer);
         }
         else {
           pSB->GetReservoir()->AddMaxQDecreaseTimeSeries(pTimeSer);
@@ -863,8 +863,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pSB=pModel->GetSubBasinByID(SBID);
       if((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
         pTimeSer=CTimeSeries::Parse(p,true,"_ResQmin_"+to_string(SBID),SBID,"none",Options);
-        if (pModel->GetDemandOptimizer() != NULL) {
-          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        if (pModel->GetManagementOptimizer() != NULL) {
+          pModel->GetManagementOptimizer()->AddUserTimeSeries(pTimeSer);
         }
         else {
           pSB->GetReservoir()->AddMinQTimeSeries(pTimeSer);
@@ -890,8 +890,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pSB=pModel->GetSubBasinByID(SBID);
       if((pSB!=NULL) && (pSB->GetReservoir()!=NULL)) {
         pTimeSer=CTimeSeries::Parse(p,true,"_ResQmax_"+to_string(SBID),SBID,"none",Options);
-        if (pModel->GetDemandOptimizer() != NULL) {
-          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        if (pModel->GetManagementOptimizer() != NULL) {
+          pModel->GetManagementOptimizer()->AddUserTimeSeries(pTimeSer);
         }
         else{
           pSB->GetReservoir()->AddMaxQTimeSeries(pTimeSer);
@@ -917,8 +917,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,true,"_ResFlow_"+to_string(SBID),SBID,"none",Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
-        if (pModel->GetDemandOptimizer() != NULL) {
-          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        if (pModel->GetManagementOptimizer() != NULL) {
+          pModel->GetManagementOptimizer()->AddUserTimeSeries(pTimeSer);
         }
         else{
           pSB->GetReservoir()->AddOverrideQTimeSeries(pTimeSer);
@@ -962,7 +962,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         pDem->SetLocalIndex(ii);
         pSB->AddWaterDemand(pDem);
         if (Options.management_optimization){
-          pModel->GetDemandOptimizer()->AddWaterDemand(pDem);
+          pModel->GetManagementOptimizer()->AddWaterDemand(pDem);
         }
       }
       else
@@ -1202,8 +1202,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
      */
       if(Options.noisy) { cout <<"User-specified Time Series"<<endl; }
       pTimeSer=CTimeSeries::Parse(p,false,s[1], DOESNT_EXIST, "none", Options);
-      if(pModel->GetDemandOptimizer()!=NULL) {
-        pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+      if(pModel->GetManagementOptimizer()!=NULL) {
+        pModel->GetManagementOptimizer()->AddUserTimeSeries(pTimeSer);
       }
       else
       {

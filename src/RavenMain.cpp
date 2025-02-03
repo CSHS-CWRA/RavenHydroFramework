@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 #include <time.h>
 #include "RavenInclude.h"
@@ -71,6 +71,8 @@ int main(int argc, char* argv[])
   if (WARNINGS.fail()){
     ExitGracefully("Main::Unable to open Raven_errors.txt. Bad output directory specified?",RAVEN_OPEN_ERR);
   }
+  WARNINGS<<" Raven v"+Options.version+" Build date: "<<RavenBuildDate<<endl;
+  WARNINGS<<"----------------------------------------------------------"<<endl;
   WARNINGS.close();
 
   t0=clock();

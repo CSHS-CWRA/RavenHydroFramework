@@ -545,7 +545,7 @@ void MassEnergyBalance( CModel            *pModel,
   // ----------------------------------------------------------------------------------------
   if (Options.management_optimization)
   {
-    pModel->GetDemandOptimizer()->SolveDemandProblem(pModel, Options, aRouted, tt);
+    pModel->GetManagementOptimizer()->SolveDemandProblem(pModel, Options, aRouted, tt);
   }
 
   // Route water over timestep

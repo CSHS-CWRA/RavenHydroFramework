@@ -210,11 +210,11 @@ void    COutflowRegime::AddRegimeConstraint(RegimeConstraint* pCond)
 //
 bool EvaluateCondition(const comparison cond, const double& v, const double& v1, const double& v2)
 {
-  if      (cond==COMPARE_IS_EQUAL   ){return (v==v1); }
-  else if (cond==COMPARE_NOT_EQUAL  ){return (v!=v1); }
+  if      (cond==COMPARE_IS_EQUAL   ){return fabs(v-v1)<REAL_SMALL; }
+  else if (cond==COMPARE_NOT_EQUAL  ){return fabs(v-v1)>REAL_SMALL; }
   else if (cond==COMPARE_GREATERTHAN){return (v>v1);  }
   else if (cond==COMPARE_LESSTHAN   ){return (v<v1);  }
-  else if (cond==COMPARE_BETWEEN    ){return (v>=v1) && (v<=v2); }
+  else if (cond==COMPARE_BETWEEN    ){return (v>=v1) && (v<=v2); }//inclusive
   return false;
 }
 
@@ -235,6 +235,9 @@ bool      COutflowRegime::AreConditionsMet(const time_struct& tt) const
 
     if      (var == "DATE") {
       if (!EvaluateCondition(comp, tt.model_time, v1, v2)) {return false;}
+    }
+    else if (var == "YEAR") {
+      if (!EvaluateCondition(comp, (double)(tt.year), v1, v2)) {return false;}
     }
     else if ((var == "DOY") || (var=="DAY_OF_YEAR")) {
       if (comp!=COMPARE_BETWEEN){

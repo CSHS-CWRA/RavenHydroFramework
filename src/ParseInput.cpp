@@ -1510,8 +1510,10 @@ bool ParseMainInputFile (CModel     *&pModel,
         Options.main_output_dir=Options.output_dir;
         PrepareOutputdirectory(Options);
 
-        ofstream WARNINGS((Options.main_output_dir+"Raven_errors.txt").c_str());
+        ofstream WARNINGS((Options.main_output_dir+"Raven_errors.txt").c_str()); //This means RavenErrors.txt was also created in default directory
         WARNINGS.close();
+
+        WriteAdvisory("ParseInput: recommended practice is to specify the output directory from the command line, rather than using the :OutputDirectory command.",Options.noisy);
       }
       else {
         WriteWarning("ParseMainInputFile: :OutputDirectory command was ignored because directory was specified from command line.",Options.noisy);

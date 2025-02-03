@@ -95,7 +95,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
   }
   int    nWildcards=0;
 
-  CDemandOptimizer *pDO=pModel->GetDemandOptimizer();
+  CDemandOptimizer *pDO=pModel->GetManagementOptimizer();
 
   pDO->Initialize(pModel,Options); //only requires rvh,.rvt read
 
@@ -968,7 +968,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           pDemand=new CDemand(demand_ID,demand_name,demandSBID,false,pModel);
           pDemand->SetLocalIndex(demand_ind);
           pSB->AddWaterDemand(pDemand);
-          pModel->GetDemandOptimizer()->AddWaterDemand(pDemand);
+          pModel->GetManagementOptimizer()->AddWaterDemand(pDemand);
         }
         else {
            ExitGracefully("Invalid subbasin ID in :WaterDemand command header.",BAD_DATA_WARN);
@@ -1172,7 +1172,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
             pDemand=new CDemand(demand_ID,demand_name,demandSBID,true,pModel);
             pDemand->SetLocalIndex(demand_ind);
             pSB->GetReservoir()->AddDemand(pDemand);
-            pModel->GetDemandOptimizer()->AddWaterDemand(pDemand);
+            pModel->GetManagementOptimizer()->AddWaterDemand(pDemand);
           }
           else
           {
@@ -1213,7 +1213,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       CTimeSeries *pTimeSer;
       if(Options.noisy) { cout <<"User-specified Time Series"<<endl; }
       pTimeSer=CTimeSeries::Parse(pp,true,s[1], DOESNT_EXIST, "none", Options);
-      pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+      pModel->GetManagementOptimizer()->AddUserTimeSeries(pTimeSer);
       break;
     }
     default://------------------------------------------------

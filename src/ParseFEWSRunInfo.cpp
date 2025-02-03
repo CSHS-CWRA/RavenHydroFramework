@@ -279,6 +279,52 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
       if(Options.noisy) { cout << "ParseRunInfoFile: read properties:AssimilateStreamflow from NetCDF: " << (!strcmp(boolean,"true"))  << endl; }
       delete[] boolean;
     }
+
+    // Other attributes with info embedded in attribute name 
+    int nAttributes;
+    char att_name[NC_MAX_NAME];
+    double att_value;
+    retval = nc_inq_varnatts(ncid,varid_props,&nAttributes);
+    if (retval==NC_NOERR){
+      for (int i = 0; i < nAttributes; i++) {
+        retval=nc_inq_attname(ncid,varid_props,i,att_name);
+        if (retval==NO_ERROR){
+          string att_name_s=to_string(att_name);
+
+          // NamedConstant(s) ----------------------------------------------------
+
+          if (att_name_s.substr(0, 14) == "NamedConstant_") {
+            string name=att_name_s.substr(14,att_name_s.length());
+
+            retval=nc_get_att_double(ncid,varid_props,att_name,&att_value);
+
+            cout<<"RUN INFO NAMED CONSTANT = "<<name<<" value = "<<att_value <<endl;
+
+            pModel->GetManagementOptimizer()->AddUserConstant(att_name,att_value);
+          }
+
+          // TargetStageSet_ ----------------------------------------------------
+
+          if (att_name_s.substr(0, 15) == "TargetStageSet_") {
+            string SBID_s=att_name_s.substr(15,att_name_s.length());
+            long long SBID=s_to_ll(SBID_s.c_str());
+            
+            retval = nc_inq_attlen(ncid, varid_props, att_name, &att_len);
+            char* boolean = new char[att_len + 1];
+            retval = nc_get_att_text(ncid,varid_props,att_name,boolean);       HandleNetCDFErrors(retval);// read attribute text
+            boolean[att_len] = '\0';// add string determining character
+
+             if (!strcmp(boolean,"true")) {
+                
+               // LOOK for User Time Series 
+               //pModel->GetManagementOptimizer()->LookForTargetStageInUserTS(SBID);
+               // creates !hSBID = @ts("TargetStage_SBID",0) management goal , ensures units correction applied
+               ExitGracefully("RUN INFO FILE - TARGET STAGE SET ",STUB);
+             }
+          }
+        }
+      }
+    }
   }
   else {
     WriteWarning("ParseNetCDFRunInfoFile: Properties variable not found",Options.noisy);
@@ -306,7 +352,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
 //  The index i of each entry will be the same as that used by the matrix in part 3.
 // 3)	One or more matrices of size[1:time,1:stations] which includes the state variable being updated,using the
 //  same indexing[i=1:stations] as the vector of HRUIDs. Blank values will not be updated. Raven model HRUs with IDs
-//  not in this list will not be updated. HRUIDs in this list but not in Raven model will throw a warning to RavenErrors.txt.
+//  not in this list will not be updated. HRUIDs in this list but not in Raven model will throw a warning to Raven_errors.txt.
 //  The naming convention of this attribute is equivalent to the raven state variable tag,e.g.,SNOW,PONDED_WATER,SOIL[0].
 //  The state variable corresponding to the model start time will be used for initialization; all other values in the time vector are ignored
 //  Note : this ONLY looks for state variables that are in model, all other state variable arrays will be ignored
@@ -498,7 +544,7 @@ bool ParseNetCDFStateFile(CModel *&pModel,const optStruct &Options)
 //  The index i of each entry will be the same as that used by the matrix in part 3.
 // 3)	One or more matrices of size[1:time,1:stations] which includes the flow/stage state variable being initialized,using the
 //  same indexing[i=1:stations] as the vector of SBIDs. Blank values will not be updated. Raven model subbasins with IDs
-//  not in this list will not be updated. SBIDs in this list but not in Raven model will throw a warning to RavenErrors.txt.
+//  not in this list will not be updated. SBIDs in this list but not in Raven model will throw a warning to Raven_errors.txt.
 // .The state variable corresponding to the model start time will be used for initialization of flow/stage; all other values in the time vector are ignored
 //  The naming convention of this attribute is one of: {QOUT, STAGE,  }
 //
