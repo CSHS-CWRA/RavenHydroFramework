@@ -1355,7 +1355,7 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
 /// \param  loc_ID              [in] location information about timeseries, e.g. subbasin ID or HRU ID
 /// \param  FileNameNC          [in] file name of NetCDF
 /// \param  VarNameNC           [in] name of variable in NetCDF
-/// \param  DimNamesNC_stations [in] name of station dimension (optional; default=None)
+/// \param  DimNamesNC_stations [in] name of station dimension (optional; default="None")
 /// \param  DimNamesNC_time     [in] name of time dimension (mandatory)
 /// \param  StationIdx          [in] idx of station to be read (or -1 if to be determined from FEWS station_id variable via FROM_STATION_VAR) (only used if DimNamesNC:stations not None)
 /// \param  TimeShift           [in] time shift of data (fractional day by which read data should be shifted)
@@ -1364,7 +1364,9 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
 /// \return array (size nTS) of pointers to time series
 //
 CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, string name,
-                                                   long long loc_ID, string gauge_name,bool shift_to_per_ending, bool shift_from_per_ending, string FileNameNC, string VarNameNC,
+                                                   long long loc_ID, string gauge_name,
+                                                   bool shift_to_per_ending, bool shift_from_per_ending, 
+                                                   string FileNameNC, string VarNameNC,
                                                    string DimNamesNC_stations, string DimNamesNC_time,
                                                    int StationIdx, double TimeShift, double LinTrans_a, double LinTrans_b)
 {
@@ -1671,7 +1673,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
       retval=nc_get_vars_double(ncid,varid_f,nc_start,nc_length,nc_stride,&aTmp2D[0][0]);   HandleNetCDFErrors(retval);
     }
     if (Options.noisy) {
-      cout<<" CForcingGrid::ReadTimeSeriesFromNetCDF - !none"<<endl;
+      cout<<" CTimeSeries::ReadTimeSeriesFromNetCDF - !none"<<endl;
       printf("  Dim of chunk read: dim1 = %i   dim2 = %i\n",dim1,dim2);
       printf("  start  chunk: (%zu, %zu)\n", nc_start[0], nc_start[1]);
       printf("  length chunk: (%zu, %zu)\n", nc_length[0],nc_length[1]);
@@ -1688,7 +1690,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
     nc_start [0] = 0;  nc_length[0] = (size_t)(ntime);  nc_stride[0] = 1;
     retval=nc_get_vars_double(ncid,varid_f,nc_start,nc_length,nc_stride,&aTmp1D[0]);    HandleNetCDFErrors(retval);
     if (Options.noisy) {
-      cout<<" CForcingGrid::ReadTimeSeriesFromNetCDF - none"<<endl;
+      cout<<" CTimeSeries::ReadTimeSeriesFromNetCDF - none"<<endl;
       printf("  Dim of chunk read: dim1 = %i \n",dim1);
       printf("  start  chunk: (%zu)\n", nc_start[0]);
       printf("  length chunk: (%zu)\n", nc_length[0]);

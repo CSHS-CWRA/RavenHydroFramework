@@ -367,13 +367,13 @@ void CDemandOptimizer::AddUserConstant(const string name, const double& val)
 void   CDemandOptimizer::AddWorkflowVariable(const workflowVar *pWV)
 {
   if (VariableNameExists(pWV->name)) {
-    string warn="CDemandOptimizer::AddWorkflowVariable: variable name "+pWV->name+" is already in use.";
+    string warn="CDemandOptimizer::AddWorkflowVariable: variable name "+pWV->name+" already exists.";
     ExitGracefully(warn.c_str(),BAD_DATA_WARN);
   }
-
-  if (!DynArrayAppend((void**&)(_pWorkflowVars),(void*)(pWV),_nWorkflowVars)){
-   ExitGracefully("CDemandOptimizer::AddWorkflowVariable: adding NULL Workflow Variable",BAD_DATA);}
-
+  else{
+    if (!DynArrayAppend((void**&)(_pWorkflowVars),(void*)(pWV),_nWorkflowVars)){
+     ExitGracefully("CDemandOptimizer::AddWorkflowVariable: adding NULL Workflow Variable",BAD_DATA);}
+  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief adds user time series

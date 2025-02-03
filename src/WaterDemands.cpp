@@ -65,7 +65,7 @@ string  CDemand::GetName() const
 }
 int     CDemand::GetGlobalIndex() const
 {
-  ExitGracefullyIf(_global_index==DOESNT_EXIST,"CDemand::GetLocalIndex(): didnt set local index",RUNTIME_ERR);
+  ExitGracefullyIf(_global_index==DOESNT_EXIST,"CDemand::GetGlobalIndex(): didnt set global index",RUNTIME_ERR);
   return _global_index; //d
 }
 int     CDemand::GetLocalIndex() const

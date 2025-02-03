@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
 
   Includes declaration of global constants, enumerated types, and
   shared common & hydrological functions
@@ -1069,6 +1069,7 @@ struct optStruct
   string           stateinfo_filename;        ///< fully qualified filename of state_mods.nc file from FEWS
   string           flowinfo_filename;         ///< fully qualified filename of flowstate_mods.nc file from FEWS
   string           paraminfo_filename;        ///< fully qualified filename of param_mods.nc file from FEWS
+  string           maninfo_filename;          ///< fully qualified filename of managment.nc file from FEWS
   string           warm_ensemble_run;         ///< run name prefix in warm ensemble solution files
 
   string           main_output_dir;           ///< primary output directory (RavenErrors.txt, =output_dir for non-ensemble)

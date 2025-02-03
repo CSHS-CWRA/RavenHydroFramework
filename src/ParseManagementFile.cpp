@@ -156,8 +156,10 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     else if(!strcmp(s[0],":DeclareDecisionVariable"))     { code=24; }
     else if(!strcmp(s[0],":DefineWorkflowVariable"))      { code=25; }
     else if(!strcmp(s[0],":WorkflowVarDefinition"))       { code=26; }
+    else if(!strcmp(s[0],":DeclareWorkflowVariable"))     { code=27; }
     else if(!strcmp(s[0],":LookupTable"))                 { code=30; }
     else if(!strcmp(s[0],":OverrideStageDischargeCurve")) { code=31; }
+    else if(!strcmp(s[0],":LookupTableFromCSV"))          { code=32; }
 
     else if(!strcmp(s[0],":LoopThrough"))                 { code=40; }
     else if(!strcmp(s[0],":EndLoopThrough"))              { code=41; }
@@ -652,11 +654,17 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
          :Expression [name] = [expression]
        :EndWorkflowVarDefinition
      */
-      if(Options.noisy) { cout <<"Workflow Variable Definition Statement"<<endl; }
+      if (Options.noisy) { cout << "Workflow Variable Definition Statement" << endl; }
 
-      workflowVar *pWV =new workflowVar();
-      pWV->name=to_string(s[1]);
-      pDO->AddWorkflowVariable(pWV);
+      workflowVar* pWV; 
+      if (pDO->GetWorkflowVarStruct(to_string(s[1])) != NULL){//already declared
+        pWV=pDO->GetWorkflowVarStruct(to_string(s[1]));
+      }
+      else{
+        pWV= new workflowVar();
+        pWV->name = to_string(s[1]);
+        pDO->AddWorkflowVariable(pWV);
+      }
 
       expressionStruct *pExp;
       bool is_first=true;
@@ -749,6 +757,14 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       }
       break;
     }
+    case(27):  //----------------------------------------------
+    { /*:DeclareWorkflowVariable [name]*/
+       if(Options.noisy) { cout <<"Declare Workflow Variable"<<endl; }
+       workflowVar *pWV=new workflowVar();
+       pWV->name=to_string(s[1]);
+       pDO->AddWorkflowVariable(pWV);
+       break;
+    }
     case(30):  //----------------------------------------------
     {/*:LookupTable [name]
          N
@@ -807,6 +823,63 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         
       break;
     }
+    case(32):  //----------------------------------------------
+    {/*:LookupTableFromCSV [name] [filename.csv]
+       format: 
+        HeaderX, HeaderY
+        x1, y1
+        x2, y2
+        ...
+        xN, yN
+        (eof)
+     */
+      if(Options.noisy) { cout <<"LookupTableFromCSV"<<endl; }
+
+      const int MAX_LOOKUP_TABLE=256;
+
+      int     N;
+      double *aX = new double[MAX_LOOKUP_TABLE];
+      double *aY = new double[MAX_LOOKUP_TABLE];
+      int     line2(0);
+      bool    eof(false);
+      string  name = s[1];
+      string  filename="";
+      for (int i=2;i<Len;i++){filename+=to_string(s[i]); }
+      
+      ifstream    LUCSV;
+      LUCSV.open(filename.c_str());
+      if (LUCSV.fail()){cout << "ERROR opening file: "<<filename<<endl; return false;}
+
+      CParser *ppCSV=new CParser(LUCSV,filename,line2);
+
+      ppCSV->Tokenize(s,Len); //headers
+     
+      N=0;
+      do {
+        eof=ppCSV->Tokenize(s,Len);
+        if(IsComment(s[0],Len)) { }
+        else {
+          if(Len>=2) {
+            aX[N] = s_to_d(s[0]);
+            aY[N] = s_to_d(s[1]);
+            N++;
+          }
+          else {
+            WriteWarning("Incorrect line length (<2) in :LookupTableFromCSV table",Options.noisy);
+            break;
+          }
+        }
+      } while (!eof);
+
+      LUCSV.close();
+
+      CLookupTable *pLUT = new CLookupTable(name,aX,aY,N);
+      pDO->AddUserLookupTable(pLUT);
+      delete [] aX;
+      delete [] aY;
+      break;
+    }
+    
     case(40):  //----------------------------------------------
     { /*:LoopThrough [SB_GROUP or DEMAND_GROUP] [group name]  */
       if(Options.noisy) { cout <<"Start Loop"<<endl; }
@@ -1021,9 +1094,12 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     {/*:ReturnDestination [SBID] */
       if(Options.noisy) { cout <<"Return destination ID"<<endl; }
       if (pDemand==NULL){
-        ExitGracefully(":ReturnTimeSeries must be between :WaterDemand and :EndWaterDemand commands.",BAD_DATA_WARN);
+        ExitGracefully(":ReturnDestination must be between :WaterDemand and :EndWaterDemand commands.",BAD_DATA_WARN);
       }
       else {
+        if (pModel->GetSubBasinByID(s_to_ll(s[1])) == NULL) {
+          ExitGracefully("ParseManagementFile: Bad subbasin ID supplied to :ReturnDestination command.",BAD_DATA_WARN);
+        }
         pDemand->SetTargetSBID(s_to_ll(s[1]));
       }
       break;
@@ -1147,7 +1223,6 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           string warn ="Invalid expression in :DemandExpression command at line " + pp->GetLineNumber();
           WriteWarning(warn.c_str(),Options.noisy);
         }
-
       }
       break;
     }

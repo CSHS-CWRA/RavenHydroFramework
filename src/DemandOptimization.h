@@ -283,6 +283,8 @@ public: /*------------------------------------------------------*/
   double        GetUnitConversion     (const string s) const;
   int           GetUserDVIndex        (const string s) const;
   double        GetWorkflowVariable   (const string s, int &index) const;
+  workflowVar  *GetWorkflowVarStruct  (int index);
+  workflowVar  *GetWorkflowVarStruct  (const string s);
   int           GetNumUserDVs         () const;
   int           GetDebugLevel         () const;
   int           GetIndexFromDVString  (string s) const;

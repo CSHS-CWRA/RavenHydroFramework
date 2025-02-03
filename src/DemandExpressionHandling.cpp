@@ -194,7 +194,21 @@ double CDemandOptimizer::GetWorkflowVariable(const string s, int &index) const
   }
   return RAV_BLANK_DATA;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief retrieves workflow structure from list of workflow variables
+/// \params i [in] - index
 
+/// \returns ith workflow variable
+//
+workflowVar* CDemandOptimizer::GetWorkflowVarStruct(int i) {
+  return _pWorkflowVars[i];
+}
+workflowVar* CDemandOptimizer::GetWorkflowVarStruct(string s) {
+  for (int i = 0; i < _nWorkflowVars; i++) {
+    if (s==_pWorkflowVars[i]->name){ return _pWorkflowVars[i]; }
+  }
+  return NULL;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief retrieves value of decision variable index
 /// \params s [in] - string
