@@ -71,8 +71,10 @@ int main(int argc, char* argv[])
   if (WARNINGS.fail()){
     ExitGracefully("Main::Unable to open Raven_errors.txt. Bad output directory specified?",RAVEN_OPEN_ERR);
   }
+  if (Options.benchmarking){
   WARNINGS<<" Raven v"+Options.version+" Build date: "<<RavenBuildDate<<endl;
   WARNINGS<<"----------------------------------------------------------"<<endl;
+  }
   WARNINGS.close();
 
   t0=clock();

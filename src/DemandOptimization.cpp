@@ -597,6 +597,7 @@ void  CDemandOptimizer::IdentifyUpstreamDemands()
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes Demand decision variables
 /// \notes to be called during .rvm file read, PRIOR to declaring any user-specified DVs, goals, or constraints
+/// WHY? because of the expected ordering of decision variables in the GetDVColumnInd() routine
 /// \params pModel [in] - pointer to model
 /// \params Options  [in] - model options structure
 //

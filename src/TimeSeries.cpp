@@ -969,7 +969,6 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long lon
     else{
       tstep =FixTimestep(s_to_d(s[2]));
     }
-
     nMeasurements=s_to_i(s[3]);
     //units =s[4]
   }
@@ -981,9 +980,9 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long lon
     tstep        =FixTimestep(s_to_d(s[3]));
     //units =s[4]
   }
-  if (shift_to_per_ending)
+  if (shift_to_per_ending) //Just shifting by time step, not data interval (messy and used for HYDROGRAPHS only)
   {
-    start_day+=tstep;
+    start_day+=Options.timestep;
     int leap=0;
     if (IsLeapYear(start_yr,Options.calendar)){ leap = 1; }
     if (start_day>=365+leap){start_day-=365+leap; start_yr++;}

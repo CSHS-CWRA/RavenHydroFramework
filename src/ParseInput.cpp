@@ -491,6 +491,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":rvg_Filename"              )){code=512;}//GWMIGRATE -TO REMOVE
 
 	  if       (in_ifmode_statement)                        {code=-6; }
+    else if  (Len==0)                                     {code=-1; }
     else if  (!strcmp(s[0],":rvh_Filename"              )){code=160;}
     else if  (!strcmp(s[0],":rvp_Filename"              )){code=161;}
     else if  (!strcmp(s[0],":rvt_Filename"              )){code=162;}
@@ -525,6 +526,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 
     //--------------------HYDROLOGICAL PROCESSES ---------------
     if       (in_ifmode_statement)                        {code=-6; }
+    else if  (Len==0)                                     {code=-1; }
     else if  (!strcmp(s[0],":HydrologicProcesses"       )){code=200;}//REQUIRED
     else if  (!strcmp(s[0],":HydrologicalProcesses"     )){code=200;}//REQUIRED
     else if  (!strcmp(s[0],":Baseflow"                  )){code=201;}
@@ -580,6 +582,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     //...
     //--------------------TRANSPORT PROCESSES ---------------
     if       (in_ifmode_statement)                        {code=-6; }
+    else if  (Len==0)                                     {code=-1; }
     else if  (!strcmp(s[0],":Transport"                 )){code=300;}
     else if  (!strcmp(s[0],":FixedConcentration"        )){code=301; is_temp=false;}//After corresponding DefineHRUGroup(s) command, if used
     else if  (!strcmp(s[0],":FixedTemperature"          )){code=301; is_temp=true;}//After corresponding DefineHRUGroup(s) command, if used
