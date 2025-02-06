@@ -39,6 +39,7 @@ CDemandOptimizer::CDemandOptimizer(CModel *pMod)
   _nDecisionVars=0;
   _pDecisionVars=NULL;
   _nUserDecisionVars=0;
+  _pUserDecisionVars=NULL;
 
   _nSlackVars=0;
   _aSlackValues=NULL;
@@ -68,8 +69,6 @@ CDemandOptimizer::CDemandOptimizer(CModel *pMod)
   _nGoals=0;
   _pGoals=NULL;
 
-  _demands_initialized=false;
-
   _do_debug_level=0;//no debugging
 
   _nSolverResiduals=0;
@@ -86,6 +85,7 @@ CDemandOptimizer::~CDemandOptimizer()
     cout<<"DESTROYING DEMAND OPTIMIZER"<<endl;
   }
   for (int i=0;i<_nDecisionVars;    i++){delete _pDecisionVars[i];    }delete [] _pDecisionVars;
+  for (int i=0;i<_nUserDecisionVars;i++){                             }delete [] _pUserDecisionVars;
   for (int i=0;i<_nUserTimeSeries;  i++){delete _pUserTimeSeries[i];  }delete [] _pUserTimeSeries;
   for (int i=0;i<_nUserLookupTables;i++){delete _pUserLookupTables[i];}delete [] _pUserLookupTables;
   for (int i=0;i<_nWorkflowVars;    i++){delete _pWorkflowVars[i];    }delete [] _pWorkflowVars;
@@ -173,13 +173,6 @@ CDemandGroup* CDemandOptimizer::GetDemandGroupFromName(const string name)
 int CDemandOptimizer::GetNumDemandGroups() const
 {
   return _nDemandGroups;
-}
-//////////////////////////////////////////////////////////////////
-/// \brief returns true if demands have been initialized
-//
-bool CDemandOptimizer::DemandsAreInitialized() const
-{
-  return _demands_initialized;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns debug level
@@ -301,18 +294,29 @@ void  CDemandOptimizer::AddWaterDemand(CDemand* pDem)
 //
 void CDemandOptimizer::AddDecisionVar(const decision_var* pDV)
 {
-  if (VariableNameExists(pDV->name)) {
+  if (VariableNameExists(pDV->name) && (pDV->dvar_type!=DV_USER)) { //otherwise, captures self when user vars added to master list
     string warn="CDemandOptimizer::AddDecisionVar: decision variable name "+pDV->name+" is already in use.";
     ExitGracefully(warn.c_str(),BAD_DATA_WARN);
   }
 
   if (!DynArrayAppend((void**&)(_pDecisionVars),(void*)(pDV),_nDecisionVars)){
-   ExitGracefully("CDemandOptimizer::AddDecisionVar: adding NULL DV",BAD_DATA);}
+    ExitGracefully("CDemandOptimizer::AddDecisionVar: adding NULL DV",BAD_DATA);}
 
-  if (pDV->dvar_type==DV_USER){
-    _nUserDecisionVars++;
-  }
 }
+//////////////////////////////////////////////////////////////////
+/// \brief adds USER decision variable structure to _pUserDecisionVars member aarray (later added to _pDecisionVars array in RVM initialize)
+/// \params pDV [in] - user-specified decision variable to be added
+//
+void CDemandOptimizer::AddUserDecisionVar(const decision_var* pDV)
+{
+  if (VariableNameExists(pDV->name)) {
+    string warn="CDemandOptimizer::AddUserDecisionVar: decision variable name "+pDV->name+" is already in use.";
+    ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+  }
+  if (!DynArrayAppend((void**&)(_pUserDecisionVars),(void*)(pDV),_nUserDecisionVars)){
+    ExitGracefully("CDemandOptimizer::AddUserDecisionVar: adding NULL DV",BAD_DATA);}
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief disables stage discharge curve handling for reservoir in subbasin p
 //
@@ -323,16 +327,16 @@ void CDemandOptimizer::OverrideSDCurve(const int p)
 //////////////////////////////////////////////////////////////////
 /// \brief sets bounds for user specified decision variable
 //
-void CDemandOptimizer::SetDecisionVarBounds(const string name, const double& min, const double& max)
+void CDemandOptimizer::SetUserDecisionVarBounds(const string name, const double& min, const double& max)
 {
-  for (int i = 0; i < _nDecisionVars; i++) {
-    if (_pDecisionVars[i]->name==name){
-      _pDecisionVars[i]->min=min;
-      _pDecisionVars[i]->max=max;
+  for (int i = 0; i < _nUserDecisionVars; i++) {
+    if (_pUserDecisionVars[i]->name==name){
+      _pUserDecisionVars[i]->min=min;
+      _pUserDecisionVars[i]->max=max;
       return;
     }
   }
-  string warn = "SetDecisionVarBounds: invalid decision variable name (" + name + "): must define before use";
+  string warn = "SetUserDecisionVarBounds: invalid decision variable name (" + name + "): must declare or define before use";
   WriteWarning(warn.c_str(),_pModel->GetOptStruct()->noisy);
 }
 
@@ -414,6 +418,9 @@ bool CDemandOptimizer::VariableNameExists(const string &name) const
   for (int i=0; i<_nDecisionVars; i++){
     if (_pDecisionVars[i]->name==name){return true;}
   }
+  for (int i=0; i<_nUserDecisionVars; i++){//not yet in _pDecisionVars when called
+    if (_pUserDecisionVars[i]->name==name){return true;}
+  }
   for (int i = 0; i < _nUserConstants; i++) {
     if (_aUserConstNames[i]==name){return true;}
   }
@@ -464,6 +471,8 @@ void CDemandOptimizer::Initialize(CModel* pModel, const optStruct& Options)
   // Populate ordered decision variable array _pDecisionVars[]
   //  This order has to be maintained because of how the decision variables are indexed (consistent with GetDVColumnInd())
   //  subbasin outflows -> reservoir outflows -> reservoir stages -> delivered demand -> user-specified DVs -> slack variables
+  //  demand variables added in InitializeDemands
+  //  user and slack variables added in InitalizePostRVM
   //------------------------------------------------------------------
   // add subbasin outflow DVs
   int SB_count=0;
@@ -596,15 +605,12 @@ void  CDemandOptimizer::IdentifyUpstreamDemands()
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes Demand decision variables
-/// \notes to be called during .rvm file read, PRIOR to declaring any user-specified DVs, goals, or constraints
-/// WHY? because of the expected ordering of decision variables in the GetDVColumnInd() routine
+/// Called once at end of RVM read PRIOR to InitializePostRVM()
 /// \params pModel [in] - pointer to model
 /// \params Options  [in] - model options structure
 //
 void CDemandOptimizer::InitializeDemands(CModel* pModel, const optStruct& Options)
 {
-  if (_demands_initialized){return;}//This routine has already been called
-
   if (Options.noisy){cout<<"CDemandOptimizer: Demand initialization..."<<endl;}
 
   // reserve memory for delivery arrays
@@ -657,8 +663,6 @@ void CDemandOptimizer::InitializeDemands(CModel* pModel, const optStruct& Option
     }
   }
   _nReturns=r;
-
-  _demands_initialized=true;
 }
 string ComparisonToString(comparison C)
 {
@@ -708,6 +712,12 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
     }
   }
 
+  //Add User-defined decision vars to _pDecisionVars array
+  //------------------------------------------------------------------
+  for (int i = 0; i < _nUserDecisionVars; i++) {
+    AddDecisionVar(_pUserDecisionVars[i]);
+  }
+
   int p;
   _nSlackVars = 0;
   CSubBasin    *pSB;
@@ -730,6 +740,7 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
   }
 
   // Convert reservoir commands to user-specified constraints
+  //   allowed here because it doesnt introduce new DVs
   //------------------------------------------------------------------
   AddReservoirConstraints();
 
@@ -1243,14 +1254,31 @@ int CDemandOptimizer::GetDVColumnInd(const dv_type typ, const int counter) const
   return 0;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief prepares demand optimization problem
+/// \notes to be called every time step prior to demand updates and routing mass balance from Solvers.cpp
+/// \params pModel [in] - pointer to model
+/// \params Options  [in] - model options structure
+/// \params tt [in] - model time structure
+//
+void CDemandOptimizer::PrepDemandProblem(CModel *pModel, const optStruct &Options, const time_struct &tt)
+{
+  // update history arrays from previous timestep
+  // ----------------------------------------------------------------
+  UpdateHistoryArrays();
+
+  // evaluates value of all workflow variables for this time step
+  // ----------------------------------------------------------------
+  UpdateWorkflowVariables(tt,Options);
+}
+//////////////////////////////////////////////////////////////////
 /// \brief Solves demand optimization problem
 /// \notes to be called every time step in lieu of routing mass balance
 /// \params pModel [in] - pointer to model
 /// \params Options  [in] - model options structure
 /// \params aSBrunoff [in] - array of current amount of runoff released to each subbasin (m3)  [size:nSubBasins]
-/// \params t [in] - local model time
+/// \params tt [in] - model time structure
 //
-void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Options, const double *aSBrunoff,const time_struct &tt )
+void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Options, const double *aSBrunoff,const time_struct &tt)
 {
 #ifdef _LPSOLVE_
 
@@ -1273,14 +1301,6 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
   double *h_iter =new double [_pModel->GetNumSubBasins()];
   double *Q_iter =new double [_pModel->GetNumSubBasins()];
   int    *lprow  =new int    [_pModel->GetNumSubBasins()]; //index of goal equation for non-linear reservoir stage discharge curve in subbasin p
-
-  // update history arrays from previous timestep
-  // ----------------------------------------------------------------
-  UpdateHistoryArrays();
-
-  // evaluates value of all workflow variables for this time step
-  // ----------------------------------------------------------------
-  UpdateWorkflowVariables(tt,Options);
 
   // instantiate linear programming solver
   // ----------------------------------------------------------------

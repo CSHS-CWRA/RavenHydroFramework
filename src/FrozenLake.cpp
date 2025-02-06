@@ -120,7 +120,7 @@ void   CmvFrozenLake::GetRatesOfChange( const double      *state_vars,
     double SWE=state_vars[iSWE];
 
     double corr=1.0;
-    if      (SWE>buff_ht ){corr=0.0;            }
+    if      (SWE>=buff_ht){corr=0.0;            }
     else if (SWE<=0.0    ){corr=1.0;            }
     else                  {corr=1.0-SWE/buff_ht;}
 

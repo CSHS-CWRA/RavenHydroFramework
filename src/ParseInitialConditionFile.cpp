@@ -845,7 +845,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         }
         else if (!strcmp(s[0], ":BedTemperature"))
         {
-          if (Len >= 3) {
+          if (Len >= 2) {
             CEnthalpyModel *pEnth=(CEnthalpyModel*)(pConstit);
             pEnth->SetBedTemperature (p,s_to_d(s[1]));
           }

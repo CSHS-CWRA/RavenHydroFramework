@@ -34,10 +34,17 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
   {
     double Ma       =pHRU->GetSurfaceProps()->melt_factor;
     double melt_temp=pHRU->GetSurfaceProps()->DD_melt_temp;
-    /*double Mf       =pHRU->GetSurfaceProps()->refreeze_factor;
+    return Ma*(F->temp_daily_ave-melt_temp)*F->subdaily_corr;
+  }
+  //----------------------------------------------------------
+  else if (method==POTMELT_DD_FREEZE)
+  {
+    double Ma       =pHRU->GetSurfaceProps()->melt_factor;
+    double melt_temp=pHRU->GetSurfaceProps()->DD_melt_temp;
+    double Mf       =pHRU->GetSurfaceProps()->refreeze_factor;
     if ((Mf > 0) && (F->temp_daily_ave-melt_temp)<0.0){
-       return Mf*(F->temp_daily_ave-melt_temp)*F->subdaily_corr;
-    }*/
+       return Mf*(F->temp_daily_ave-melt_temp); //no subdaily correction for freezing
+    }
     return Ma*(F->temp_daily_ave-melt_temp)*F->subdaily_corr;
   }
   //----------------------------------------------------------

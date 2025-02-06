@@ -331,11 +331,16 @@ void CTimeSeries::InitializeResample(const int nSampVal, const double sampInterv
 /// \brief Returns index of time period for time t_loc in terms of local time
 ///
 /// \param &t_loc [in] Local time for time series (=0 for first time data present)
-/// \return Index of time period for time t_loc; if t_loc<0, returns 0, if t_loc>_nPulses-1, returns nPulses-1
+/// \return Index of time period for time t_loc; if t_loc<0, returns 0, if t_loc>_nPulses-1, returns nPulses-1 
+/// ?OR? \return Index of time period for local time t_loc; if t_loc<0 or >_nPulses-1, return DOESNT_EXIST//JRCNEWTS
+/// right now this has some unintended consequences for the final time step of solution when the input data is the same duration as the simulation. Needs to be looked into further.
 //
 int CTimeSeries::GetTimeIndex(const double &t_loc) const
 {
   return min((int)(max(floor(t_loc/_interval),0.0)),_nPulses-1);
+  //int index=(int)floor((t_loc+TIME_CORRECTION)/ _interval);//JRCNEWTS
+  //if (index >= _nPulses || index < 0) {index=DOESNT_EXIST;}//JRCNEWTS
+  //return index;//JRCNEWTS
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns sample index nn of time period for time t_model in terms of model time
@@ -358,6 +363,8 @@ double CTimeSeries::GetValue(const double &t) const
   int n= 0;
   double t_loc = t + _t_corr; //local time series time
   n = GetTimeIndex(t_loc);
+
+  //if (n==DOESNT_EXIST){return RAV_BLANK_DATA;} //JRCNEWTS
 
   if (_pulse){return _aVal[n];}
   else      {
@@ -384,8 +391,10 @@ double CTimeSeries::GetAvgValue(const double &t, const double &tstep) const
   //t_loc+tstep is now between n2*_interval and (n2+1)*_interval
   double inc;
   double blank = 0;
+  //if ((n1==DOESNT_EXIST) || (n2==DOESNT_EXIST)){return RAV_BLANK_DATA;}//JRCNEWTS
   if (t_loc < -TIME_CORRECTION)   {return RAV_BLANK_DATA; }
   if (t_loc > _nPulses*_interval) {return RAV_BLANK_DATA; }
+  //if (t_loc +tstep/2.0 > _nPulses*_interval){return RAV_BLANK_DATA;}
   if (_pulse){
     if (n1 == n2){ return _aVal[n1]; }
     else{
@@ -424,8 +433,8 @@ double CTimeSeries::GetMinValue(const double &t, const double &tstep) const
   double vmin(ALMOST_INF);
   double t_loc=t+_t_corr;
   n1=GetTimeIndex(t_loc      +TIME_CORRECTION);//to account for potential roundoff error
-  n2=GetTimeIndex(t_loc+tstep-TIME_CORRECTION);
-
+  n2=GetTimeIndex(t_loc+tstep-TIME_CORRECTION);//JRCNEWTS
+  //if ((n1==DOESNT_EXIST) || (n2==DOESNT_EXIST)){return RAV_BLANK_DATA;}//JRCNEWTS
   ExitGracefullyIf(!_pulse,"CTimeSeries::GetMinValue (non-pulse)",STUB);
 
   if (n1==n2){return _aVal[n1];}
@@ -445,7 +454,8 @@ double CTimeSeries::GetMaxValue(const double &t, const double &tstep) const
   double vmax(-ALMOST_INF);
   double t_loc=t+_t_corr;
   n1=GetTimeIndex(t_loc      +TIME_CORRECTION);//to account for potential roundoff error
-  n2=GetTimeIndex(t_loc+tstep-TIME_CORRECTION);
+  n2=GetTimeIndex(t_loc+tstep-TIME_CORRECTION);//JRCNEWTS
+  //if ((n1==DOESNT_EXIST) || (n2==DOESNT_EXIST)){return RAV_BLANK_DATA;}//JRCNEWTS
 
   ExitGracefullyIf(!_pulse,"CTimeSeries::GetMaxValue (non-pulse)",STUB);
 
@@ -544,6 +554,7 @@ double CTimeSeries::GetDailyMax(const int model_day) const
 /// \notes only really valid for special ts storing model results for diagnostics.
 /// \param &t [in] Global time at which point value of time series is to be determined
 /// \param type [in] type of observed time series
+/// JRC: subtle difference between this and GetValue() - why do we need this??
 /// \return value of modelled time series
 //
 double CTimeSeries::GetModelledValue(const double &t,const ts_type type) const
@@ -551,7 +562,7 @@ double CTimeSeries::GetModelledValue(const double &t,const ts_type type) const
   int n=0;
   double t_loc=t+_t_corr;
   n=GetTimeIndex(t_loc);
-
+  //if (n==DOESNT_EXIST){return RAV_BLANK_DATA;}//JRCNEWTS
   if (type == TS_REGULAR){return GetAvgValue(t,_sampInterval);}
   else      {
     if (n==_nPulses-1){return _aVal[n];}

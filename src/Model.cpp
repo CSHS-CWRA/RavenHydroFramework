@@ -1737,7 +1737,7 @@ void CModel::OverrideStreamflow   (const long long SBID)
         CTimeSeries *pTS =new CTimeSeries(name,*pObs);//copy time series
         pTS->SetLocID(SBID);
 
-        //need to shift everything by one interval, since hydrographs are stored as period-ending
+        //need to shift everything by one interval, since HYDROGRAPHS are stored as period-ending
         pTS->ShiftInTime(-(pTS->GetInterval()),*_pOptStruct);
 
         //add as inflow hydrograph to downstream

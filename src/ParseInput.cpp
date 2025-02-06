@@ -3733,6 +3733,7 @@ potmelt_method ParsePotMeltMethod(const string s)
 {
   string tmp=StringToUppercase(s);
   if      (!strcmp(tmp.c_str(),"POTMELT_DEGREE_DAY")){return POTMELT_DEGREE_DAY;}
+  else if (!strcmp(tmp.c_str(),"POTMELT_DD_FREEZE" )){return POTMELT_DD_FREEZE;}
   else if (!strcmp(tmp.c_str(),"POTMELT_EB"        )){return POTMELT_EB;}
   else if (!strcmp(tmp.c_str(),"POTMELT_RESTRICTED")){return POTMELT_RESTRICTED;}
   else if (!strcmp(tmp.c_str(),"POTMELT_DD_RAIN"   )){return POTMELT_DD_RAIN;}

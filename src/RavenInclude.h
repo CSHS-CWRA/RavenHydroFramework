@@ -672,6 +672,7 @@ enum potmelt_method
   POTMELT_HMETS,            ///< From HMETS model (Martel et al., 2017)
   POTMELT_RILEY,            ///< From Riley et al., 1972, as reported in HYDROTEL 2.1 manual
   POTMELT_BLENDED,          ///< weighted average of multiple methods
+  POTMELT_DD_FREEZE,        ///< simple degree day with refreeze coefficient in winter
   POTMELT_NONE,             ///< Potential melt not calculated
   POTMELT_UNKNOWN           ///< special case - can't recognize melt method in input
 };

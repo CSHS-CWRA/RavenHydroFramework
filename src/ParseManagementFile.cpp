@@ -274,9 +274,9 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
        :EndDemandGroup
      */
       if(Options.noisy) { cout <<"Demand Group"<<endl; }
-      if (pDO->DemandsAreInitialized()) {
+      /*if (pDO->DemandsAreInitialized()) {
         ExitGracefully("ParseManagementFile: all :Demand commands must be specified before management goals/constraints/decision vars in the .rvm file",BAD_DATA_WARN);
-      }
+      }*/
       if (Len!=2){pp->ImproperFormat(s);}
 
       pDO->AddDemandGroup(s[1]);
@@ -314,9 +314,6 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     case(12):  //----------------------------------------------
     {/*:DemandMultiplier [demand] [multiplier] */
       if(Options.noisy) { cout <<"Demand Multiplier"<<endl; }
-      if (pDO->DemandsAreInitialized()) {
-        ExitGracefully("ParseManagementFile: all :Demand commands must be specified before management goals/constraints/decision vars in the .rvm file",BAD_DATA_WARN);
-      }
       double mult = s_to_d(s[2]);
       if (mult < 0) {
         ExitGracefully("ParseManagementFile: :DemandMultiplier cannot be negative",BAD_DATA_WARN);
@@ -333,9 +330,6 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     case(13):  //----------------------------------------------
     {/*:DemandGroupMultiplier [groupname] [multiplier] */
       if(Options.noisy) { cout <<"Demand Group Multiplier"<<endl; }
-      if (pDO->DemandsAreInitialized()) {
-        ExitGracefully("ParseManagementFile: all :Demand commands must be specified before management goals/constraints/decision vars in the .rvm file",BAD_DATA_WARN);
-      }
       double mult = s_to_d(s[2]);
       if (mult < 0) {
         ExitGracefully("ParseManagementFile: :DemandGroupMultiplier cannot be negative",BAD_DATA_WARN);
@@ -372,9 +366,6 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     case(17):  //----------------------------------------------
     {/*:DemandIsUnrestricted [demand1] */ //demand1 is 1234 or FarmerBob, not !D1234 or !D.FarmerBob
       if(Options.noisy) { cout <<"Unrestricted Demand"<<endl; }
-      if (pDO->DemandsAreInitialized()) {
-        ExitGracefully("ParseManagementFile: all :Demand commands must be specified before management goals/constraints/decision vars in the .rvm file",BAD_DATA_WARN);
-      }
       pDO->SetDemandAsUnrestricted(s[1]);
       break;
     }
@@ -392,14 +383,11 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     case(21):  //----------------------------------------------
     { /*:DefineDecisionVariable [name] = [expressionRHS] */
       if(Options.noisy) { cout <<"Define Decision Variable"<<endl; }
-
-      pDO->InitializeDemands(pModel,Options);
-
       expressionStruct *pExp;
       managementGoal    *pConst=NULL;
       decision_var     *pDV = new decision_var(s[1],DOESNT_EXIST,DV_USER,pDO->GetNumUserDVs());
 
-      pDO->AddDecisionVar(pDV);
+      pDO->AddUserDecisionVar(pDV);
       pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
 
       if (pDO->GetDebugLevel()>=1){
@@ -422,7 +410,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     case(22):  //----------------------------------------------
     {/*:DecisionVariableBounds [name] [low] [upp] */
       if(Options.noisy) { cout <<"Decision variable bounds"<<endl; }
-      pDO->SetDecisionVarBounds(s[1], s_to_d(s[2]), s_to_d(s[3]));
+      pDO->SetUserDecisionVarBounds(s[1], s_to_d(s[2]), s_to_d(s[3]));
       break;
     }
     case(23):  //----------------------------------------------
@@ -455,8 +443,6 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
        :EndManagementGoal
      */
       if(Options.noisy) { cout <<"Management Constraint or Management Goal"<<endl; }
-
-      pDO->InitializeDemands(pModel,Options);
 
       managementGoal *pGoal=new managementGoal();
       pGoal->name=s[1];
@@ -611,27 +597,35 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     case(24):  //----------------------------------------------
     { /*:DeclareDecisionVariable [name]  */
       if(Options.noisy) { cout <<"Declare Decision Variable"<<endl; }
-      pDO->InitializeDemands(pModel,Options);
       decision_var     *pDV = new decision_var(s[1],DOESNT_EXIST,DV_USER,pDO->GetNumUserDVs());
-      pDO->AddDecisionVar(pDV);
+      pDO->AddUserDecisionVar(pDV);
       break;
     }
     case(25):  //----------------------------------------------
     { /*:DefineWorkflowVariable [name] = [expressionRHS] */
       if(Options.noisy) { cout <<"Define Workflow Variable"<<endl; }
       expressionStruct *pExp;
-      workflowVar *pWV=new workflowVar();
-      pWV->name=to_string(s[1]);
-      pDO->AddWorkflowVariable(pWV);
+      workflowVar *pWV;
+
+      if (pDO->GetWorkflowVarStruct(to_string(s[1])) != NULL){//already declared
+        pWV=pDO->GetWorkflowVarStruct(to_string(s[1]));
+      }
+      else{
+        pWV= new workflowVar();
+        pWV->name = to_string(s[1]);
+        pDO->AddWorkflowVariable(pWV);
+      }
+
       pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
 
-      if (pExp==NULL){
+      if (pExp!=NULL){
+        pWV->AddExpression(pExp);
+      }
+      else{
         string warn ="Invalid expression in :DefineWorkflowVariable command at line " + pp->GetLineNumber();
         WriteWarning(warn.c_str(),Options.noisy);
         break;
       }
-      pWV->AddExpression(pExp);
-      
       if (pDO->GetDebugLevel()>=1){
         SummarizeExpression((const char**)(s),Len,pExp);
       }
@@ -1362,8 +1356,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
   } //end while !end_of_file
   RVM.close();
 
-  pDO->InitializeDemands(pModel,Options); //if no management goals/constraints, called here
-
+  pDO->InitializeDemands    (pModel,Options); 
   pDO->InitializePostRVMRead(pModel,Options);
 
   if (loopCount != 0) {
