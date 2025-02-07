@@ -217,11 +217,8 @@ workflowVar* CDemandOptimizer::GetWorkflowVarStruct(string s) {
 int CDemandOptimizer::GetUserDVIndex(const string s) const
 {
   int ct=0;
-  for (int i = 0; i < _nDecisionVars; i++) {
-    if (_pDecisionVars[i]->dvar_type==DV_USER){
-      if (_pDecisionVars[i]->name==s){return ct;}
-      ct++;
-    }
+  for (int i = 0; i < _nUserDecisionVars; i++) {
+    if (_pUserDecisionVars[i]->name==s){return i;}
   }
   return DOESNT_EXIST;
 }
@@ -233,7 +230,7 @@ int CDemandOptimizer::GetUserDVIndex(const string s) const
 /// index is subbasin index p for subbasin-based DVs, or demand index ii for demand-linked DVs
 /// supports !Qxxx, !Q.name, !hxxx, !Ixxx, !Dxxx, !Cxxx, $Bxxx, $Exxx, !dxxx, !Rxxx
 //
-int CDemandOptimizer::GetIndexFromDVString(string s) const //String in format !Qxxx or !Q.name but not !Qxx[n]
+int CDemandOptimizer::GetIndexFromDVString(string s) const //String in format !Qxxx or !Q.name or $dxxx but not !Qxx[n]
 {
   if ((s[1] == 'Q') || (s[1] == 'h') || (s[1]=='I') || (s[1]=='B') || (s[1]=='E')) //Subbasin-indexed \todo[funct] - support q = dQ/dt
   {
@@ -504,6 +501,17 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
       term->p_index=p;
       return true;
     }
+    else if (s[1] == 'd') {
+      int d=GetIndexFromDVString(s);
+      if (d == DOESNT_EXIST) {
+        warn="ConvertToExpressionTerm: invalid demand ID or demand from disabled subbasin used in expression " +warnstring +": goal/constraint will be ignored";
+        WriteWarning(warn.c_str(),true);
+        return false;
+      }
+      term->type=TERM_CONST;
+      term->value=_pDemands[d]->GetDemand();
+      return true;
+    }
   }
   //----------------------------------------------------------------------
   else if (s.substr(0, 4) == "@ts(")//time series (e.g., @ts(my_time_series,n)
@@ -763,7 +771,6 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
   //----------------------------------------------------------------------
   else if (GetWorkflowVariable(s,index) != RAV_BLANK_DATA) // workflow variable
   {
-    
     term->type=TERM_WORKFLOW;
     term->value=GetWorkflowVariable(s,index);// initially zero
     term->DV_ind=index;

@@ -795,6 +795,9 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
               pConstit->SetMoutArray(p,nsegs,aMout,aMout[nsegs]);
               delete[] aMout;
             }
+            else {
+              WriteWarning("ParseInitialConditionsFile: incorrect number of terms in :Mout initial conditions item",Options.noisy);
+            }
           }
         }
         else if(!strcmp(s[0],":Mlat"))
@@ -809,6 +812,9 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
               pConstit->SetMlatHist(p,histsize,aMlat,aMlat[histsize]);
               delete[] aMlat;
             }
+            else {
+              WriteWarning("ParseInitialConditionsFile: incorrect number of terms in :Mlat initial conditions item",Options.noisy);
+            }
           }
         }
         else if(!strcmp(s[0],":Min"))
@@ -822,6 +828,9 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
               }
               pConstit->SetMinHist(p,histsize,aMin);
               delete[] aMin;
+            }
+            else {
+              WriteWarning("ParseInitialConditionsFile: incorrect number of terms in :Min initial conditions item",Options.noisy);
             }
           }
         }
