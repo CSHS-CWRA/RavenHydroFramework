@@ -742,7 +742,7 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
   // Convert reservoir commands to user-specified constraints
   //   allowed here because it doesnt introduce new DVs
   //------------------------------------------------------------------
-  AddReservoirConstraints();
+  AddReservoirConstraints(Options);
 
   // Calculate penalty units correction for reservoirs
   //------------------------------------------------------------------
@@ -858,8 +858,9 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
     }
 
     string tmpstr,tmpstr2;
-    cout<<" # History Items: "     <<_nHistoryItems<<endl;
+    cout<<" # Lookback intervals: "<<_nHistoryItems<<endl;
     cout<<" # Slack Vars: "        <<_nSlackVars<<endl;
+    cout<<" # Named constants : "  <<_nUserConstants<<endl;
     cout<<" # Constraints/Goals: " <<_nGoals<<endl;
     for (int i = 0; i < _nGoals; i++) {
       if (_pGoals[i]->is_goal){tmpstr="[GOAL]      "; }
@@ -935,7 +936,7 @@ void TokenizeString(string instring, char **s, int &Len)
 // these are done as if the corresponding constraints were read in as expressions from the .rvm file
 // initialization step: called from InitializePostRVMFileRead()
 //
-void CDemandOptimizer::AddReservoirConstraints()
+void CDemandOptimizer::AddReservoirConstraints(const optStruct &Options)
 {
   int               p;
   CSubBasin        *pSB;
@@ -960,7 +961,7 @@ void CDemandOptimizer::AddReservoirConstraints()
       int k=pSB->GetReservoir()->GetHRUIndex();
       if (k==DOESNT_EXIST){
         advice="AddReservoirConstraints: The reservoir in subbasin "+SBIDs+" doesnt have an :HRUID - this will negatively impact the units scaling of management optimization penalties.";
-        ExitGracefully(advice.c_str(), BAD_DATA_WARN);
+        WriteAdvisory(advice.c_str(), Options.noisy);
       }
 
       //Max Stage constraints
@@ -1301,6 +1302,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
   double *h_iter =new double [_pModel->GetNumSubBasins()];
   double *Q_iter =new double [_pModel->GetNumSubBasins()];
   int    *lprow  =new int    [_pModel->GetNumSubBasins()]; //index of goal equation for non-linear reservoir stage discharge curve in subbasin p
+  int    *lpsbrow=new int    [_pModel->GetNumSubBasins()]; //index of constraint equation for subbasin reaches
 
   // instantiate linear programming solver
   // ----------------------------------------------------------------
@@ -1642,6 +1644,8 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
       retval = lp_lib::add_constraintex(pLinProg,i,row_val,col_ind,ROWTYPE_EQ,RHS);
       ExitGracefullyIf(retval==0,"SolveDemandProblem::Error adding mass balance constraint",RUNTIME_ERR);
       IncrementAndSetRowName(pLinProg,rowcount,"reach_MB_"+to_string(pSB->GetID()));
+        
+      lpsbrow[p]=lp_lib::get_Nrows(pLinProg);
     }
   }
 
@@ -2051,12 +2055,12 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
           sum_diverted+=div_Q;
         }
 
-        RHS=lp_lib::get_rh(pLinProg,lprow[p]);//TMP DEBUG - NOT SAME LPROW AS RESERVOIRS !!!
+        RHS=lp_lib::get_rh(pLinProg,lpsbrow[p]);
 
         RHS+=(sum_diverted-aDivGuess[p]);
         aDivGuess[p]=sum_diverted;
 
-        lp_lib::set_rh (pLinProg,lprow[p],RHS);
+        lp_lib::set_rh (pLinProg,lpsbrow[p],RHS);
       }
     }
   }/*end iteration loop*/
@@ -2076,6 +2080,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
   delete [] h_iter;
   delete [] Q_iter;
   delete [] lprow;
+  delete [] lpsbrow;
   delete [] aDivert;
   delete [] aDivGuess;
 

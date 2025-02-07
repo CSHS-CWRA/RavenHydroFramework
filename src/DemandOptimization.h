@@ -270,7 +270,7 @@ private: /*------------------------------------------------------*/
   //Called during initialization
   void              AddDecisionVar(const decision_var *pDV);
   bool        UserTimeSeriesExists(string TSname) const;
-  void     AddReservoirConstraints();
+  void     AddReservoirConstraints(const optStruct &Options);
   void     IdentifyUpstreamDemands();
   bool          VariableNameExists(const string &name) const;
 
