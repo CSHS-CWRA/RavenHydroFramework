@@ -851,7 +851,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       N=0;
       do {
         eof=ppCSV->Tokenize(s,Len);
-        if(IsComment(s[0],Len)) { }
+        if      ((eof) || (IsComment(s[0],Len))) { }
         else {
           if(Len>=2) {
             aX[N] = s_to_d(s[0]);
@@ -859,6 +859,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
             N++;
           }
           else {
+            delete [] aX;delete [] aY;delete ppCSV;
             WriteWarning("Incorrect line length (<2) in :LookupTableFromCSV table",Options.noisy);
             break;
           }
@@ -866,11 +867,11 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       } while (!eof);
 
       LUCSV.close();
-
       CLookupTable *pLUT = new CLookupTable(name,aX,aY,N);
       pDO->AddUserLookupTable(pLUT);
       delete [] aX;
       delete [] aY;
+      delete ppCSV;
       break;
     }
     

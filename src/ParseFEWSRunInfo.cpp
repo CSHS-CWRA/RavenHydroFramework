@@ -293,14 +293,21 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
 
           // NamedConstant(s) ----------------------------------------------------
 
-          if (att_name_s.substr(0, 14) == "NamedConstant_") {
+          if (att_name_s.substr(0, 14) == "NamedConstant_") 
+          {
             string name=att_name_s.substr(14,att_name_s.length());
 
-            retval=nc_get_att_double(ncid,varid_props,att_name,&att_value);
+            retval = nc_inq_attlen(ncid,varid_props,att_name,&att_len);         HandleNetCDFErrors(retval);
+            char* my_value = new char[att_len + 1];
+            retval = nc_get_att_text(ncid,varid_props,att_name,my_value);       HandleNetCDFErrors(retval);// read attribute text
+            my_value[att_len] = '\0';// add string determining character
+            att_value=s_to_d(my_value);
+            delete my_value;
 
             cout<<"RUN INFO NAMED CONSTANT = "<<name<<" value = "<<att_value <<endl;
-
-            pModel->GetManagementOptimizer()->AddUserConstant(att_name,att_value);
+            if (Options.management_optimization){
+              pModel->GetManagementOptimizer()->AddUserConstant(name,att_value);
+            }
           }
 
           // TargetStageSet_ ----------------------------------------------------
@@ -726,6 +733,11 @@ bool ParseNetCDFFlowStateFile(CModel*& pModel,const optStruct& Options)
 bool ParseNetCDFManagementFile(CModel*& pModel,const optStruct& Options) 
 {
   if(Options.maninfo_filename=="") { return true; }
+  if (!Options.management_optimization) 
+  {
+    WriteWarning(":FEWSManagmentInfoFile command will be ignored; Management optimization is not enabled.",Options.noisy);
+    return true;
+  }
 
 #ifdef _RVNETCDF_
   int     ncid;                // NetCDF file id
@@ -797,8 +809,10 @@ bool ParseNetCDFManagementFile(CModel*& pModel,const optStruct& Options)
                                               manfile, "UserTimeSeries_"+userTSnames[i],
                                               "None", "time", //this assumes "time" is FEWS standard for time dimension
                                               0, 0.0, 1.0, 0.0);
-
-    pModel->GetManagementOptimizer()->AddUserTimeSeries(pTS);
+    if (Options.management_optimization){
+      cout<<"ADDING USER TIME SERIES "<<endl;
+      pModel->GetManagementOptimizer()->AddUserTimeSeries(pTS);
+    }
   }
   delete [] userTSnames;
 
