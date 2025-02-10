@@ -304,30 +304,10 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
             att_value=s_to_d(my_value);
             delete my_value;
 
-            cout<<"RUN INFO NAMED CONSTANT = "<<name<<" value = "<<att_value <<endl;
+            //cout<<"RUN INFO NAMED CONSTANT = "<<name<<" value = "<<att_value <<endl;
             if (Options.management_optimization){
               pModel->GetManagementOptimizer()->AddUserConstant(name,att_value);
             }
-          }
-
-          // TargetStageSet_ ----------------------------------------------------
-
-          if (att_name_s.substr(0, 15) == "TargetStageSet_") {
-            string SBID_s=att_name_s.substr(15,att_name_s.length());
-            long long SBID=s_to_ll(SBID_s.c_str());
-            
-            retval = nc_inq_attlen(ncid, varid_props, att_name, &att_len);
-            char* boolean = new char[att_len + 1];
-            retval = nc_get_att_text(ncid,varid_props,att_name,boolean);       HandleNetCDFErrors(retval);// read attribute text
-            boolean[att_len] = '\0';// add string determining character
-
-             if (!strcmp(boolean,"true")) {
-                
-               // LOOK for User Time Series 
-               //pModel->GetManagementOptimizer()->LookForTargetStageInUserTS(SBID);
-               // creates !hSBID = @ts("TargetStage_SBID",0) management goal , ensures units correction applied
-               ExitGracefully("RUN INFO FILE - TARGET STAGE SET ",STUB);
-             }
           }
         }
       }
@@ -716,112 +696,6 @@ bool ParseNetCDFFlowStateFile(CModel*& pModel,const optStruct& Options)
 #endif
 }
 
-//////////////////////////////////////////////////////////////////
-/// \brief Parses Deltares FEWS Management Time series file
-///
-/// \param *&pModel [out] Reference to model object
-/// \param &Options [out] Global model options information
-/// \return True if operation is successful
-//
-// The management update file includes:
-// 1) 'time'  dimensions
-// 2)	One or more vectors of size[1:time] 
-
-// .The state variable corresponding to the model start time will be used for initialization of flow/stage; all other values in the time vector are ignored
-//  The naming convention of each vector is : {UserTimeSeries_NAME}
-//
-bool ParseNetCDFManagementFile(CModel*& pModel,const optStruct& Options) 
-{
-  if(Options.maninfo_filename=="") { return true; }
-  if (!Options.management_optimization) 
-  {
-    WriteWarning(":FEWSManagmentInfoFile command will be ignored; Management optimization is not enabled.",Options.noisy);
-    return true;
-  }
-
-#ifdef _RVNETCDF_
-  int     ncid;                // NetCDF file id
-  int     retval;              // return value of NetCDF routines
-  int     ntime    = 0;        // size of time vector
-  int     time_dimid;          // dimension id of time variable
-  int     start_time_index=0;  // index of NetCDF time array which corresponds to Raven start time
-
-  // Open file
-  //====================================================================
-  string manfile=Options.maninfo_filename;
-
-  if(Options.noisy) { cout<<"Opening management info file "<<manfile<<endl; }
-  retval = nc_open(manfile.c_str(),NC_NOWRITE,&ncid);
-  if(retval != 0) {
-    string warn = "ParseNetCDFManagementFile: :ParseNetCDFManagementFile command: Cannot find file "+ manfile;
-    ExitGracefully(warn.c_str(),BAD_DATA_WARN);
-    return false;
-  }
-  HandleNetCDFErrors(retval);
-
-  // Get information from time vector
-  //====================================================================
-  GetNetCDFTimeInfo(ncid,time_dimid,ntime,start_time_index,Options);
-
-  if ((start_time_index < 0) || (start_time_index >= ntime))
-  {
-    time_struct tt;
-    JulianConvert(0, Options.julian_start_day, Options.julian_start_year, Options.calendar, tt);
-    string warn = "ParseNetCDFFlowStateFile: Model start time ("+tt.date_string+" "+ DecDaysToHours(Options.julian_start_day)+") does not occur during time window provided in NetCDF state update file";
-    ExitGracefully(warn.c_str(), BAD_DATA);
-    return false;
-  }
-
-  // Get Names of all UserTimeSeries_ vectors in model
-  //====================================================================
-  int N=0;
-  string *userTSnames;
-  int nvars;
-  char varname[NC_MAX_NAME];
-  retval=nc_inq_nvars(ncid,&nvars);
-
-  userTSnames=new string [nvars];
-
-  for (int i = 0; i < nvars; i++) {
-    retval=nc_inq_varname(ncid,i,varname);
-
-    userTSnames[N]=varname;
-
-    if (userTSnames[N].substr(0,15)=="UserTimeSeries_") 
-    {
-      userTSnames[N]=userTSnames[N].substr(15,userTSnames[N].length());
-      N++;
-    }
-  }
-
-  //close file
-  //====================================================================
-  retval = nc_close(ncid);         HandleNetCDFErrors(retval);
-
-  //Read data and store as time series
-  //====================================================================
-
-  CTimeSeries *pTS;
-  for (int i=0;i<N;i++)
-  {  
-    pTS=CTimeSeries::ReadTimeSeriesFromNetCDF(Options, userTSnames[i],
-                                              DOESNT_EXIST, "none",false, true, //assumes period ending format
-                                              manfile, "UserTimeSeries_"+userTSnames[i],
-                                              "None", "time", //this assumes "time" is FEWS standard for time dimension
-                                              0, 0.0, 1.0, 0.0);
-    if (Options.management_optimization){
-      cout<<"ADDING USER TIME SERIES "<<endl;
-      pModel->GetManagementOptimizer()->AddUserTimeSeries(pTS);
-    }
-  }
-  delete [] userTSnames;
-
-  return true;
-#else
-  ExitGracefully("ParseNetCDFFlowStateFile: Deltares FEWS State Update file can only be read using NetCDF version of Raven",BAD_DATA_WARN);
-  return false;
-#endif
-}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Parses Deltares FEWS Parameter update file

@@ -335,7 +335,6 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.stateinfo_filename      ="";
   Options.paraminfo_filename      ="";
   Options.flowinfo_filename       ="";
-  Options.maninfo_filename        ="";
 
   Options.NetCDF_chunk_mem        =10; //MB
 
@@ -484,7 +483,6 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":FEWSStateInfoFile"         )){code=110;}
     else if  (!strcmp(s[0],":FEWSParamInfoFile"         )){code=111;}
     else if  (!strcmp(s[0],":FEWSBasinStateInfoFile"    )){code=112;}
-    else if  (!strcmp(s[0],":FEWSManagmentInfoFile"     )){code=113;}
 
     else if  (!strcmp(s[0],":WriteGroundwaterHeads"     )){code=510;}//GWMIGRATE -TO REMOVE
     else if  (!strcmp(s[0],":WriteGroundwaterFlows"     )){code=511;}//GWMIGRATE -TO REMOVE
@@ -1932,12 +1930,6 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:FEWSBasinStateInfoFile [filename.nc]*/
       if (Options.noisy) { cout << "FEWS flow state update file" << endl; }
       Options.flowinfo_filename = CorrectForRelativePath(s[1], Options.rvi_filename);//with .nc extension!
-      break;
-    }
-    case(113):  //
-    {/*:FEWSManagmentInfoFile [filename.nc]*/
-      if (Options.noisy) { cout << "FEWS management info file" << endl; }
-      Options.maninfo_filename = CorrectForRelativePath(s[1], Options.rvi_filename);//with .nc extension!
       break;
     }
     case(160):  //--------------------------------------------
