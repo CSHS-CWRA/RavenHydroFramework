@@ -326,7 +326,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.aNetCDFattribs          =NULL;
   Options.assimilate_flow         =false;
   Options.assimilate_stage        =false;
-  Options.assimilation_start      =-1.0;
+  Options.assimilation_start      =-1.0; //start before simulation 
   Options.time_zone               =0;
   Options.rvl_read_frequency      =0.0; //do not read at all
   Options.custom_interval         =1.0; //daily
@@ -489,6 +489,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":rvg_Filename"              )){code=512;}//GWMIGRATE -TO REMOVE
 
 	  if       (in_ifmode_statement)                        {code=-6; }
+    else if  (Len==0)                                     {code=-1; }
     else if  (!strcmp(s[0],":rvh_Filename"              )){code=160;}
     else if  (!strcmp(s[0],":rvp_Filename"              )){code=161;}
     else if  (!strcmp(s[0],":rvt_Filename"              )){code=162;}
@@ -523,6 +524,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 
     //--------------------HYDROLOGICAL PROCESSES ---------------
     if       (in_ifmode_statement)                        {code=-6; }
+    else if  (Len==0)                                     {code=-1; }
     else if  (!strcmp(s[0],":HydrologicProcesses"       )){code=200;}//REQUIRED
     else if  (!strcmp(s[0],":HydrologicalProcesses"     )){code=200;}//REQUIRED
     else if  (!strcmp(s[0],":Baseflow"                  )){code=201;}
@@ -578,6 +580,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     //...
     //--------------------TRANSPORT PROCESSES ---------------
     if       (in_ifmode_statement)                        {code=-6; }
+    else if  (Len==0)                                     {code=-1; }
     else if  (!strcmp(s[0],":Transport"                 )){code=300;}
     else if  (!strcmp(s[0],":FixedConcentration"        )){code=301; is_temp=false;}//After corresponding DefineHRUGroup(s) command, if used
     else if  (!strcmp(s[0],":FixedTemperature"          )){code=301; is_temp=true;}//After corresponding DefineHRUGroup(s) command, if used
@@ -1510,8 +1513,10 @@ bool ParseMainInputFile (CModel     *&pModel,
         Options.main_output_dir=Options.output_dir;
         PrepareOutputdirectory(Options);
 
-        ofstream WARNINGS((Options.main_output_dir+"Raven_errors.txt").c_str());
+        ofstream WARNINGS((Options.main_output_dir+"Raven_errors.txt").c_str()); //This means RavenErrors.txt was also created in default directory
         WARNINGS.close();
+
+        WriteAdvisory("ParseInput: recommended practice is to specify the output directory from the command line, rather than using the :OutputDirectory command.",Options.noisy);
       }
       else {
         WriteWarning("ParseMainInputFile: :OutputDirectory command was ignored because directory was specified from command line.",Options.noisy);
@@ -2212,7 +2217,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"INF_PRMS"        )){itype=INF_PRMS;      }
       else if (!strcmp(s[1],"INF_HBV"         )){itype=INF_HBV;       }
       else if (!strcmp(s[1],"INF_UBC"         )){itype=INF_UBC;       }
-      else if (!strcmp(s[1],"INF_PARTITION"   )){itype=INF_RATIONAL;  }
+      else if (!strcmp(s[1],"INF_PARTITION"   )){itype=INF_RATIONAL;  } //backward compatible
       else if (!strcmp(s[1],"INF_GR4J"        )){itype=INF_GR4J;      }
       else if (!strcmp(s[1],"INF_SCS"              )){itype=INF_SCS;       }
       else if (!strcmp(s[1],"INF_SCS_NOABSTRACTION")){itype=INF_SCS_NOABSTRACTION;  }
@@ -3720,6 +3725,7 @@ potmelt_method ParsePotMeltMethod(const string s)
 {
   string tmp=StringToUppercase(s);
   if      (!strcmp(tmp.c_str(),"POTMELT_DEGREE_DAY")){return POTMELT_DEGREE_DAY;}
+  else if (!strcmp(tmp.c_str(),"POTMELT_DD_FREEZE" )){return POTMELT_DD_FREEZE;}
   else if (!strcmp(tmp.c_str(),"POTMELT_EB"        )){return POTMELT_EB;}
   else if (!strcmp(tmp.c_str(),"POTMELT_RESTRICTED")){return POTMELT_RESTRICTED;}
   else if (!strcmp(tmp.c_str(),"POTMELT_DD_RAIN"   )){return POTMELT_DD_RAIN;}

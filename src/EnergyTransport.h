@@ -26,7 +26,8 @@ class CEnthalpyModel :public CConstituentModel
   int            _mHyporheic;  ///< model soil layer corresponding to hyporheic mixing layer (default=2)
   double       *_aMinResTime;  ///< minimum residence time [d] (<1 dt) in each stream reach [size: nSubBasins]
 
-  double          *_aBedTemp;  ///< array of riverbed temperatures (state variable) [C] [size: nSubBasins]
+  double          *_aBedTemp;  ///< array of riverbed temperatures (*state variable*) [C] [size: nSubBasins]
+
   double       *_aTave_reach;  ///< time-lagged average reach water temperature [C] [size: nSubBasins]
   double   *_aSS_temperature;  ///< array of steady state target temperatures in each basin [C] [size: nSubBasins]
 

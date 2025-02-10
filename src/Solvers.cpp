@@ -475,6 +475,13 @@ void MassEnergyBalance( CModel            *pModel,
   const int MAX_CONTROL_STRUCTURES=10;
   double *res_Qstruct=new double [MAX_CONTROL_STRUCTURES];
 
+  // Update workflow variables and history variables for managment optimization
+  // ----------------------------------------------------------------------------------------
+  if (Options.management_optimization)
+  {
+    pModel->GetManagementOptimizer()->PrepDemandProblem(pModel,Options,tt);
+  }
+
   //determine total outflow from HRUs into respective basins (aRouted[p])
   for (p=0;p<NB;p++)
   {
@@ -545,7 +552,7 @@ void MassEnergyBalance( CModel            *pModel,
   // ----------------------------------------------------------------------------------------
   if (Options.management_optimization)
   {
-    pModel->GetDemandOptimizer()->SolveDemandProblem(pModel, Options, aRouted, tt);
+    pModel->GetManagementOptimizer()->SolveDemandProblem(pModel, Options, aRouted, tt);
   }
 
   // Route water over timestep

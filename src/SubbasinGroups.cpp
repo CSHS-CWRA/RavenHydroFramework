@@ -51,7 +51,7 @@ int    CSubbasinGroup::GetGlobalIndex       () const {return _global_pp;}
 ///
 /// \return true if Subbasin with subbasin ID SBID is in group
 //
-bool  CSubbasinGroup::IsInGroup          (const long SBID) const
+bool  CSubbasinGroup::IsInGroup          (const long long SBID) const
 {
   for (int p=0;p<_nSubbasins; p++){
     if (_pSubbasins[p]->GetID()==SBID){return true;}

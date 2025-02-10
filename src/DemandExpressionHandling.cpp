@@ -194,7 +194,21 @@ double CDemandOptimizer::GetWorkflowVariable(const string s, int &index) const
   }
   return RAV_BLANK_DATA;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief retrieves workflow structure from list of workflow variables
+/// \params i [in] - index
 
+/// \returns ith workflow variable
+//
+workflowVar* CDemandOptimizer::GetWorkflowVarStruct(int i) {
+  return _pWorkflowVars[i];
+}
+workflowVar* CDemandOptimizer::GetWorkflowVarStruct(string s) {
+  for (int i = 0; i < _nWorkflowVars; i++) {
+    if (s==_pWorkflowVars[i]->name){ return _pWorkflowVars[i]; }
+  }
+  return NULL;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief retrieves value of decision variable index
 /// \params s [in] - string
@@ -203,11 +217,8 @@ double CDemandOptimizer::GetWorkflowVariable(const string s, int &index) const
 int CDemandOptimizer::GetUserDVIndex(const string s) const
 {
   int ct=0;
-  for (int i = 0; i < _nDecisionVars; i++) {
-    if (_pDecisionVars[i]->dvar_type==DV_USER){
-      if (_pDecisionVars[i]->name==s){return ct;}
-      ct++;
-    }
+  for (int i = 0; i < _nUserDecisionVars; i++) {
+    if (_pUserDecisionVars[i]->name==s){return i;}
   }
   return DOESNT_EXIST;
 }
@@ -219,7 +230,7 @@ int CDemandOptimizer::GetUserDVIndex(const string s) const
 /// index is subbasin index p for subbasin-based DVs, or demand index ii for demand-linked DVs
 /// supports !Qxxx, !Q.name, !hxxx, !Ixxx, !Dxxx, !Cxxx, $Bxxx, $Exxx, !dxxx, !Rxxx
 //
-int CDemandOptimizer::GetIndexFromDVString(string s) const //String in format !Qxxx or !Q.name but not !Qxx[n]
+int CDemandOptimizer::GetIndexFromDVString(string s) const //String in format !Qxxx or !Q.name or $dxxx but not !Qxx[n]
 {
   if ((s[1] == 'Q') || (s[1] == 'h') || (s[1]=='I') || (s[1]=='B') || (s[1]=='E')) //Subbasin-indexed \todo[funct] - support q = dQ/dt
   {
@@ -231,7 +242,7 @@ int CDemandOptimizer::GetIndexFromDVString(string s) const //String in format !Q
       return DOESNT_EXIST;
     }
     else{
-      long   SBID=s_to_l(s.substr(2).c_str());
+      long long  SBID=s_to_ll(s.substr(2).c_str());
       return _pModel->GetSubBasinIndex(SBID);
     }
   }
@@ -490,6 +501,17 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
       term->p_index=p;
       return true;
     }
+    else if (s[1] == 'd') {
+      int d=GetIndexFromDVString(s);
+      if (d == DOESNT_EXIST) {
+        warn="ConvertToExpressionTerm: invalid demand ID or demand from disabled subbasin used in expression " +warnstring +": goal/constraint will be ignored";
+        WriteWarning(warn.c_str(),true);
+        return false;
+      }
+      term->type=TERM_CONST;
+      term->value=_pDemands[d]->GetDemand();
+      return true;
+    }
   }
   //----------------------------------------------------------------------
   else if (s.substr(0, 4) == "@ts(")//time series (e.g., @ts(my_time_series,n)
@@ -644,7 +666,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
   else if (s.substr(0, 8) == "@SB_var(") // SubBasin state var (e.g., @SB_var(SNOW,[id])
   {
     string sv_name;
-    long   SBID;
+    long long SBID;
     size_t is = s.find("@SB_var(");
     size_t ie = s.find(",",is);
     size_t ip = s.find_last_of(")");
@@ -660,7 +682,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     {
       bool found=false;
       sv_name = s.substr(is+8,ie-(is+8));
-      SBID    = s_to_l(s.substr(ie+1,ip-(ie+1)).c_str());
+      SBID    = s_to_ll(s.substr(ie+1,ip-(ie+1)).c_str());
 
       int lay=DOESNT_EXIST;
       sv_type sv=_pModel->GetStateVarInfo()->StringToSVType(sv_name,lay,false);
@@ -749,7 +771,6 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
   //----------------------------------------------------------------------
   else if (GetWorkflowVariable(s,index) != RAV_BLANK_DATA) // workflow variable
   {
-
     term->type=TERM_WORKFLOW;
     term->value=GetWorkflowVariable(s,index);// initially zero
     term->DV_ind=index;
@@ -1002,7 +1023,7 @@ exp_condition* CDemandOptimizer::ParseCondition(const char** s, const int Len, c
       char code=pCond->dv_name[1];
       if ((code=='Q') || (code=='h') || (code=='I')) //subbasin state decision variable
       {
-        long SBID=s_to_l(tmp2.c_str());
+        long long SBID=s_to_ll(tmp2.c_str());
         if (_pModel->GetSubBasinByID(SBID) == NULL) {
           ExitGracefully("ParseManagementFile: Subbasin ID in :Condition statement is invalid.",BAD_DATA_WARN);
         }
@@ -1083,6 +1104,10 @@ bool CDemandOptimizer::CheckOpRegimeConditions(const op_regime *pOperRegime, con
       {
         dv_value=(double)(tt.month);
       }
+      else if (pCond->dv_name == "YEAR")
+      {
+        dv_value = (double)(tt.year);
+      }
       else if (pCond->dv_name == "DATE")
       {
         dv_value=0;
@@ -1162,11 +1187,11 @@ bool CDemandOptimizer::CheckOpRegimeConditions(const op_regime *pOperRegime, con
 
       if (comp == COMPARE_BETWEEN)
       {
-        if ((pCond->dv_name == "DAY_OF_YEAR") || (pCond->dv_name =="MONTH")) { //handles wraparound
-          if ( v2 < v ){
-            if ((dv_value > v ) && (dv_value < v2)){return false;}
+        if ((pCond->dv_name == "DAY_OF_YEAR") || (pCond->dv_name =="MONTH") || (pCond->dv_name=="YEAR")) { //handles wraparound
+          if ( v2 < v ){ // wraparound
+            if ((dv_value < v ) && (dv_value > v2)){return false;} //integer values - this is inclusive of end dates
           }
-          else {
+          else { //regular
             if ((dv_value > v2) || (dv_value < v )){return false;}
           }
         }

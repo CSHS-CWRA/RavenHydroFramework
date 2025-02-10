@@ -18,7 +18,7 @@
 //
 CTimeSeriesABC::CTimeSeriesABC(ts_type type,
                                string  Name,
-                               long    loc_ID,
+                               long long loc_ID,
                                string  filename="")
 {
   _type       =type;
@@ -26,7 +26,7 @@ CTimeSeriesABC::CTimeSeriesABC(ts_type type,
   _loc_ID     =loc_ID;
   _srcfile    =filename;
   _constit_ind=DOESNT_EXIST;
-  _ID_tag     =DOESNT_EXIST;
+  _demand_ID  =DOESNT_EXIST;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -69,13 +69,13 @@ string CTimeSeriesABC::GetName()  const{return _name;}
 /// \brief Returns location identifier
 /// \return location identifier (e.g., HRU ID or Basin ID of observation data)
 //
-long   CTimeSeriesABC::GetLocID()      const{return _loc_ID;}
+long long CTimeSeriesABC::GetLocID()      const{return _loc_ID;}
 
 //////////////////////////////////////////////////////////////////
-/// \brief returns identifier tag
-/// \return identifier tag
+/// \brief returns demand ID
+/// \return demand ID
 //
-int   CTimeSeriesABC::GetIDTag() const {return _ID_tag; }
+long long   CTimeSeriesABC::GetDemandID() const {return _demand_ID; }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns location identifier
@@ -87,13 +87,13 @@ int    CTimeSeriesABC::GetConstitInd() const { return _constit_ind; }
 /// \brief Sets location identifier
 /// \param ID - HRU ID or SubBasin ID linked to observations
 //
-void   CTimeSeriesABC::SetLocID(long ID) { _loc_ID=ID; }
+void   CTimeSeriesABC::SetLocID(long long ID) { _loc_ID=ID; }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Sets identifier tag
-/// \param IDtag - integer tag (e.g., demand ID)
+/// \brief Sets demand ID
+/// \param ID - long long integer tag (e.g., demand ID)
 //
-void   CTimeSeriesABC::SetIDTag(int IDtag) { _ID_tag=IDtag; }
+void   CTimeSeriesABC::SetDemandID(long long ID) { _demand_ID=ID; }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Sets constituent index

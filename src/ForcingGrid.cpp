@@ -466,7 +466,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   // -------------------------------
   // add time shift to data
   //      --> only applied when _interval < 1.0 (daily)
-  //      --> otherwise ignored and warning written to RavenErrors.txt
+  //      --> otherwise ignored and warning written to Raven_errors.txt
   // -------------------------------
   if (_interval >= 1.0) {   // data are not sub-daily
     if ( ceil(_TimeShift) == _TimeShift) {  // time shift of whole days requested

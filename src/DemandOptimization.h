@@ -79,7 +79,7 @@ struct decision_var
 //
 struct exp_condition
 {
-  string      dv_name;      //< decision variable name (e.g., Q1023) or "MONTH" or "DATE" or "DAY_OF_YEAR"
+  string      dv_name;      //< decision variable name (e.g., Q1023) or "MONTH" or "DATE" or "DAY_OF_YEAR" or "YEAR"
   double      value;        //< conditional value
   double      value2;       //< second conditional (if COMPARE_BETWEEN)
   string      date_string;  //< conditional value (if date)
@@ -179,6 +179,7 @@ struct workflowVar
 ///////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for demand optimization
 //
+class CDemandGroup;
 class CDemandOptimizer
 {
 private: /*------------------------------------------------------*/
@@ -220,6 +221,7 @@ private: /*------------------------------------------------------*/
   int              _nSlackVars;         //< number of slack variables
 
   int             _nUserDecisionVars;   //< number of user-specified decision variables
+  decision_var  **_pUserDecisionVars;   //< array of pointers to user-specified decision vars [size: _nUserDecisionVars] (overlaps content of _pDecisionVars)
 
   int             _nUserConstants;      //< number of user-specified named constants
   string         *_aUserConstNames;     //< array of names of user-specified constants
@@ -245,8 +247,6 @@ private: /*------------------------------------------------------*/
   ofstream        _GOALSAT;            //< ofstream for GoalSatisfaction.csv
   ofstream        _RESID;              //< ofstream for OptimizationResidual.csv
 
-  bool            _demands_initialized;//< true if demands have been initialized
-
   int             _do_debug_level;      //< =1 if debug info is to be printed to screen, =2 if LP matrix also printed (full debug), 0 for nothing
 
   //Called during simualtion
@@ -268,8 +268,9 @@ private: /*------------------------------------------------------*/
 
 
   //Called during initialization
+  void              AddDecisionVar(const decision_var *pDV);
   bool        UserTimeSeriesExists(string TSname) const;
-  void     AddReservoirConstraints();
+  void     AddReservoirConstraints(const optStruct &Options);
   void     IdentifyUpstreamDemands();
   bool          VariableNameExists(const string &name) const;
 
@@ -282,6 +283,8 @@ public: /*------------------------------------------------------*/
   double        GetUnitConversion     (const string s) const;
   int           GetUserDVIndex        (const string s) const;
   double        GetWorkflowVariable   (const string s, int &index) const;
+  workflowVar  *GetWorkflowVarStruct  (int index);
+  workflowVar  *GetWorkflowVarStruct  (const string s);
   int           GetNumUserDVs         () const;
   int           GetDebugLevel         () const;
   int           GetIndexFromDVString  (string s) const;
@@ -292,8 +295,6 @@ public: /*------------------------------------------------------*/
   CDemand      *GetWaterDemand        (const int d);
   int           GetNumWaterDemands    () const;
 
-  bool   DemandsAreInitialized() const;
-
   void   SetHistoryLength      (const int n);
   void   SetCumulativeDate     (const int julian_date, const string demandID);
   void   SetDebugLevel         (const int lev);
@@ -301,8 +302,9 @@ public: /*------------------------------------------------------*/
   void   OverrideSDCurve       (const int p);
 
   void   AddGoalOrConstraint   (const managementGoal *pGoal);
-  void   AddDecisionVar        (const decision_var *pDV);
-  void   SetDecisionVarBounds  (const string name, const double &min, const double &max);
+  
+  void   AddUserDecisionVar    (const decision_var *pDV);
+  void   SetUserDecisionVarBounds(const string name, const double &min, const double &max);
   void   AddUserConstant       (const string name, const double &val);
   void   AddWorkflowVariable   (const workflowVar *pCV);
   void   AddUserTimeSeries     (const CTimeSeries *pTS);
@@ -324,6 +326,7 @@ public: /*------------------------------------------------------*/
   void   Initialize            (CModel *pModel, const optStruct &Options);
   void   InitializePostRVMRead (CModel *pModel, const optStruct &Options);
   void   InitializeDemands     (CModel *pModel, const optStruct &Options);
+  void   PrepDemandProblem     (CModel *pModel, const optStruct &Options, const time_struct &tt);
   void   SolveDemandProblem    (CModel *pModel, const optStruct &Options, const double *aSBrunoff, const time_struct &tt);
 
   void   WriteOutputFileHeaders(const optStruct &Options);

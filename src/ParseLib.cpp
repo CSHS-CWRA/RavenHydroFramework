@@ -9,7 +9,7 @@
 inline int      s_to_i (char *s1)            {return (int)atof(s1);   }
 inline double   s_to_d (char *s1)            {return atof(s1);        }
 inline bool     s_to_b (char *s1)            {return ((int)atof(s1)!=0);   }
-inline long long int s_to_ll(char *s1){return (long long int)atoll(s1);}
+inline long long int s_to_ll(char *s1)       {return (long long int)atoll(s1);}
 
 /*----------------------------------------------------------------
   Constructor

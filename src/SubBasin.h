@@ -43,7 +43,7 @@ class CSubBasin
 {
 private:/*------------------------------------------------------*/
 
-  long                     _ID;   ///< unique ID of subbasin (must be positive)
+  long long                _ID;   ///< unique ID of subbasin (must be positive)
   string                 _name;   ///< name
   bool               _disabled;   ///< true if disabled
   int                _global_p;   ///< p index in _pModel subbasin array
@@ -53,7 +53,7 @@ private:/*------------------------------------------------------*/
   //basin properties
   double           _basin_area;   ///< contributing surface area for subbasin [km2]
   double        _drainage_area;   ///< total upstream drainage area [km2] (includes subbasin area)
-  long          _downstream_ID;   ///< ID of downstream subbasin; if <0, then this outflows outside the model domain
+  long long     _downstream_ID;   ///< ID of downstream subbasin; if <0, then this outflows outside the model domain
   bool                 _gauged;   ///< if true, hydrographs are generated for downstream flows
   bool           _is_headwater;   ///< true if no subbasins drain into this one and _pInflowHydro==NULL
   bool             _is_conduit;   ///< true if basin is 'conduit' basin, and shouldn't have HRUs
@@ -162,10 +162,10 @@ private:/*------------------------------------------------------*/
   void            UpdateRoutingHydro(const double &tstep);
 public:/*-------------------------------------------------------*/
   //Constructors:
-  CSubBasin(const long           ID,
+  CSubBasin(const long long      ID,
             const string         Name,
             const CModelABC     *pMod,
-            const long           downstream_ID, //index of downstream SB, if <0, downstream outlet
+            const long long      downstream_ID, //index of downstream SB, if <0, downstream outlet
             const CChannelXSect *pChan,         //Channel
             const double         reach_len,     //reach length [m]
             const double         Qreference,    //reference flow [m3/s]
@@ -174,7 +174,7 @@ public:/*-------------------------------------------------------*/
   ~CSubBasin();
 
   //Accessor functions
-  long                 GetID                () const;
+  long long            GetID                () const;
   int                  GetGlobalIndex       () const; //[p]
   string               GetName              () const;
   double               GetBasinArea         () const;
@@ -185,11 +185,12 @@ public:/*-------------------------------------------------------*/
   double               GetAvgCumulFlux      (const int i, const bool to) const;
   double               GetAvgCumulFluxBet   (const int iFrom, const int iTo) const;
   double               GetReferenceFlow     () const;
+  double               GetTimeOfConc        () const;
   double               GetReferenceCelerity () const;
   double               GetReferenceXSectArea() const;
   double               GetCelerity          () const;
   double               GetDiffusivity       () const;
-  long                 GetDownstreamID      () const;
+  long long            GetDownstreamID      () const;
   int                  GetNumHRUs           () const;
   const CHydroUnit    *GetHRU               (const int k) const;
   bool                 IsGauged             () const;
@@ -294,12 +295,13 @@ public:/*-------------------------------------------------------*/
   void            SetQoutArray             (const int N, const double *aQo, const double QoLast);
   void            SetQlatHist              (const int N, const double *aQl, const double QlLast);
   void            SetQinHist               (const int N, const double *aQi);
-  void            SetDownstreamID          (const long down_SBID);
+  void            SetDownstreamID          (const long long down_SBID);
   void            SetDownstreamBasin       (const CSubBasin *pSB);
   void            SetGauged                (const bool isgauged);
   void            Disable                  ();
   void            Enable                   ();
   double          ScaleAllFlows            (const double &scale_factor, const bool scale_last, const double &tstep, const double &t);
+  double          AdjustAllFlows           (const double &adjustment, const bool scale_last, const double &tstep, const double &t);
   void            SetUnusableFlowPercentage(const double &val);
   void            IncludeInAssimilation    ();
 
@@ -363,7 +365,7 @@ public:/*-------------------------------------------------------*/
   double            GetAvgForcing      (const forcing_type &ftype) const;
   double            GetAvgCumulFlux    (const int i,const bool to) const;
   double            GetAvgCumulFluxBet (const int iFrom,const int iTo) const;
-  bool              IsInGroup          (const long SBID) const;
+  bool              IsInGroup          (const long long SBID) const;
   bool              IsDisabled         () const;
 };
 

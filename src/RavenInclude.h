@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
 
   Includes declaration of global constants, enumerated types, and
   shared common & hydrological functions
@@ -99,7 +99,7 @@ extern double g_min_storage;      ///< minimum soil storage
 extern int    g_current_e;        ///< current ensemble member index
 
 // Model version
-const std::string __RAVEN_VERSION__   ="3.8.1";
+const std::string __RAVEN_VERSION__   ="4.0";
 //*****************************************************************
 // Global Constants
 //*****************************************************************
@@ -672,6 +672,7 @@ enum potmelt_method
   POTMELT_HMETS,            ///< From HMETS model (Martel et al., 2017)
   POTMELT_RILEY,            ///< From Riley et al., 1972, as reported in HYDROTEL 2.1 manual
   POTMELT_BLENDED,          ///< weighted average of multiple methods
+  POTMELT_DD_FREEZE,        ///< simple degree day with refreeze coefficient in winter
   POTMELT_NONE,             ///< Potential melt not calculated
   POTMELT_UNKNOWN           ///< special case - can't recognize melt method in input
 };

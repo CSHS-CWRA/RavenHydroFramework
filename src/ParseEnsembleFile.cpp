@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2023 the Raven Development Team
+Copyright (c) 2008-2025 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -9,7 +9,7 @@ Copyright (c) 2008-2023 the Raven Development Team
 #include "ParseLib.h"
 #include "ModelEnsemble.h"
 #include "EnKF.h"
-bool IsContinuousFlowObs2(const CTimeSeriesABC* pObs,long SBID);
+bool IsContinuousFlowObs2(const CTimeSeriesABC* pObs,long long SBID);
 //////////////////////////////////////////////////////////////////
 /// \brief Parses Ensemble Model file
 /// \details model.rve: input file that defines ensemble member details for MC, calibration, etc.
@@ -251,7 +251,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
       //pModel->AddDiagnostic(pDiag);
       if(pEnsemble->GetType()==ENSEMBLE_DDS) {
         CDDSEnsemble *pDDS=((CDDSEnsemble*)(pEnsemble));
-        pDDS->SetCalibrationTarget(s_to_l(s[1]),diag,per_string);
+        pDDS->SetCalibrationTarget(s_to_ll(s[1]),diag,per_string);
       }
       else {
         WriteWarning(":ObjectiveFunction command will be ignored; no calibration method specified.",Options.noisy);

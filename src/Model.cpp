@@ -56,11 +56,14 @@ CModel::CModel(const int        nsoillayers,
   _aDownstreamInds=NULL;
 
   _aDAscale       =NULL; //Initialized in InitializeDataAssimilation
+  _aDAscale_last  =NULL;
+  _aDAQadjust     =NULL;
+  _aDADrainSum    =NULL;
+  _aDADownSum     =NULL;
   _aDAlength      =NULL;
   _aDAtimesince   =NULL;
   _aDAoverride    =NULL;
   _aDAobsQ        =NULL;
-  _aDAlast        =NULL;
 
   _pOptStruct = &Options;
   _pGlobalParams = new CGlobalParams();
@@ -209,9 +212,12 @@ CModel::~CModel()
   delete [] _aObsIndex;      _aObsIndex=NULL;
 
   delete [] _aDAscale;       _aDAscale=NULL;
+  delete [] _aDAscale_last;  _aDAscale_last=NULL;
+  delete [] _aDAQadjust;     _aDAQadjust=NULL;
+  delete [] _aDADrainSum;    _aDADrainSum=NULL;
+  delete [] _aDADownSum;     _aDADownSum=NULL;
   delete [] _aDAlength;      _aDAlength=NULL;
   delete [] _aDAtimesince;   _aDAtimesince=NULL;
-  delete [] _aDAlast;        _aDAlast=NULL;
   delete [] _aDAoverride;    _aDAoverride=NULL;
   delete [] _aDAobsQ;        _aDAobsQ=NULL;
 
@@ -501,10 +507,10 @@ int         CModel::GetDownstreamBasin(const int p) const
 //////////////////////////////////////////////////////////////////
 /// \brief Returns subbasin object corresponding to passed subbasin ID
 ///
-/// \param SBID [in] Integer sub basin ID
+/// \param SBID [in] long long integer sub basin ID
 /// \return pointer to Sub basin object corresponding to passed ID, if ID is valid
 //
-CSubBasin  *CModel::GetSubBasinByID(const long SBID) const
+CSubBasin  *CModel::GetSubBasinByID(const long long SBID) const
 {
   static int last_p=0;
   int p;
@@ -521,9 +527,9 @@ CSubBasin  *CModel::GetSubBasinByID(const long SBID) const
 /// \brief Returns sub basin index corresponding to passed subbasin ID
 ///
 /// \param SBID [in] Integer subbasin ID
-/// \return Sub basin index corresponding to passed ID, if ID is valid
+/// \return SubBasin index corresponding to passed ID, if ID is valid
 //
-int         CModel::GetSubBasinIndex(const long SBID) const
+int         CModel::GetSubBasinIndex(const long long SBID) const
 {
   static int last_p = 0;
   int p;
@@ -538,11 +544,11 @@ int         CModel::GetSubBasinIndex(const long SBID) const
 //////////////////////////////////////////////////////////////////
 /// \brief Returns array of pointers to subbasins upstream of subbasin SBID, including that subbasin
 ///
-/// \param SBID [in] Integer subbasin ID
+/// \param SBID [in] long long int subbasin ID
 /// \param nUpstream [out] size of array of pointers of subbasins
 /// \return array of pointers to subbasins upstream of subbasin SBID, including that subbasin
 //
-const CSubBasin **CModel::GetUpstreamSubbasins(const int SBID,int &nUpstream) const
+const CSubBasin **CModel::GetUpstreamSubbasins(const long long SBID,int &nUpstream) const
 {
   static const CSubBasin **pSBs=new const CSubBasin *[_nSubBasins];
 
@@ -592,7 +598,7 @@ const CSubBasin **CModel::GetUpstreamSubbasins(const int SBID,int &nUpstream) co
 /// \param SBIDdown [in] subbasin ID basis of query
 /// \return true if subbasin with ID SBID is upstream of (or is) basin with subbasin SBIDdown
 //
-bool  CModel::IsSubBasinUpstream(const long SBID,const long SBIDdown) const
+bool  CModel::IsSubBasinUpstream(const long long SBID,const long long SBIDdown) const
 {
   if      (SBID==DOESNT_EXIST    ) { return false;} //end of the recursion line
   else if (SBIDdown==SBID)         { return true; } //a subbasin is upstream of itself (even handles loops on bad networks)
@@ -639,7 +645,7 @@ CSubbasinGroup  *CModel::GetSubBasinGroup(const string name) const
 /// \param SBGroupName [in] String name of subbasin group
 /// \return true if subbasin SBID is in subbasin Group specified by SBGroupName
 //
-bool CModel::IsInSubBasinGroup(const long SBID,const string SBGroupName) const
+bool CModel::IsInSubBasinGroup(const long long SBID,const string SBGroupName) const
 {
   CSubbasinGroup *pGrp=NULL;
   pGrp=GetSubBasinGroup(SBGroupName);
@@ -976,7 +982,7 @@ CEnsemble  *CModel::GetEnsemble() const { return _pEnsemble; }
 /// \brief Returns demand optimizer
 /// \return pointer to demand optimizer
 //
-CDemandOptimizer  *CModel::GetDemandOptimizer() const { return _pDO; }
+CDemandOptimizer  *CModel::GetManagementOptimizer() const { return _pDO; }
 
 /*****************************************************************
    Watershed Diagnostic Functions
@@ -1706,13 +1712,13 @@ void  CModel::SetNumSnowLayers     (const int          nLayers)
   delete [] aLev;
 }
 
-bool IsContinuousFlowObs(const CTimeSeriesABC *pObs,long SBID);
+bool IsContinuousFlowObs(const CTimeSeriesABC *pObs,long long SBID);
 
 //////////////////////////////////////////////////////////////////
 /// \brief overrides streamflow with observed streamflow
 /// \param SBID [in] valid subbasin identifier of basin with observations at outflow
 //
-void CModel::OverrideStreamflow   (const long SBID)
+void CModel::OverrideStreamflow   (const long long SBID)
 {
   for (int i=0;i<_nObservedTS; i++)
   {
@@ -1728,7 +1734,7 @@ void CModel::OverrideStreamflow   (const long SBID)
         return;
       }
 
-      long downID=GetSubBasinByID(SBID)->GetDownstreamID();
+      long long downID=GetSubBasinByID(SBID)->GetDownstreamID();
       if (downID!=DOESNT_EXIST)
       {
         //Copy time series of observed flows to new time series
@@ -1737,7 +1743,7 @@ void CModel::OverrideStreamflow   (const long SBID)
         CTimeSeries *pTS =new CTimeSeries(name,*pObs);//copy time series
         pTS->SetLocID(SBID);
 
-        //need to shift everything by one interval, since hydrographs are stored as period-ending
+        //need to shift everything by one interval, since HYDROGRAPHS are stored as period-ending
         pTS->ShiftInTime(-(pTS->GetInterval()),*_pOptStruct);
 
         //add as inflow hydrograph to downstream
@@ -2665,10 +2671,10 @@ void CModel::UpdateParameter(const class_type &ctype,const string pname,const st
     if (_nSubBasins == 0) {
       ExitGracefully("UpdateParameter: should not call before subbasins are created",RUNTIME_ERR);
     }
-    long SBID=s_to_l(cname.c_str()); //class name should be SBID in this case
+    long long SBID=s_to_ll(cname.c_str()); //class name should be SBID in this case
     if( (strlen(cname.c_str())>8) && //also accept SUBBASIN32 instead of 32
         (!strcmp(cname.substr(0,8).c_str(),"SUBBASIN")) ) {
-      SBID=s_to_l(cname.substr(8,strlen(cname.c_str())-8).c_str());
+      SBID=s_to_ll(cname.substr(8,strlen(cname.c_str())-8).c_str());
     }
 
     CSubBasin *pSB=GetSubBasinByID(SBID);

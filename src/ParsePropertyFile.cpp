@@ -531,6 +531,17 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           CSoilClass::SetSoilProperty(*parsed_soils[indices[i]],aParamStrings[j+1],properties[i][j]);
         }
       }
+      bool found_in_master;
+      for (int j=0;j<nParamStrings-1;j++){
+        found_in_master=false;
+        for (int k = 0; k < nPmaster; k++) {
+          if ((aPCmaster[k] == CLASS_SOIL) && (aPmaster[k]==aParamStrings[j+1])){found_in_master=true; break;}
+        }
+        if (!found_in_master) {
+          string warn="ParseClassPropertiesFile: Soil parameter "+aParamStrings[j+1]+" specified in .rvp file, but is not used within this model formulation.";
+          WriteAdvisory(warn.c_str(), Options.noisy);
+        }
+      }
       break;
     }
     //===========================================================================================
@@ -615,6 +626,17 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           CLandUseClass::SetSurfaceProperty(parsed_surf[indices[i]],
                                             aParamStrings[j+1],
                                             properties[i][j]);
+        }
+      }
+      bool found_in_master;
+      for (int j=0;j<nParamStrings-1;j++){
+        found_in_master=false;
+        for (int k = 0; k < nPmaster; k++) {
+          if ((aPCmaster[k] == CLASS_LANDUSE) && (aPmaster[k]==aParamStrings[j+1])){found_in_master=true; break;}
+        }
+        if (!found_in_master) {
+          string warn="ParseClassPropertiesFile: Land Use parameter "+aParamStrings[j+1]+" specified in .rvp file, but is not used within this model formulation.";
+          WriteAdvisory(warn.c_str(), Options.noisy);
         }
       }
       break;
@@ -750,6 +772,17 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           CVegetationClass::SetVegetationProperty(parsed_veg   [indices[i]],
                                                   aParamStrings[j+1],
                                                   properties   [i][j]);
+        }
+      }
+      bool found_in_master;
+      for (int j=0;j<nParamStrings-1;j++){
+        found_in_master=false;
+        for (int k = 0; k < nPmaster; k++) {
+          if ((aPCmaster[k] == CLASS_VEGETATION) && (aPmaster[k]==aParamStrings[j+1])){found_in_master=true; break;}
+        }
+        if (!found_in_master) {
+          string warn="ParseClassPropertiesFile: Vegetation parameter "+aParamStrings[j+1]+" specified in .rvp file, but is not used within this model formulation.";
+          WriteAdvisory(warn.c_str(), Options.noisy);
         }
       }
       break;
@@ -1476,13 +1509,13 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
 
   if (!Options.silent){cout<<"Autocalculating Model Parameters..."<<endl;}
 
-  pModel->GetGlobalParams()->AutoCalculateGlobalParams          (parsed_globals,global_template);
+  pModel->GetGlobalParams()->AutoCalculateGlobalParams(parsed_globals,global_template);
 
   for (int c=1;c<num_parsed_veg;c++){
-    pVegClasses [c-1]->AutoCalculateVegetationProps (parsed_veg[c],parsed_veg[0]);
+    pVegClasses [c-1]->AutoCalculateVegetationProps  (parsed_veg[c],parsed_veg[0]);
   }
   for (int c=1;c<num_parsed_soils;c++){
-    pSoilClasses[c]->AutoCalculateSoilProps       (*parsed_soils[c],*parsed_soils[0],pModel->GetTransportModel()->GetNumConstituents());
+    pSoilClasses[c]->AutoCalculateSoilProps          (*parsed_soils[c],*parsed_soils[0],pModel->GetTransportModel()->GetNumConstituents());
   }
   for (int c=1;c<num_parsed_lult;c++) {
     pModel->GetLanduseClass(c-1)->AutoCalculateLandUseProps(parsed_surf[c], parsed_surf[0]);

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Demands.h"
 
@@ -8,7 +8,7 @@
 /// \brief Implementation of the water demand constructor
 /// \details Creates empty instance of the water demand class
 //
-CDemand::CDemand(int ID, string name, long SBID, bool is_res)
+CDemand::CDemand(long long ID, string name, long long SBID, bool is_res, const CModel *pMod)
 {
   _ID=ID;
   _name=name;
@@ -37,8 +37,10 @@ CDemand::CDemand(int ID, string name, long SBID, bool is_res)
 
   _currentDemand=0;
   _currentRetTarget=0;
+
+  _pModel=pMod;
 }
-CDemand::CDemand(int ID, string name, long SBID, bool is_res, CTimeSeries* pTS):CDemand(ID,name,SBID,is_res)
+CDemand::CDemand(long long ID, string name, long long SBID, bool is_res, CTimeSeries* pTS,const CModel *pMod):CDemand(ID,name,SBID,is_res,pMod)
 {
   _pDemandTS=pTS;
   _demType=DEMAND_TIME_SERIES;
@@ -53,7 +55,7 @@ CDemand::~CDemand()
 //////////////////////////////////////////////////////////////////
 /// \brief Water demand accessors
 //
-int     CDemand::GetID() const
+long long CDemand::GetDemandID() const
 {
   return _ID;
 }
@@ -63,7 +65,7 @@ string  CDemand::GetName() const
 }
 int     CDemand::GetGlobalIndex() const
 {
-  ExitGracefullyIf(_global_index==DOESNT_EXIST,"CDemand::GetLocalIndex(): didnt set local index",RUNTIME_ERR);
+  ExitGracefullyIf(_global_index==DOESNT_EXIST,"CDemand::GetGlobalIndex(): didnt set global index",RUNTIME_ERR);
   return _global_index; //d
 }
 int     CDemand::GetLocalIndex() const
@@ -71,7 +73,7 @@ int     CDemand::GetLocalIndex() const
   ExitGracefullyIf(_loc_index==DOESNT_EXIST,"CDemand::GetLocalIndex(): didnt set local index",RUNTIME_ERR);
   return _loc_index;
 }
-long    CDemand::GetSubBasinID() const
+long long CDemand::GetSubBasinID() const
 {
   return _SBID;
 }
@@ -108,7 +110,7 @@ bool    CDemand::HasReturnFlow() const
 {
   return (_returnPct*_multiplier>0.0);
 }
-long    CDemand::GetTargetSBID() const {
+long long CDemand::GetTargetSBID() const {
   return _targetSBID;
 }
 //////////////////////////////////////////////////////////////////
@@ -172,7 +174,7 @@ void    CDemand::SetReturnExpression(expressionStruct* pExp)
   _retType=RETURN_EXPRESSION;
   _pReturnExp=pExp;
 }
-void    CDemand::SetTargetSBID(const long ID)
+void    CDemand::SetTargetSBID(const long long ID)
 {
   _targetSBID=ID;
 }
@@ -212,21 +214,18 @@ void    CDemand::UpdateDemand(const optStruct &Options,const time_struct& tt)
     if (Qirr==RAV_BLANK_DATA){Qirr=0.0;}
 
     _currentDemand=_multiplier*Qirr;
-    //cout<<"UPDATE DEMAND : "<<_currentDemand<<" "<<_multiplier<<" "<<Qirr<< " " <<nn<<endl;
   }
   else if (_demType == DEMAND_PCT)
   {
-    //pct of inflow from end of previous time step
-    //double Q=pModel->GetSubBasin(p)->GetInflow(); // outflow from last time step
-    //_currentDemand=demPct * Q;
-    ExitGracefully("UpdateDEmand::DEMAND_PCT",STUB);
+    //pct of outflow from end of previous time step
+    double Q=_pModel->GetSubBasinByID(_SBID)->GetOutflowRate(); // outflow from last time step
+    _currentDemand=_demandFract * Q;
   }
   else if (_demType == DEMAND_EXPRESSION)
   {
-    //double val=_pModel->GetDO->EvaluateExpression(pExp,tt.model_time);
-    //if (fabs(val-RAV_BLANK_DATA)<REAL_SMALL){_currentDemand=0.0;}
-    //else                                    {_currentDemand=val;}
-    ExitGracefully("UpdateDEmand::DEMAND_EXPRESSION",STUB);
+    double val=_pModel->GetManagementOptimizer()->EvaluateExpression(_pDemandExp, tt.model_time,true);
+    if (fabs(val-RAV_BLANK_DATA)<REAL_SMALL){_currentDemand=0.0;}
+    else                                    {_currentDemand=val;}
   }
   /*
   else if (_demType == DEM_SOIL_MOISTURE) {

@@ -442,7 +442,10 @@ time_struct DateStringToTimeStruct(const string sDate, string sTime, const int c
   if (tt.month==12){tt.julian_day+=30;}
   if ((tt.leap_yr  ) && (tt.month> 2)){tt.julian_day+= 1;}
 
-  if (tt.day_of_month > DAYS_PER_MONTH[tt.month - 1]) {
+  int leap=0;
+  if (tt.leap_yr){leap=1;}
+
+  if (tt.day_of_month > (DAYS_PER_MONTH[tt.month - 1]+leap)) {
     ExitGracefully("DateStringToTimeStruct: Invalid time format used - exceeded max day of month",BAD_DATA);
   }
   if (tt.day_of_month <=0 ) {

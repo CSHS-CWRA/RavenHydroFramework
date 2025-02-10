@@ -50,10 +50,10 @@ int    CDemandGroup::GetGlobalIndex       () const {return _global_ii;}
 ///
 /// \return true if demand with  ID demandID is in group
 //
-bool  CDemandGroup::IsInGroup          (const int demandID) const
+bool  CDemandGroup::IsInGroup          (const long long demandID) const
 {
   for (int p=0;p<_nDemands; p++){
-    if (_pDemands[p]->GetID() == demandID) { return true; }
+    if (_pDemands[p]->GetDemandID() == demandID) { return true; }
   }
   return false;
 }
