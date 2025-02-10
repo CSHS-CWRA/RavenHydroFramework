@@ -328,7 +328,7 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
     {
       _aObsIndices[_nObs]=i;
       _nObs++;
-      for(int nn=_nTimeSteps-_window_size;nn<_nTimeSteps;nn++) {
+      for(int nn=_nTimeSteps-_window_size+1;nn<=_nTimeSteps;nn++) {
         obsval=pTSObs->GetSampledValue(nn);
         if(obsval!=RAV_BLANK_DATA) { _nObsDatapoints++; }
       }
@@ -380,7 +380,7 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
         if (_pObsPerturbations[p]->state==sv){pPerturb=_pObsPerturbations[p];}
       }
 
-      for(int nn=_nTimeSteps-_window_size;nn<_nTimeSteps;nn++)
+      for(int nn=_nTimeSteps-_window_size+1;nn<=_nTimeSteps;nn++)
       {
         obsval=pTSObs->GetSampledValue(nn);
         if(obsval!=RAV_BLANK_DATA) {
@@ -443,27 +443,28 @@ void CEnKFEnsemble::CloseTimeStepOps(CModel* pModel,optStruct& Options,const tim
   //----------------------------------------------------------
   int curr_nn=(int)((tt.model_time+TIME_CORRECTION)/Options.timestep);//current timestep index
 
-  if (curr_nn<_nTimeSteps-_window_size){return;} // haven't reached the data availability period yet
+  if (curr_nn<_nTimeSteps-_window_size+1){return;} // haven't reached the data availability period yet
 
   int j=0;
   double obsval;
   for(int ii=0;ii<_nObs;ii++) { //messy that we have to go through whole loop like this
     const CTimeSeriesABC* pTSObs=pModel->GetObservedTS (_aObsIndices[ii]);
     const CTimeSeriesABC* pTSMod=pModel->GetSimulatedTS(_aObsIndices[ii]);
-    for(int nn=_nTimeSteps-_window_size;nn<_nTimeSteps;nn++) {
+    for(int nn=_nTimeSteps-_window_size+1;nn<=_nTimeSteps;nn++) {
       obsval=pTSObs->GetSampledValue(nn);
       if(obsval!=RAV_BLANK_DATA) {
         if(nn==curr_nn) {
           _output_matrix[e][j]=pTSMod->GetSampledValue(nn);
           //cout<<"GRABBING OUTPUT ens: "<<e<<" nn="<<curr_nn<<" obs: "<<_output_matrix[e][j]<<" "<<obsval<<" duration "<<Options.duration<<endl;
-          break;
+          j++;
+          break; //escape loop
+        } 
+        else {
+          j++;
         }
-        j++;
+        
       }
     }
-  }
-  if (j!=_nObsDatapoints){
-    ExitGracefully("Indexing issue in EnKF::CloseTimeStepOps: This shouldnt happen.",RUNTIME_ERR);
   }
 }
 //////////////////////////////////////////////////////////////////
