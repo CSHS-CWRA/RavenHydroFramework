@@ -18,15 +18,15 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
         with:
-          egress-policy: block
-          allowed-endpoints: >
-            azure.archive.ubuntu.com:80
-            esm.ubuntu.com:443
-            files.pythonhosted.org:443
-            github.com:443
-            motd.ubuntu.com:443
-            packages.microsoft.com:443
-            pypi.org:443
+          egress-policy: audit
+#          allowed-endpoints: >
+#            azure.archive.ubuntu.com:80
+#            esm.ubuntu.com:443
+#            files.pythonhosted.org:443
+#            github.com:443
+#            motd.ubuntu.com:443
+#            packages.microsoft.com:443
+#            pypi.org:443
 
       - name: Checkout Repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
@@ -49,7 +49,7 @@ jobs:
   build-netcdf:
     name: Build (${{ matrix.build_type }}; ${{ matrix.os }}; NetCDF=True)
     needs: lint
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ ubuntu-latest, macos-latest ]
@@ -105,7 +105,7 @@ jobs:
   build:
     name: Build (${{ matrix.build_type }}; ${{ matrix.os }}; NetCDF=False)
     needs: lint
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
