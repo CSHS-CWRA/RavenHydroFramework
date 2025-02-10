@@ -292,7 +292,6 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
           string att_name_s=to_string(att_name);
 
           // NamedConstant(s) ----------------------------------------------------
-
           if (att_name_s.substr(0, 14) == "NamedConstant_") 
           {
             string name=att_name_s.substr(14,att_name_s.length());
@@ -302,7 +301,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
             retval = nc_get_att_text(ncid,varid_props,att_name,my_value);       HandleNetCDFErrors(retval);// read attribute text
             my_value[att_len] = '\0';// add string determining character
             att_value=s_to_d(my_value);
-            delete my_value;
+            delete [] my_value;
 
             //cout<<"RUN INFO NAMED CONSTANT = "<<name<<" value = "<<att_value <<endl;
             if (Options.management_optimization){

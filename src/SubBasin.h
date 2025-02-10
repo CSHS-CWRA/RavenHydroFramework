@@ -301,6 +301,7 @@ public:/*-------------------------------------------------------*/
   void            Disable                  ();
   void            Enable                   ();
   double          ScaleAllFlows            (const double &scale_factor, const bool scale_last, const double &tstep, const double &t);
+  double          AdjustAllFlows           (const double &adjustment, const bool scale_last, const double &tstep, const double &t);
   void            SetUnusableFlowPercentage(const double &val);
   void            IncludeInAssimilation    ();
 

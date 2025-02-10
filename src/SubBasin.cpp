@@ -1417,6 +1417,47 @@ double CSubBasin::ScaleAllFlows(const double &scale, const bool overriding, cons
   _rivulet_storage*=scale; va+=_rivulet_storage*sf;
   return va;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief adjust all internal flows by adjustment factor (for assimilation/nudging)
+/// \remark Messes with mass balance something fierce!
+/// \param &scale [in] Flow adjustment, m3/s
+/// \param &scale_last [in] True if Qlast should be scaled (overriding); false for no-data scaling
+/// \param &tstep [in] time step [d]
+/// \return volume added to system [m3]
+//
+double CSubBasin::AdjustAllFlows(const double &adjust, const bool overriding, const double &tstep, const double &t)
+{
+  double va=0.0; //volume added [m3]
+
+  if(!overriding)
+  {
+    for(int n=0;n<_nQinHist; n++) {
+      _aQinHist[n]+=adjust; upperswap(_aQinHist[n],0.0);
+      va+=adjust*tstep*SEC_PER_DAY;
+    }
+    for(int i=0;i<_nSegments;i++) {
+      _aQout[i]+=adjust; upperswap(_aQout[i],0.0);
+      va+=adjust*tstep*SEC_PER_DAY;
+    }
+  }
+
+  if((overriding) && (_pReservoir==NULL)) {
+    for (int i=0;i<_nSegments;i++)
+    {
+      _aQout[i]+=adjust;  upperswap(_aQout[i],0.0);
+      va+=adjust*tstep*SEC_PER_DAY;
+    }
+  }
+
+  if(_pReservoir!=NULL) {
+    //va+=_pReservoir->ScaleFlow(scale,overriding,tstep,t);
+  }
+
+  //Estivate volume added through scaling
+  //_channel_storage+=adjust*tstep*SEC_PER_DAY; //va+=_channel_storage*sf;
+  //_rivulet_storage+=adjust*tstep*SEC_PER_DAY; //va+=_rivulet_storage*sf;
+  return va;
+}
 /////////////////////////////////////////////////////////////////
 /// \brief Sets (i.e., overrides initial) Downstream ID (use sparingly!)
 /// \param down_SBID [in] ID of downstream subbasin

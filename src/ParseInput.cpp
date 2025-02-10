@@ -2217,7 +2217,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"INF_PRMS"        )){itype=INF_PRMS;      }
       else if (!strcmp(s[1],"INF_HBV"         )){itype=INF_HBV;       }
       else if (!strcmp(s[1],"INF_UBC"         )){itype=INF_UBC;       }
-      else if (!strcmp(s[1],"INF_PARTITION"   )){itype=INF_RATIONAL;  }
+      else if (!strcmp(s[1],"INF_PARTITION"   )){itype=INF_RATIONAL;  } //backward compatible
       else if (!strcmp(s[1],"INF_GR4J"        )){itype=INF_GR4J;      }
       else if (!strcmp(s[1],"INF_SCS"              )){itype=INF_SCS;       }
       else if (!strcmp(s[1],"INF_SCS_NOABSTRACTION")){itype=INF_SCS_NOABSTRACTION;  }
