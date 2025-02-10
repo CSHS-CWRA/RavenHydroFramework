@@ -144,7 +144,13 @@ jobs:
           cmake .
           cmake --build . --config ${{ matrix.build_type }} -j 3
 
-      - name: Run tests
+      - name: Run tests (Windows)
+        if: ${{ matrix.os == 'windows-latest' && steps.build.outcome == 'success' }}
         run: |
-          Raven
-          Raven -v
+          Raven.exe
+          Raven.exe -v
+      - name: Run tests (Ubuntu/macOS)
+        if: ${{ matrix.os != 'windows-latest' && steps.build.outcome == 'success' }}
+        run: |
+          ./Raven
+          ./Raven -v
