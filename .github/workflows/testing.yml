@@ -58,7 +58,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
         with:
-          disable-sudo: true
+          disable-sudo: false
           egress-policy: block
           allowed-endpoints: >
             azure.archive.ubuntu.com:80
@@ -73,15 +73,17 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install NetCDF (Linux)
+      - name: Install NetCDF (Ubuntu/apt)
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y libnetcdf-dev
-      - name: Install NetCDF (macOS)
-        if: matrix.os == 'macos-latest'
-        run: |
-          brew install netcdf
+      - name: Install NetCDF4 (macOS/homebrew)
+        if: (matrix.os == 'macos-latest') && (!matrix.conda)
+        uses: tecolicom/actions-use-homebrew-tools@b9c066b79607fa3d71e0be05d7003bb75fd9ff34 # v1.3.0
+        with:
+          tools: netcdf
+          cache: "yes"
 
       - name: Fetch NetCDF CMake script
         run: |
