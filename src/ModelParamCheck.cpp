@@ -112,7 +112,7 @@ void CModel::AddFromPotMeltParamList(string *aP,class_type *aPC,int &nP,const po
     aP[nP]="MELT_FACTOR"; aPC[nP]=CLASS_LANDUSE; nP++;
     aP[nP]="DD_MELT_TEMP";aPC[nP]=CLASS_LANDUSE; nP++;
     aP[nP]="REFREEZE_FACTOR";aPC[nP]=CLASS_LANDUSE; nP++;
-  }  
+  }
   else if(pot_melt==POTMELT_RESTRICTED)
   {
     aP[nP]="MELT_FACTOR"; aPC[nP]=CLASS_LANDUSE; nP++;

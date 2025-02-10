@@ -280,7 +280,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
       delete[] boolean;
     }
 
-    // Other attributes with info embedded in attribute name 
+    // Other attributes with info embedded in attribute name
     int nAttributes;
     char att_name[NC_MAX_NAME];
     double att_value;
@@ -292,7 +292,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
           string att_name_s=to_string(att_name);
 
           // NamedConstant(s) ----------------------------------------------------
-          if (att_name_s.substr(0, 14) == "NamedConstant_") 
+          if (att_name_s.substr(0, 14) == "NamedConstant_")
           {
             string name=att_name_s.substr(14,att_name_s.length());
 
@@ -534,7 +534,7 @@ bool ParseNetCDFStateFile(CModel *&pModel,const optStruct &Options)
 // .The state variable corresponding to the model start time will be used for initialization of flow/stage; all other values in the time vector are ignored
 //  The naming convention of this attribute is one of: {QOUT, STAGE,  }
 //
-bool ParseNetCDFFlowStateFile(CModel*& pModel,const optStruct& Options) 
+bool ParseNetCDFFlowStateFile(CModel*& pModel,const optStruct& Options)
 {
   if(Options.flowinfo_filename=="") { return true; }
 

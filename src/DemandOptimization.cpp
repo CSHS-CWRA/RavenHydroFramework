@@ -1644,7 +1644,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
       retval = lp_lib::add_constraintex(pLinProg,i,row_val,col_ind,ROWTYPE_EQ,RHS);
       ExitGracefullyIf(retval==0,"SolveDemandProblem::Error adding mass balance constraint",RUNTIME_ERR);
       IncrementAndSetRowName(pLinProg,rowcount,"reach_MB_"+to_string(pSB->GetID()));
-        
+
       lpsbrow[p]=lp_lib::get_Nrows(pLinProg);
     }
   }

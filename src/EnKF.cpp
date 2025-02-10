@@ -458,11 +458,11 @@ void CEnKFEnsemble::CloseTimeStepOps(CModel* pModel,optStruct& Options,const tim
           //cout<<"GRABBING OUTPUT ens: "<<e<<" nn="<<curr_nn<<" obs: "<<_output_matrix[e][j]<<" "<<obsval<<" duration "<<Options.duration<<endl;
           j++;
           break; //escape loop
-        } 
+        }
         else {
           j++;
         }
-        
+
       }
     }
   }

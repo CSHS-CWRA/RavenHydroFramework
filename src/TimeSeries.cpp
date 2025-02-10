@@ -331,7 +331,7 @@ void CTimeSeries::InitializeResample(const int nSampVal, const double sampInterv
 /// \brief Returns index of time period for time t_loc in terms of local time
 ///
 /// \param &t_loc [in] Local time for time series (=0 for first time data present)
-/// \return Index of time period for time t_loc; if t_loc<0, returns 0, if t_loc>_nPulses-1, returns nPulses-1 
+/// \return Index of time period for time t_loc; if t_loc<0, returns 0, if t_loc>_nPulses-1, returns nPulses-1
 /// ?OR? \return Index of time period for local time t_loc; if t_loc<0 or >_nPulses-1, return DOESNT_EXIST//JRCNEWTS
 /// right now this has some unintended consequences for the final time step of solution when the input data is the same duration as the simulation. Needs to be looked into further.
 //
@@ -1375,7 +1375,7 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
 //
 CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, string name,
                                                    long long loc_ID, string gauge_name,
-                                                   bool shift_to_per_ending, bool shift_from_per_ending, 
+                                                   bool shift_to_per_ending, bool shift_from_per_ending,
                                                    string FileNameNC, string VarNameNC,
                                                    string DimNamesNC_stations, string DimNamesNC_time,
                                                    int StationIdx, double TimeShift, double LinTrans_a, double LinTrans_b)

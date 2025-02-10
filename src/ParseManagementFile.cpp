@@ -651,7 +651,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
      */
       if (Options.noisy) { cout << "Workflow Variable Definition Statement" << endl; }
 
-      workflowVar* pWV; 
+      workflowVar* pWV;
       if (pDO->GetWorkflowVarStruct(to_string(s[1])) != NULL){//already declared
         pWV=pDO->GetWorkflowVarStruct(to_string(s[1]));
       }
@@ -820,7 +820,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     }
     case(32):  //----------------------------------------------
     {/*:LookupTableFromCSV [name] [filename.csv]
-       format: 
+       format:
         HeaderX, HeaderY
         x1, y1
         x2, y2
@@ -840,7 +840,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       string  name = s[1];
       string  filename="";
       for (int i=2;i<Len;i++){filename+=to_string(s[i]); }
-      
+
       ifstream    LUCSV;
       LUCSV.open(filename.c_str());
       if (LUCSV.fail()){cout << "ERROR opening file: "<<filename<<endl; return false;}
@@ -848,7 +848,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       CParser *ppCSV=new CParser(LUCSV,filename,line2);
 
       ppCSV->Tokenize(s,Len); //headers
-     
+
       N=0;
       do {
         eof=ppCSV->Tokenize(s,Len);
@@ -875,7 +875,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       delete ppCSV;
       break;
     }
-    
+
     case(40):  //----------------------------------------------
     { /*:LoopThrough [SB_GROUP or DEMAND_GROUP] [group name]  */
       if(Options.noisy) { cout <<"Start Loop"<<endl; }
@@ -1124,7 +1124,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         ExitGracefully(":ResetDate must be between :WaterDemand and :EndWaterDemand commands.",BAD_DATA_WARN);
       }
       else {
-        
+
         pDO->SetCumulativeDate(s_to_i(s[1]), to_string(demand_ID));
       }
       break;
@@ -1358,7 +1358,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
   } //end while !end_of_file
   RVM.close();
 
-  pDO->InitializeDemands    (pModel,Options); 
+  pDO->InitializeDemands    (pModel,Options);
   pDO->InitializePostRVMRead(pModel,Options);
 
   if (loopCount != 0) {

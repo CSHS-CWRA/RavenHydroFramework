@@ -302,7 +302,7 @@ public: /*------------------------------------------------------*/
   void   OverrideSDCurve       (const int p);
 
   void   AddGoalOrConstraint   (const managementGoal *pGoal);
-  
+
   void   AddUserDecisionVar    (const decision_var *pDV);
   void   SetUserDecisionVarBounds(const string name, const double &min, const double &max);
   void   AddUserConstant       (const string name, const double &val);
