@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 3.20)
 # made with help from Zhu Liang-Jun of IGSNRR in Beijing
-# modified for GitHub by Trevor James Smith of Ouranos in Montreal
+# modified for GitHub and C++11 by Trevor James Smith of Ouranos in Montreal
 # modified for lpsolve support by Maxim Krassovski of DFO
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # optional cmake command line arguments (e.g, "cmake -D COMPILE_LIB=ON" .)
 option(COMPILE_LIB "If ON, will create a dynamic lib file (default: OFF)" OFF)
