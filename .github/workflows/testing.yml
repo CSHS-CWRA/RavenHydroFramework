@@ -30,6 +30,8 @@ jobs:
 
       - name: Checkout Repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+            persist-credentials: false
 
       - name: Install linters
         run: |
@@ -68,6 +70,18 @@ jobs:
 
       - name: Checkout Repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          persist-credentials: false
+
+      - name: Install NetCDF (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnetcdf-dev
+      - name: Install NetCDF (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install netcdf
 
       - name: Fetch NetCDF CMake script
         run: |
@@ -113,6 +127,8 @@ jobs:
 
       - name: Checkout Repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          persist-credentials: false
 
       - name: Install dependencies (Windows)
         if: matrix.os == 'windows-latest'
