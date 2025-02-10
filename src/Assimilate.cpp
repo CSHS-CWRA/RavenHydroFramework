@@ -28,6 +28,8 @@ void CModel::InitializeDataAssimilation(const optStruct &Options)
     _aDAscale     =new double[_nSubBasins];
     _aDAscale_last=new double[_nSubBasins];
     _aDAQadjust   =new double[_nSubBasins];
+    _aDADrainSum  =new double[_nSubBasins];
+    _aDADownSum   =new double[_nSubBasins];
     _aDAlength    =new double[_nSubBasins];
     _aDAtimesince =new double[_nSubBasins];
     _aDAoverride  =new bool  [_nSubBasins];
@@ -36,6 +38,8 @@ void CModel::InitializeDataAssimilation(const optStruct &Options)
       _aDAscale     [p]=1.0;
       _aDAscale_last[p]=1.0;
       _aDAQadjust   [p]=0.0;
+      _aDADrainSum  [p]=0.0;
+      _aDADownSum   [p]=0.0;
       _aDAlength    [p]=0.0;
       _aDAtimesince [p]=0.0;
       _aDAoverride  [p]=false;
@@ -135,11 +139,13 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
 
   for(p=0; p<_nSubBasins; p++) {
     _aDAscale_last[p]=_aDAscale[p];
+    _aDADrainSum[p]=0.0;
   }
 
   for(int pp=_nSubBasins-1; pp>=0; pp--)//downstream to upstream
   {
     p=GetOrderedSubBasinIndex(pp);
+    pdown = GetSubBasinByID(_pSubBasins[p]->GetDownstreamID())->GetGlobalIndex();
 
     bool ObsExists=false; //observation available in THIS basin
     // observations in this basin, determine scaling variables based upon blank/not blank
@@ -163,6 +169,10 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
             _aDAtimesince[p]=0.0;
             _aDAoverride [p]=true;
             _aDAobsQ     [p]=Qobs;
+            _aDADrainSum [p]=0.0; //??? maybe doesnt matter
+            if (pdown != DOESNT_EXIST) {      
+              _aDADrainSum [pdown]+=_pSubBasins[p]->GetDrainageArea(); //DOES THIS HANDLE NESTING RIGHT?
+            }
           }
           else
           { //found a blank or zero flow value
@@ -172,10 +182,18 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
             _aDAlength   [p]=0.0;
             _aDAoverride [p]=false;
             _aDAobsQ     [p]=0.0;
+            if (pdown != DOESNT_EXIST) {        
+              _aDADrainSum[pdown] += _aDADrainSum[p];
+            }
           }
           ObsExists=true;
           break; //avoids duplicate observations
         }
+      }
+    } 
+    else {
+      if (pdown != DOESNT_EXIST) {        
+        _aDADrainSum[pdown] += _aDADrainSum[p];
       }
     }
     // no observations in this basin, get scaling from downstream
@@ -200,13 +218,35 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
     }
   }// end downstream to upstream
 
+  for(int pp=0;pp<_nSubBasins; pp++)//upstream to downstream
+  {
+    p=GetOrderedSubBasinIndex(pp);
+    pdown = GetSubBasinByID(_pSubBasins[p]->GetDownstreamID())->GetGlobalIndex();
+    if (_aDAoverride[p]) {
+      _aDADrainSum[p]=_pSubBasins[p]->GetDrainageArea();
+    }
+    else if (pdown!=DOESNT_EXIST){
+      _aDADrainSum[p]=_aDADrainSum[pdown];
+    }
+  }
+
+
   // Apply time and space correction factors
   //----------------------------------------------------------------
   double time_fact = _pGlobalParams->GetParams()->assim_time_decay;
   double distfact  = _pGlobalParams->GetParams()->assim_upstream_decay/M_PER_KM; //[1/km]->[1/m]
+  double ECCCwt;
   for(p=0; p<_nSubBasins; p++)
   {
     _aDAscale  [p] =1.0+(_aDAscale[p]-1.0)*exp(-distfact*_aDAlength[p])*exp(-time_fact*_aDAtimesince[p]);
-    _aDAQadjust[p] =_aDAQadjust[p]*exp(-distfact*_aDAlength[p])*exp(-time_fact*_aDAtimesince[p]);
+    //_aDAQadjust[p] =_aDAQadjust[p]*exp(-distfact*_aDAlength[p])*exp(-time_fact*_aDAtimesince[p]);
+
+    if (_aDADrainSum[p]!=0.0){
+      ECCCwt = (_pSubBasins[p]->GetDrainageArea() - _aDADrainSum[p])/(_aDADownSum[p]-_aDADrainSum[p]);
+    }
+    else {
+      ECCCwt=1.0;
+    }
+    _aDAQadjust[p] = _aDAQadjust[p]*ECCCwt;
   }
 }

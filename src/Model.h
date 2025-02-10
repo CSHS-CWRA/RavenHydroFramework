@@ -134,6 +134,8 @@ private:/*------------------------------------------------------*/
   double             *_aDAscale; ///< array of data assimilation flow scaling parameters [size: _nSubBasins] (NULL w/o DA)
   double            *_aDAlength; ///< array of downstream distance to nearest DA observation [m] [size: _nSubBasins] (NULL w/o DA)
   double           *_aDAQadjust; ///< array of flow adjustments [m3/s] [size: _nSubBasins]
+  double          *_aDADrainSum; ///< sum of assimilated drainage areas upstream of a subbasin outlet [km2] [size: _nSubBasins]
+  double           *_aDADownSum; ///< the drainage area of the nearest downstream assimilated flow observation [km2] [size: _nSubBasins]
   double         *_aDAtimesince; ///< array of downstream time since most recent downstream DA observation [size: _nSubBasins] (NULL w/o DA)
   bool            *_aDAoverride; ///< array of booleans indicating if observation data is available for assimilation at basin p's outlet [size: _nSubBasins] (NULL w/o DA)
   double              *_aDAobsQ; ///< array of observed flow values in basins [size: _nSubBasins]  (NULL w/o DA)
