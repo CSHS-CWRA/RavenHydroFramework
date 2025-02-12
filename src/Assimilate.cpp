@@ -170,7 +170,7 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
             _aDAoverride [p]=true;
             _aDAobsQ     [p]=Qobs;
             _aDADrainSum [p]=0.0; //??? maybe doesnt matter
-            if (pdown != DOESNT_EXIST) {      
+            if (pdown != DOESNT_EXIST) {
               _aDADrainSum [pdown]+=_pSubBasins[p]->GetDrainageArea(); //DOES THIS HANDLE NESTING RIGHT?
             }
           }
@@ -182,7 +182,7 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
             _aDAlength   [p]=0.0;
             _aDAoverride [p]=false;
             _aDAobsQ     [p]=0.0;
-            if (pdown != DOESNT_EXIST) {        
+            if (pdown != DOESNT_EXIST) {
               _aDADrainSum[pdown] += _aDADrainSum[p];
             }
           }
@@ -190,9 +190,9 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
           break; //avoids duplicate observations
         }
       }
-    } 
+    }
     else {
-      if (pdown != DOESNT_EXIST) {        
+      if (pdown != DOESNT_EXIST) {
         _aDADrainSum[pdown] += _aDADrainSum[p];
       }
     }

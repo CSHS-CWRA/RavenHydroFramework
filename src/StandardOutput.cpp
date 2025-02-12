@@ -1407,13 +1407,13 @@ void CModel::WriteMajorOutput(const time_struct &tt, string solfile, bool final)
       BAS<<","<<_pSubBasins[pp]->GetBasinProperties("GAMMA_SCALE");
       BAS<<","<<_pSubBasins[pp]->GetBasinProperties("CELERITY");
       BAS<<","<<_pSubBasins[pp]->GetBasinProperties("DIFFUSIVITY");
-      //Has flow observations 
+      //Has flow observations
       for (i = 0; i < _nObservedTS; i++){
         if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[pp]->GetID())) {has_obs=true;}
       }
       if (has_obs){BAS<<", TRUE";}
       else        {BAS<<",FALSE";}
-      
+
       BAS<<","<<_pSubBasins[pp]->GetLatHistorySize();
       for (int i = 0; i < _pSubBasins[pp]->GetLatHistorySize(); i++) {
         BAS<<","<<_pSubBasins[pp]->GetUnitHydrograph()[i];

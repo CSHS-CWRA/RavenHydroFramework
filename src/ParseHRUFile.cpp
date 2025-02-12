@@ -47,8 +47,8 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
 
   ifstream INPUT2;                //For Secondary input
   CParser* pMainParser=NULL;      //for storage of main parser while reading secondary files
-  ifstream INPUT3;                //For tertiary input 
-  CParser *pSecondaryParser=NULL; //for storage of secondary parser while reading tertiary files 
+  ifstream INPUT3;                //For tertiary input
+  CParser *pSecondaryParser=NULL; //for storage of secondary parser while reading tertiary files
 
   if (Options.noisy){
     cout <<"======================================================"<<endl;
@@ -120,18 +120,18 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
       if (pSecondaryParser != NULL){
         ExitGracefully("ParseEnsembleFile::nested :RedirectToFile commands are not allowed to be nested more than two levels (e.g., rvm file to rvm file to rvm file to rvm file)",BAD_DATA);
       }
-      if (pMainParser == NULL) { //from base .rvh file 
-        INPUT2.open(filename.c_str()); 
+      if (pMainParser == NULL) { //from base .rvh file
+        INPUT2.open(filename.c_str());
         if(INPUT2.fail()) {
           string warn;
           warn=":RedirectToFile (from .rvh): Cannot find file "+filename;
           ExitGracefully(warn.c_str(),BAD_DATA);
         }
-        pMainParser=pp;     
+        pMainParser=pp;
         pp=new CParser(INPUT2,filename,line);//open new parser
-      } 
-      else { //from already redirected .rvh file 
-        INPUT3.open(filename.c_str()); 
+      }
+      else { //from already redirected .rvh file
+        INPUT3.open(filename.c_str());
         if(INPUT3.fail()) {
           string warn;
           warn=":RedirectToFile (from .rvh): Cannot find file "+filename;
@@ -139,7 +139,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
         }
         pSecondaryParser=pp;
         pp=new CParser(INPUT3,filename,line);//open new parser
-      } 
+      }
       break;
     }
     case(-4):  //----------------------------------------------

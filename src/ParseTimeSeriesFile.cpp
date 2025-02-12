@@ -43,8 +43,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
   ifstream RVT;
   ifstream INPUT2;                //For Secondary input
   CParser* pMainParser=NULL;      //for storage of main parser while reading secondary files
-  ifstream INPUT3;                //For tertiary input 
-  CParser *pSecondaryParser=NULL; //for storage of secondary parser while reading tertiary files 
+  ifstream INPUT3;                //For tertiary input
+  CParser *pSecondaryParser=NULL; //for storage of secondary parser while reading tertiary files
 
   if (Options.in_bmi_mode && (strcmp(Options.rvt_filename.c_str(), "") == 0)) {  // an RVT may not be specified for a BMI run
     return (true);
@@ -191,18 +191,18 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (pSecondaryParser != NULL){
         ExitGracefully("ParseEnsembleFile::nested :RedirectToFile commands are not allowed to be nested more than two levels (e.g., rvm file to rvm file to rvm file to rvm file)",BAD_DATA);
       }
-      if (pMainParser == NULL) { //from base .rvt file 
-        INPUT2.open(filename.c_str()); 
+      if (pMainParser == NULL) { //from base .rvt file
+        INPUT2.open(filename.c_str());
         if(INPUT2.fail()) {
           string warn;
           warn=":RedirectToFile (from .rvt): Cannot find file "+filename;
           ExitGracefully(warn.c_str(),BAD_DATA);
         }
-        pMainParser=p;     
+        pMainParser=p;
         p=new CParser(INPUT2,filename,line);//open new parser
-      } 
-      else { //from already redirected .rvt file 
-        INPUT3.open(filename.c_str()); 
+      }
+      else { //from already redirected .rvt file
+        INPUT3.open(filename.c_str());
         if(INPUT3.fail()) {
           string warn;
           warn=":RedirectToFile (from .rvt): Cannot find file "+filename;
@@ -210,7 +210,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         }
         pSecondaryParser=p;
         p=new CParser(INPUT3,filename,line);//open new parser
-      } 
+      }
       break;
     }
     case(-4):  //----------------------------------------------
