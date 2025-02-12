@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(COMPILE_LIB "If ON, will create a dynamic lib file (default: OFF)" OFF)
 option(COMPILE_EXE "If ON, will create a executable file (default: ON)" ON)
 option(PYTHON, "If ON, will create a share library for python (default: OFF)" OFF)
-option(LPSOLVE,"If ON, will link to lp_solve optimization library (default: OFF)" OFF)
+option(LPSOLVE, "If ON, will link to lp_solve optimization library (default: OFF)" OFF)
 
 # Setup Project
 PROJECT(Raven CXX)
@@ -20,7 +20,13 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 # Find NetCDF
 find_package(NetCDF) #may also be 'netCDF'
-find_package(netCDF)
+if (NOT NetCDF_FOUND)
+  message(STATUS "NetCDF not found, trying netCDF")
+  find_package(netCDF)
+endif()
+
+# Find HDF5
+find_package(HDF5)
 
 # find header & source
 file(GLOB HEADER "src/*.h")
@@ -49,7 +55,6 @@ if(COMPILE_EXE)
     ${SOURCE}
     ${HEADER}
   )
-  # target_compile_definitions(Raven PUBLIC STANDALONE) # trying to disable this to silence redefinition warnings
   set_target_properties(Raven PROPERTIES LINKER_LANGUAGE CXX)
   if(LPSOLVE)
     target_link_directories(Raven PRIVATE lib/lp_solve)  # where liblpsolve55.so is located
