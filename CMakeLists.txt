@@ -49,7 +49,7 @@ if(COMPILE_EXE)
     ${SOURCE}
     ${HEADER}
   )
-  target_compile_definitions(Raven PUBLIC STANDALONE)
+  # target_compile_definitions(Raven PUBLIC STANDALONE) # trying to disable this to silence redefinition warnings
   set_target_properties(Raven PROPERTIES LINKER_LANGUAGE CXX)
   if(LPSOLVE)
     target_link_directories(Raven PRIVATE lib/lp_solve)  # where liblpsolve55.so is located
