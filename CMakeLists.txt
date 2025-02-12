@@ -85,9 +85,6 @@ endif()
 source_group("Header Files" FILES ${HEADER})
 source_group("Source Files" FILES ${SOURCE})
 
-source_group("Header Files" FILES ${HEADER})
-source_group("Source Files" FILES ${SOURCE})
-
 # unset cmake variables to avoid polluting the cache
 unset(COMPILE_LIB CACHE)
 unset(COMPILE_EXE CACHE)
