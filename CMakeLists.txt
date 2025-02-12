@@ -6,6 +6,7 @@ cmake_minimum_required(VERSION 3.20)
 # Set the C++ standard to C++11
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+SET(CMAKE_CXX_EXTENSIONS OFF)
 
 # optional cmake command line arguments (e.g, "cmake -D COMPILE_LIB=ON" .)
 option(COMPILE_LIB "If ON, will create a dynamic lib file (default: OFF)" OFF)
@@ -42,16 +43,12 @@ if(PYTHON)
   pybind11_add_module(libraven MODULE src/py/libraven.cpp)
   include_directories("src")
   target_compile_features(libraven PUBLIC cxx_std_11)
-  # Mute deprecated warnings
-  target_compile_options(libraven PRIVATE -Wno-deprecated)
 endif()
 
 # creates a shared library - file extension is OS dependent (Linux: .so, Windows: .dll)
 if(COMPILE_LIB)
   add_library(ravenbmi SHARED ${SOURCE})
   target_compile_definitions(ravenbmi PUBLIC BMI_LIBRARY)
-  # Mute deprecated warnings
-  target_compile_options(ravenbmi PRIVATE -Wno-deprecated)
 endif()
 
 # creates an executable - file extension is OS dependent (Linux: none, Windows: .exe)
@@ -61,8 +58,13 @@ if(COMPILE_EXE)
     ${HEADER}
   )
   set_target_properties(Raven PROPERTIES LINKER_LANGUAGE CXX)
-  # Mute deprecated warnings
-  target_compile_options(Raven PRIVATE -Wno-deprecated)
+
+  # Remove deprecation warnings for GCC
+  IF(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(Raven PRIVATE "-Wno-deprecated")
+    message(STATUS "Modified compile flags with '-Wno-deprecated'")
+  ENDIF()
+
   if(LPSOLVE)
     target_link_directories(Raven PRIVATE lib/lp_solve)  # where liblpsolve55.so is located
     target_link_libraries(Raven lpsolve55)
