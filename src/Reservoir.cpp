@@ -8,14 +8,14 @@
 //////////////////////////////////////////////////////////////////
 /// \brief Base Constructor for reservoir called by all other constructors
 /// \param Name [in] Nickname for reservoir
-/// \param SubID [in] subbasin ID
+/// \param SBID [in] subbasin ID
 /// \param typ [in] reservoir type
 /// \details needed because versions of c++ prior to v11 don't necessaarily support delegating constructors
 //
-void CReservoir::BaseConstructor(const string Name,const long SubID)
+void CReservoir::BaseConstructor(const string Name,const long long SBID)
 {
   _name=Name;
-  _SBID=SubID;
+  _SBID=SBID;
 
   _pDownSB=NULL;
 
@@ -36,8 +36,8 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
   _aQstruct=NULL;
   _aQstruct_last=NULL;
 
-  _pDemandTS=NULL;
-  _nDemandTS=0;
+  _pWaterDemands=NULL;
+  _nWaterDemands=0;
 
   _pHRU=NULL;
 
@@ -55,12 +55,13 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
   _pQdownTS=NULL;
   _QdownRange=0.0;
   _pQdownSB=NULL;
-  _nDemands=0;
-  _aDemands=NULL;
+  _nDownDemands=0;
+  _aDownDemands=NULL;
   _demand_mult=1.0;
 
   _Qoptimized=RAV_BLANK_DATA;
   _aQdelivered=NULL;
+  _aQreturned =NULL;
 
   _pDZTR=NULL;
 
@@ -100,12 +101,12 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
 //////////////////////////////////////////////////////////////////
 /// \brief Base Constructor for reservoir
 /// \param Name [in] Nickname for reservoir
-/// \param SubID [in] subbasin ID
+/// \param SBID [in] subbasin ID
 /// \param typ [in] reservoir type
 //
-CReservoir::CReservoir(const string Name,const long SubID)
+CReservoir::CReservoir(const string Name,const long long SBID)
 {
-  BaseConstructor(Name,SubID);
+  BaseConstructor(Name,SBID);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -120,7 +121,7 @@ CReservoir::CReservoir(const string Name,const long SubID)
 /// \param b_A [in] power law exponent for area rating curve [-] (0 for prismatic reservoir)
 
 //
-CReservoir::CReservoir(const string Name, const long SBID,
+CReservoir::CReservoir(const string Name, const long long SBID,
                        const double a_V,  const double b_V,
                        const double a_Q,  const double b_Q,
                        const double a_A,  const double b_A,
@@ -163,18 +164,18 @@ CReservoir::CReservoir(const string Name, const long SBID,
 //////////////////////////////////////////////////////////////////
 /// \brief Constructor for reservoir using lookup table rating curves
 /// \param Name [in] Nickname for reservoir
-/// \param SubID [in] subbasin ID
+/// \param SBID [in] subbasin ID
 /// \param a_ht[] [in] array of reservoir stages [size: nPoints]
 /// \param a_Q[] [in] array of reservoir discharges [size: nPoints]
 /// \param a_A[] [in] array of reservoir volumes [size: nPoints]
 /// \param a_V[] [in] array of reservoir areas [size: nPoints]
 //
-CReservoir::CReservoir(const string Name, const long SubID,
+CReservoir::CReservoir(const string Name, const long long SBID,
                        const double *a_ht,
                        const double *a_Q, const double *a_Qund,const double *a_A, const double *a_V,
                        const int     nPoints)
 {
-   BaseConstructor(Name,SubID);
+   BaseConstructor(Name,SBID);
 
   _min_stage =ALMOST_INF;
   _max_stage=-ALMOST_INF;
@@ -201,22 +202,24 @@ CReservoir::CReservoir(const string Name, const long SubID,
     if(a_Qund==NULL){ _aQunder[i]=0.0; }
     else            { _aQunder[i]=a_Qund[i];   }
 
+    if (_aQ[i]==0){_crest_ht=_aStage[i];}
+
     // QA/QC:
     if ((i > 0) && ((_aStage[i]-_aStage[i-1])<0)){
-      warn = "CReservoir::constructor: stage relations must be specified in order of increasing stage. [bad reservoir: " + _name + " "+to_string(SubID)+"]";
-      ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+      warn = "CReservoir::constructor: stage relations must be specified in order of increasing stage. [bad reservoir: " + _name + " "+to_string(SBID)+"]";
+      ExitGracefully(warn.c_str(),BAD_DATA_WARN);return;
     }
     if ((i > 0) && ((_aVolume[i] - _aVolume[i-1]) <= -REAL_SMALL)){
-      warn = "CReservoir::constructor: volume-stage relationships must be monotonically increasing for all stages. [bad reservoir: " + _name + " "+to_string(SubID)+"]";
-      ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+      warn = "CReservoir::constructor: volume-stage relationships must be monotonically increasing for all stages. [bad reservoir: " + _name + " "+to_string(SBID)+"]";
+      ExitGracefully(warn.c_str(),BAD_DATA_WARN);return;
     }
     if ((i > 0) && ((_aQ[i] - _aQ[i-1]) < -REAL_SMALL)){
-      warn = "CReservoir::constructor: stage-discharge relationships must be increasing or flat for all stages. [bad reservoir: " + _name + " "+to_string(SubID)+ "]";
-      ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+      warn = "CReservoir::constructor: stage-discharge relationships must be increasing or flat for all stages. [bad reservoir: " + _name + " "+to_string(SBID)+ "]";
+      ExitGracefully(warn.c_str(),BAD_DATA_WARN);return;
     }
     if ((i > 0) && ((_aQunder[i] - _aQunder[i-1]) < -REAL_SMALL)){
-      warn = "CReservoir::constructor: stage-discharge (underflow) relationships must be increasing or flat for all stages. [bad reservoir: " + _name + " "+to_string(SubID)+ "]";
-      ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+      warn = "CReservoir::constructor: stage-discharge (underflow) relationships must be increasing or flat for all stages. [bad reservoir: " + _name + " "+to_string(SBID)+ "]";
+      ExitGracefully(warn.c_str(),BAD_DATA_WARN);return;
     }
   }
   _max_capacity=_aVolume[_Np-1];
@@ -225,7 +228,7 @@ CReservoir::CReservoir(const string Name, const long SubID,
 //////////////////////////////////////////////////////////////////
 /// \brief Constructor for reservoir using VARYING lookup table rating curves
 /// \param Name [in] Nickname for reservoir
-/// \param SubID [in] subbasin ID
+/// \param SBID [in] subbasin ID
 /// \param nDates [in] # of flow rating curves
 /// \param aDates [in] array of julian days (integer <366) at which rating curve changes
 /// \param a_ht[] [in] array of reservoir stages [size: nPoints]
@@ -233,7 +236,7 @@ CReservoir::CReservoir(const string Name, const long SubID,
 /// \param a_A[] [in] array of reservoir volumes [size: nPoints]
 /// \param a_V[] [in] array of reservoir areas [size: nPoints]
 //
-CReservoir::CReservoir(const string Name, const long SubID,
+CReservoir::CReservoir(const string Name, const long long SBID,
                        const int my_nDates, const int *my_aDates,
                        const double *a_ht,
                        double      **a_QQ,
@@ -242,7 +245,7 @@ CReservoir::CReservoir(const string Name, const long SubID,
                        const double *a_V,
                        const int     nPoints)
 {
-  BaseConstructor(Name,SubID);
+  BaseConstructor(Name,SBID);
 
   _nDates=my_nDates;
   _aDates = new int[_nDates];
@@ -275,46 +278,47 @@ CReservoir::CReservoir(const string Name, const long SubID,
     _aQunder[i]=0.0;if(a_Qund!=NULL){ _aQunder[i]=a_Qund[i]; }
     _aArea  [i]=a_A[i];
     _aVolume[i]=a_V[i];
+    if (_aQ[i]==0){_crest_ht=_aStage[i]; }
     for (int v = 0; v < _nDates; v++){
       _aQ_back[v][i] = a_QQ[v][i];
       if ((i > 0) && ((_aQ_back[v][i] - _aQ_back[v][i-1]) < -REAL_SMALL)){
-        warn = "CReservoir::constructor: stage-discharge relationships must be increasing or flat for all stages. [bad varying reservoir: " + _name + " "+to_string(SubID)+ "]";
+        warn = "CReservoir::constructor: stage-discharge relationships must be increasing or flat for all stages. [bad varying reservoir: " + _name + " "+to_string(SBID)+ "]";
         ExitGracefully(warn.c_str(),BAD_DATA_WARN);
       }
     }
     if ((i > 0) && ((_aVolume[i] - _aVolume[i-1]) <= -REAL_SMALL)){
-      warn = "CReservoir::constructor: volume-stage relationships must be monotonically increasing for all stages. [bad reservoir: " + _name + " "+to_string(SubID)+"]";
+      warn = "CReservoir::constructor: volume-stage relationships must be monotonically increasing for all stages. [bad reservoir: " + _name + " "+to_string(SBID)+"]";
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
     }
     if ((i > 0) && ((_aQ[i] - _aQ[i-1]) < -REAL_SMALL)){
-      warn = "CReservoir::constructor: stage-discharge relationships must be increasing or flat for all stages. [bad reservoir: " + _name + " "+to_string(SubID)+ "]";
+      warn = "CReservoir::constructor: stage-discharge relationships must be increasing or flat for all stages. [bad reservoir: " + _name + " "+to_string(SBID)+ "]";
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
     }
     if ((i > 0) && ((_aQunder[i] - _aQunder[i-1]) < -REAL_SMALL)){
-      warn = "CReservoir::constructor: stage-discharge relationships (underflow) must be increasing or flat for all stages. [bad reservoir: " + _name + " "+to_string(SubID)+ "]";
+      warn = "CReservoir::constructor: stage-discharge relationships (underflow) must be increasing or flat for all stages. [bad reservoir: " + _name + " "+to_string(SBID)+ "]";
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
     }
   }
   _max_capacity=_aVolume[_Np-1];
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Constructor for Prismatic lake reservoir controlled by weir coefficient
+/// \brief Constructor for prismatic lake reservoir controlled by weir coefficient
 /// \param Name [in] Nickname for reservoir
-/// \param SubID [in] subbasin ID
+/// \param SBID [in] subbasin ID
 /// \param weircoeff [in] weir coefficient, <1.0
 /// \param crestw [in] width of crest, [m]
 /// \param A  [in] area of reservoir [m2]
 /// \param depth [in] maximum depth of prismatic reservoir
 //
 CReservoir::CReservoir(const string Name,
-                       const long   SubID,
+                       const long long SBID,
                        const double weircoeff,
                        const double crestw,
                        const double crestht,
                        const double A,
                        const double depth)
 {
-   BaseConstructor(Name,SubID);
+   BaseConstructor(Name,SBID);
 
   _crest_width=crestw;
   _crest_ht   =crestht;
@@ -359,31 +363,32 @@ CReservoir::CReservoir(const string Name,
 //
 CReservoir::~CReservoir()
 {
-  delete [] _aQ;      _aQ    =NULL;
-  delete [] _aQunder; _aQunder=NULL;
-  delete [] _aArea;   _aArea =NULL;
-  delete [] _aVolume; _aVolume=NULL;
+  delete [] _aQ;          _aQ     =NULL;
+  delete [] _aQunder;     _aQunder=NULL;
+  delete [] _aArea;       _aArea  =NULL;
+  delete [] _aVolume;     _aVolume=NULL;
   for (int v = 0; v<_nDates; v++){ delete[] _aQ_back[v]; } delete [] _aQ_back; _aQ_back=NULL;
-  delete [] _aDates; _aDates=NULL;
+  delete [] _aDates;      _aDates =NULL;
 
-  for (int i=0; i<_nDemandTS;i++){delete _pDemandTS[i]; } delete [] _pDemandTS; _pDemandTS=NULL;
+  for (int ii=0; ii<_nWaterDemands;ii++){delete _pWaterDemands[ii]; } delete [] _pWaterDemands; _pWaterDemands=NULL;
 
-  delete _pWeirHeightTS;_pWeirHeightTS=NULL;
-  delete _pMaxStageTS;_pMaxStageTS=NULL;
-  delete _pOverrideQ;_pOverrideQ=NULL;
-  delete _pMinStageTS;_pMinStageTS=NULL;
+  delete _pWeirHeightTS;  _pWeirHeightTS=NULL;
+  delete _pMaxStageTS;    _pMaxStageTS=NULL;
+  delete _pOverrideQ;     _pOverrideQ=NULL;
+  delete _pMinStageTS;    _pMinStageTS=NULL;
   delete _pMinStageFlowTS;_pMinStageFlowTS=NULL;
-  delete _pTargetStageTS;_pTargetStageTS=NULL;
+  delete _pTargetStageTS; _pTargetStageTS=NULL;
   delete _pMaxQIncreaseTS;_pMaxQIncreaseTS=NULL;
   delete _pMaxQDecreaseTS;_pMaxQDecreaseTS=NULL;
   delete _pDroughtLineTS; _pDroughtLineTS=NULL;
-  delete _pQminTS; _pQminTS=NULL;
-  delete _pQmaxTS; _pQmaxTS=NULL;
-  delete _pQdownTS; _pQdownTS=NULL;
+  delete _pQminTS;        _pQminTS=NULL;
+  delete _pQmaxTS;        _pQmaxTS=NULL;
+  delete _pQdownTS;       _pQdownTS=NULL;
 
   delete [] _aQstruct;      _aQstruct=NULL;
   delete [] _aQstruct_last; _aQstruct_last=NULL;
   delete [] _aQdelivered;   _aQdelivered=NULL;
+  delete [] _aQreturned;    _aQreturned=NULL;
 
   for (int i=0;i<_nControlStructures;i++){delete _pControlStructures[i];} delete [] _pControlStructures; _pControlStructures=NULL;
 }
@@ -391,7 +396,13 @@ CReservoir::~CReservoir()
 //////////////////////////////////////////////////////////////////
 /// \returns Subbasin ID
 //
-long  CReservoir::GetSubbasinID          () const { return _SBID; }
+long long CReservoir::GetSubbasinID          () const { return _SBID; }
+
+//////////////////////////////////////////////////////////////////
+/// \returns Reservoir name
+//
+string  CReservoir::GetReservoirName() const { return _name; }
+
 
 //////////////////////////////////////////////////////////////////
 /// \returns reservoir storage [m3]
@@ -421,6 +432,18 @@ double  CReservoir::GetMinStage          (const int nn) const {
 double  CReservoir::GetMaxStage          (const int nn) const {
   if(_pMaxStageTS    !=NULL){ return _pMaxStageTS->GetSampledValue(nn);}
   return ALMOST_INF;
+}
+//////////////////////////////////////////////////////////////////
+/// \returns sill elevation [m]
+/// supports time-variable discharge curves and weir height adjustments
+//
+double  CReservoir::GetSillElevation(const int nn) const
+{
+  double weir_adj=0.0;
+  if (_pWeirHeightTS!=NULL){
+    weir_adj=_pWeirHeightTS->GetSampledValue(nn);
+  }
+  return _crest_ht+weir_adj;
 }
 //////////////////////////////////////////////////////////////////
 /// \returns current surface area [m2]
@@ -572,7 +595,7 @@ string CReservoir::GetRegimeName(const int i,const time_struct &tt) const
 /// \brief returns subbasin ID of recipient of control structure i's outflow
 /// \param i [in] control structure index (must be in range from 0...nControlStructures)
 //
-long   CReservoir::GetControlFlowTarget(const int i) const
+long long  CReservoir::GetControlFlowTarget(const int i) const
 {
   return _pControlStructures[i]->GetTargetBasinID();
 }
@@ -612,41 +635,30 @@ double CReservoir::GetDischargeFromStage(const double &stage, const int nn) cons
 /// \return number of water/irrigation demands
 //
 int    CReservoir::GetNumWaterDemands() const {
-  return _nDemandTS;
+  return _nWaterDemands;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief returns water/irrigation demand integer ID
-/// \return water/irrigation demand integer ID
+/// \brief returns water/irrigation demand object
+/// \return water/irrigation demand object
 //
-int    CReservoir::GetWaterDemandID(const int ii) const
-{
-  #ifdef _STRICTCHECK_
-  ExitGracefullyIf(ii < 0 || ii >= _nDemandTS, "CReservoir::GetWaterDemandID: invalid index",RUNTIME_ERR);
-#endif
-  return _pDemandTS[ii]->GetIDTag(); //stores demand ID
-}
-//////////////////////////////////////////////////////////////////
-/// \brief returns water/irrigation demand name/alias
-/// \return water/irrigation demand name/alias
-//
-string CReservoir::GetWaterDemandName      (const int ii) const
+CDemand* CReservoir::GetWaterDemandObj(const int ii) const
 {
 #ifdef _STRICTCHECK_
-  ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CSubBasin::GetWaterDemandName: invalid index",RUNTIME_ERR);
+  ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CReservoir::GetWaterDemandObj: invalid index",RUNTIME_ERR);
 #endif
-  return _pDemandTS[ii]->GetName();
+  return _pWaterDemands[ii];
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns specified irrigation/water use demand from reservoir at time t
 /// \param &t [in] Model time at which the demand from reservoir is to be determined
 /// \return specified demand from reservoir at time t
 //
-double CReservoir::GetWaterDemand           (const int ii,const double &t) const
+double CReservoir::GetWaterDemand           (const int ii) const
 {
-  double Qirr;
-  Qirr=_pDemandTS[ii]->GetValue(t);
-  if (Qirr==RAV_BLANK_DATA){Qirr=0.0;}
-  return Qirr;
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CReservoir::GetWaterDemand: invalid index",RUNTIME_ERR);
+#endif
+  return _pWaterDemands[ii]->GetDemand();
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns instantaneous ACTUAL irrigation use at end of current timestep
@@ -654,9 +666,22 @@ double CReservoir::GetWaterDemand           (const int ii,const double &t) const
 //
 double CReservoir::GetDemandDelivery(const int ii) const
 {
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CReservoir::GetDemandDelivery: invalid index",RUNTIME_ERR);
+#endif
   return _aQdelivered[ii];
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Returns instantaneous ACTUAL irrigation use at end of current timestep
+/// \return actual delivery from reservoir [m3/s]
+//
+double CReservoir::GetReturnFlow(const int ii) const
+{
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf(ii < 0 || ii >= _nWaterDemands, "CReservoir::GetReturnFlow: invalid index",RUNTIME_ERR);
+#endif
+  return _aQreturned[ii];
+}
 //////////////////////////////////////////////////////////////////
 /// \brief initializes reservoir variables
 /// \param Options [in] model options structure
@@ -668,10 +693,7 @@ void CReservoir::Initialize(const optStruct &Options)
   double model_duration =Options.duration;
   double timestep       =Options.timestep;
 
-  for (int i=0; i<_nDemandTS; i++)
-  {
-    _pDemandTS[i]->Initialize(model_start_day, model_start_yr, model_duration, timestep, false, Options.calendar);
-  }
+
   if(_pWeirHeightTS!=NULL)
   {
     _pWeirHeightTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
@@ -720,10 +742,7 @@ void CReservoir::Initialize(const optStruct &Options)
   {
     _pQdownTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
   }
-  _aQdelivered = new double [_nDemandTS];
-  for (int ii = 0; ii < _nDemandTS; ii++) {
-    _aQdelivered[ii]=0.0;
-  }
+
   _aQstruct     =new double [_nControlStructures];
   _aQstruct_last=new double [_nControlStructures];
   for (int i = 0; i < _nControlStructures; i++) {
@@ -731,15 +750,28 @@ void CReservoir::Initialize(const optStruct &Options)
   }
   _dry_timesteps=0;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Initializes SB demand members AFTER RVM FILE READ
+/// \param &Options [in] Global model options information
+//
+void  CReservoir::InitializePostRVM(const optStruct& Options)
+{
+  _aQdelivered = new double [_nWaterDemands];
+  _aQreturned  = new double [_nWaterDemands];
+  for (int ii = 0; ii < _nWaterDemands; ii++) {
+    _pWaterDemands[ii]->Initialize(Options);
+    _aQdelivered[ii]=0.0;
+    _aQreturned [ii]=0.0;
+  }
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Adds extraction history
 /// \param *pDemand demand time series to be added
 //
-void    CReservoir::AddDemandTimeSeries (CTimeSeries *pDemand)
+void    CReservoir::AddDemand (CDemand *pDemand)
 {
-  if (!DynArrayAppend((void**&)(_pDemandTS),(void*)(pDemand),_nDemandTS)){
-    ExitGracefully("CReservoir::AddDemandTimeSeries : trying to add NULL time series",BAD_DATA);}
+  if (!DynArrayAppend((void**&)(_pWaterDemands),(void*)(pDemand),_nWaterDemands)){
+    ExitGracefully("CReservoir::AddDemand : trying to add NULL demand object",BAD_DATA);}
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Adds weir height time series [m]
@@ -839,7 +871,7 @@ void    CReservoir::AddMinQTimeSeries(CTimeSeries *pQmin) {
 //
 void    CReservoir::AddMaxQTimeSeries(CTimeSeries *pQmax) {
   ExitGracefullyIf(_pQmaxTS!=NULL,
-    "CReservoir::AddMinQTimeSeries: only one minimum flow time series may be specified per reservoir",BAD_DATA_WARN);
+    "CReservoir::AddMaxQTimeSeries: only one minimum flow time series may be specified per reservoir",BAD_DATA_WARN);
   _pQmaxTS=pQmax;
 }
 //////////////////////////////////////////////////////////////////
@@ -869,7 +901,7 @@ void  CReservoir::AddDownstreamDemand(const CSubBasin *pSB,const double pct, con
   pDemand->percent     =pct;
   pDemand->julian_start=julian_start;
   pDemand->julian_end  =julian_end;
-  if(!DynArrayAppend((void**&)(_aDemands),(void*)(pDemand),_nDemands)) {
+  if(!DynArrayAppend((void**&)(_aDownDemands),(void*)(pDemand),_nDownDemands)) {
     ExitGracefully("CReservoir::AddDownstreamDemand: adding NULL source",RUNTIME_ERR);
   }
 }
@@ -954,7 +986,7 @@ void CReservoir::SetLakeConvectionCoeff(const double& conv) {
 string CReservoir::GetCurrentConstraint() const {
   switch(_constraint)
   {
-  case(RC_MAX_STAGE):         {return "MAX_STAGE"; }
+  case(RC_MAX_STAGE):         {return "RC_MAX_STAGE"; }
   case(RC_MIN_STAGE):         {return "RC_MIN_STAGE"; }
   case(RC_NATURAL):           {return "RC_NATURAL"; }
   case(RC_TARGET):            {return "RC_TARGET"; }
@@ -977,16 +1009,54 @@ string CReservoir::GetCurrentConstraint() const {
 /// \param nPoints - number of points in array
 //
 
-void CReservoir::SetVolumeStageCurve(const double *a_ht,const double *a_V,const int nPoints)
+void CReservoir::SetVolumeStageCurve(const double *a_ht,const double *a_V,const int nPoints, double weircoeff, double crestwidth)
 {
-  for(int i=0;i<_Np;i++)
+  for(int i=1;i<nPoints;i++)
   {
-    _aVolume[i]=InterpolateCurve(_aStage[i],a_ht,a_V,nPoints,false);
-    if((i > 0) && ((_aVolume[i] - _aVolume[i-1]) <= -REAL_SMALL)) {
+    if (((a_ht[i]-a_ht[i-1])<=REAL_SMALL) || ((a_V[i]-a_V[i-1])<=REAL_SMALL)){
       string warn = "CReservoir::SetVolumeStageCurve: volume-stage relationships must be monotonically increasing for all stages. [bad reservoir: " + _name + " "+to_string(_SBID)+"]";
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
     }
   }
+  if (a_V[0]!=0.0){
+    string warn = "CReservoir::SetVolumeStageCurve: volume-stage relationships must start with volume of zero. [bad reservoir: " + _name + " "+to_string(_SBID)+"]";
+    ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+  }
+
+  _min_stage  =a_ht[0];
+  _max_stage  =a_ht[nPoints-1];
+
+  //_Np=102; //SAME AS LAKE TYPE CONSTRUCTOR, BY NECESSITY!
+
+  //cout<<_name<<" CREST HEIGHT : "<<_crest_ht<<endl;
+  double dh;
+  string warn;
+  dh=(_max_stage-_min_stage)/(_Np-1);
+  _aStage [0]=_min_stage; //Memory
+  _aQ     [0]=0.0;
+  _aQunder[0]=0.0;
+  _aArea  [0]=0.0;
+  _aArea  [0]=(InterpolateCurve(_aStage[0]+dh,a_ht,a_V,nPoints,false))/dh; //Area CANNOT go to zero
+  _aVolume[0]=0.0;
+   for (int i=1;i<_Np;i++)
+  {
+    _aStage [i]=_min_stage+i*dh;
+    _aQ      [i]=0.0;
+    if ((_aStage[i]-_crest_ht)>0.0){
+      _aQ    [i]=2.0/3.0*weircoeff*sqrt(2*GRAVITY)*crestwidth*pow((_aStage[i]-_crest_ht),1.5); //Overflow weir equation
+    }
+    if (((_aStage[i]-_crest_ht)<dh) && ((_aStage[i]-_crest_ht)>=0.0)){
+      _aStage[i]=_crest_ht; //ensures there is a point that perfectly coincides with crest
+      _aQ    [i]=0.0;
+    }
+    _aQunder[i]=0.0;
+    _aVolume[i]=InterpolateCurve (_aStage[i]   ,a_ht,a_V,nPoints,false);
+    _aArea  [i]=(InterpolateCurve(_aStage[i]+dh,a_ht,a_V,nPoints,false)-_aVolume[i])/dh;
+    //cout<<" "<<_aStage[i]<<" "<<_aVolume[i]<<" "<<_aArea[i]<<" "<<_aQ    [i]<<endl;
+
+  }
+  _max_capacity=_aVolume[_Np-1];
+
 }
 //////////////////////////////////////////////////////////////////
 /// \brief overrides area stage curve for Lake-type reservoirs (if known)
@@ -1000,7 +1070,7 @@ void CReservoir::SetAreaStageCurve(const double *a_ht,const double *a_A,const in
   for(int i=0;i<_Np;i++)
   {
     _aArea[i]=InterpolateCurve(_aStage[i],a_ht,a_A,nPoints,false);
-    if((i > 0) && ((_aArea[i] - _aArea[i-1]) <= -REAL_SMALL)) {
+    if((i > 0) && ((_aArea[i] - _aArea[i-1]) <= -REAL_SMALL) && (_aArea[i]!=0.0)) {
       string warn = "CReservoir::SetAreaStageCurve: area-stage relationships must be monotonically increasing for all stages. [bad reservoir: " + _name + " "+to_string(_SBID)+"]";
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
     }
@@ -1119,6 +1189,17 @@ double CReservoir::ScaleFlow(const double& scale,const bool overriding, const do
 
   return va;
 }
+/////////////////////////////////////////////////////////////////
+/// \brief update demand magnitudes, called in solver at start of every time step
+/// \param &Options [in] Global model options information
+/// \param &tt [in] time structure at start of current time step
+//
+void CReservoir::UpdateDemands(const optStruct& Options, const time_struct& tt)
+{
+  for (int ii = 0; ii < _nWaterDemands; ii++) {
+    _pWaterDemands[ii]->UpdateDemand(Options,tt);
+  }
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief updates state variable "stage" and other reservoir auxiliary variables at end of computational time step
@@ -1137,7 +1218,7 @@ void  CReservoir::UpdateStage(const double &new_stage,const double &res_outflow,
   _Qout      =res_outflow;
   for (int i = 0; i < _nControlStructures; i++) {
     _aQstruct_last[i]=_aQstruct[i];
-    _aQstruct[i]=aQstruct_new[i];
+    _aQstruct     [i]=aQstruct_new[i];
   }
 
   _DAscale_last=_DAscale;
@@ -1177,13 +1258,12 @@ void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep, co
     _MB_losses+=_GW_seepage;
   }
 
-  for (int ii = 0; ii < _nDemandTS; ii++) {
+  for (int ii = 0; ii < _nWaterDemands; ii++) {
     if (Options.management_optimization) {
       _MB_losses+=_aQdelivered[ii];
     }
     else{
-      int nn        =(int)((tt.model_time+TIME_CORRECTION)/tstep);//current timestep index
-      _MB_losses+=_pDemandTS[ii]->GetSampledValue(nn) * SEC_PER_DAY * tstep;
+      _MB_losses+=_pWaterDemands[ii]->GetDemand() * SEC_PER_DAY * tstep;
     }
   }
 
@@ -1196,7 +1276,22 @@ void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep, co
 //
 void CReservoir::AddToDeliveredDemand(const int ii, const double &Qdel)
 {
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf((ii<0) || (ii>=_nWaterDemands),"CReservoir::AddToDeliveredDemand: invalid demand index",RUNTIME_ERR);
+#endif
   _aQdelivered[ii]=Qdel;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief records return flow associated with  water demand ii (even if it doesnt return here)
+/// \param ii [in] local demand index
+/// \param Qret [in] returned flow [m3/s]
+//
+void CReservoir::RecordReturnFlow(const int ii, const double &Qret)
+{
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf((ii<0) || (ii>=_nWaterDemands),"CReservoir::RecordReturnFlow: invalid demand index",RUNTIME_ERR);
+#endif
+  _aQreturned[ii]=Qret;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief updates rating curves based upon the time and assimilates lake stage
@@ -1206,7 +1301,8 @@ void CReservoir::AddToDeliveredDemand(const int ii, const double &Qdel)
 //
 void CReservoir::UpdateReservoir(const time_struct &tt, const optStruct &Options)
 {
-  // update flow rules-----------------------------------
+  // update flow rules (for time-variable stage-discharge curve)-------
+  // also updates crest height
   if (_nDates != 0){
     int vv=_nDates-1;
     for (int v = 0; v < _nDates; v++){
@@ -1214,6 +1310,7 @@ void CReservoir::UpdateReservoir(const time_struct &tt, const optStruct &Options
     }
     for (int i = 0; i < _Np; i++){
       _aQ[i] = _aQ_back[vv][i];
+      if (_aQ[i]==0.0){_crest_ht=_aStage[i];}
     }
   }
 
@@ -1242,8 +1339,9 @@ void CReservoir::UpdateReservoir(const time_struct &tt, const optStruct &Options
   }
 
   // reboot delivered amount to zero each tstep ------------------
-  for (int ii=0; ii<_nDemandTS; ii++){
+  for (int ii=0; ii<_nWaterDemands; ii++){
     _aQdelivered[ii]=0.0;
+    _aQreturned [ii]=0.0;
   }
   return;
 }
@@ -1330,7 +1428,7 @@ void  CReservoir::SetInitialFlow(const double &initQ,const double &initQlast,con
 //
 void CReservoir::SetControlFlow(const int i, const double& Q, const double& Qlast)
 {
-  _aQstruct[i]=Q;
+  _aQstruct     [i]=Q;
   _aQstruct_last[i]=Qlast;
 }
 
@@ -1381,6 +1479,7 @@ double  CReservoir::RouteWater(const double &Qin_old,
 {
   if ((_assimilate_stage) && (!_assim_blank))
   {
+    cout<<"ASSIMILATING STAGE "<<_stage<<endl;
     res_outflow=_Qout;
     return _stage;
   }
@@ -1437,10 +1536,10 @@ double  CReservoir::RouteWater(const double &Qin_old,
   }
 
   // Downstream water demand sets minimum flow
-  for(int i=0;i<_nDemands;i++) {
-    if(IsInDateRange(tt.julian_day,_aDemands[i]->julian_start,_aDemands[i]->julian_end)){
-      Qmin+=(_aDemands[i]->pDownSB->GetTotalWaterDemand(tt.model_time)*_aDemands[i]->percent);
-      Qmin+= _aDemands[i]->pDownSB->GetEnviroMinFlow   (tt.model_time)*1.0; //assume 100% of environmental min flow must be met
+  for(int i=0;i<_nDownDemands;i++) {
+    if(IsInDateRange(tt.julian_day,_aDownDemands[i]->julian_start,_aDownDemands[i]->julian_end)){
+      Qmin+=(_aDownDemands[i]->pDownSB->GetTotalWaterDemand()*_aDownDemands[i]->percent);
+      Qmin+= _aDownDemands[i]->pDownSB->GetEnviroMinFlow   (tt.model_time)*1.0; //assume 100% of environmental min flow must be met
     }
   }
 
@@ -1476,14 +1575,14 @@ double  CReservoir::RouteWater(const double &Qin_old,
     seep_old=_seepage_const*(_stage-_local_GW_head); //[m3/s]
   }
   ext_new=ext_old=0.0;
-  for (int ii=0; ii<_nDemandTS;ii++){
+  for (int ii=0; ii<_nWaterDemands;ii++){
     if (Options.management_optimization){
       ext_new+=_aQdelivered[ii];
       ext_old+=_aQdelivered[ii];
     }
     else{
-      ext_old=_pDemandTS[ii]->GetSampledValue(nn);
-      ext_new=_pDemandTS[ii]->GetSampledValue(nn); //steady rate over time step
+      ext_old=_pWaterDemands[ii]->GetDemand();
+      ext_new=_pWaterDemands[ii]->GetDemand(); //steady rate over time step - all water delivered
     }
   }
 
@@ -1491,9 +1590,6 @@ double  CReservoir::RouteWater(const double &Qin_old,
   if(gamma<0)
   {//reservoir dried out; no solution available. (f is always >0, so gamma must be as well)
    //only remaining filling action is via seepage, which is likely not enough, and Q_out_new can't be negative
-   // string warn="CReservoir::RouteWater: basin "+to_string(_SBID)+ " dried out on " +tt.date_string;
-   //WriteWarning(warn,false);
-
     constraint=RC_DRY_RESERVOIR;
     res_outflow=0.0;
     return _min_stage;
@@ -1673,7 +1769,7 @@ double  CReservoir::RouteWater(const double &Qin_old,
   // ======================================================================================
 
   double total_outflow=res_outflow;
-  int downID=DOESNT_EXIST;
+  long long downID=DOESNT_EXIST;
   if (_pDownSB!=NULL){downID=_pDownSB->GetID();}
   for(int i=0; i<_nControlStructures; i++)
   {
@@ -1739,7 +1835,6 @@ double     CReservoir::GetWeirOutflow(const double &ht, const double &adj) const
 //
 void CReservoir::ClearTimeSeriesData(const optStruct& Options)
 {
-  for (int i=0; i<_nDemandTS;i++){delete _pDemandTS[i]; } delete [] _pDemandTS; _pDemandTS=NULL;
   delete _pWeirHeightTS;_pWeirHeightTS=NULL;
   delete _pMaxStageTS;_pMaxStageTS=NULL;
   delete _pOverrideQ;_pOverrideQ=NULL;

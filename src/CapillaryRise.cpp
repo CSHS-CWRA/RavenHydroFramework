@@ -167,10 +167,11 @@ void   CmvCapillaryRise::ApplyConstraints( const double     *storage,
   double min_stor=g_min_storage;
 
   //cant remove more than is there
-  rates[0]=threshMin(rates[0],max(storage[iFrom[0]],min_stor)/Options.timestep,0.0);
+  rates[0]=min(rates[0],max(storage[iFrom[0]],min_stor)/Options.timestep);
 
   //exceedance of max "to" compartment
   //water flow simply slows (or stops) so that receptor will not overfill during tstep
-  rates[0]=threshMin(rates[0],
-                     (pHRU->GetStateVarMax(iTo[0],storage,Options)-storage[iTo[0]])/Options.timestep,0.0);
+  if (!Options.allow_soil_overfill){
+    rates[0]=min(rates[0],(pHRU->GetStateVarMax(iTo[0],storage,Options)-storage[iTo[0]])/Options.timestep);
+  }
 }

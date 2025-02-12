@@ -50,7 +50,7 @@ string GetProcessName(process_type p)
   case(SNOWSQUEEZE):        {name="Liquid snow release";      break;}
   case(REFREEZE):           {name="Snow Refreeze";            break;}
   case(SUBLIMATION):        {name="Sublimation";              break;}
-  case(SNOW_BALANCE):       {name="Snow Melt & Refreeze";     break;}
+  case(SNOW_BALANCE):       {name="Snow Balance";             break;}
   case(GLACIER_MELT):       {name="Glacier Melt";             break;}
   case(GLACIER_RELEASE):    {name="Glacier Release";          break;}
   case(GLACIER_INFIL):      {name="Glacier Infiltration";     break;}
@@ -367,6 +367,9 @@ void JulianConvert(double model_time, const double start_date, const int start_y
 
   tt.date_string=string(out);
   tt.leap_yr=IsLeapYear(tt.year,calendar);
+
+  //tt.nn=(int)((tt.model_time+TIME_CORRECTION)/Options.timestep);//current timestep index - likely needs Options.timestep to be in global member
+
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -439,7 +442,10 @@ time_struct DateStringToTimeStruct(const string sDate, string sTime, const int c
   if (tt.month==12){tt.julian_day+=30;}
   if ((tt.leap_yr  ) && (tt.month> 2)){tt.julian_day+= 1;}
 
-  if (tt.day_of_month > DAYS_PER_MONTH[tt.month - 1]) {
+  int leap=0;
+  if (tt.leap_yr){leap=1;}
+
+  if (tt.day_of_month > (DAYS_PER_MONTH[tt.month - 1]+leap)) {
     ExitGracefully("DateStringToTimeStruct: Invalid time format used - exceeded max day of month",BAD_DATA);
   }
   if (tt.day_of_month <=0 ) {
@@ -1828,6 +1834,18 @@ void quickSort(double arr[], int left, int right)
   // recursion
   if (left <  j){quickSort(arr, left,  j);}
   if (i < right){quickSort(arr, i, right);}
+}
+//////////////////////////////////////////////////////////////////
+/// \brief adds value v to end of integer array a[] of original size n, expands a[] to size n+1
+//
+void pushIntoIntArray(int*&a, const int &v, int &n)
+{
+  int *tmp=new int [n+1];
+  for (int i = 0; i < n; i++) { tmp[i]=a[i];}
+  tmp[n]=v;
+  if (n>0){delete [] a;}
+  a=tmp;
+  n++;
 }
 //////////////////////////////////////////////////////////////////
 // given unsorted or sorted array arr[] returns rank of each term, where 0 indicates the largest value (none smaller) and N-1 the smallest value (all are greater)

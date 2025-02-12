@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef IRREGULARTIMESERIES_H
 #define IRREGULARTIMESERIES_H
@@ -29,7 +29,7 @@ private:/*------------------------------------------------------*/
 public:/*-------------------------------------------------------*/
   //Constructors:
   CIrregularTimeSeries(string name,
-                       long   loc_ID,
+                       long long loc_ID,
                        string filename,
                        double *aValues,
                        double *aDays,
@@ -64,7 +64,7 @@ public:/*-------------------------------------------------------*/
 
   int    GetTimeIndexFromModelTime(const double &t_mod) const;
 
-  static CIrregularTimeSeries  *Parse (CParser *p, const string name, const long loc_ID, const int nMeasurements);
+  static CIrregularTimeSeries  *Parse (CParser *p, const string name, const long long loc_ID, const int nMeasurements);
 };
 
 #endif

@@ -615,12 +615,15 @@ void   CmvInfiltration::ApplyConstraints( const double     *storage,
   if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lakes & glaciers
 
   //cant remove more than is there (should never be an option)
-  rates[0]=threshMin(rates[0],storage[iFrom[0]]/Options.timestep,0.0);
+  rates[0]=min(rates[0],storage[iFrom[0]]/Options.timestep);
 
   //reaching soil saturation level
-  double max_stor=pHRU->GetStateVarMax(iTo[0],storage,Options);
-  double inf=threshMin(rates[0],
-                       max(max_stor-storage[iTo[0]],0.0)/Options.timestep,0.0);
+  double inf=rates[0];
+  double max_stor;
+  if (!Options.allow_soil_overfill){
+    max_stor=pHRU->GetStateVarMax(iTo[0],storage,Options);
+    inf=min(rates[0],max(max_stor-storage[iTo[0]],0.0)/Options.timestep);
+  }
 
   rates[1]+=(rates[0]-inf);
   rates[0]=inf;

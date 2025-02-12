@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2024 the Raven Development Team
   ----------------------------------------------------------------*/
 
 #include "RavenInclude.h"
@@ -21,6 +21,7 @@ void ZeroOutForcings(force_struct &F)
   F.precip_daily_ave = 0.0;
   F.precip_5day=0.0;
   F.snow_frac=0.0;
+  F.irrigation=0.0;
 
   F.temp_ave=0.0;
   F.temp_daily_min=0.0;
@@ -101,15 +102,15 @@ forcing_type GetForcingTypeFromString(const string &forcing_string)
   else if (f=="SNOW_FRAC"        ){return F_SNOW_FRAC;}
   else if (f=="SNOWFALL"         ){return F_SNOWFALL;}
   else if (f=="RAINFALL"         ){return F_RAINFALL;}
-
+  else if (f=="IRRIGATION"       ){return F_IRRIGATION; }
   else if (f=="TEMP_AVE"         ){return F_TEMP_AVE;}
   else if (f=="TEMP_MIN"         ){return F_TEMP_DAILY_MIN;}
-  else if (f=="MIN_TEMPERATURE"  ){return F_TEMP_DAILY_MIN;}
-  else if (f=="TEMP_DAILY_MIN"   ){return F_TEMP_DAILY_MIN;}
+  else if (f=="MIN_TEMPERATURE"  ){return F_TEMP_DAILY_MIN;}//alias
+  else if (f=="TEMP_DAILY_MIN"   ){return F_TEMP_DAILY_MIN;}//alias
   else if (f=="TEMP_MAX"         ){return F_TEMP_DAILY_MAX;}
   else if (f=="MAX_TEMPERATURE"  ){return F_TEMP_DAILY_MAX;}
-  else if (f=="TEMP_DAILY_MAX"   ){return F_TEMP_DAILY_MAX;}
-  else if (f=="TEMP_DAILY_AVE"   ){return F_TEMP_DAILY_AVE;}
+  else if (f=="TEMP_DAILY_MAX"   ){return F_TEMP_DAILY_MAX;}//alias
+  else if (f=="TEMP_DAILY_AVE"   ){return F_TEMP_DAILY_AVE;}//alias
   else if (f=="TEMP_MONTH_MAX"   ){return F_TEMP_MONTH_MAX;}
   else if (f=="TEMP_MONTH_MIN"   ){return F_TEMP_MONTH_MIN;}
   else if (f=="TEMP_MONTH_AVE"   ){return F_TEMP_MONTH_AVE;}
@@ -118,9 +119,9 @@ forcing_type GetForcingTypeFromString(const string &forcing_string)
   else if (f=="TEMP_MIN_UNC"     ){return F_TEMP_MIN_UNC;}
 
   else if (f=="AIR_DENS"         ){return F_AIR_DENS;}
-  else if (f=="AIR_DENSITY"      ){return F_AIR_DENS;}
+  else if (f=="AIR_DENSITY"      ){return F_AIR_DENS;}//alias
   else if (f=="AIR_PRES"         ){return F_AIR_PRES;}
-  else if (f=="AIR_PRESSURE"     ){return F_AIR_PRES;}
+  else if (f=="AIR_PRESSURE"     ){return F_AIR_PRES;}//alias
   else if (f=="REL_HUMIDITY"     ){return F_REL_HUMIDITY;}
 
   else if (f=="ET_RADIA"         ){return F_ET_RADIA;}
@@ -152,12 +153,6 @@ forcing_type GetForcingTypeFromString(const string &forcing_string)
   else if (f=="PRECIP_CONC"      ){return F_PRECIP_CONC; }
   else if (f=="SUBDAILY_CORR"    ){return F_SUBDAILY_CORR;}
 
-  else
-  {
-    return F_UNRECOGNIZED;
-    //cout <<"Forcing string:|"<<f<<"|"<<endl;
-    //ExitGracefully("GetForcingTypeFromString: invalid forcing string",RUNTIME_ERR);
-  }
   return F_UNRECOGNIZED;
 }
 /////////////////////////////////////////////////////////////////////
@@ -175,6 +170,7 @@ double GetForcingFromType(const forcing_type &ftype, const force_struct &f)
   else if (ftype==F_SNOW_FRAC       ){return f.snow_frac;}
   else if (ftype==F_SNOWFALL        ){return (    f.snow_frac)*f.precip;}
   else if (ftype==F_RAINFALL        ){return (1.0-f.snow_frac)*f.precip;}
+  else if (ftype==F_IRRIGATION      ){return f.irrigation;}
 
   else if (ftype==F_TEMP_AVE        ){return f.temp_ave;}
   else if (ftype==F_TEMP_DAILY_MIN  ){return f.temp_daily_min;}
@@ -244,6 +240,7 @@ void  SetForcingFromType(const forcing_type &ftype, force_struct &f, const doubl
   else if (ftype==F_SNOW_FRAC       ){f.snow_frac=val;}
   else if (ftype==F_SNOWFALL        ){} //derived- cant set directly
   else if (ftype==F_RAINFALL        ){} //derived- cant set directly
+  else if (ftype==F_IRRIGATION      ){f.irrigation=val;}
 
   else if (ftype==F_TEMP_AVE        ){f.temp_ave=val;}
   else if (ftype==F_TEMP_DAILY_MIN  ){f.temp_daily_min=val;}
@@ -327,6 +324,7 @@ string GetForcingTypeUnits(forcing_type ftype)
   case F_SNOW_FRAC:       {units="0-1";  break;}
   case F_SNOWFALL:        {units="mm/d"; break;}
   case F_RAINFALL:        {units="mm/d"; break;}
+  case F_IRRIGATION:      {units="mm/d"; break;}
 
   case F_TEMP_AVE:        {units="C"; break;}
   case F_TEMP_DAILY_MIN:  {units="C"; break;}
@@ -393,6 +391,7 @@ string ForcingToString(const forcing_type ftype)
   case F_SNOW_FRAC:       {fstring="SNOW_FRAC"; break;}
   case F_SNOWFALL:        {fstring="SNOWFALL"; break;}
   case F_RAINFALL:        {fstring="RAINFALL"; break;}
+  case F_IRRIGATION:      {fstring="IRRIGATION"; break;}
 
   case F_TEMP_AVE:        {fstring="TEMP_AVE"; break;}
   case F_TEMP_DAILY_MIN:  {fstring="TEMP_DAILY_MIN"; break;}

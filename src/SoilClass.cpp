@@ -390,8 +390,8 @@ void CSoilClass::InitializeSoilProperties(soil_struct &S, bool is_template,int n
   S.evap_res_fc =S.shuttleworth_b          =DefaultParameterValue(is_template,true);
   S.PET_correction                         =1.0;
 
-  S.albedo_wet                             =DefaultParameterValue(is_template,true);
-  S.albedo_dry                             =DefaultParameterValue(is_template,true);
+  S.albedo_wet                             =0.16;
+  S.albedo_dry                             =0.24;
 
   //Conceptual parameters
   //-----------------------------------------------------

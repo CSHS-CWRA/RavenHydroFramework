@@ -19,6 +19,7 @@ enum diag_type {
   DIAG_RMSE,
   DIAG_RMSE_DER,
   DIAG_KLING_GUPTA,
+  DIAG_KGE_PRIME,
   DIAG_DAILY_KGE,
   DIAG_KLING_GUPTA_DER,
   DIAG_KLING_GUPTA_DEVIATION,
@@ -54,6 +55,7 @@ diag_type StringToDiagnostic(string distring);
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for time series comparison diagnostics
+//
 class CDiagnostic
 {
 private:/*------------------------------------------------------*/

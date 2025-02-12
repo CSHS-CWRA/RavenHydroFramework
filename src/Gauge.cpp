@@ -225,6 +225,7 @@ void CGauge::Initialize(const optStruct   &Options,
   WarnAboutForcing(Options.SW_radiation  ==SW_RAD_DATA,   F_SW_RADIA);
   WarnAboutForcing(Options.SW_radia_net  ==NETSWRAD_DATA, F_SW_RADIA_NET);
   WarnAboutForcing(Options.LW_radiation  ==LW_RAD_DATA,   F_LW_RADIA_NET);
+  WarnAboutForcing(Options.LW_incoming   ==LW_INC_DATA,   F_LW_INCOMING);
   WarnAboutForcing(Options.cloud_cover   ==CLOUDCOV_DATA, F_CLOUD_COVER);
   WarnAboutForcing(Options.ow_evaporation==PET_DATA,      F_OW_PET);
   WarnAboutForcing(Options.evaporation   ==PET_DATA,      F_PET);
@@ -236,9 +237,9 @@ void CGauge::Initialize(const optStruct   &Options,
   // Check for monthly values, when needed
   //--------------------------------------------------------------------------
   ExitGracefullyIf((_aAveTemp[0]==NOT_SPECIFIED) && ((Options.evaporation==PET_FROMMONTHLY)),
-                   "CGauge::Initialize: monthly temps for gauge not specified, but are needed",BAD_DATA);
+                   "CGauge::Initialize: monthly temperatures for gauge not specified (using :MonthlyAveTemperature command) , but are needed",BAD_DATA);
   ExitGracefullyIf((_aAvePET[0]==NOT_SPECIFIED) && ((Options.evaporation==PET_FROMMONTHLY) || (Options.evaporation==PET_MONTHLY_FACTOR)),
-                   "CGauge::Initialize: monthly PET values for gauge not specified, but are needed",BAD_DATA);
+                   "CGauge::Initialize: monthly PET values for gauge not specified (using :MonthlyAveEvaporation command), but are needed",BAD_DATA);
 
 }
 //////////////////////////////////////////////////////////////////

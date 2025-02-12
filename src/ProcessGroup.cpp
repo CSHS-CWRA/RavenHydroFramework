@@ -77,18 +77,10 @@ void CProcessGroup::GetRatesOfChange(const double      *state_vars,
     nConn=_pSubProcesses[j]->GetNumConnections();
     _pSubProcesses[j]->GetRatesOfChange(state_vars,pHRU,Options,tt,loc_rates);
     _pSubProcesses[j]->ApplyConstraints(state_vars,pHRU,Options,tt,loc_rates);
-    for(int qq=0;qq<nConn;qq++){ rates[q1+qq]=_aWeights[j]*loc_rates[qq];}
+    for(int qq=0;qq<nConn;qq++){
+      rates[q1+qq]=_aWeights[j]*loc_rates[qq];
+    }
 
-    //ORDERED SERIES:
-    /*for(int qq=0;qq<nConn;qq++){
-      if(iTo[qq]!=iFrom[qq]){
-        sv[iFrom[qq]]-=_aWeights[j]*loc_rates[qq]*Options.timestep;//mass/energy balance maintained
-        sv[iTo  [qq]]+=_aWeights[j]*loc_rates[qq]*Options.timestep;//change is an exchange of energy or mass, which must be preserved
-      }
-      else{
-        sv[iTo  [qq]]+=_aWeights[j]*loc_rates[qq]*Options.timestep;//for state vars that are not storage compartments
-      }
-    }*/
     q1+=nConn;
   }
 }

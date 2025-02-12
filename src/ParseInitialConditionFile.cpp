@@ -21,7 +21,7 @@ void SetInitialStateVar(CModel *&pModel,const int SVind,const sv_type typ,const 
 bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
 {
   int         i,k;              //counters
-  long        SBID;             //subbasin ID
+  long long   SBID;             //subbasin ID
   //CHydroUnit *pHRU;           //temporary pointers to HRUs, Subbasins
   CSubBasin  *pSB;
   bool        ended(false);
@@ -199,7 +199,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         {
           ExitGracefullyIf(Len<2,
                            "Parse HRU File: incorrect number of terms in SubBasin initial conditions",BAD_DATA);
-          SBID=s_to_l(s[0]);
+          SBID=s_to_ll(s[0]);
           pSB=NULL;
           pSB=pModel->GetSubBasinByID(SBID);
           if (pSB!=NULL){
@@ -536,7 +536,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       if (Options.noisy) {cout <<"   Reading Basin State Variables"<<endl;}
       bool done=false;
       CSubBasin *pBasin=NULL;
-      int SBID=DOESNT_EXIST;
+      long long SBID=DOESNT_EXIST;
       do
       {
         bool eof=pp->Tokenize(s,Len);
@@ -545,7 +545,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         else if (IsComment(s[0],Len)){}//do nothing
         else if (!strcmp(s[0],":BasinIndex"))
         {
-          SBID=s_to_l(s[1]);
+          SBID=s_to_ll(s[1]);
           pBasin=pModel->GetSubBasinByID(SBID);
           ExitGracefullyIf(pBasin==NULL,
                            "ParseInitialConditionsFile: bad basin index in .rvc file",BAD_DATA);
@@ -646,7 +646,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
     case(7):  //----------------------------------------------
     {
       //:InitialReservoirFlow [SBID] [flow in m3/s]
-      int SBID=s_to_l(s[1]);
+      SBID=s_to_ll(s[1]);
       CSubBasin *pBasin=pModel->GetSubBasinByID(SBID);
       if(pBasin==NULL) {
         ExitGracefully("ParseInitialConditionsFile: bad basin index in :InitialReservoirFlow command (.rvc file)",BAD_DATA_WARN);break;
@@ -660,15 +660,19 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
     case(8):  //----------------------------------------------
     {
       //:InitialReservoirStage [SBID] [stage]
-      int SBID=s_to_l(s[1]);
+      SBID=s_to_ll(s[1]);
       CSubBasin *pBasin=pModel->GetSubBasinByID(SBID);
       if(pBasin==NULL) {
         ExitGracefully("ParseInitialConditionsFile: bad basin index in :InitialReservoirFlow command (.rvc file)",BAD_DATA_WARN); break;
       }
       if(pBasin->GetReservoir()==NULL) {
-        ExitGracefully("ParseInitialConditionsFile: bad basin index in :InitialReservoirStage command (.rvc file), no reservoir exists in specified basin",BAD_DATA_WARN);break;
+        //warning to handle commented out reservoirs
+        string warn="ParseInitialConditionsFile: bad basin index in :InitialReservoirStage command (.rvc file), no reservoir exists in basin " +to_string(SBID)+". Command will be ignored.";
+        WriteWarning(warn.c_str(),Options.noisy);
       }
-      pBasin->GetReservoir()->SetReservoirStage(s_to_d(s[2]),s_to_d(s[2]));
+      else{
+        pBasin->GetReservoir()->SetReservoirStage(s_to_d(s[2]),s_to_d(s[2]));
+      }
       break;
     }
     case(10):  //----------------------------------------------
@@ -751,7 +755,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       if(Options.noisy) { cout <<"   Reading Basin Transport Variables for constituent "<<pConstit->GetName()<<endl; }
       bool done=false;
       CSubBasin *pBasin=NULL;
-      int SBID=DOESNT_EXIST;
+      SBID=DOESNT_EXIST;
       do
       {
         bool eof=pp->Tokenize(s,Len);
@@ -760,7 +764,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         else if(IsComment(s[0],Len)) {}//do nothing
         else if(!strcmp(s[0],":BasinIndex"))
         {
-          SBID=s_to_l(s[1]);
+          SBID=s_to_ll(s[1]);
           pBasin=pModel->GetSubBasinByID(SBID);
           ExitGracefullyIf(pBasin==NULL,
             "ParseInitialConditionsFile: bad basin index in .rvc file",BAD_DATA);
@@ -791,6 +795,9 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
               pConstit->SetMoutArray(p,nsegs,aMout,aMout[nsegs]);
               delete[] aMout;
             }
+            else {
+              WriteWarning("ParseInitialConditionsFile: incorrect number of terms in :Mout initial conditions item",Options.noisy);
+            }
           }
         }
         else if(!strcmp(s[0],":Mlat"))
@@ -805,6 +812,9 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
               pConstit->SetMlatHist(p,histsize,aMlat,aMlat[histsize]);
               delete[] aMlat;
             }
+            else {
+              WriteWarning("ParseInitialConditionsFile: incorrect number of terms in :Mlat initial conditions item",Options.noisy);
+            }
           }
         }
         else if(!strcmp(s[0],":Min"))
@@ -818,6 +828,9 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
               }
               pConstit->SetMinHist(p,histsize,aMin);
               delete[] aMin;
+            }
+            else {
+              WriteWarning("ParseInitialConditionsFile: incorrect number of terms in :Min initial conditions item",Options.noisy);
             }
           }
         }
@@ -841,7 +854,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         }
         else if (!strcmp(s[0], ":BedTemperature"))
         {
-          if (Len >= 3) {
+          if (Len >= 2) {
             CEnthalpyModel *pEnth=(CEnthalpyModel*)(pConstit);
             pEnth->SetBedTemperature (p,s_to_d(s[1]));
           }

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------
   Percolation
   ----------------------------------------------------------------*/
@@ -352,7 +352,9 @@ void   CmvPercolation::ApplyConstraints(const double             *state_vars,
 
   //exceedance of max "to" compartment
   //water flow simply slows (or stops) so that receptor will not overfill during tstep
-  double room;
-  room=threshMax(pHRU->GetStateVarMax(iTo[0],state_vars,Options)-state_vars[iTo[0]],0.0,0.0);
-  rates[0]=threshMin(rates[0],room/Options.timestep,0.0);
+  if (!Options.allow_soil_overfill){
+    double room;
+    room=threshMax(pHRU->GetStateVarMax(iTo[0],state_vars,Options)-state_vars[iTo[0]],0.0,0.0);
+    rates[0]=threshMin(rates[0],room/Options.timestep,0.0);
+  }
 }

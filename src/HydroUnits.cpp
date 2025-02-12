@@ -278,7 +278,11 @@ double CHydroUnit::GetSoilTensionStorageCapacity(const int m) const
   ExitGracefullyIf((m<0) || (m>=_pModel->GetNumSoilLayers()),
                    "CHydroUnit GetSoilTensionStorageCapacity::improper index",BAD_DATA);
 #endif
-  return aThickness[m]*MM_PER_METER*_pSoil[m]->cap_ratio*(_pSoil[m]->field_capacity-_pSoil[m]->sat_wilt);
+  double storcap=aThickness[m]*MM_PER_METER*_pSoil[m]->cap_ratio*(_pSoil[m]->field_capacity-_pSoil[m]->sat_wilt);
+  if (storcap<-REAL_SMALL){
+    ExitGracefully("Wilting point saturation (SAT_WILT) is greater than field capacity (FIELD_CAPACITY) for one or more soil classes, leading to negative tension storage",BAD_DATA);
+  }
+  return storcap;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -359,7 +363,7 @@ void CHydroUnit::Enable(){_Disabled=false;}
 //////////////////////////////////////////////////////////////////
 /// \brief links HRU to reservoir
 //
-void CHydroUnit::LinkToReservoir(const long SBID){_res_linked=true;}
+void CHydroUnit::LinkToReservoir(const long long SBID){_res_linked=true;}
 
 
 //////////////////////////////////////////////////////////////////

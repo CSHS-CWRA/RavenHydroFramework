@@ -67,7 +67,7 @@ void CDDSEnsemble::SetPerturbationValue(const double &perturb) {
 //////////////////////////////////////////////////////////////////
 /// \brief set DDS calibration target
 //
-void CDDSEnsemble::SetCalibrationTarget(const long SBID,const diag_type object_diag,const string period)
+void CDDSEnsemble::SetCalibrationTarget(const long long SBID,const diag_type object_diag,const string period)
 {
   _calib_SBID  =SBID;
   _calib_Obj   =object_diag;

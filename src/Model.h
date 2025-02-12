@@ -1,6 +1,6 @@
 ﻿/*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef MODEL_H
 #define MODEL_H
@@ -133,10 +133,13 @@ private:/*------------------------------------------------------*/
   //Data Assimilation
   double             *_aDAscale; ///< array of data assimilation flow scaling parameters [size: _nSubBasins] (NULL w/o DA)
   double            *_aDAlength; ///< array of downstream distance to nearest DA observation [m] [size: _nSubBasins] (NULL w/o DA)
+  double           *_aDAQadjust; ///< array of flow adjustments [m3/s] [size: _nSubBasins]
+  double          *_aDADrainSum; ///< sum of assimilated drainage areas upstream of a subbasin outlet [km2] [size: _nSubBasins]
+  double           *_aDADownSum; ///< the drainage area of the nearest downstream assimilated flow observation [km2] [size: _nSubBasins]
   double         *_aDAtimesince; ///< array of downstream time since most recent downstream DA observation [size: _nSubBasins] (NULL w/o DA)
   bool            *_aDAoverride; ///< array of booleans indicating if observation data is available for assimilation at basin p's outlet [size: _nSubBasins] (NULL w/o DA)
   double              *_aDAobsQ; ///< array of observed flow values in basins [size: _nSubBasins]  (NULL w/o DA)
-  double             * _aDAlast; ///< array of scale factors from previous time step  [size: _nSubBasins]  (NULL w/o DA)
+  double        *_aDAscale_last; ///< array of scale factors from previous time step  [size: _nSubBasins]  (NULL w/o DA)
 
   force_perturb**_pPerturbations; ///< array of pointers to perturbation data; defines which forcing functions to perturb and how [size: _nPerturbations]
   int            _nPerturbations; ///< number of forcing functions to perturb
@@ -400,7 +403,7 @@ public:/*-------------------------------------------------------*/
   CHRUGroup        *GetHRUGroup                       (const int kk) const;
   CHRUGroup        *GetHRUGroup                       (const string name) const;
   CSubBasin        *GetSubBasin                       (const int p ) const;
-  CSubBasin        *GetSubBasinByID                   (const long ID) const;
+  CSubBasin        *GetSubBasinByID                   (const long long ID) const;
   CSubbasinGroup   *GetSubBasinGroup                  (const int pp) const;
   CSubbasinGroup   *GetSubBasinGroup                  (const string name) const;
   CHydroProcessABC *GetProcess                        (const int j ) const;
@@ -416,29 +419,29 @@ public:/*-------------------------------------------------------*/
   double            GetAverageSnowfall                () const;
   int               GetOrderedSubBasinIndex           (const int pp) const;
   int               GetDownstreamBasin                (const int p ) const;
-  int               GetSubBasinIndex                  (const long ID) const;
+  int               GetSubBasinIndex                  (const long long SBID) const;
   int               GetGaugeIndexFromName             (const string name) const;
   int               GetForcingGridIndexFromType       (const forcing_type &ty) const;
-  const CSubBasin **GetUpstreamSubbasins              (const int SBID, int &nUpstream) const;
-  bool              IsSubBasinUpstream                (const long SBID,const long SBIDdown) const;
+  const CSubBasin **GetUpstreamSubbasins              (const long long SBID, int &nUpstream) const;
+  bool              IsSubBasinUpstream                (const long long SBID,const long long SBIDdown) const;
 
   double            GetWatershedArea                  () const;
   bool              IsInHRUGroup                      (const int k,
                                                        const string HRUGroupName) const;
-  bool              IsInSubBasinGroup                 (const long SBID,
+  bool              IsInSubBasinGroup                 (const long long SBID,
                                                        const string SBGroupName) const;
 
   int                   GetNumObservedTS              () const;
   const CTimeSeriesABC *GetObservedTS                 (const int i) const;
   const CTimeSeriesABC* GetSimulatedTS                (const int i) const;
 
-  double               GetObjFuncVal                  (long calib_SBID,diag_type calib_Obj, const string calib_period) const;
+  double               GetObjFuncVal                  (long long calib_SBID,diag_type calib_Obj, const string calib_period) const;
 
   const optStruct     *GetOptStruct                   () const;
   CTransportModel     *GetTransportModel              () const;
   CGroundwaterModel   *GetGroundwaterModel            () const;
   CEnsemble           *GetEnsemble                    () const;
-  CDemandOptimizer    *GetDemandOptimizer             () const;
+  CDemandOptimizer    *GetManagementOptimizer         () const;
 
   void              GetParticipatingParamList         (string *aP,
                                                        class_type *aPC,
@@ -481,7 +484,7 @@ public:/*-------------------------------------------------------*/
   void    SetOutputGroup            (const CHRUGroup         *pOut              );
   void    SetNumSnowLayers          (const int                nLayers           );
 
-  void    OverrideStreamflow        (const long SBID);
+  void    OverrideStreamflow        (const long long SBID);
   void    SetEnsembleMode           (CEnsemble *pEnsemble);
   void    AddDemandOptimization     (CDemandOptimizer *pDO);
 
@@ -495,6 +498,7 @@ public:/*-------------------------------------------------------*/
   //called only once prior to simulation:
   void        Initialize                 (const optStruct &Options);
   void        InitializeBasins           (const optStruct &Options,const bool re_init);
+  void        InitializePostRVM          (const optStruct &Options);
   void        WriteOutputFileHeaders     (const optStruct &Options);
   void        GenerateGriddedPrecipVars  (const optStruct &Options);
   void        GenerateGriddedTempVars    (const optStruct &Options);

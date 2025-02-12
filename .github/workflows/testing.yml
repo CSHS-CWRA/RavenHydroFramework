@@ -18,6 +18,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
         with:
+          disable-sudo: false
           egress-policy: block
           allowed-endpoints: >
             azure.archive.ubuntu.com:80
@@ -30,6 +31,8 @@ jobs:
 
       - name: Checkout Repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+            persist-credentials: false
 
       - name: Install linters
         run: |
@@ -47,16 +50,17 @@ jobs:
   build-netcdf:
     name: Build (${{ matrix.build_type }}; ${{ matrix.os }}; NetCDF=True)
     needs: lint
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest ]
-        build_type: [ Debug, Release ]
+        os: [ "ubuntu-latest", "macos-latest" ]
+        build_type: [ "Debug", "Release" ]
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
         with:
-          disable-sudo: true
+          disable-sudo: false
           egress-policy: block
           allowed-endpoints: >
             azure.archive.ubuntu.com:80
@@ -68,6 +72,20 @@ jobs:
 
       - name: Checkout Repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          persist-credentials: false
+
+      - name: Install NetCDF (Ubuntu/apt)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnetcdf-dev
+      - name: Install NetCDF4 (macOS/homebrew)
+        if: (matrix.os == 'macos-latest') && (!matrix.conda)
+        uses: tecolicom/actions-use-homebrew-tools@b9c066b79607fa3d71e0be05d7003bb75fd9ff34 # v1.3.0
+        with:
+          tools: netcdf
+          cache: "yes"
 
       - name: Fetch NetCDF CMake script
         run: |
@@ -75,22 +93,24 @@ jobs:
 
       - name: Build
         id: build
-        continue-on-error: true
         run: |
-          cmake .
-          cmake --build . --config ${{ matrix.build_type }} -j 3
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build . --config ${{ matrix.build_type }} -j 3 --verbose
 
       - name: Run tests
         if: steps.build.outcome == 'success'
         run: |
-          ./Raven
-          ./Raven -v
+          ./build/Raven
+          ./build/Raven -v
 
   build:
     name: Build (${{ matrix.build_type }}; ${{ matrix.os }}; NetCDF=False)
     needs: lint
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
         build_type: [ Debug, Release ]
@@ -113,6 +133,8 @@ jobs:
 
       - name: Checkout Repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          persist-credentials: false
 
       - name: Install dependencies (Windows)
         if: matrix.os == 'windows-latest'
@@ -120,12 +142,19 @@ jobs:
 
       - name: Build
         id: build
-        continue-on-error: true
         run: |
-          cmake .
-          cmake --build . --config ${{ matrix.build_type }} -j 3
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build . --config ${{ matrix.build_type }} -j 3 --verbose
 
-      - name: Run tests
+      - name: Run tests (Windows)
+        if: ${{ matrix.os == 'windows-latest' && steps.build.outcome == 'success' }}
         run: |
-          ./Raven
-          ./Raven -v
+          ./build/${{ matrix.build_type }}/Raven.exe
+          ./build/${{ matrix.build_type }}/Raven.exe -v
+      - name: Run tests (Ubuntu/macOS)
+        if: ${{ matrix.os != 'windows-latest' && steps.build.outcome == 'success' }}
+        run: |
+          ./build/Raven
+          ./build/Raven -v

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef TIMESERIESABC_H
 #define TIMESERIESABC_H
@@ -19,10 +19,10 @@ public:
 private:/*------------------------------------------------------*/
   ts_type   _type;        ///< type - regular or irregular
   string    _name;        ///< name of time series (used only for error messages)
-  long      _loc_ID;      ///< location ID (stores additional info, like HRU or SB ID for observation data)
+  long long _loc_ID;      ///< location ID (stores additional info, like HRU or SBID for observation data)
   int       _constit_ind; ///< constituent index, if a concentration/temperature observation
   string    _srcfile;     ///< original source file
-  int       _ID_tag;      ///< integer ID tag for (e.g.,) demand ID
+  long long _demand_ID;   ///< integer ID tag for (e.g.,) demand ID
 
   CTimeSeriesABC(const CTimeSeriesABC &t); //suppresses default copy constructor
 
@@ -30,7 +30,7 @@ public:/*-------------------------------------------------------*/
   //Constructors:
   CTimeSeriesABC(ts_type type,
                  string  name,
-                 long    loc_ID,
+                 long long loc_ID,
                  string filename);
   CTimeSeriesABC(string name,
                  const CTimeSeriesABC &t);
@@ -45,14 +45,14 @@ public:/*-------------------------------------------------------*/
 
   ts_type GetType      () const;
   string  GetName      () const;
-  long    GetLocID     () const;
+  long long GetLocID   () const;
   int     GetConstitInd() const;
   string  GetSourceFile() const;
-  int     GetIDTag     () const;
+  long long GetDemandID() const;
 
-  void    SetLocID     (long ID);
+  void    SetLocID     (long long ID);
   void    SetConstitInd(const int c);
-  void    SetIDTag     (int IDtag);
+  void    SetDemandID  (long long demandID);
 
   virtual double GetInterval() const=0;
   virtual double GetTime      (const int n) const=0;

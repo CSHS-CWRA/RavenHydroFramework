@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2024 the Raven Development Team
   ----------------------------------------------------------------
   Fully coupled snow balance routines
   ----------------------------------------------------------------*/
@@ -47,15 +47,18 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, CModelABC *pModel)
   }
   else if (type==SNOBAL_HBV)
   {
-    int iSnowLiq,iSoil;
+    int iSnowLiq,iSoil,iPond;
     iSnowLiq  =pModel->GetStateVarIndex(SNOW_LIQ);
     iSoil     =pModel->GetStateVarIndex(SOIL,0);
+    iPond     =pModel->GetStateVarIndex(PONDED_WATER);
 
-    CHydroProcessABC::DynamicSpecifyConnections(3); //nConnections=2
+    CHydroProcessABC::DynamicSpecifyConnections(5);
 
     iFrom[0]=iSnow;       iTo[0]=iSnowLiq;       //rates[0]: SNOW->SNOW_LIQ
     iFrom[1]=iSnow;       iTo[1]=iSoil;          //rates[1]: SNOW->SOIL
-    iFrom[2]=iSnowLiq;    iTo[2]=iSoil;          //rates[1]: SNOW->SOIL
+    iFrom[2]=iSnowLiq;    iTo[2]=iSoil;          //rates[2]: SNOW_LIQ->SOIL
+    iFrom[3]=iSnow;       iTo[3]=iPond;          //rates[3]: SNOW->PONDED_WATER
+    iFrom[4]=iSnowLiq;    iTo[4]=iPond;          //rates[4]: SNOW_LIQ->PONDED_WATER
   }
   else if (type==SNOBAL_UBCWM)
   {
@@ -469,6 +472,11 @@ void CmvSnowBalance::GetRatesOfChange(const double               *state_var,
     rates[0]+=to_liq;               //SNOW->SNOW_LIQ
     rates[1] =max(melt-to_liq,0.0); //SNOW->SOIL[0]
     rates[2] =overflow;             //SNOW_LIQ->SOIL[0]
+
+    if (pHRU->GetHRUType() != HRU_STANDARD) {//lakes & wetlands - don't send to soil
+      rates[3]=rates[1]; rates[1]=0.0;
+      rates[4]=rates[2]; rates[2]=0.0;
+    }
   }
   //------------------------------------------------------------
   else if(type==SNOBAL_CRHM_EBSM)
