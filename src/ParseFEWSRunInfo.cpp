@@ -288,7 +288,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
     if (retval==NC_NOERR){
       for (int i = 0; i < nAttributes; i++) {
         retval=nc_inq_attname(ncid,varid_props,i,att_name);
-        if (retval==NO_ERROR){
+        if (retval==NC_NOERR){
           string att_name_s=to_string(att_name);
 
           // NamedConstant(s) ----------------------------------------------------
