@@ -2,9 +2,9 @@ Contributor License Agreement (CLA)
 
 Project Name: Raven Hydrological Modelling Framework
 
-Version: 3.8.1
+Version: X.Y.Z
 
-Effective Date: 2024-07-15
+Effective Date: YYYY-MM-DD
 
 You (the "Contributor") agree to the following terms for your present and future contributions submitted to the project named above (the "Project").
 
