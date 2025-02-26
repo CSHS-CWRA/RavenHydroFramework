@@ -19,7 +19,7 @@ on:
     branches:
       - "main"
   schedule:
-    - cron: '0 0 9 1 * *' # At 09:00 AM, on day 1 of the month
+    - cron: '0 9 1 * *' # At 09:00 AM, on day 1 of the month
 
 jobs:
   analyze:
