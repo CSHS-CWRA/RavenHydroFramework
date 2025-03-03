@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------
   ChannelXSect.h
   ------------------------------------------------------------------
@@ -104,6 +104,6 @@ public:/*-------------------------------------------------------*/
   double              GetCelerity   (const double &Qref, const double &SB_slope,const double &SB_n) const;
   double              GetDiffusivity(const double &Q, const double &SB_slope, const double &SB_n) const;
 
-  void                CheckReferenceFlow(const double& Qref,const double& SB_slope,const double& SB_n,const long SBID) const;
+  void                CheckReferenceFlow(const double& Qref,const double& SB_slope,const double& SB_n,const long long SBID) const;
 };
 #endif

@@ -12,6 +12,7 @@
 #include "TimeSeries.h"
 #include "Reservoir.h"
 class CReservoir;
+class CDemand;
 class CChannelXSect;  // defined in ChannelXSect.h
 enum res_constraint;
 
@@ -42,7 +43,7 @@ class CSubBasin
 {
 private:/*------------------------------------------------------*/
 
-  long                     _ID;   ///< unique ID of subbasin (must be positive)
+  long long                _ID;   ///< unique ID of subbasin (must be positive)
   string                 _name;   ///< name
   bool               _disabled;   ///< true if disabled
   int                _global_p;   ///< p index in _pModel subbasin array
@@ -52,7 +53,7 @@ private:/*------------------------------------------------------*/
   //basin properties
   double           _basin_area;   ///< contributing surface area for subbasin [km2]
   double        _drainage_area;   ///< total upstream drainage area [km2] (includes subbasin area)
-  long          _downstream_ID;   ///< ID of downstream subbasin; if <0, then this outflows outside the model domain
+  long long     _downstream_ID;   ///< ID of downstream subbasin; if <0, then this outflows outside the model domain
   bool                 _gauged;   ///< if true, hydrographs are generated for downstream flows
   bool           _is_headwater;   ///< true if no subbasins drain into this one and _pInflowHydro==NULL
   bool             _is_conduit;   ///< true if basin is 'conduit' basin, and shouldn't have HRUs
@@ -108,7 +109,7 @@ private:/*------------------------------------------------------*/
   double      _rivulet_storage;   ///< water storage in rivulets [m3]
   double             _QoutLast;   ///< Qout from downstream channel segment [m3/s] at start of previous timestep- needed for reporting integrated outflow
   double             _QlatLast;   ///< Qlat (after convolution) at start of previous timestep [m3/s]
-  //double           _aQchanLast;   ///< channel outflow 
+  //double           _aQchanLast;   ///< channel outflow
   double               _Qlocal;   ///< local contribution to current subbasin outflow [m3/s] (just from in-catchment routing)
   double             _QlocLast;   ///< last local contribution [m3/s]
 
@@ -118,6 +119,8 @@ private:/*------------------------------------------------------*/
   double            _Qdiverted;   ///< diverted flow at end of timestep [m3/s] (for MB accounting)
   double           _Qdelivered;   ///< delivered flow at end of time step if management optimization is used [m3/s]
   double         *_aQdelivered;   ///< delivered flow at end of time step for each water demand [m3/s] [size: _nIrrigDemands]
+  double          *_aQreturned;   ///< return flow associated with deliveries (may be redirected to other basin) [m3/s]
+  double              _Qreturn;   ///< return flow at end of time step if management optimization is used [m3/s] (may be sourced from other basin)
 
   //Hydrograph Memory
   double            *_aQinHist;   ///< history of inflow from upstream into primary channel [m3/s][size:nQinHist] (aQinHist[n] = Qin(t-ndt))
@@ -138,8 +141,8 @@ private:/*------------------------------------------------------*/
   CTimeSeries  *_pInflowHydro2;   ///< pointer to time series of inflows/extractions ; at downstream end of basin reach
   CTimeSeries *_pEnviroMinFlow;   ///< pointer to time series of environmental minimum flow targets that force reduced irrigation demand (=0 by default)
 
-  int           _nIrrigDemands;   ///< number of irrigation demand/water demand time series
-  CTimeSeries **_pIrrigDemands;   ///< pointer to array of time series of demand (which can be unmet) applied at downstream end of basin reach [size: _nIrrigDemand]
+  int           _nWaterDemands;   ///< number of water demand objects
+  CDemand     **_pWaterDemands;   ///< pointer to array of demand objects; demand applied at downstream end of basin reach [size: _nIrrigDemand]
 
   int             _nDiversions;   ///< number of flow diversions from basin
   diversion     **_pDiversions;   ///< array of pointers to flow diversion structures
@@ -159,10 +162,10 @@ private:/*------------------------------------------------------*/
   void            UpdateRoutingHydro(const double &tstep);
 public:/*-------------------------------------------------------*/
   //Constructors:
-  CSubBasin(const long           ID,
+  CSubBasin(const long long      ID,
             const string         Name,
             const CModelABC     *pMod,
-            const long           downstream_ID, //index of downstream SB, if <0, downstream outlet
+            const long long      downstream_ID, //index of downstream SB, if <0, downstream outlet
             const CChannelXSect *pChan,         //Channel
             const double         reach_len,     //reach length [m]
             const double         Qreference,    //reference flow [m3/s]
@@ -171,7 +174,7 @@ public:/*-------------------------------------------------------*/
   ~CSubBasin();
 
   //Accessor functions
-  long                 GetID                () const;
+  long long            GetID                () const;
   int                  GetGlobalIndex       () const; //[p]
   string               GetName              () const;
   double               GetBasinArea         () const;
@@ -182,11 +185,12 @@ public:/*-------------------------------------------------------*/
   double               GetAvgCumulFlux      (const int i, const bool to) const;
   double               GetAvgCumulFluxBet   (const int iFrom, const int iTo) const;
   double               GetReferenceFlow     () const;
+  double               GetTimeOfConc        () const;
   double               GetReferenceCelerity () const;
   double               GetReferenceXSectArea() const;
   double               GetCelerity          () const;
   double               GetDiffusivity       () const;
-  long                 GetDownstreamID      () const;
+  long long            GetDownstreamID      () const;
   int                  GetNumHRUs           () const;
   const CHydroUnit    *GetHRU               (const int k) const;
   bool                 IsGauged             () const;
@@ -210,8 +214,6 @@ public:/*-------------------------------------------------------*/
   double               GetTopWidth          () const;
   bool                 UseInFlowAssimilation() const;
   int                  GetNumWaterDemands   () const;
-  int                  GetWaterDemandID     (const int ii) const;
-  string               GetWaterDemandName   (const int ii) const;
   double               GetUnusableFlowPercentage() const;
 
   const double   *GetUnitHydrograph        () const;
@@ -225,7 +227,7 @@ public:/*-------------------------------------------------------*/
   int             GetNumDiversions         () const;
 
   double          GetOutflowRate           () const;                   //[m3/s] from final reach segment OR reservoir, point in time
-  double          GetChannelOutflowRate    () const;                   //[m3/s] from final reach segment (NOT reservoir), point in time, BEFORE diversions included 
+  double          GetChannelOutflowRate    () const;                   //[m3/s] from final reach segment (NOT reservoir), point in time, BEFORE diversions included
   double          GetLastChannelOutflowRate() const;                   //[m3/s] from final reach segment (NOT reservoir), point in time, BEFORE diversions included
   double          GetLastOutflowRate       () const;                   //[m3/s] from final segment, previous timestep
   double          GetLocalOutflowRate      () const;                   //[m3/s] local contribution to outflow
@@ -237,7 +239,7 @@ public:/*-------------------------------------------------------*/
   double          GetReservoirLosses       (const double &tstep) const;//[m3] from reservoir integrated over timestep
   double      GetIntegratedReservoirInflow (const double &tstep) const;//[m3] from final segment upstream of reservoir integrated over timestep
   double          GetIrrigationLosses      (const double &tstep) const;//[m3] from actual irrigation (not just demand)
-  double          GetDiversionLosses       (const double &tstep) const;//[m3] from flow diversions 
+  double          GetDiversionLosses       (const double &tstep) const;//[m3] from flow diversions
 
   double          GetRivuletStorage        () const;                   //[m3] volume en route to outflow
   double          GetChannelStorage        () const;                   //[m3] volume in channel
@@ -245,8 +247,10 @@ public:/*-------------------------------------------------------*/
 
   double          GetSpecifiedInflow       (const double &t) const;    //[m3/s] to upstream end of channel at point in time
   double          GetDownstreamInflow      (const double &t) const;    //[m3/s] to downstream end of channel at point in time
-  double          GetTotalWaterDemand      (const double &t) const;    //[m3/s] total from downstream end of channel at point in time
-  double          GetWaterDemand           (const int ii,const double &t) const;  //[m3/s] iith demand from downstream end of channel at point in time
+  double          GetTotalWaterDemand      () const;                   //[m3/s] total from downstream end of channel at point in time
+  double          GetWaterDemand           (const int ii) const;       //[m3/s] iith demand from downstream end of channel at point in time
+  double          GetTotalReturnFlow       () const;                   //[m3/s] total instantaneous return flow TO this basin
+  double          GetReturnFlow            (const int ii) const;       //[m3/s] return flow associated with iith demand (may be redirected OUT of basin)
   double          GetDownstreamIrrDemand   (const double &t) const;    //[m3/s] cumulative downstream irrigation demand, including from this subbasin
   double          GetDemandDelivery        () const;                   //[m3/s] instantaneous total delivery rate Qirr
   double          GetDemandDelivery        (const int ii) const;       //[m3/s] instantaneous delivery rate to demand ii
@@ -256,6 +260,7 @@ public:/*-------------------------------------------------------*/
   int             GetDiversionTargetIndex  (const int i) const;        // returns subbasin index p of diversion i
 
   CReservoir     *GetReservoir             () const;
+  CDemand        *GetWaterDemandObj        (const int ii) const;       //returns pointer to ith water demand
 
   double          GetBasinProperties       (const string label) const;
 
@@ -271,11 +276,12 @@ public:/*-------------------------------------------------------*/
                                             const double    &Qlat_avg,         //[m3/s]
                                             const double    &total_drain_area, //[km2]
                                             const optStruct &Options);
+  void            InitializePostRVM        (const optStruct &Options);
   void            InitializeFlowStates     (const double& Qin_avg,const double& Qlat_avg,const optStruct &Options);
   void            AddInflowHydrograph      (CTimeSeries *pInflow);
   void            AddDownstreamInflow      (CTimeSeries *pInflow);
-  void            AddIrrigationDemand      (CTimeSeries *pOutflow);
   void            AddEnviroMinFlow         (CTimeSeries *pMinFlow);
+  void            AddWaterDemand           (CDemand     *pDemand);
   void            AddFlowDiversion         (const int jul_start, const int jul_end, const int target_p, const double min_flow, const double pct);
   void            AddFlowDiversion         (const int jul_start, const int jul_end, const int target_p, const double *aQ1, const double *aQ2, const int NQ);
   void            ClearTimeSeriesData      (const optStruct& Options);
@@ -289,17 +295,21 @@ public:/*-------------------------------------------------------*/
   void            SetQoutArray             (const int N, const double *aQo, const double QoLast);
   void            SetQlatHist              (const int N, const double *aQl, const double QlLast);
   void            SetQinHist               (const int N, const double *aQi);
-  void            SetDownstreamID          (const long down_SBID);
+  void            SetDownstreamID          (const long long down_SBID);
   void            SetDownstreamBasin       (const CSubBasin *pSB);
-  void            AddToDeliveredDemand     (const int ii, const double Qdel);
   void            SetGauged                (const bool isgauged);
   void            Disable                  ();
   void            Enable                   ();
   double          ScaleAllFlows            (const double &scale_factor, const bool scale_last, const double &tstep, const double &t);
+  double          AdjustAllFlows           (const double &adjustment, const bool scale_last, const double &tstep, const double &t);
   void            SetUnusableFlowPercentage(const double &val);
   void            IncludeInAssimilation    ();
 
   //called during model operation:
+  void            UpdateDemands            (const optStruct &Options,const time_struct &tt);
+  void            AddToDeliveredDemand     (const int ii, const double &Qdel);
+  void            RecordReturnFlow         (const int ii, const double& Qret);
+  void            AddToReturnFlow          (const double &Qret);
   void            UpdateInflow             (const double &Qin );//[m3/s]
   void            UpdateLateralInflow      (const double &Qlat);//[m3/s]
   void            UpdateSubBasin           (const time_struct &tt, const optStruct &Options);
@@ -355,7 +365,7 @@ public:/*-------------------------------------------------------*/
   double            GetAvgForcing      (const forcing_type &ftype) const;
   double            GetAvgCumulFlux    (const int i,const bool to) const;
   double            GetAvgCumulFluxBet (const int iFrom,const int iTo) const;
-  bool              IsInGroup          (const long SBID) const;
+  bool              IsInGroup          (const long long SBID) const;
   bool              IsDisabled         () const;
 };
 

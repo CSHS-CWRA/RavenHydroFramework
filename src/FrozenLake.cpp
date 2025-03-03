@@ -15,9 +15,9 @@
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the standard constructor
-/// \param cr_type [in] Model of capillary rise selected
-/// \param In_index [in] Soil storage unit index from which water is lost
-/// \param Out_index [in] Soil storage unit index to which water rises
+/// \param lakefreeze_type [in] Model of lake freeze selected
+/// \param pTransMod [in] pointer to transport model
+/// \param pModel [in] - ponter to hydrologic model
 //
 CmvFrozenLake::CmvFrozenLake(lakefreeze_type       type,
                              const CTransportModel *pTransMod,
@@ -63,11 +63,10 @@ void CmvFrozenLake::GetParticipatingParamList(string  *aP , class_type *aPC , in
   {
     nP=1;
     aP [0]="LAKESNOW_BUFFER_HT";     aPC [0]=CLASS_LANDUSE;
-
   }
   else if (_type == LFREEZE_THERMAL)
   {
-    ExitGracefully("LFREEZE_THERMAL",STUB); //need to allow snow buffering
+
   }
   else
   {
@@ -106,7 +105,8 @@ void   CmvFrozenLake::GetRatesOfChange( const double      *state_vars,
                                           const time_struct &tt,
                                                 double      *rates) const
 {
-  if (pHRU->GetHRUType()!=HRU_LAKE){return;}//Lakes  only (includes reservoirs)
+  if ((pHRU->GetHRUType()!=HRU_LAKE) &&
+      (pHRU->GetHRUType()!=HRU_WETLAND)){return;}//Lakes and wetlands only (includes reservoirs)
 
   double ice_thick=state_vars[iFrom[0]];
 
@@ -120,7 +120,7 @@ void   CmvFrozenLake::GetRatesOfChange( const double      *state_vars,
     double SWE=state_vars[iSWE];
 
     double corr=1.0;
-    if      (SWE>buff_ht ){corr=0.0;            }
+    if      (SWE>=buff_ht){corr=0.0;            }
     else if (SWE<=0.0    ){corr=1.0;            }
     else                  {corr=1.0-SWE/buff_ht;}
 
@@ -130,6 +130,7 @@ void   CmvFrozenLake::GetRatesOfChange( const double      *state_vars,
   else if (_type == LFREEZE_THERMAL)
   {
     //just queries thermal model and updates ice thickness variable
+    // \todo[funct] need to allow snow buffering
 
     ice_thick=state_vars[iFrom[0]];
 
@@ -142,7 +143,6 @@ void   CmvFrozenLake::GetRatesOfChange( const double      *state_vars,
 
     rates[0]=(new_ice_thick-ice_thick)/Options.timestep;
   }
-
 }
 
 //////////////////////////////////////////////////////////////////

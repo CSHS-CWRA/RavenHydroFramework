@@ -15,48 +15,146 @@ jobs:
       run:
         shell: bash
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Harden Runner
+        uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
+        with:
+          disable-sudo: false
+          egress-policy: block
+          allowed-endpoints: >
+            azure.archive.ubuntu.com:80
+            esm.ubuntu.com:443
+            files.pythonhosted.org:443
+            github.com:443
+            motd.ubuntu.com:443
+            packages.microsoft.com:443
+            pypi.org:443
+
+      - name: Checkout Repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+            persist-credentials: false
+
       - name: Install linters
         run: |
           sudo apt-get update
           sudo apt-get install uncrustify cppcheck iwyu
-      - uses: actions/setup-python@v4
-      - name: Install pre-commit
+
+      - name: Set up Python3
+        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
+        with:
+          python-version: '3.x'
+
+      - name: Run pre-commit hooks
+        uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
+
+  build-netcdf:
+    name: Build (${{ matrix.build_type }}; ${{ matrix.os }}; NetCDF=True)
+    needs: lint
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ "ubuntu-latest", "macos-latest" ]
+        build_type: [ "Debug", "Release" ]
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
+        with:
+          disable-sudo: false
+          egress-policy: block
+          allowed-endpoints: >
+            azure.archive.ubuntu.com:80
+            esm.ubuntu.com:443
+            github.com:443
+            motd.ubuntu.com:443
+            packages.microsoft.com:443
+            raw.githubusercontent.com:443
+
+      - name: Checkout Repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          persist-credentials: false
+
+      - name: Install NetCDF (Ubuntu/apt)
+        if: matrix.os == 'ubuntu-latest'
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install pre-commit
-      - name: Run pre-commit
+          sudo apt-get update
+          sudo apt-get install -y libnetcdf-dev
+      - name: Install NetCDF4 (macOS/homebrew)
+        if: (matrix.os == 'macos-latest') && (!matrix.conda)
+        uses: tecolicom/actions-use-homebrew-tools@b9c066b79607fa3d71e0be05d7003bb75fd9ff34 # v1.3.0
+        with:
+          tools: netcdf
+          cache: "yes"
+
+      - name: Fetch NetCDF CMake script
         run: |
-          pre-commit run --all-files
+          wget https://raw.githubusercontent.com/Kitware/VTK/master/CMake/FindNetCDF.cmake -P cmake
+
+      - name: Build
+        id: build
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build . --config ${{ matrix.build_type }} -j 3 --verbose
+
+      - name: Run tests
+        if: steps.build.outcome == 'success'
+        run: |
+          ./build/Raven
+          ./build/Raven -v
 
   build:
-    name: Build RavenHydroFramework binary (${{ matrix.build_type }})
-    runs-on: ubuntu-latest
+    name: Build (${{ matrix.build_type }}; ${{ matrix.os }}; NetCDF=False)
+    needs: lint
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        build_type: [Debug, Release]
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        build_type: [ Debug, Release ]
     defaults:
       run:
-        shell: bash
+        shell: bash -l {0}
     steps:
-     - name: Checkout
-       uses: actions/checkout@v4
-     - name: Install dependencies
-       run: |
-         sudo apt-get update
-         sudo apt-get install libnetcdf-dev build-essential cmake
-     - name: Fetch NetCDF CMake script
-       run: |
-         wget https://raw.githubusercontent.com/Kitware/VTK/master/CMake/FindNetCDF.cmake -P cmake
-     - name: Build
-       id: build
-       continue-on-error: true
-       run: |
-         cmake . -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-         make -j4
-     - name: Run tests
-       if: steps.build.outcome == 'success'
-       run: |
-         ./Raven
-         ./Raven -v
+      - name: Harden Runner
+        uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
+        with:
+          disable-sudo: true
+          egress-policy: block
+          allowed-endpoints: >
+            azure.archive.ubuntu.com:80
+            esm.ubuntu.com:443
+            github.com:443
+            motd.ubuntu.com:443
+            objects.githubusercontent.com:443
+            packages.microsoft.com:443
+
+      - name: Checkout Repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          persist-credentials: false
+
+      - name: Install dependencies (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: lukka/get-cmake@2bcb1a4c14ab154443cc740dced0f9b6a8fb2b59 # v3.29.6
+
+      - name: Build
+        id: build
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build . --config ${{ matrix.build_type }} -j 3 --verbose
+
+      - name: Run tests (Windows)
+        if: ${{ matrix.os == 'windows-latest' && steps.build.outcome == 'success' }}
+        run: |
+          ./build/${{ matrix.build_type }}/Raven.exe
+          ./build/${{ matrix.build_type }}/Raven.exe -v
+      - name: Run tests (Ubuntu/macOS)
+        if: ${{ matrix.os != 'windows-latest' && steps.build.outcome == 'success' }}
+        run: |
+          ./build/Raven
+          ./build/Raven -v

@@ -508,6 +508,7 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
   else if (!name.compare("PET_LIN_COEFF"          )){S.pet_lin_coeff=value;}
   else if (!name.compare("PET_VAP_COEFF"          )){S.pet_vap_coeff=value;}
   else if (!name.compare("RELHUM_CORR"            )){S.relhum_corr=value;}
+  else if (!name.compare("WINDVEL_CORR"           )){S.wind_vel_corr=value;}
   else if (!name.compare("WIND_VEL_CORR"          )){S.wind_vel_corr=value;}
   else if (!name.compare("GR4J_X4"                )){S.GR4J_x4=value;}
   else if (!name.compare("UBC_ICEPT_FACTOR"       )){S.UBC_icept_factor=value;}
@@ -614,6 +615,7 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("PET_LIN_COEFF"          )){return S.pet_lin_coeff;}
   else if (!name.compare("PET_VAP_COEFF"          )){return S.pet_vap_coeff;}
   else if (!name.compare("RELHUM_CORR"            )){return S.relhum_corr;}
+  else if (!name.compare("WINDVEL_CORR"           )){return S.wind_vel_corr;}
   else if (!name.compare("WIND_VEL_CORR"          )){return S.wind_vel_corr;}
   else if (!name.compare("GR4J_X4"                )){return S.GR4J_x4;}
   else if (!name.compare("UBC_ICEPT_FACTOR"       )){return S.UBC_icept_factor;}

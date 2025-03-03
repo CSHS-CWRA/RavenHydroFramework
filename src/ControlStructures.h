@@ -17,8 +17,8 @@
 *****************************************************************/
 struct RegimeCondition
 {
-  string     variable;     ///<  one of {DATE, DOY, STAGE, FLOW, ...}
-  long       basinID;      ///< defaults to -1 (this basin)
+  string     variable;     ///< one of {DATE, DOY, STAGE, FLOW, ...}
+  long long  basinID;      ///< defaults to -1 (this basin)
   comparison compare;      ///< e.g., greater than, between, etc.
   double     compare_val1; ///< primary comparison value
   double     compare_val2; ///< secondary comparison value (used for between)
@@ -78,7 +78,7 @@ public:/*-------------------------------------------------------*/
   void   AddRegimeConstraint(RegimeConstraint *pCond);
 
   bool      AreConditionsMet(const time_struct &tt) const;
-  double          GetOutflow(const double &h, const double &Qstart, const double &hstart, const long &target_SBID, const double &drefelev) const;
+  double          GetOutflow(const double &h, const double &hstart, const double &Qstart, const long long &target_SBID, const double &drefelev) const;
 };
 
 
@@ -91,8 +91,8 @@ class CControlStructure
 {
 private:/*-------------------------------------------------------*/
   string           _name;                ///< structure name
-  long             _SBID;                ///< subbasin ID
-  long             _target_SBID;         ///< outflow directed to this subbasin ID
+  long long        _SBID;                ///< subbasin ID
+  long long        _target_SBID;         ///< outflow directed to this subbasin ID
   double           _dRefElev;            ///< downstream reference elevation [m] (used in some structures for backwater, limiting flow, etc.)
 
   int              _nRegimes;            ///< number of flow regimes
@@ -100,19 +100,19 @@ private:/*-------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors:
-  CControlStructure(const string name,const long SBID, const long downID);
+  CControlStructure(const string name,const long long SBID, const long long downID);
   ~CControlStructure();
 
-  void   AddRegime       (COutflowRegime *pRegime);
-  void   SetTargetBasin  (const long SBID);
+  void      AddRegime       (COutflowRegime *pRegime);
+  void      SetTargetBasin  (const long long SBID);
 
-  void   SetDownstreamRefElevation (const double dRefElev);
+  void      SetDownstreamRefElevation (const double dRefElev);
 
-  string GetName         () const;
-  long   GetTargetBasinID() const;
+  string    GetName         () const;
+  long long GetTargetBasinID() const;
 
-  double GetOutflow(const double &stage,const double &stage_start,const double &Q_start,const time_struct &tt) const;
+  double    GetOutflow(const double &stage,const double &stage_start,const double &Q_start,const time_struct &tt) const;
 
-  string GetCurrentRegimeName(const time_struct &tt) const;
+  string    GetCurrentRegimeName(const time_struct &tt) const;
 };
 #endif

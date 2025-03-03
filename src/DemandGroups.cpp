@@ -12,9 +12,9 @@
 CDemandGroup::CDemandGroup(string tag, int global_ind)
 {
   _name=tag;
-  _nDemands=0;  _aDemandIDs=NULL;
+  _nDemands=0;
+  _pDemands=NULL;
   _global_ii=global_ind;
-  _disabled=false;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -22,7 +22,7 @@ CDemandGroup::CDemandGroup(string tag, int global_ind)
 //
 CDemandGroup::~CDemandGroup()
 {
-  delete [] _aDemandIDs; _aDemandIDs=NULL; //deletes pointers only
+  delete [] _pDemands; _pDemands=NULL; //deletes pointers only
 }
 
 //////////////////////////////////////////////////////////////////
@@ -46,60 +46,48 @@ int    CDemandGroup::GetGlobalIndex       () const {return _global_ii;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns true if demands with ID demandID is in group
-/// \param demandID [in] demand id 
+/// \param demandID [in] demand id
 ///
 /// \return true if demand with  ID demandID is in group
 //
-bool  CDemandGroup::IsInGroup          (const int demandID) const
+bool  CDemandGroup::IsInGroup          (const long long demandID) const
 {
   for (int p=0;p<_nDemands; p++){
-    if (_aDemandIDs[p]==demandID){return true;}
+    if (_pDemands[p]->GetDemandID() == demandID) { return true; }
   }
   return false;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Returns demand corresponding to index p in group
-/// \param p [in] Index referring to pth element of the demand Group
-/// \return demand corresponding to index p
+/// \brief Returns demand corresponding to index ii in group
+/// \param ii [in] Index referring to pth element of the demand Group
+/// \return demand corresponding to index ii
 //
-int CDemandGroup::GetDemandID(const int p) const
+CDemand* CDemandGroup::GetDemand(const int ii) const
 {
-  ExitGracefullyIf((p<0) || (p>=_nDemands),"CDemandGroup GetDemand::improper index",BAD_DATA);
-  return _aDemandIDs[p];
+  return _pDemands[ii];
 }
 //////////////////////////////////////////////////////////////////
-/// \return true if subbasin group is disabled
+/// \brief Returns demand name corresponding to index ii in group
+/// \param ii [in] Index referring to pth element of the demand Group
+/// \return demand name corresponding to index ii
 //
-bool CDemandGroup::IsDisabled() const
+/*string CDemandGroup::GetDemandName(const int ii) const
 {
-  return _disabled;
-}
+  ExitGracefullyIf((ii<0) || (ii>=_nDemands),"CDemandGroup GetDemandName::improper index",BAD_DATA);
+  return _aDemandNames[ii];
+}*/
+
 //////////////////////////////////////////////////////////////////
-/// \brief Add an Subbasin to group by dynamically appending to array
+/// \brief Add an demand to group by dynamically appending to array
 //
-void CDemandGroup::AddDemand(int demandID)
+void CDemandGroup::AddDemand(CDemand *pDem)
 {
-  ExitGracefully("STUB: AddDemand",STUB);
+  if (!DynArrayAppend((void**&)(_pDemands),(void*)(pDem),_nDemands)){
+     ExitGracefully("CDemandGroup::AddDemand: adding NULL demand",BAD_DATA);}
 }
 //////////////////////////////////////////////////////////////////
 /// \brief initializes demand Groups
 //
 void CDemandGroup::Initialize()
 {
-  if(_disabled)
-  {
-    for(int p=0;p<_nDemands;p++){
-     // _aDemands[p]->Disable(); //this disables constituent demands
-    }
-  }
-}
-//////////////////////////////////////////////////////////////////
-/// \brief disables demand Group
-//
-void CDemandGroup::DisableGroup()
-{
-  _disabled=true; //propagates once initialized
-  for(int p=0;p<_nDemands;p++) {
-    // _aDemands[p]->Disable(); //this disables constituent demands
-  }
 }

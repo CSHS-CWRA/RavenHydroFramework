@@ -26,7 +26,8 @@ class CEnthalpyModel :public CConstituentModel
   int            _mHyporheic;  ///< model soil layer corresponding to hyporheic mixing layer (default=2)
   double       *_aMinResTime;  ///< minimum residence time [d] (<1 dt) in each stream reach [size: nSubBasins]
 
-  double          *_aBedTemp;  ///< array of riverbed temperatures (state variable) [C] [size: nSubBasins]
+  double          *_aBedTemp;  ///< array of riverbed temperatures (*state variable*) [C] [size: nSubBasins]
+
   double       *_aTave_reach;  ///< time-lagged average reach water temperature [C] [size: nSubBasins]
   double   *_aSS_temperature;  ///< array of steady state target temperatures in each basin [C] [size: nSubBasins]
 
@@ -59,7 +60,7 @@ public:/*-------------------------------------------------------*/
   double GetWaterTemperature     (const double *state_vars, const int iWater) const;
 
   double GetEnergyLossesInTransit(const int p,double &Q_sens,double &Q_GW) const;
-  double GetEnergyLossesFromReach(const int p,double &Q_sens,double &Q_cond,double &Q_lat,double &Q_GW,double &Q_rad_in,double &Q_lw_in, double &Q_lw_out,double &Q_fric, double &Tave) const;
+  double GetEnergyLossesFromReach(const int p,double &Q_sens,double &Q_cond,double &Q_lat,double &Q_GW,double &Q_rad_in,double &Q_lw_in, double &Q_lw_out,double &Q_lateral, double &Q_fric, double &Tave) const;
   double GetEnergyLossesFromLake (const int p,double &Q_sens,double &Q_cond,double &Q_lat,double &Q_rad_in,double &Q_lw_in, double &Q_lw_out, double &Q_rain) const;
 
   double GetOutflowIceFraction   (const int p) const;
@@ -73,6 +74,8 @@ public:/*-------------------------------------------------------*/
 
   //Manipulators (inherited from CConstitModel)
   void   Initialize              (const optStruct& Options);
+
+  void   PrepareForInCatchmentRouting(const int p);
   void   PrepareForRouting       (const int p);
   double ApplyInCatchmentRouting (const int p,
                                   const double *aUnitHydro,

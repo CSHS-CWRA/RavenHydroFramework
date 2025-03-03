@@ -9,7 +9,7 @@
 inline int      s_to_i (char *s1)            {return (int)atof(s1);   }
 inline double   s_to_d (char *s1)            {return atof(s1);        }
 inline bool     s_to_b (char *s1)            {return ((int)atof(s1)!=0);   }
-inline long long int s_to_ll(char *s1){return (long long int)atoll(s1);}
+inline long long int s_to_ll(char *s1)       {return (long long int)atoll(s1);}
 
 /*----------------------------------------------------------------
   Constructor
@@ -42,15 +42,24 @@ string CParser::GetFilename   ()         {return _filename;}
 //-----------------------------------------------------------------------
 void   CParser::NextIsMathExp ()         {_parsing_math_exp=true;}
 //-----------------------------------------------------------------------
+streampos CParser::GetPosition() const {
+  return _INPUT->tellg();
+}
+//-----------------------------------------------------------------------
+void      CParser::SetPosition(streampos& pos) {
+  _INPUT->seekg(pos,std::ios_base::beg);
+}
+//-----------------------------------------------------------------------
 string CParser::Peek()
 {
 
 // return first word of current line in INPUT without proceeding forward in the file
     std::streampos place;
-    int Len;
+    int Len=0;
     bool eof;
     char *s[MAXINPUTITEMS];
 
+    if (_INPUT->eof()){return ""; }
     place=_INPUT->tellg(); // Get current position
     eof=Tokenize(s,Len);   //read and parse whole line
     _lineno--;             //otherwise line number incremented upon peeking
@@ -72,7 +81,7 @@ string CParser::AddSpacesBeforeOps(string line) const
   string tmp;
   for (int i = 0; i < line.size(); i++) {
     char o=line[i];//).c_str();
-    if      ((o == '/') || (o == '*') || (o == '+') || (o == '-') || (o == '=') || (o == '~') || (o == '<') || (o == '>')){
+    if      ((o == '/') || (o == '*') || (o == '+')  || (o == '=') || (o == '~') || (o == '<') || (o == '>')){ //|| (o == '-')
       tmp+=" "+to_string(line[i])+" ";
     }
     else {
@@ -129,7 +138,7 @@ bool CParser::Tokenize(char **out, int &numwords){
 
   if (_parsing_math_exp) {
     string line;
-    line=AddSpacesBeforeOps(wholeline); //NOT WORKING
+    line=AddSpacesBeforeOps(wholeline);
     strcpy(wholeline,line.c_str());
     _parsing_math_exp=false;
   }

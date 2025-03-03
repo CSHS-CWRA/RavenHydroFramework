@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
 
   Includes declaration of global constants, enumerated types, and
   shared common & hydrological functions
@@ -16,7 +16,9 @@
 
 //#define _MODFLOW_USG_ // uncomment if compiling MODFLOW-USG coupled version of Raven
 //#define _STRICTCHECK_ // uncomment if strict checking should be enabled (slows down model)
+#ifndef _LPSOLVE_
 //#define _LPSOLVE_       // uncomment if compiling lpsolve Demand Optimization version of Raven
+#endif
 #define STANDALONE
 #ifdef netcdf
 #define _RVNETCDF_      // if Makefile is used this will be automatically be uncommented if netCDF library is available
@@ -97,7 +99,7 @@ extern double g_min_storage;      ///< minimum soil storage
 extern int    g_current_e;        ///< current ensemble member index
 
 // Model version
-const std::string __RAVEN_VERSION__   ="3.8.0";
+const std::string __RAVEN_VERSION__   ="4.0";
 //*****************************************************************
 // Global Constants
 //*****************************************************************
@@ -145,7 +147,10 @@ const double  WATT_TO_MJ_PER_D        =0.0864;                                  
 const double  MJ_PER_M2_LANGLEY       =0.04184;                                 ///< Langley to [MJ/m2]
 const double  INCH_PER_METER          =39.37;                                   ///< [m] to [in]
 const double  FEET_PER_METER          =3.28;                                    ///< [m] to [ft]
-const double  ACREFTD_PER_CMS         =70.0456;                                 //// [acre-ft/d] to [m3/s]
+const double  ACREFTD_PER_CMS         =70.0456;                                 ///< [acre-ft/d] to [m3/s]
+const double  ACREFT_PER_M3           =0.000810714;                             ///< [acre-ft] to [m3]
+const double  CFS_PER_CMS             =0.0283168;                               ///< [ft3/s] to [m3/s]
+const double  CDM_PER_DAY_PER_CMS     =86.4;                                    ///< [cdm/day] to [m3/s]
 const double  MPH_PER_KPH             =1.609;                                   ///< [kph] to [mph]
 const double  MPH_PER_MPS             =2.237;                                   ///< [m/s] to [mph]
 const double  RADIANS_TO_DEGREES      =57.29578951;                             ///< [rad] to [deg]
@@ -259,6 +264,31 @@ const double  DEFAULT_MAX_REACHLENGTH =10000.0;                                 
 //Special symbols
 const char  DEG_SYMBOL                ='o';                                     ///< degree symbol, (or \0xB0)
 
+const string ravenASCII[]={
+ "    ::                                                                          .  ::         \n",
+ "     -%:  .                                                                     +* .##.   .=  \n",
+ "  -#.:%%:.*:                                                                   :%%.=%#.  :#=  \n",
+ " .%%+:@@:-@=                                                                 .*%*:%%= .*@*.   \n",
+ "-. :%@%=*@+-%#:  :                                                           .+**=##-:*%%-..=%\n",
+ "#%+:.=%@%*%%*#@*.-%:                                                        :*****+=%%*::*%%*.\n",
+ "-**%*--#%@%%%#*%*=@*.                                                   :*=**#%%%%%%%%@@%-::  \n",
+ " :=#%%####%%%%%%%%%%*:..                                      ..::..=%@%%%%#*##%%%%%%%%%%+.   \n",
+ "    ....-+*%%%@@%%%%*%@@@#*%=:                               :=-+%%%%%%@@%********###%%%%#:   \n",
+ "    :%@@%%%%%%%%%+=+#@@%%##%@@%=+:.           .::.      .:=*%%*#**%%@%%@@@%%%%%%%@@@@@@%*     \n",
+ "    :*%%%%%%%%%#######%%@%%@@@@%@%%@@*=-.   .+*##+::=*##+==%%%%%%##%%%##***#%%%%%%##*=-.      \n",
+ "     .+@@@@@@%%%%%%#%%%%@@%%@@@@@@%%@%*+%%%%@O@%%O##@@@%*#%%%%%%%%#%@%##%###%%%@@@@%+:        \n",
+ "        :@%%%%%%%%%%%%%%#%*%@@@%%@%@@@@@@@@@@@|*|%@@@@@@@*%%%@@@@##%%%%###%%%%%%%%%*-...      \n",
+ "          :+******#%%%#***%@%#%%@%@@@@@@@@|@@@%v#%%%@@|@@%%##+#@@@@##%%#*#%%%%%%%%%:          \n",
+ "              :#@@%%%%%%%%%%@@@%+%%@%%@%%#%@@@%%@%%@@@%*@%%%%#**#%%%###%%#**#%@%*.            \n",
+ "             .=**%@@@%%%%@@@@%%#%%%%%@@-.*#%@@%@@@@@@=..::#%@%*###%%%%%%%%%%#-                \n",
+ "                 :=+%@%#@@@@%%%%@%+%@@%= .-#%%@@@@@@%.    =@@%#%+#%%%%%#+=.                   \n",
+ "                      .%%@@@:%@#*-*=   .+%%%%%@@@@%%@#:   :#%:= -:..                          \n",
+ "                        .-.  ..  ..  .=%#%@%%@@@@@@%@%%*:                                     \n",
+ "                        .          .-%**%%#+%%@@@@%#%%%%@=.                                   \n",
+ "                                   :+=#%%%%+%%#%@%@#@@@%%%:..                                 \n",
+ "                                    .#*=**.*#%%%%*%=--..-==:.                                 \n",
+ "                                              :-*:                                            \n"};
+
 //*****************************************************************
 //Exit Strategies
 //*****************************************************************
@@ -300,8 +330,8 @@ const bool    DESTRUCTOR_DEBUG    =false;       ///< if true, screen output is g
 const int     MAX_SV_LAYERS       =160;         ///< Max number of layers per state variable (greater than MAX_SOILLAYERS)
 const int     MAX_SOILLAYERS      =50;          ///< Max number of soil layers in profile
 const int     MAX_STATE_VAR_TYPES =100;         ///< Max number of *types* of state variables in model
-const int     MAX_STATE_VARS      =200;         ///< Max number of simulated state variables manipulable by one process (CAdvection worst offender)
-const int     MAX_CONNECTIONS     =200;         ///< Max number of to/from connections in any single process (CAdvection worst offender)
+const int     MAX_STATE_VARS      =500;         ///< Max number of simulated state variables manipulable by one process (CAdvection worst offender)
+const int     MAX_CONNECTIONS     =650;         ///< Max number of to/from connections in any single process (CAdvection worst offender)
 const int     MAX_LAT_CONNECTIONS =4000;        ///< Max number of lateral HRU flow connections
 const int     MAX_SOIL_PROFILES   =200;         ///< Max number of soil profiles
 const int     MAX_VEG_CLASSES     =200;         ///< Max number of vegetation classes
@@ -351,7 +381,7 @@ enum flux_frequency
 enum flux_method
 {
   FLUX_EX_STANDARD,           ///< Regular process calculations
-  FLUX_EX_UFR,      ///< All fluxes are determined using rating curves
+  FLUX_EX_UFR,                ///< All fluxes are determined using rating curves
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -561,6 +591,7 @@ enum HRU_type
 {
   HRU_STANDARD,             ///< Standard HRU
   HRU_LAKE,                 ///< Lake HRU
+  HRU_WATER,                ///< Non-lake Waterbody HRU (streams)
   HRU_GLACIER,              ///< Glacier HRU
   HRU_WETLAND,              ///< Wetland HRU
   HRU_ROCK,                 ///< Open Rock or Pavement (impermeable) HRUs
@@ -641,6 +672,7 @@ enum potmelt_method
   POTMELT_HMETS,            ///< From HMETS model (Martel et al., 2017)
   POTMELT_RILEY,            ///< From Riley et al., 1972, as reported in HYDROTEL 2.1 manual
   POTMELT_BLENDED,          ///< weighted average of multiple methods
+  POTMELT_DD_FREEZE,        ///< simple degree day with refreeze coefficient in winter
   POTMELT_NONE,             ///< Potential melt not calculated
   POTMELT_UNKNOWN           ///< special case - can't recognize melt method in input
 };
@@ -831,6 +863,7 @@ enum sv_type
   SNOW,                    ///< [mm] frozen snow depth (mm SWE : snow water equivalent)
   NEW_SNOW,                ///< [mm] new snowfall waiting to be handled by snow balance (as SWE)
   SNOW_LIQ,                ///< [mm] liquid water content of snowpack
+  TOTAL_SWE,               ///< [mm] equivalent to SNOW[0]+SNOW[1]+...+SNOW_LIQ[0]..
   WETLAND,                 ///< [mm] deep wetland depression storage
   GLACIER,                 ///< [mm] Glacier melt/reservoir storage
   GLACIER_ICE,             ///< [mm] Glacier ice - typically assumed to be infinite reservoir.
@@ -1081,6 +1114,7 @@ struct optStruct
   bool               keepUBCWMbugs;           ///< true if peculiar UBCWM bugs are retained (only really for BC Hydro use)
   bool               suppressCompetitiveET;   ///< true if competitive ET should be suppressed (for backward compatibility)
   bool               snow_suppressPET;        ///< true if presence of snow should set PET to zero
+  bool               allow_soil_overfill;     ///< true if soil can be filled above capacity (to be handled using overflow routine)
 
   // Soil model information
   int                num_soillayers;          ///< number of soil layers
@@ -1114,6 +1148,7 @@ struct optStruct
   bool             write_simpleout;           ///< true if simple_out.csv file is to be written (for scripting)
   bool             write_massloading;         ///< true if MassLoadings.csv file is to be written
   bool             write_localflow;           ///< true if local flows are written to Hydrographs file (csv or nc)
+  bool             write_netresinflow;        ///< true if reservoir net inflows are written to Hydrographs file (csv or nc)
   bool             benchmarking;              ///< true if benchmarking output - removes version/timestamps in output
   bool             suppressICs;               ///< true if initial conditions are suppressed when writing output time series
   bool             period_ending;             ///< true if period ending convention should be used for reading/writing Ensim files
@@ -1188,7 +1223,7 @@ const int MAX_FORCING_TYPES=50;
 enum forcing_type
 {
   F_PRECIP,         F_PRECIP_DAILY_AVE, F_PRECIP_5DAY,    F_SNOW_FRAC,
-  F_RAINFALL,       F_SNOWFALL,
+  F_RAINFALL,       F_SNOWFALL,         F_IRRIGATION,
   F_TEMP_AVE,
   F_TEMP_DAILY_MIN, F_TEMP_DAILY_MAX,   F_TEMP_DAILY_AVE,
   F_TEMP_MONTH_MAX, F_TEMP_MONTH_MIN,   F_TEMP_MONTH_AVE,
@@ -1213,6 +1248,7 @@ struct force_struct
   double precip_daily_ave;    ///< average precipitaiton over day (0:00-24:00) [mm/d]
   double precip_5day;         ///< 5-day precipitation total [mm] (needed for SCS)
   double snow_frac;           ///< fraction of precip that is snow [0..1]
+  double irrigation;          ///< irrigation rate over time step [mm/d]
   double precip_temp;         ///< precipitation temperature [C]
   double precip_conc;         ///< precipitation concentration [C] (\todo[funct]: should make vector)
 
@@ -1331,6 +1367,7 @@ double      RoundToNearestMinute  (const double& t);
 bool        IsInDateRange         (const double &julian_day,
                                    const int    &julian_start,
                                    const int    &julian_end);
+int      GetJulianDayFromMonthYear(const string &date_str, const int calendar);
 
 bool        IsValidNetCDFTimeString   (const string unit_t_str);
 time_struct TimeStructFromNetCDFString(const string unit_t_str,
@@ -1477,9 +1514,11 @@ inline void      s_to_range (const char *s1, long long int &v1, long long int &v
     v2=atoll(s.substr((unsigned int)(p)+1,1000).c_str());
   };
 }
+/* //_finite causes all sorts of issues on multi-platform compilation
 #ifndef _WIN32
 #define _finite(v) finite(v)
 #endif
+*/
 
 ///////////////////////////////////////////////////////////////////
 /// \brief converts any input to string
@@ -1639,6 +1678,7 @@ void   CalcWeightsFromUniformNums(const double* aVals, double* aWeights, const i
 void   quickSort        (double arr[], int left, int right) ;
 double InterpolateCurve (const double x,const double *xx,const double *y,int N,bool extrapbottom);
 void   getRanks         (const double *arr, const int N, int *ranks);
+void   pushIntoIntArray (int*&a, const int &v, int &n);
 
 //Geographic Conversion Functions-----------------------------------
 //defined in UTM_to_LatLong.cpp

@@ -42,6 +42,7 @@ struct down_demand {
   int    julian_end;          ///< julian end day of demand (wraps, such that if julian_end < julian_start, demand in winter)
 };
 class CSubBasin;
+class CDemand;
 class CControlStructure;
 /*****************************************************************
    Class CReservoir
@@ -52,7 +53,7 @@ class CReservoir
 {
 private:/*-------------------------------------------------------*/
   string       _name;                ///< reservoir name
-  long         _SBID;                ///< subbasin ID
+  long long    _SBID;                ///< subbasin ID
   double       _max_capacity;        ///< maximum reservoir capacity [m3]
 
   double       _lakebed_thick;       ///< lakebed thickness [m]
@@ -61,8 +62,8 @@ private:/*-------------------------------------------------------*/
 
   const CHydroUnit  *_pHRU;          ///< (potentially zero-area) HRU used for Precip/ET calculation (or NULL for no ET)
 
-  CTimeSeries **_pDemandTS;          ///< array of Time Series of water demand [m3/s] (or NULL for zero extraction) [size: _nDemandTS]
-  int           _nDemandTS;          ///< number of reservoir demand time series
+  int          _nWaterDemands;       ///< number of reservoir demand time series
+  CDemand    **_pWaterDemands;       ///< array of pointers to demand objects [size:_nDemands]
 
   CTimeSeries *_pWeirHeightTS;       ///< Time series of weir heights [m] (or NULL for fixed weir height)
   CTimeSeries *_pMaxStageTS;         ///< Time series of rule curve upper stage constraint [m] (or NULL for no maximum stage)
@@ -83,8 +84,8 @@ private:/*-------------------------------------------------------*/
   const CSubBasin *_pQdownSB;        ///< pointer to downstream SubBasin for diversions (or NULL for none)
   const CSubBasin *_pDownSB;         ///< pointer to downstream subbasin
 
-  down_demand**_aDemands;            ///< array of pointers to downstream demand information used to determine Qmin [size:_nDemands]
-  int          _nDemands;            ///< size of downstream demand location array
+  down_demand**_aDownDemands;        ///< array of pointers to downstream demand information used to determine Qmin [size:_nDemands]
+  int          _nDownDemands;        ///< size of downstream demand location array
 
   DZTRmodel    *_pDZTR;              ///< pointer to DZTR model, if used (default=NULL)
 
@@ -113,6 +114,7 @@ private:/*-------------------------------------------------------*/
   double      *_aQstruct;            ///< array of flows from control structures at end of time step [m3/s]
   double      *_aQstruct_last;       ///< array of flows from control structures at start of time step [m3/s]
   double      *_aQdelivered;         ///< amount of water demand delivered for each demand [m3/s] (for management optimization)
+  double      *_aQreturned;          ///< amount of water returned for each demand [m3/s]
 
   res_constraint _constraint;        ///< current constraint type
 
@@ -141,7 +143,7 @@ private:/*-------------------------------------------------------*/
   double       _seepage_const;       ///< seepage constant [m3/s/m] for groundwater losses Q=k*(h-h_loc)
   double       _local_GW_head;       ///< local head [m] (same  for groundwater losses Q=k*(h-h_loc)
 
-  void       BaseConstructor(const string Name,const long SubID); //because some versions of c++ don't like delegating constructors
+  void       BaseConstructor(const string Name,const long long SBID); //because some versions of c++ don't like delegating constructors
 
   double     GetVolume (const double &ht) const;
   double     GetArea   (const double &ht) const;
@@ -153,26 +155,27 @@ private:/*-------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors:
-  CReservoir(const string Name, const long SubID);
-  CReservoir(const string name, const long SubID, //Power law constructor
+  CReservoir(const string Name, const long long SBID);
+  CReservoir(const string name, const long long SBID, //Power law constructor
              const double a_v, const double b_v,
              const double a_Q, const double b_Q,
              const double a_A, const double b_A,
              const double crestht, const double depth);
-  CReservoir(const string name, const long SubID,
+  CReservoir(const string name, const long long SBID,
              const double *a_ht,
              const double *a_Q, const double *aQ_und,const double *a_A, const double *a_V,
              const int     nPoints);
-  CReservoir(const string Name, const long SubID,
+  CReservoir(const string Name, const long long SBID,
              const int nDates, const int *aDates, const double *a_ht,
              double **a_QQ, const double *aQ_und, const double *a_A, const double *a_V,
              const int     nPoints);
-  CReservoir(const string Name, const long SubID, const double weircoeff, //Lake constructor
+  CReservoir(const string Name, const long long SBID, const double weircoeff, //Lake constructor
              const double crestw, const double crestht, const double A, const double depth);
   ~CReservoir();
 
   //Accessors
-  long              GetSubbasinID            () const;
+  long long         GetSubbasinID            () const;
+  string            GetReservoirName         () const;
 
   double            GetStorage               () const; //[m3]
   double            GetOldStorage            () const; //[m3]
@@ -196,12 +199,14 @@ public:/*-------------------------------------------------------*/
   double            GetStageDischargeDerivative(const double &stage,const int nn) const; //[m3/s/d]
   double            GetMinStage              (const int nn) const;//[m]
   double            GetMaxStage              (const int nn) const;//[m]
+  double            GetSillElevation         (const int nn) const;//[m]
 
   int               GetNumWaterDemands       () const;
-  int               GetWaterDemandID         (const int ii) const;
-  string            GetWaterDemandName       (const int ii) const;
-  double            GetWaterDemand           (const int ii,const double &t) const;  //[m3/s] iith demand from reservoir at point in time
-  double            GetDemandDelivery        (const int ii) const;       //[m3/s] instantaneous delivery rate to demand ii
+  CDemand          *GetWaterDemandObj        (const int ii) const;
+
+  double            GetWaterDemand           (const int ii) const;  //[m3/s] iith current demand from reservoir
+  double            GetDemandDelivery        (const int ii) const;  //[m3/s] instantaneous delivery rate to demand ii
+  double            GetReturnFlow            (const int ii) const;
 
   int               GetHRUIndex              () const;
   double            GetMaxCapacity           () const; //[m3]
@@ -211,7 +216,7 @@ public:/*-------------------------------------------------------*/
   int               GetNumControlStructures  () const;
   double            GetAET                   () const; //[mm/d]
   string            GetRegimeName            (const int i, const time_struct &tt) const;
-  long              GetControlFlowTarget     (const int i) const;
+  long long         GetControlFlowTarget     (const int i) const;
   string            GetControlName           (const int i) const;
 
   int               GetNumDryTimesteps       () const;
@@ -219,12 +224,11 @@ public:/*-------------------------------------------------------*/
   //Manipulators
   void              SetMinStage              (const double &min_z);
   void              SetMaxCapacity           (const double &max_cap);
-  void              Initialize               (const optStruct &Options);
   void              SetInitialFlow           (const double &Q,const double &Qlast,const time_struct &tt, const optStruct &Options);
   void              SetReservoirStage        (const double &ht, const double &ht_last);
   void              SetControlFlow           (const int i, const double &Q, const double &Qlast);
   void              SetOptimizedOutflow      (const double &Qout);
-  void              SetVolumeStageCurve      (const double *a_ht,const double *a_V,const int nPoints);
+  void              SetVolumeStageCurve      (const double *a_ht,const double *a_V,const int nPoints, double weircoeff, double crestwidth);
   void              SetAreaStageCurve        (const double *a_ht,const double *a_A,const int nPoints);
   void              SetGWParameters          (const double &coeff, const double &h_ref);
   void              SetCrestWidth            (const double &width);
@@ -236,7 +240,8 @@ public:/*-------------------------------------------------------*/
   void              SetLakebedConductivity   (const double &cond);
   void              SetLakeConvectionCoeff   (const double &conv);
 
-  void              AddDemandTimeSeries      (CTimeSeries *pOutflow);
+  void              AddDemand                (CDemand *pDemand);
+
   void              AddWeirHeightTS          (CTimeSeries *pWeirHt);
   void              AddMaxStageTimeSeries    (CTimeSeries *pMS);
   void              AddOverrideQTimeSeries   (CTimeSeries *pQ);
@@ -263,7 +268,13 @@ public:/*-------------------------------------------------------*/
   void              DisableOutflow           ();
   void              ClearTimeSeriesData      (const optStruct& Options);
 
+  //Called during initialization:
+  void              Initialize               (const optStruct &Options);
+  void              InitializePostRVM        (const optStruct &Options);
+
   //Called during simulation:
+
+  void              UpdateDemands            (const optStruct& Options, const time_struct& tt);
   double            RouteWater               (const double      &Qin_old,
                                               const double      &Qin_new,
                                               const CModelABC*  pModel,
@@ -283,5 +294,6 @@ public:/*-------------------------------------------------------*/
   void              UpdateMassBalance        (const time_struct &tt, const double &tstep, const optStruct &Options);
   double            ScaleFlow                (const double &scale, const bool overriding,const double &tstep,const double &t);
   void              AddToDeliveredDemand     (const int ii, const double &Q);
+  void              RecordReturnFlow         (const int ii, const double& Qret);
 };
 #endif

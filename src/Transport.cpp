@@ -94,13 +94,13 @@ int CTransportModel::GetLayerIndex(const int c,const int i_stor) const
 {
 
   ExitGracefullyIf(i_stor>=_nIndexMapping,"CTransportModel::GetLayerIndex: invalid storage index",RUNTIME_ERR);
-  int j=_aIndexMapping[i_stor];
-  if(j==DOESNT_EXIST) { return DOESNT_EXIST; }
-  if(c==DOESNT_EXIST) { return DOESNT_EXIST; }
+  int ii=_aIndexMapping[i_stor];
+  if(ii==DOESNT_EXIST) { return DOESNT_EXIST; }
+  if(c ==DOESNT_EXIST) { return DOESNT_EXIST; }
   /*ExitGracefullyIf(j==DOESNT_EXIST,
   "CTransportModel::GetLayerIndex: constituent storage unit not found. Invalid index passed",RUNTIME_ERR);*/
   //cout<<" layer index = "<<c*_nWaterCompartments+j<<" istor: "<<i_stor<<" j: "<<j<<endl;
-  return c*_nWaterCompartments+j;
+  return c*_nWaterCompartments+ii;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -276,8 +276,8 @@ int    CTransportModel::GetConstituentIndex(const string name) const
 //
 int    CTransportModel::GetFromIndex(const int c,const int q) const
 {
-  int j=_aIndexMapping[_iFromWater[q]];
-  return pModel->GetStateVarIndex(CONSTITUENT,c*_nWaterCompartments+j);
+  int ii=_aIndexMapping[_iFromWater[q]];
+  return pModel->GetStateVarIndex(CONSTITUENT,c*_nWaterCompartments+ii);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -287,8 +287,8 @@ int    CTransportModel::GetFromIndex(const int c,const int q) const
 //
 int    CTransportModel::GetToIndex(const int c,const int q) const
 {
-  int j=_aIndexMapping[_iToWater[q]];
-  return pModel->GetStateVarIndex(CONSTITUENT,c*_nWaterCompartments+j);
+  int ii=_aIndexMapping[_iToWater[q]];
+  return pModel->GetStateVarIndex(CONSTITUENT,c*_nWaterCompartments+ii);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns global state variable index i of lateral "from" constituent mass compartment
@@ -300,8 +300,8 @@ int    CTransportModel::GetLatFromIndex(const int c,const int qq) const
 #ifdef _STRICTCHECK_
   ExitGracefullyIf(_iLatFromWater==NULL,"CTransportModel::GetLatFromIndex: NULL array",RUNTIME_ERR);
 #endif
-  int j=_aIndexMapping[_iLatFromWater[qq]];
-  return pModel->GetStateVarIndex(CONSTITUENT,c*_nWaterCompartments+j);
+  int ii=_aIndexMapping[_iLatFromWater[qq]];
+  return pModel->GetStateVarIndex(CONSTITUENT,c*_nWaterCompartments+ii);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns global state variable index i of lateral "to" constituent mass compartment
@@ -313,8 +313,8 @@ int    CTransportModel::GetLatToIndex(const int c,const int qq) const
 #ifdef _STRICTCHECK_
   ExitGracefullyIf(_iLatToWater==NULL,"CTransportModel::GetLatFromIndex: NULL array",RUNTIME_ERR);
 #endif
-  int j=_aIndexMapping[_iLatToWater[qq]];
-  return pModel->GetStateVarIndex(CONSTITUENT,c*_nWaterCompartments+j);
+  int ii=_aIndexMapping[_iLatToWater[qq]];
+  return pModel->GetStateVarIndex(CONSTITUENT,c*_nWaterCompartments+ii);
 
 }
 
@@ -325,7 +325,7 @@ int    CTransportModel::GetLatToIndex(const int c,const int qq) const
 //
 int    CTransportModel::GetStorIndex(const int c,const int ii) const
 {
-  int j=_aIndexMapping[_iWaterStorage[ii]];
+  int j=_aIndexMapping[_iWaterStorage[ii]]; //JRC: shouldnt these be inverted so this is just j==ii?
   return pModel->GetStateVarIndex(CONSTITUENT,c*_nWaterCompartments+j);
 }
 
@@ -336,6 +336,8 @@ int    CTransportModel::GetStorIndex(const int c,const int ii) const
 //
 int    CTransportModel::GetWaterStorIndexFromSVIndex(const int i) const
 {
+  //return _aIndexMapping[i ]; //JRC - check - this should be the same, but faster??
+
   for(int ii=0;ii<_nWaterCompartments;ii++) {
     if(_iWaterStorage[ii]==i) { return ii; }
   }
@@ -582,7 +584,7 @@ void CTransportModel::Prepare(const optStruct &Options)
       int iT=pProc->GetToIndices()[q];
       sv_type typF=pModel->GetStateVarType(iF);
       sv_type typT=pModel->GetStateVarType(iT);
-      if((iF!=iT) && (CStateVariable::IsWaterStorage(typF)) && (CStateVariable::IsWaterStorage(typT)))
+      if((iF!=iT) && (CStateVariable::IsWaterStorage(typF,false)) && (CStateVariable::IsWaterStorage(typT,false)))
       { //This is a process that may advect a constituent
         _nAdvConnections++;
       }
@@ -606,7 +608,7 @@ void CTransportModel::Prepare(const optStruct &Options)
       int iT=pProc->GetToIndices()[q];
       sv_type typF=pModel->GetStateVarType(iF);
       sv_type typT=pModel->GetStateVarType(iT);
-      if((iF!=iT) && (CStateVariable::IsWaterStorage(typF)) && (CStateVariable::IsWaterStorage(typT)))
+      if((iF!=iT) && (CStateVariable::IsWaterStorage(typF,false)) && (CStateVariable::IsWaterStorage(typT,false)))
       { //This is a process that may advect a constituent
         _iFromWater[qq]=iF;
         _iToWater  [qq]=iT;
@@ -626,7 +628,7 @@ void CTransportModel::Prepare(const optStruct &Options)
   _nWaterCompartments=0;
   for(int i=0;i<pModel->GetNumStateVars(); i++)
   {
-    if(CStateVariable::IsWaterStorage(pModel->GetStateVarType(i)))
+    if(CStateVariable::IsWaterStorage(pModel->GetStateVarType(i),false))
     {
       _nWaterCompartments++;
     }
@@ -638,7 +640,7 @@ void CTransportModel::Prepare(const optStruct &Options)
   for(int i=0;i<pModel->GetNumStateVars(); i++)
   {
     _aIndexMapping[i]=DOESNT_EXIST;
-    if(CStateVariable::IsWaterStorage(pModel->GetStateVarType(i)))
+    if(CStateVariable::IsWaterStorage(pModel->GetStateVarType(i),false))
     {
       _iWaterStorage[ii]=i;
       _aIndexMapping[i ]=ii;
@@ -730,7 +732,7 @@ void   CTransportModel::CalculateLateralConnections()
       int iT=pLatProc->GetLateralToIndices()[q];
       sv_type typF=pModel->GetStateVarType(iF);
       sv_type typT=pModel->GetStateVarType(iT);
-      if((iF!=iT) && (CStateVariable::IsWaterStorage(typF)) && (CStateVariable::IsWaterStorage(typT)))
+      if((iF!=iT) && (CStateVariable::IsWaterStorage(typF,false)) && (CStateVariable::IsWaterStorage(typT,false)))
       { //This is a process that may advect a constituent
         _nLatConnections++;
       }
@@ -758,7 +760,7 @@ void   CTransportModel::CalculateLateralConnections()
       int kT=pLatProc->GetToHRUIndices()[q];
       sv_type typF=pModel->GetStateVarType(iF);
       sv_type typT=pModel->GetStateVarType(iT);
-      if((iF!=iT) && (CStateVariable::IsWaterStorage(typF)) && (CStateVariable::IsWaterStorage(typT)))
+      if((iF!=iT) && (CStateVariable::IsWaterStorage(typF,false)) && (CStateVariable::IsWaterStorage(typT,false)))
       { //This is a process that may advect a constituent
         _iLatFromWater [qq]=iF;
         _iLatToWater   [qq]=iT;

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2022 the Raven Development Team
+Copyright (c) 2008-2025 the Raven Development Team
 ----------------------------------------------------------------
 Constituent Transport/Tracer Model class
 coordinates information about constituent storage
@@ -12,7 +12,7 @@ coordinates information about constituent storage
 #include "Transport.h"
 #include "EnergyTransport.h"
 
-bool IsContinuousConcObs(const CTimeSeriesABC *pObs,const long SBID,const int c); //Defined in StandardOutput.cpp
+bool IsContinuousConcObs(const CTimeSeriesABC *pObs,const long long SBID,const int c); //Defined in StandardOutput.cpp
 void WriteNetCDFGlobalAttributes(const int out_ncid,const optStruct& Options,const string descript);
 int  NetCDFAddMetadata     (const int fileid,const int time_dimid,string shortname,string longname,string units);
 int  NetCDFAddMetadata2D   (const int fileid,const int time_dimid,int nbasins_dimid,string shortname,string longname,string units);
@@ -212,6 +212,7 @@ double  CConstituentModel::GetSpecifiedMassFlux(const int i_stor,const int k,con
 /// \param i_stor [in] global index of water storage state variable
 /// \param kk [in] HRU group index (or -1 if this applies to all HRUs)
 /// \param Cs [in] Dirichlet source concentration [mg/L] or temperature [C]
+/// \param Cs2 [in] duplicate Dirichlet source concentration [mg/L] or temperature [C], but not duplicate for Isotope
 //
 void   CConstituentModel::AddDirichletCompartment(const int i_stor,const int kk,const double Cs, const double Cs2)
 {
@@ -729,7 +730,7 @@ void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options)
     _OUTPUT<<", sensible (r) "<<kg<<", conductive (r) " << kg << ", latent (r) "<<kg<<", GW mixing (r) "<<kg<<", radiant (r) "<<kg<<", friction (r)"<<kg<< endl;//TMP DEBUG
   }
 
-  //Pollutograph / stream temperatures file
+  // Pollutograph / stream temperatures file
   //--------------------------------------------------------------------
   if(!_is_passive) {
     if(_type!=ENTHALPY) { filename=_name+"Pollutographs.csv"; }
@@ -1261,14 +1262,14 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
 
   double latent_flux=0;
   double Q_sens(0.0),Q_cond(0.0),Q_lat(0.0),Q_GW(0.0),Q_rad(0.0),Q_fric(0.0);
-  double Qs,Qc,Ql,Qg,Qr,Qlw,Qlw_in,Qf,Tave;
+  double Qs,Qc,Ql,Qg,Qr,Qlw,Qlw_in,Qltrl,Qf,Tave;
   if(_type==ENTHALPY)
   {
     pEnthalpyModel=(CEnthalpyModel*)(this);
     latent_flux =pEnthalpyModel->GetAvgLatentHeatFlux()*(area*M2_PER_KM2)*Options.timestep; // [MJ] (loss term)t)
 
     for(int p=0;p<_pModel->GetNumSubBasins();p++) {
-      pEnthalpyModel->GetEnergyLossesFromReach(p,Qs,Qc,Ql,Qg,Qr,Qlw_in,Qlw,Qf,Tave);
+      pEnthalpyModel->GetEnergyLossesFromReach(p,Qs,Qc,Ql,Qg,Qr,Qlw_in,Qlw,Qltrl,Qf,Tave);
       Q_sens+=Qs;Q_cond+=Qc;Q_lat+=Ql;Q_GW+=Qg;Q_rad+=Qr+Qlw+Qlw_in; Q_fric+=Qf;
     }
   }
@@ -1352,7 +1353,12 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
       if(pBasin->IsGauged() && (pBasin->IsEnabled()))
       {
         Q=pBasin->GetOutflowRate();
-        if (Q<REAL_SMALL){_POLLUT<<",,";}
+        if (Q<REAL_SMALL){
+          _POLLUT<<",";
+          if(_type==ENTHALPY) {
+            _POLLUT<<",";
+          }
+        }
         else             {
           _POLLUT<<","<<GetOutflowConcentration(p);
           if(_type==ENTHALPY) {
@@ -1523,7 +1529,7 @@ void CConstituentModel::WriteNetCDFMinorOutput(const optStruct& Options,const ti
 
   CEnthalpyModel *pEnthalpyModel=NULL; //Necessary evil to reduce code duplication rather than having an entirely separate WriteMinorOutput for Enthalpy
   if (_type==ENTHALPY){
-    CEnthalpyModel *pEnthalpyModel=(CEnthalpyModel*)(this);
+    pEnthalpyModel=(CEnthalpyModel*)(this);
   }
 
   if((Options.suppressICs) && (tt.model_time==0.0)) { return; }

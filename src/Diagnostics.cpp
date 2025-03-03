@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team, Ayman Khedr, Konhee Lee
+  Copyright (c) 2008-2024 the Raven Development Team, Ayman Khedr, Konhee Lee
   ----------------------------------------------------------------*/
 
 #include "TimeSeriesABC.h"
@@ -41,10 +41,12 @@ string CDiagnostic::GetName() const
   {
   case(DIAG_NASH_SUTCLIFFE):    {return "DIAG_NASH_SUTCLIFFE"; }
   case(DIAG_DAILY_NSE):         {return "DIAG_DAILY_NSE"; }
+  case(DIAG_FUZZY_NASH):        {return "DIAG_FUZZY_NASH"; }
   case(DIAG_RMSE):              {return "DIAG_RMSE";}
   case(DIAG_PCT_BIAS):          {return "DIAG_PCT_BIAS";}
   case(DIAG_ABS_PCT_BIAS):      {return "DIAG_ABS_PCT_BIAS"; }
   case(DIAG_ABSERR):            {return "DIAG_ABSERR";}
+  case(DIAG_ABSERR_RUN):        {return "DIAG_ABSERR_RUN";}
   case(DIAG_ABSMAX):            {return "DIAG_ABSMAX";}
   case(DIAG_PDIFF):             {return "DIAG_PDIFF";}
   case(DIAG_PCT_PDIFF):         {return "DIAG_PCT_PDIFF";}
@@ -56,6 +58,7 @@ string CDiagnostic::GetName() const
   case(DIAG_R2):                {return "DIAG_R2";}
   case(DIAG_LOG_NASH):          {return "DIAG_LOG_NASH";}
   case(DIAG_KLING_GUPTA):       {return "DIAG_KLING_GUPTA";}
+  case(DIAG_KGE_PRIME):         {return "DIAG_KGE_PRIME";}
   case(DIAG_DAILY_KGE):         {return "DIAG_DAILY_KGE";}
   case(DIAG_NASH_SUTCLIFFE_DER):{return "DIAG_NASH_SUTCLIFFE_DER"; }
   case(DIAG_RMSE_DER):          {return "DIAG_RMSE_DER"; }
@@ -374,6 +377,45 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
       return -ALMOST_INF;
     }
   }
+  case(DIAG_FUZZY_NASH)://----------------------------------------------------
+  {
+    double avgobs=0.0;
+    N=0;
+    double pct=_width/100; //"width" is actually percentage. If ==0, reverts to NSE
+    for(nn=nnstart;nn<nnend;nn++)
+    {
+      weight=baseweight[nn];
+      obsval =pTSObs->GetSampledValue(nn);
+      avgobs+=weight*obsval;
+      N     +=weight;
+    }
+    if(N>0.0) { avgobs/=N; }
+
+    double sum1(0.0),sum2(0.0);
+    double eps,eps2;
+    for(nn=nnstart;nn<nnend;nn++)
+    {
+      weight=baseweight[nn];
+      obsval = pTSObs->GetSampledValue(nn);
+      modval = pTSMod->GetSampledValue(nn);
+
+      eps = max(modval - obsval * (1.0 + pct), 0.0) + max(obsval*(1.0 - pct)-modval,0.0);
+      eps2= max(avgobs - obsval * (1.0 + pct), 0.0) + max(avgobs*(1.0 - pct)-modval,0.0);
+      sum1 += weight*pow(eps ,2);
+      sum2 += weight*pow(eps2,2);
+    }
+
+    if ((N > 0) && (sum2>0))
+    {
+      return 1.0 - (sum1 / sum2);
+    }
+    else
+    {
+      string warn = "DIAG_NASH_SUTCLIFFE not calculated. Missing non-zero weighted observations during simulation duration.";
+      WriteWarning(warn,Options.noisy);
+      return -ALMOST_INF;
+    }
+  }
   case(DIAG_RMSE)://----------------------------------------------------
   {
     double sum=0.0;
@@ -496,6 +538,63 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     {
       string warn = "DIAG_ABSERR not calculated. Missing non-zero weighted observations during simulation duration.";
       WriteWarning(warn, Options.noisy);
+      return -ALMOST_INF;
+    }
+  }
+  case(DIAG_ABSERR_RUN)://----------------------------------------------------
+  {
+    if (_width < 2)
+    {
+      string warn = "Provide average _width greater than 1 in format: DIAG_ABSERR_RUN[n]";
+      WriteWarning(warn, Options.noisy);
+      return -ALMOST_INF;
+    }
+    if (_width * 2 > nnend)
+    {
+      string warn = "Not enough sample values. Check width and timeseries";
+      WriteWarning(warn, Options.noisy);
+      return -ALMOST_INF;
+    }
+    nnend    -= _width;
+    nnstart  += _width;
+
+    N=0;
+
+    double sum1(0.0);
+    for (nn=nnstart;nn<nnend;nn++)
+    {
+      int front = 0;
+      int back = 0;
+      double modavg = 0.0;
+      double obsavg = 0.0;
+      weight = baseweight[nn];
+
+      front = (int)floor(_width / 2);
+      if(_width % 2 == 1) {back = front;}
+      else                {back = front - 1;}
+
+      for(int k = nn - front; k <= nn + back; k++)
+      {
+        modavg += pTSMod->GetSampledValue(k);
+        obsavg += pTSObs->GetSampledValue(k);
+        weight *= baseweight[k];
+      }
+      N  += weight;
+
+      modval = modavg / _width;
+      obsval = obsavg / _width;
+
+      sum1 += fabs(obsval - modval)*weight;
+    }
+
+    if(N>0.0)
+    {
+      return sum1;
+    }
+    else
+    {
+      string warn = "DIAG_ABSERR_RUN not performed correctly. Missing non-zero weighted observations during simulation duration.";
+      WriteWarning(warn,Options.noisy);
       return -ALMOST_INF;
     }
   }
@@ -903,6 +1002,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     }
   }
   case(DIAG_KLING_GUPTA)://-----------------------------------------
+  case(DIAG_KGE_PRIME)://-------------------------------------------
   case(DIAG_KLING_GUPTA_DEVIATION)://-------------------------------
   {
     double ObsAvg = 0;
@@ -946,6 +1046,8 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     double Alpha = ModStd / ObsStd;
 
     if (_type==DIAG_KLING_GUPTA_DEVIATION){Beta=1.0;} //remove penalty for difference in means
+
+    if (_type==DIAG_KGE_PRIME){if (Beta!=0.0){Alpha/=Beta;}}// Uses C.O.V. instead of std dev. from Kling et al. (2012) Runoff conditions in the upper Danube basin under an ensemble of climate change scenarios, Journal of Hydrology
 
     if ((N>0) && ((ObsAvg!=0.0) || (Beta==1.0)) && (ObsStd!=0.0) && (ModStd!=0.0))
     {
@@ -1443,6 +1545,7 @@ diag_type StringToDiagnostic(string distring)
   else if (!distring.compare("PCT_BIAS"             )){return DIAG_PCT_BIAS;}
   else if (!distring.compare("ABS_PCT_BIAS"         )){return DIAG_ABS_PCT_BIAS; }
   else if (!distring.compare("ABSERR"               )){return DIAG_ABSERR;}
+  else if (!distring.compare("ABSERR_RUN"           )){return DIAG_ABSERR_RUN;}
   else if (!distring.compare("ABSMAX"               )){return DIAG_ABSMAX;}
   else if (!distring.compare("PDIFF"                )){return DIAG_PDIFF;}
   else if (!distring.compare("PCT_PDIFF"            )){return DIAG_PCT_PDIFF;}
@@ -1454,6 +1557,7 @@ diag_type StringToDiagnostic(string distring)
   else if (!distring.compare("R2"                   )){return DIAG_R2;}
   else if (!distring.compare("LOG_NASH"             )){return DIAG_LOG_NASH;}
   else if (!distring.compare("KLING_GUPTA"          )){return DIAG_KLING_GUPTA;}
+  else if (!distring.compare("KGE_PRIME"            )){return DIAG_KGE_PRIME;}
   else if (!distring.compare("DAILY_KGE"            )){return DIAG_DAILY_KGE;}
   else if (!distring.compare("NASH_SUTCLIFFE_DER"   )){return DIAG_NASH_SUTCLIFFE_DER;}
   else if (!distring.compare("RMSE_DER"             )){return DIAG_RMSE_DER;}
@@ -1470,5 +1574,6 @@ diag_type StringToDiagnostic(string distring)
   else if (!distring.compare("NASH_SUTCLIFFE_RUN"   )){return DIAG_NASH_SUTCLIFFE_RUN; }
   else if (!distring.compare("KLING_GUPTA_PRIME"    )){return DIAG_KLING_GUPTA_PRIME;}
   else if (!distring.compare("KLING_GUPTA_DEVIATION_PRIME")){return DIAG_KLING_GUPTA_DEVIATION_PRIME;}
+  else if (!distring.compare("FUZZY_NASH"           )){return DIAG_FUZZY_NASH; }
   else                                                {return DIAG_UNRECOGNIZED;}
 }

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef HYDROUNITS_H
 #define HYDROUNITS_H
@@ -146,7 +146,7 @@ public:/*-------------------------------------------------------*/
   //Manipulator functions (used in parser)
   void                   Disable              ();
   void                   Enable               ();
-  void                   LinkToReservoir      (const long SBID);
+  void                   LinkToReservoir      (const long long SBID);
 
   //Manipulator functions (used in initialization)
   void          Initialize              (const int UTM_zone);

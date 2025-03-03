@@ -24,4 +24,5 @@ void TestConvectionSolution();
 void ADRCumDistTest();
 void TestGammaSampling();
 void TestWetBulbTemps();
+void TestDateStrings();
 #endif

@@ -1,6 +1,6 @@
 ﻿/*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -8,8 +8,8 @@
 #include "IrregularTimeSeries.h"
 #include "ParseLib.h"
 
-void AllocateReservoirDemand(CModel *&pModel,const optStruct &Options,long SBID, long SBIDres,double pct_met,int jul_start,int jul_end);
-bool IsContinuousFlowObs2(const CTimeSeriesABC* pObs,long SBID);
+void AllocateReservoirDemand(CModel *&pModel,const optStruct &Options,long long SBID, long long SBIDres,double pct_met,int jul_start,int jul_end);
+bool IsContinuousFlowObs2(const CTimeSeriesABC* pObs,long long SBID);
 void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid,int &stat_varid, long *&aStations, string *&aStat_string,int &nStations);
 //////////////////////////////////////////////////////////////////
 /// \brief Parse input time series file, model.rvt
@@ -33,6 +33,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
   bool   in_ifmode_statement=false;
   int    ncid=-9;
   string const_name;
+  long long SBID;
 
   bool ended            = false;
   bool has_irrig        = false;
@@ -40,8 +41,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
   bool is_3D            = false;  // true if gridded forcing is 3D
 
   ifstream RVT;
-  ifstream INPUT2;           //For Secondary input
-  CParser* pMainParser=NULL; //for storage of main parser while reading secondary files
+  ifstream INPUT2;                //For Secondary input
+  CParser* pMainParser=NULL;      //for storage of main parser while reading secondary files
+  ifstream INPUT3;                //For tertiary input
+  CParser *pSecondaryParser=NULL; //for storage of secondary parser while reading tertiary files
 
   if (Options.in_bmi_mode && (strcmp(Options.rvt_filename.c_str(), "") == 0)) {  // an RVT may not be specified for a BMI run
     return (true);
@@ -185,17 +188,28 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
       filename =CorrectForRelativePath(filename ,Options.rvt_filename);
 
-      INPUT2.open(filename.c_str());
-      if (INPUT2.fail()){
-        warn=":RedirectToFile: Cannot find file "+filename;
-        ExitGracefully(warn.c_str(),BAD_DATA);
+      if (pSecondaryParser != NULL){
+        ExitGracefully("ParseEnsembleFile::nested :RedirectToFile commands are not allowed to be nested more than two levels (e.g., rvm file to rvm file to rvm file to rvm file)",BAD_DATA);
       }
-      else{
-        if (pMainParser != NULL) {
-          ExitGracefully("ParseTimeSeriesFile::nested :RedirectToFile commands (in already redirected files) are not allowed.",BAD_DATA);
+      if (pMainParser == NULL) { //from base .rvt file
+        INPUT2.open(filename.c_str());
+        if(INPUT2.fail()) {
+          string warn;
+          warn=":RedirectToFile (from .rvt): Cannot find file "+filename;
+          ExitGracefully(warn.c_str(),BAD_DATA);
         }
-        pMainParser=p;    //save pointer to primary parser
+        pMainParser=p;
         p=new CParser(INPUT2,filename,line);//open new parser
+      }
+      else { //from already redirected .rvt file
+        INPUT3.open(filename.c_str());
+        if(INPUT3.fail()) {
+          string warn;
+          warn=":RedirectToFile (from .rvt): Cannot find file "+filename;
+          ExitGracefully(warn.c_str(),BAD_DATA);
+        }
+        pSecondaryParser=p;
+        p=new CParser(INPUT3,filename,line);//open new parser
       }
       break;
     }
@@ -416,7 +430,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         break;
     }
     case (40): //---------------------------------------------
-    {/*:ObservationData [data type] [long SBID or int HRUID] {constituent name if data type=STREAM_CONCENTRATION }
+    {/*:ObservationData [data type] [long long SBID or HRUID] {constituent name if data type=STREAM_CONCENTRATION }
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
        {double value} x nMeasurements
        :EndObservationData
@@ -431,12 +445,13 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       bool isconc     =!strcmp(s[1], "STREAM_CONCENTRATION");
       bool istemp     =!strcmp(s[1], "STREAM_TEMPERATURE");
       bool islevel    =!strcmp(s[1], "WATER_LEVEL");
-      bool invalidSB=(pModel->GetSubBasinByID(s_to_l(s[2]))==NULL);
+      bool islakearea =!strcmp(s[1], "LAKE_AREA");
+      bool invalidSB=(pModel->GetSubBasinByID(s_to_ll(s[2]))==NULL);
 
       bool period_ending =ishyd;
       //Hydrographs are internally stored as period-ending!
 
-      pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),s_to_l(s[2]),"none",Options,period_ending);
+      pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),s_to_ll(s[2]),"none",Options,period_ending);
 
       if(isconc) {
         ExitGracefullyIf(Len<4,"ParseTimeSeriesFile: STREAM_CONCENTRATION observation must include constituent name",BAD_DATA_WARN);
@@ -472,23 +487,27 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         warn="ParseTimeSeries:: Invalid subbasin ID in observed water level time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
         WriteWarning(warn.c_str(),Options.noisy);  break;
       }
+      if(islakearea && invalidSB){
+        warn="ParseTimeSeries:: Invalid subbasin ID in observed lake area time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+        WriteWarning(warn.c_str(),Options.noisy); break;
+      }
       pModel->AddObservedTimeSeries(pTimeSer);
       break;
     }
     case (41): //---------------------------------------------
-    {/*:IrregularObservations {data type} {long SBID or int HRUID} {int nMeasurements}
+    {/*:IrregularObservations {data type} {long long SBID or HRUID} {int nMeasurements}
        {yyyy-mm-dd} {hh:mm:ss.0} {double value} x nMeasurements
        :EndIrregularObservations
      */
       if (Options.noisy) {cout <<"Irregular Observation"<<endl;}
       if (Len<4){p->ImproperFormat(s); break;}
       CTimeSeriesABC *pIrregTimeSers;
-      pIrregTimeSers=CIrregularTimeSeries::Parse(p,to_string(s[1]),s_to_l(s[2]),s_to_i(s[3]));
+      pIrregTimeSers=CIrregularTimeSeries::Parse(p,to_string(s[1]),s_to_ll(s[2]),s_to_i(s[3]));
       pModel->AddObservedTimeSeries(pIrregTimeSers);
       break;
     }
     case (42): //---------------------------------------------
-    {/*:ObservationWeights {data type} {long SBID or int HRUID}  {constituent name if data type=STREAM_CONCENTRATION }
+    {/*:ObservationWeights {data type} {long long SBID or HRUID}  {constituent name if data type=STREAM_CONCENTRATION }
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
        {double value} x nMeasurements
        :EndObservationWeights
@@ -503,9 +522,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       bool isconc     =!strcmp(s[1], "STREAM_CONCENTRATION");
       bool istemp     =!strcmp(s[1], "STREAM_TEMPERATURE");
       bool islevel    =!strcmp(s[1], "WATER_LEVEL");
-      bool invalidSB=(pModel->GetSubBasinByID(s_to_l(s[2]))==NULL);
+      bool islakearea =!strcmp(s[1], "LAKE_AREA");
+      bool invalidSB=(pModel->GetSubBasinByID(s_to_ll(s[2]))==NULL);
 
-      pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),s_to_l(s[2]),"none",Options);
+      pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),s_to_ll(s[2]),"none",Options);
 
       if(isconc) {
         ExitGracefullyIf(Len<4,"ParseTimeSeriesFile: STREAM_CONCENTRATION observation must include constituent name",BAD_DATA_WARN);
@@ -541,18 +561,22 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         warn="ParseTimeSeries:: Invalid subbasin ID in observed water level weights time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
         WriteWarning(warn.c_str(),Options.noisy);  break;
       }
+      if(islakearea && invalidSB){
+        warn="ParseTimeSeries:: Invalid subbasin ID in observed lake area weights time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+        WriteWarning(warn.c_str(),Options.noisy);  break;
+      }
       pModel->AddObservedWeightsTS(pTimeSer);
       break;
     }
     case (43): //---------------------------------------------
-    {/*:IrregularWeights {data type} {long SBID or int HRUID} {int nMeasurements}
+    {/*:IrregularWeights {data type} {long long SBID or HRUID} {int nMeasurements}
        {yyyy-mm-dd} {hh:mm:ss.0} {double weight} x nMeasurements
        :EndIrregularWeights
      */
       if (Options.noisy) {cout <<"Irregular weights"<<endl;}
       if (Len<4){p->ImproperFormat(s); break;}
       CTimeSeriesABC *pIrregTimeSers;
-      pIrregTimeSers=CIrregularTimeSeries::Parse(p,to_string(s[1]),s_to_l(s[2]),s_to_i(s[3]));
+      pIrregTimeSers=CIrregularTimeSeries::Parse(p,to_string(s[1]),s_to_ll(s[2]),s_to_i(s[3]));
       pModel->AddObservedWeightsTS(pIrregTimeSers);
       break;
     }
@@ -563,9 +587,9 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
        :EndBasinInflowHydrograph
      */
       if (Options.noisy) {cout <<"Basin Inflow Hydrograph"<<endl;}
-      long SBID=DOESNT_EXIST;
+      SBID=DOESNT_EXIST;
       CSubBasin *pSB;
-      if (Len>=2){SBID=s_to_l(s[1]);}
+      if (Len>=2){SBID=s_to_ll(s[1]);}
 
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,false,"Inflow_Hydrograph_"+to_string(SBID),SBID,"none",Options);
@@ -586,9 +610,9 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
        :EndBasinInflowHydrograph2
      */
       if (Options.noisy) {cout <<"Basin Inflow Hydrograph(2)"<<endl;}
-      long SBID=DOESNT_EXIST;
+      SBID=DOESNT_EXIST;
       CSubBasin *pSB;
-      if (Len>=2){SBID=s_to_l(s[1]);}
+      if (Len>=2){SBID=s_to_ll(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,false,"Inflow_Hydrograph_"+to_string(SBID),SBID,"none",Options);
       if (pSB!=NULL){
@@ -603,25 +627,37 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     }
     case (52): //---------------------------------------------
     {/*:ReservoirDemand {long SBID} [int demandID] [string demandName] (or :ReservoirExtraction)
-       {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
-       {double Qout} x nMeasurements [m3/s]
+         {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+         {double Qout} x nMeasurements [m3/s]
        :EndReservoirDemand
      */
       if (Options.noisy) {cout <<"Reservoir Water Demand Time Series"<<endl;}
-      long SBID=DOESNT_EXIST;
+      SBID=DOESNT_EXIST;
       int  demand_ID=DOESNT_EXIST;
       string demand_name = "";
 
       CSubBasin *pSB;
-      if (Len>=2){SBID=s_to_l(s[1]);}
+      if (Len>=2){SBID=s_to_ll(s[1]);}
       if (Len>=3){demand_ID=s_to_i(s[2]);}
       if (Len>=4){demand_name=s[3];}
 
       pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,true,demand_name,SBID,"none",Options);
-      if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
-        pTimeSer->SetIDTag(demand_ID);
-        pSB->GetReservoir()->AddDemandTimeSeries(pTimeSer);
+
+      if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL))
+      {
+	    has_irrig=true;
+
+        pTimeSer=CTimeSeries::Parse(p,true,demand_name,SBID,"none",Options);
+        pTimeSer->SetDemandID(demand_ID);
+
+        int ii=pSB->GetReservoir()->GetNumWaterDemands();
+
+        CDemand *pDem=new CDemand(demand_ID,demand_name,SBID,true,pTimeSer,pModel);
+        pDem->SetLocalIndex(ii);
+        pSB->GetReservoir()->AddDemand(pDem);
+        if (Options.management_optimization){
+          pModel->GetManagementOptimizer()->AddWaterDemand(pDem);
+        }
       }
       else
       {
@@ -631,15 +667,15 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (53): //---------------------------------------------
-    {/*:VariableWeirHeight {long SBID}
+    {/*:VariableWeirHeight {long long SBID}
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
        {double delta_h} x nMeasurements [m]
        :EndVariableWeirHeight
      */
       if (Options.noisy) {cout <<"Weir Height Time Series"<<endl;}
-      long SBID=DOESNT_EXIST;
+      SBID=DOESNT_EXIST;
       CSubBasin *pSB;
-      if (Len>=2){SBID=s_to_l(s[1]);}
+      if (Len>=2){SBID=s_to_ll(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,true,"WeirHeight_"+to_string(SBID),SBID,"none",Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
@@ -653,20 +689,20 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (54): //---------------------------------------------
-    {/*:ReservoirMaxStage {long SBID}
+    {/*:ReservoirMaxStage {long long SBID}
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
        {double stage} x nMeasurements [m]
        :EndReservoirMaxStage
      */
       if (Options.noisy) {cout <<"Maximum stage time series "<<endl;}
-      long SBID=DOESNT_EXIST;
+      SBID=DOESNT_EXIST;
       CSubBasin *pSB;
-      if (Len>=2){SBID=s_to_l(s[1]);}
+      if (Len>=2){SBID=s_to_ll(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,true,"_MaxStage_"+to_string(SBID),SBID,"none",Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
-        if (pModel->GetDemandOptimizer() != NULL) {
-          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        if (pModel->GetManagementOptimizer() != NULL) {
+          pModel->GetManagementOptimizer()->AddUserTimeSeries(pTimeSer);
         }
         else {
           pSB->GetReservoir()->AddMaxStageTimeSeries(pTimeSer);
@@ -680,20 +716,20 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (55): //---------------------------------------------
-    {/*:ReservoirMinStage {long SBID}
+    {/*:ReservoirMinStage {long long SBID}
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
        {double stage} x nMeasurements [m]
        :EndReservoirMinStage
      */
       if (Options.noisy) {cout <<"Reservoir Minimum Stage Time Series"<<endl;}
-      long SBID=DOESNT_EXIST;
+      SBID=DOESNT_EXIST;
       CSubBasin *pSB;
-      if (Len>=2){SBID=s_to_l(s[1]);}
+      if (Len>=2){SBID=s_to_ll(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,true,"_MinStage_"+to_string(SBID),SBID,"none",Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
-        if (pModel->GetDemandOptimizer() != NULL) {
-          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        if (pModel->GetManagementOptimizer() != NULL) {
+          pModel->GetManagementOptimizer()->AddUserTimeSeries(pTimeSer);
         }
         else {
           pSB->GetReservoir()->AddMinStageTimeSeries(pTimeSer);
@@ -707,20 +743,20 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (56): //---------------------------------------------
-    {/*:ReservoirMinStageFlow {long SBID}
+    {/*:ReservoirMinStageFlow {long long SBID}
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
        {double Q_min} x nMeasurements [m3/s]
        :EndReservoirMinStageFlow
      */
       if (Options.noisy) {cout <<"Reservoir Minimum Stage Discharge Time Series"<<endl;}
-      long SBID=DOESNT_EXIST;
+      SBID=DOESNT_EXIST;
       CSubBasin *pSB;
-      if (Len>=2){SBID=s_to_l(s[1]);}
+      if (Len>=2){SBID=s_to_ll(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,true,"_MinStageFlow_"+to_string(SBID),SBID,"none",Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
-        if (pModel->GetDemandOptimizer() != NULL) {
-          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        if (pModel->GetManagementOptimizer() != NULL) {
+          pModel->GetManagementOptimizer()->AddUserTimeSeries(pTimeSer);
         }
         else {
           pSB->GetReservoir()->AddMinStageFlowTimeSeries(pTimeSer);
@@ -734,20 +770,20 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (57): //---------------------------------------------
-    {/*:ReservoirTargetStage {long SBID}
+    {/*:ReservoirTargetStage {long long SBID}
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
        {double h_target} x nMeasurements [m]
        :EndReservoirTargetStage
      */
       if (Options.noisy) {cout <<"Reservoir Target Stage Time Series"<<endl;}
-      long SBID=DOESNT_EXIST;
+      SBID=DOESNT_EXIST;
       CSubBasin *pSB;
-      if (Len>=2){SBID=s_to_l(s[1]);}
+      if (Len>=2){SBID=s_to_ll(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,true,"_TargetStage_"+to_string(SBID),SBID,"none",Options);
       if((pSB!=NULL) && (pSB->GetReservoir()!=NULL)) {
-        if (pModel->GetDemandOptimizer() != NULL) {
-          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        if (pModel->GetManagementOptimizer() != NULL) {
+          pModel->GetManagementOptimizer()->AddUserTimeSeries(pTimeSer);
         }
         else {
           pSB->GetReservoir()->AddTargetStageTimeSeries(pTimeSer);
@@ -761,20 +797,20 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (58): //---------------------------------------------
-    {/*:ReservoirMaxQDelta {long SBID}
+    {/*:ReservoirMaxQDelta {long long SBID}
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
        {double Qdelta} x nMeasurements [m3/s/d]
        :EndReservoirMaxQDelta
      */
       if (Options.noisy) {cout <<"Reservoir Maximum Discharge Delta Time Series"<<endl;}
-      long SBID=DOESNT_EXIST;
+      SBID=DOESNT_EXIST;
       CSubBasin *pSB;
-      if (Len>=2){SBID=s_to_l(s[1]);}
+      if (Len>=2){SBID=s_to_ll(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,true,"_MaxQDelta_"+to_string(SBID),SBID,"none",Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
-        if (pModel->GetDemandOptimizer() != NULL) {
-          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        if (pModel->GetManagementOptimizer() != NULL) {
+          pModel->GetManagementOptimizer()->AddUserTimeSeries(pTimeSer);
         }
         else {
           pSB->GetReservoir()->AddMaxQIncreaseTimeSeries(pTimeSer);
@@ -788,20 +824,20 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (59): //---------------------------------------------
-    {/*:ReservoirMaxQDecrease {long SBID}
+    {/*:ReservoirMaxQDecrease {long long SBID}
      {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
      {double Qdelta} x nMeasurements [m3/s/d]
      :EndReservoirMaxQDecrease
      */
       if(Options.noisy) { cout <<"Reservoir Maximum Discharge Decrease Time Series"<<endl; }
-      long SBID=DOESNT_EXIST;
+      SBID=DOESNT_EXIST;
       CSubBasin *pSB;
-      if(Len>=2) { SBID=s_to_l(s[1]); }
+      if(Len>=2) {SBID=s_to_ll(s[1]); }
       pSB=pModel->GetSubBasinByID(SBID);
       if((pSB!=NULL) && (pSB->GetReservoir()!=NULL)) {
         pTimeSer=CTimeSeries::Parse(p,true,"_MaxQDecrease_"+to_string(SBID),SBID,"none",Options);
-        if (pModel->GetDemandOptimizer() != NULL) {
-          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        if (pModel->GetManagementOptimizer() != NULL) {
+          pModel->GetManagementOptimizer()->AddUserTimeSeries(pTimeSer);
         }
         else {
           pSB->GetReservoir()->AddMaxQDecreaseTimeSeries(pTimeSer);
@@ -815,20 +851,20 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (60): //---------------------------------------------
-    {/*:ReservoirMinFlow {long Basincode}
+    {/*:ReservoirMinFlow {long long SBID}
      {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
      {double Qmin} x nMeasurements [m3/s]
      :EndReservoirMinFlow
      */
       if(Options.noisy) { cout <<"Reservoir Minimum Flow time series"<<endl; }
-      long SBID=DOESNT_EXIST;
+      SBID=DOESNT_EXIST;
       CSubBasin *pSB;
-      if(Len>=2) { SBID=s_to_l(s[1]); }
+      if(Len>=2) {SBID=s_to_ll(s[1]); }
       pSB=pModel->GetSubBasinByID(SBID);
       if((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
         pTimeSer=CTimeSeries::Parse(p,true,"_ResQmin_"+to_string(SBID),SBID,"none",Options);
-        if (pModel->GetDemandOptimizer() != NULL) {
-          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        if (pModel->GetManagementOptimizer() != NULL) {
+          pModel->GetManagementOptimizer()->AddUserTimeSeries(pTimeSer);
         }
         else {
           pSB->GetReservoir()->AddMinQTimeSeries(pTimeSer);
@@ -842,20 +878,20 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (61): //---------------------------------------------
-    {/*:ReservoirMaxFlow {long Basincode}
+    {/*:ReservoirMaxFlow {long long SBID}
      {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
      {double Qmin} x nMeasurements [m3/s]
      :EndReservoirMinFlow
      */
       if(Options.noisy) { cout <<"Reservoir Maximum Flow time series"<<endl; }
-      long SBID=DOESNT_EXIST;
+      SBID=DOESNT_EXIST;
       CSubBasin *pSB;
-      if(Len>=2) { SBID=s_to_l(s[1]); }
+      if(Len>=2) {SBID=s_to_l(s[1]); }
       pSB=pModel->GetSubBasinByID(SBID);
       if((pSB!=NULL) && (pSB->GetReservoir()!=NULL)) {
         pTimeSer=CTimeSeries::Parse(p,true,"_ResQmax_"+to_string(SBID),SBID,"none",Options);
-        if (pModel->GetDemandOptimizer() != NULL) {
-          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        if (pModel->GetManagementOptimizer() != NULL) {
+          pModel->GetManagementOptimizer()->AddUserTimeSeries(pTimeSer);
         }
         else{
           pSB->GetReservoir()->AddMaxQTimeSeries(pTimeSer);
@@ -869,20 +905,20 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (62): //---------------------------------------------
-    {/*:OverrideReservoirFlow {long SBID}
+    {/*:OverrideReservoirFlow {long long SBID}
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
        {double Q} x nMeasurements [m3/s]
        :EndOverrideReservoirFlow
      */
       if (Options.noisy) {cout <<"Forced Reservoir Outflow Time Series"<<endl;}
-      long SBID=DOESNT_EXIST;
+      SBID=DOESNT_EXIST;
       CSubBasin *pSB;
-      if (Len>=2){SBID=s_to_l(s[1]);}
+      if (Len>=2){SBID=s_to_ll(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,true,"_ResFlow_"+to_string(SBID),SBID,"none",Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
-        if (pModel->GetDemandOptimizer() != NULL) {
-          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        if (pModel->GetManagementOptimizer() != NULL) {
+          pModel->GetManagementOptimizer()->AddUserTimeSeries(pTimeSer);
         }
         else{
           pSB->GetReservoir()->AddOverrideQTimeSeries(pTimeSer);
@@ -896,30 +932,38 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (63): //---------------------------------------------
-    {/*:IrrigationDemand or :WaterDemand {long SBID} [int DemandID] [string demand_name/alias]
-     {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
-     {double Qin} x nMeasurements [m3/s]
+    {/*:IrrigationDemand or :WaterDemand {long long SBID} [int DemandID] [string demand_name/alias]
+       {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+       {double Qin} x nMeasurements [m3/s]
      :EndIrrigationDemand or :EndWaterDemand
      */
-      if(Options.noisy) { cout <<"Irrigation/Water use demand"<<endl; }
-      long SBID     =DOESNT_EXIST;
-      int  demand_ID=DOESNT_EXIST;
-      int  j        =0;
+      if(Options.noisy) { cout <<"Irrigation/Water use demand time series "<<endl; }
+      SBID     =DOESNT_EXIST;
+      long long demand_ID=DOESNT_EXIST;
+      int  ii       =0;
       string demand_name = "";
 
-      if(Len>=2) {SBID       =s_to_l(s[1]); }
+      if(Len>=2) {SBID       =s_to_ll(s[1]); }
       if(Len>=3) {demand_ID  =s_to_i(s[2]);}
       if(Len>=4) {demand_name=s[3];}
 
       CSubBasin *pSB=pModel->GetSubBasinByID(SBID);
-      if (pSB!=NULL) {j=pSB->GetNumWaterDemands();}
-      if (demand_ID   == DOESNT_EXIST) { demand_ID = SBID*10+j;} //DEFAULT - SBIDx
-      if (demand_name == "")           { demand_name = "D"+to_string(SBID)+"abcdefghijklmnopqrstuvwxyz"[j];} //e.g., D120b; }
+      if (pSB!=NULL) {ii=pSB->GetNumWaterDemands();}
+      if (demand_ID   == DOESNT_EXIST) { demand_ID = SBID*10+ii;} //DEFAULT - SBIDx
+      if (demand_name == "")           { demand_name = "D"+to_string(SBID)+"abcdefghijklmnopqrstuvwxyz"[ii];} //e.g., D120b; }
 
       pTimeSer = CTimeSeries::Parse(p, false, demand_name, SBID, "none", Options);
+      pTimeSer->SetDemandID(demand_ID);
+
       if(pSB!=NULL) {
-        pTimeSer->SetIDTag(demand_ID);
-        pSB->AddIrrigationDemand(pTimeSer); has_irrig=true;
+        has_irrig=true;
+
+        CDemand *pDem=new CDemand(demand_ID,demand_name,SBID,false,pTimeSer,pModel);
+        pDem->SetLocalIndex(ii);
+        pSB->AddWaterDemand(pDem);
+        if (Options.management_optimization){
+          pModel->GetManagementOptimizer()->AddWaterDemand(pDem);
+        }
       }
       else
       {
@@ -929,20 +973,20 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (64): //---------------------------------------------
-    {/*:ReservoirDownstreamFlow {long Basincode} {long downstreamSBID} {double range}
+    {/*:ReservoirDownstreamFlow {long long Basincode} {long long downstreamSBID} {double range}
      {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
      {double Qtarget} x nMeasurements [m3/s]
      :EndReservoirDownstreamFlow
      */
       if(Options.noisy) { cout <<"Reservoir Dowstream Flow  target time series"<<endl; }
-      long SBID=DOESNT_EXIST;
-      long SBID_down=DOESNT_EXIST;
+      SBID=DOESNT_EXIST;
+      long long SBID_down=DOESNT_EXIST;
       CSubBasin *pSB,*pSBdown;
       double range=0;
       if(Len>=4) {
-        SBID=s_to_l(s[1]);
-        SBID_down=s_to_l(s[2]);
-        range=s_to_d(s[3]);
+        SBID     =s_to_ll(s[1]);
+        SBID_down=s_to_ll(s[2]);
+        range    =s_to_d(s[3]);
       }
       else {
         ExitGracefully(":ReservoirDownstreamFlow: incorrect number of terms in command",BAD_DATA);
@@ -963,16 +1007,16 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     case (65): //---------------------------------------------
     {/*:ReservoirDownstreamDemand {long downstream SBID} {long reservoir SBID} {double percent_met} [julian_start] [julian_end]*/
       if(Options.noisy) { cout <<"Reservoir downstream demand"<<endl; }
-      long   SBID     =DOESNT_EXIST;
-      long   SBIDres  =DOESNT_EXIST;
+      SBID     =DOESNT_EXIST;
+      long long  SBIDres  =DOESNT_EXIST;
       int    jul_start=0;
       int    jul_end  =365;
       double pct_met  =0.0;
       if(Len>=4) {
-        SBID=s_to_l(s[1]);
+        SBID=s_to_ll(s[1]);
         double tmp=AutoOrDouble(s[2]);
         if(tmp==AUTO_COMPUTE) { SBIDres=AUTO_COMPUTE_LONG; }
-        else                  { SBIDres=s_to_l(s[2]); }
+        else                  { SBIDres=s_to_ll(s[2]); }
         pct_met=s_to_d(s[3]);
       }
       if(Len>=6) { //optional date commands
@@ -988,21 +1032,21 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     case (66): //---------------------------------------------
     {/*:FlowDiversion [fromSBID] [toSBID] [fract. diverted] [Qmin] {start_day} {end_day}*/
       if(Options.noisy) { cout <<"Flow diversion"<<endl; }
-      long SBID=DOESNT_EXIST;
+      SBID=DOESNT_EXIST;
       CSubBasin *pSB;
-      if(Len>=2) { SBID=s_to_l(s[1]); }
+      if(Len>=2) { SBID=s_to_ll(s[1]); }
       pSB=pModel->GetSubBasinByID(SBID);
 
       if(pSB!=NULL) {
         int start=0; //default - all year
         int end  =366; //default - all year
         if(Len>=7) { start=s_to_i(s[5]); end=s_to_i(s[6]); }
-        int target_p=pModel->GetSubBasinIndex(s_to_l(s[2]));
-        if ((s_to_l(s[2])==-1) || (target_p!=DOESNT_EXIST)) {
+        int target_p=pModel->GetSubBasinIndex(s_to_ll(s[2]));
+        if ((s_to_ll(s[2])==DOESNT_EXIST) || (target_p!=DOESNT_EXIST)) {
           pSB->AddFlowDiversion(start,end,target_p,s_to_d(s[4]),s_to_d(s[3])); has_irrig=true;
         }
         else {
-          warn=":FlowDiversion command: Target subbasin "+to_string(s_to_l(s[2]))+" not found in model, cannot add diversion";
+          warn=":FlowDiversion command: Target subbasin "+to_string(s_to_ll(s[2]))+" not found in model, cannot add diversion";
           WriteWarning(warn,Options.noisy);
         }
       }
@@ -1020,21 +1064,21 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
      :EndFlowDiversionLookupTable
      */
       if(Options.noisy) { cout << ":FlowDiversionRatingCurve" << endl; }
-      long SBID=DOESNT_EXIST;
-      long SBID2=0;
+      SBID=DOESNT_EXIST;
+      long long SBID2=0;
       int target_p(DOESNT_EXIST),start, end;
       int NQ(0);
       CSubBasin *pSB;
       start=0;   //default - all year
       end  =366; //default - all year
 
-      if(Len>=2) { SBID=s_to_l(s[1]); }
+      if(Len>=2) { SBID=s_to_ll(s[1]); }
       pSB=pModel->GetSubBasinByID(SBID);
 
       if(pSB!=NULL) {
         if(Len>=5) { start=s_to_i(s[3]); end=s_to_i(s[4]); }
-        target_p=pModel->GetSubBasinIndex(s_to_l(s[2]));
-        SBID2=s_to_l(s[2]);
+        SBID2=s_to_ll(s[2]);
+        target_p = pModel->GetSubBasinIndex(SBID2);
       }
       else if (SBID == DOESNT_EXIST) {
         warn=":FlowDiversionLookupTable command: no source subbasin ID provided, cannot add diversion";
@@ -1069,22 +1113,22 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         pSB->AddFlowDiversion(start,end,target_p,aQ1,aQ2,NQ);
       }
       else {
-        warn=":FlowDiversionLookupTable command: Target subbasin "+to_string(s_to_l(s[2]))+" not in model, cannot add diversion";
+        warn=":FlowDiversionLookupTable command: Target subbasin "+to_string(s_to_ll(s[2]))+" not in model, cannot add diversion";
         WriteWarning(warn,Options.noisy);
       }
       delete [] aQ1; delete [] aQ2;
       break;
     }
     case (68): //---------------------------------------------
-    {/*:EnvironmentalMinFlow {long SBID}
+    {/*:EnvironmentalMinFlow {long long SBID}
      {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
      {double Qmin} x nMeasurements [m3/s]
      :EndEnvironmentalMinFlow
      */
       if(Options.noisy) { cout <<"Environmental Minimum Flow"<<endl; }
-      long SBID=DOESNT_EXIST;
+      SBID=DOESNT_EXIST;
       CSubBasin *pSB;
-      if(Len>=2) { SBID=s_to_l(s[1]); }
+      if(Len>=2) { SBID=s_to_ll(s[1]); }
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,false,"EnviroMinFlow_"+to_string(SBID),SBID,"none",Options);
       if(pSB!=NULL) {
@@ -1101,7 +1145,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     {/*:UnusableFlowPercentage [SBID] [fraction]*/
       if(Options.noisy) { cout <<"Unusable flow percentage"<<endl; }
       if(Len<3) { p->ImproperFormat(s); break; }
-      CSubBasin *pBasin=pModel->GetSubBasinByID(s_to_l(s[1]));
+      CSubBasin *pBasin=pModel->GetSubBasinByID(s_to_ll(s[1]));
       if(pBasin==NULL) {
         ExitGracefully("Invalid subbasin ID in :UnusableFlowPercentage command.",BAD_DATA_WARN);
       }
@@ -1157,9 +1201,9 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       :EndUserTimeSeries
      */
       if(Options.noisy) { cout <<"User-specified Time Series"<<endl; }
-      pTimeSer=CTimeSeries::Parse(p,false,s[2], DOESNT_EXIST, "none", Options);
-      if(pModel->GetDemandOptimizer()!=NULL) {
-        pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+      pTimeSer=CTimeSeries::Parse(p,false,s[1], DOESNT_EXIST, "none", Options);
+      if(pModel->GetManagementOptimizer()!=NULL) {
+        pModel->GetManagementOptimizer()->AddUserTimeSeries(pTimeSer);
       }
       else
       {
@@ -1171,7 +1215,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     case(100)://----------------------------------------------
     {/*:OverrideStreamflow  [SBID]*/
       if (Options.noisy){cout <<"Override streamflow"<<endl;}
-      long SBID=s_to_l(s[1]);
+      SBID=s_to_ll(s[1]);
       if (pModel->GetSubBasinByID(SBID)==NULL){
         WriteWarning("ParseTimeSeries::Trying to override streamflow at non-existent subbasin "+to_string(SBID),Options.noisy);
         break;
@@ -1182,7 +1226,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     case(101)://----------------------------------------------
     {/*:AssimilateStreamflow  [SBID]*/
       if(Options.noisy) { cout <<"Assimilate streamflow"<<endl; }
-      long SBID=s_to_l(s[1]);
+      SBID=s_to_ll(s[1]);
       if(pModel->GetSubBasinByID(SBID)==NULL) {
         WriteWarning("ParseTimeSeries::Trying to assimilate streamflow at non-existent subbasin "+to_string(SBID),Options.noisy);
         break;
@@ -1336,7 +1380,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if(c==DOESNT_EXIST) {
         ExitGracefully("ParseTimeSeriesFile: :SpecifiedStreamConcentration: invalid constituent name. Command will be ignored.",BAD_DATA_WARN); break;
       }
-      long SBID=s_to_l(s[2]);
+      SBID=s_to_ll(s[2]);
       if(pModel->GetSubBasinByID(SBID)==NULL) {
         ExitGracefully("ParseTimeSeriesFile: :SpecifiedStreamConcentration: invalid subbasin ID. Command will be ignored.",BAD_DATA_WARN); break;
       }
@@ -1355,7 +1399,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         {double value} x nMeasurements
       :EndOverrideStreamConcentration
 
-      long SBID=s_to_l(s[2]);
+      SBID=s_to_ll(s[2]);
       if(pModel->GetSubBasinByID(SBID)==NULL) {
         WriteWarning("ParseTimeSeries::Trying to override stream concentration at non-existent subbasin "+to_string(SBID),Options.noisy);
         break;
@@ -1381,7 +1425,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if(c==DOESNT_EXIST) {
         ExitGracefully("ParseTimeSeriesFile: :SpecifiedStreamTemperature: temperature is not being simulated. ",BAD_DATA_WARN);
       }
-      long SBID=s_to_l(s[1]);
+      SBID=s_to_ll(s[1]);
       if(pModel->GetSubBasinByID(SBID)==NULL) {
         ExitGracefully("ParseTimeSeriesFile: :SpecifiedStreamConcentration: invalid subbasin ID. ",BAD_DATA_WARN);
       }
@@ -1406,7 +1450,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if(c==DOESNT_EXIST) {
         ExitGracefully("ParseTimeSeriesFile: :MassLoading: invalid constituent name. Command will be ignored.",BAD_DATA_WARN); break;
       }
-      long SBID=s_to_l(s[2]);
+      SBID=s_to_ll(s[2]);
       if(pModel->GetSubBasinByID(SBID)==NULL) {
         ExitGracefully("ParseTimeSeriesFile: :MassLoading: invalid subbasin ID. Command will be ignored.",BAD_DATA_WARN); break;
       }
@@ -1926,7 +1970,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         if (sb_command){ //SUBBASINS
           StationID=DOESNT_EXIST;
           int p=pModel->GetHydroUnit(k)->GetSubBasinIndex();
-          long SBID=pModel->GetSubBasin(p)->GetID();
+          long long SBID=pModel->GetSubBasin(p)->GetID();
           for (int i=0;i<nStations;i++){
             if (SBID==StatIDs[i]){
               StationID=i; break;
@@ -2042,8 +2086,16 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
     end_of_file=p->Tokenize(s,Len);
 
-    //return after file redirect, if in secondary file
-    if ((end_of_file) && (pMainParser!=NULL))
+    if ((end_of_file) && (pSecondaryParser != NULL))//return after file redirect, if in tertiary file
+    {
+      INPUT3.clear();
+      INPUT3.close();
+      delete p;
+      p=pSecondaryParser;
+      pSecondaryParser=NULL;
+      end_of_file=p->Tokenize(s,Len);
+    }
+    else if ((end_of_file) && (pMainParser!=NULL))//return after file redirect, if in secondary file
     {
       INPUT2.clear();
       INPUT2.close();
@@ -2072,7 +2124,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 /// \param *&pModel [out] Reference to the model object
 /// \param Options [in] Global model options
 //
-void AllocateReservoirDemand(CModel *&pModel, const optStruct &Options,long SBID,long SBIDres,double pct_met,int jul_start,int jul_end)
+void AllocateReservoirDemand(CModel *&pModel, const optStruct &Options,long long SBID,long long SBIDres,double pct_met,int jul_start,int jul_end)
 {
   double dmult;
   double mult = pModel->GetGlobalParams()->GetParameter("RESERVOIR_DEMAND_MULT");

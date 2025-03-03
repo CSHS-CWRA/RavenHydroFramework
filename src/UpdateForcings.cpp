@@ -384,7 +384,6 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         pGrid_pet   = GetForcingGrid(F_PET);
         pGrid_pet-> ReadData(Options,tt.model_time);
         F.PET   = pGrid_pet->GetWeightedValue(k,tt.model_time,Options.timestep);
-        cout<<"reading gridded PET"<<endl;
       }
       if(owpet_gridded) {
         pGrid_owpet   = GetForcingGrid(F_OW_PET);
@@ -597,13 +596,24 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       CorrectPET(Options,F,_pHydroUnits[k],elev,ref_elev_temp,k);
 
       //-------------------------------------------------------------------
-      // Direct evaporation of rainfall
+      // Irrigation
       //-------------------------------------------------------------------
-      if(Options.direct_evap) {
-        double reduce=min(F.PET,F.precip*(1.0-F.snow_frac));
-        if(F.precip-reduce>0.0) { F.snow_frac=1.0-(F.precip*(1.0-F.snow_frac)-reduce)/(F.precip-reduce); }
-        F.precip-=reduce;
-        F.PET   -=reduce;
+      F.irrigation=0.0; //FOR NOW
+      //F.irrigation=GetManagementOptimizer()->EstimateIrrigation(F,_pHydroUnits[k],Options,tt);
+
+      //-------------------------------------------------------------------
+      // Direct evaporation of rainfall / irrigation
+      //-------------------------------------------------------------------
+      if(Options.direct_evap)
+      {
+        double rainfall=F.precip*(1.0-F.snow_frac);
+        double reduce  =min(F.PET,rainfall+F.irrigation);
+        double rainfrac=rainfall/(rainfall+F.irrigation);
+        if ((rainfall+F.irrigation)==0){rainfrac=1.0;}
+        if(F.precip+F.irrigation-reduce>0.0) { F.snow_frac=1.0-(rainfall-reduce*rainfrac)/(F.precip-reduce*rainfrac); }
+        F.precip    -=reduce*rainfrac;
+        F.PET       -=reduce*rainfrac;
+        F.irrigation-=reduce*(1.0-rainfrac);
       }
 
       ApplyLocalParamOverrrides(k,true);

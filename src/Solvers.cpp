@@ -23,6 +23,7 @@ void MassEnergyBalance( CModel            *pModel,
   int NS,NB,nHRUs,nConnections=0,nProcesses;   //array sizes (local copies)
   int nConstituents;                           //
   int iSW, iAtm, iAET, iGW, iRO;               //Surface water, atmospheric precip, used PET, runoff indices
+  int iTotalSWE;                               //total SWE index
 
   int                iFrom          [MAX_CONNECTIONS]; //arrays used to pass values through GetRatesOfChange routines
   int                iTo            [MAX_CONNECTIONS];
@@ -143,8 +144,9 @@ void MassEnergyBalance( CModel            *pModel,
     }
   }
 
-  iSW  =pModel->GetStateVarIndex(SURFACE_WATER);
-  iAtm =pModel->GetStateVarIndex(ATMOS_PRECIP);
+  iSW      =pModel->GetStateVarIndex(SURFACE_WATER);
+  iAtm     =pModel->GetStateVarIndex(ATMOS_PRECIP);
+  iTotalSWE=pModel->GetStateVarIndex(TOTAL_SWE);
 
   // Used PET and runoff reboots to zero every timestep==============
   iAET=pModel->GetStateVarIndex(AET);
@@ -207,7 +209,7 @@ void MassEnergyBalance( CModel            *pModel,
                 aPhinew[k][iFrom[q]]-=rates_of_change[q]*tstep;//mass/energy balance maintained
                 aPhinew[k][iTo  [q]]+=rates_of_change[q]*tstep;//change is an exchange of energy or mass, which must be preserved
               }
-              else if (CStateVariable::IsWaterStorage(typ) && (typ!=CONVOLUTION)){
+              else if (CStateVariable::IsWaterStorage(typ) && (typ!=CONVOLUTION)){ //or IsWaterStorage(typ,false)
                 rates_of_change[q]=0.0;
                 aPhinew[k][iTo  [q]]+=0.0; //likely from redirect - water moves back to itself
               }
@@ -472,6 +474,14 @@ void MassEnergyBalance( CModel            *pModel,
   res_constraint res_const;
   const int MAX_CONTROL_STRUCTURES=10;
   double *res_Qstruct=new double [MAX_CONTROL_STRUCTURES];
+
+  // Update workflow variables and history variables for managment optimization
+  // ----------------------------------------------------------------------------------------
+  if (Options.management_optimization)
+  {
+    pModel->GetManagementOptimizer()->PrepDemandProblem(pModel,Options,tt);
+  }
+
   //determine total outflow from HRUs into respective basins (aRouted[p])
   for (p=0;p<NB;p++)
   {
@@ -489,12 +499,17 @@ void MassEnergyBalance( CModel            *pModel,
         pModel->GetSubBasin(p)->GetReservoir()->SetPrecip(SWvol);//[SW is treated as precip on reservoir]
       }
       else{
-        //surface water moved instantaneously from HRU to basin reach/channel storage
-        aRouted[p]+=SWvol;
+        aRouted[p]+=SWvol;             //surface water moved from HRU to in-catchment routing
       }
       aPhinew[k][iRO]=aPhinew[k][iSW]; //track net runoff [mm]
       aPhinew[k][iSW]=0.0;             //zero out surface water storage
     }
+  }
+
+  //Update demands
+  for(p=0;p<NB;p++)
+  {
+    pModel->GetSubBasin(p)->UpdateDemands(Options,tt);
   }
   // Identify magnitude of flow diversions, calculate inflows
   for(p=0;p<NB;p++)
@@ -537,7 +552,7 @@ void MassEnergyBalance( CModel            *pModel,
   // ----------------------------------------------------------------------------------------
   if (Options.management_optimization)
   {
-    pModel->GetDemandOptimizer()->SolveDemandProblem(pModel, Options, aRouted, tt);
+    pModel->GetManagementOptimizer()->SolveDemandProblem(pModel, Options, aRouted, tt);
   }
 
   // Route water over timestep
@@ -552,19 +567,21 @@ void MassEnergyBalance( CModel            *pModel,
     {
       pBasin->UpdateInflow(aQinnew[p]);              // from upstream, diversions, and specified flows
 
-      down_Q=pBasin->GetDownstreamInflow(t);         // treated as additional runoff (period starting)
+      pBasin->UpdateLateralInflow(aRouted[p]/(tstep*SEC_PER_DAY));//[m3/d]->[m3/s]
 
-      pBasin->UpdateLateralInflow(aRouted[p]/(tstep*SEC_PER_DAY)+down_Q);//[m3/d]->[m3/s]
-
-      pBasin->RouteWater    (aQoutnew,Options,tt);   
+      pBasin->RouteWater    (aQoutnew,Options,tt);
 
       irr_Q=pBasin->ApplyIrrigationDemand(t+tstep,aQoutnew[pBasin->GetNumSegments()-1],Options.management_optimization);
 
       div_Q_total=0;
-      for(int i=0; i<pBasin->GetNumDiversions();i++) { //downstream of reservoir!
+      for(int i=0; i<pBasin->GetNumDiversions();i++) { //upstream of reservoir!
         div_Q=pBasin->GetDiversionFlow(i,pBasin->GetChannelOutflowRate(),Options,tt,pDivert); //diversions based upon flows at start of timestep (without diversions)
-        div_Q_total+=div_Q; 
+        div_Q_total+=div_Q;
       }
+
+      down_Q=pBasin->GetDownstreamInflow(t)+pBasin->GetTotalReturnFlow();
+
+      aQoutnew[pBasin->GetNumSegments()-1]+=down_Q; //add return flows and Basin inflow hydrographs (type2)
 
       res_ht=res_outflow=0.0; res_const=RC_NATURAL;
       if (pBasin->GetReservoir()!=NULL)
@@ -593,6 +610,9 @@ void MassEnergyBalance( CModel            *pModel,
     }
   }//end for pp...
   delete [] res_Qstruct;
+
+
+
 
   //-----------------------------------------------------------------
   //      CONSTITUENT (MASS OR ENERGY) ROUTING
@@ -645,6 +665,8 @@ void MassEnergyBalance( CModel            *pModel,
 
         pConstitModel->SetMassInflows    (p,aMinnew[p]);
         pConstitModel->SetLateralInfluxes(p,aRoutedMass[p]);
+
+        pConstitModel->InCatchmentRoute  (p,Mlat_new,Options);//prepares, calculates, and updates Mlat_new
         pConstitModel->PrepareForRouting (p);
         pConstitModel->RouteMass         (p,aMoutnew,Mlat_new,ResMass,ResSedMass,Options,tt);  //Where everything happens!
         pConstitModel->UpdateMassOutflows(p,aMoutnew,Mlat_new,ResMass,ResSedMass,MassOutflow,Options,tt,false); //actually updates mass flow values here
@@ -661,8 +683,21 @@ void MassEnergyBalance( CModel            *pModel,
   //update state variable values=====================================
   for (k=0;k<nHRUs;k++){
     pHRU=pModel->GetHydroUnit(k);
+
     if(pHRU->IsEnabled())
     {
+      //update total SWE variable
+      if (iTotalSWE != DOESNT_EXIST) {
+        aPhinew[k][iTotalSWE] =0.0;
+        for (int i = 0; i < NS; i++)
+        {
+          sv_type typ=pModel->GetStateVarType(i);
+          if ((typ == SNOW) || (typ == SNOW_LIQ)) {
+            aPhinew[k][iTotalSWE] += aPhinew[k][i];
+          }
+        }
+      }
+
       for(i=0;i<NS;i++){
         pHRU->SetStateVarValue(i,aPhinew[k][i]);
       }

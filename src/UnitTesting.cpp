@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2024 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -12,7 +12,7 @@
 void RavenUnitTesting(const optStruct &Options)
 {
   //cout<<"RAVEN UNIT TESTING MODE"<<endl;
-
+  //for (int i=0;i<23;i++){cout<<ravenASCII[i];}
   //uncomment one for use:
   //DateTest();
   //OpticalAirMassTest();
@@ -34,6 +34,7 @@ void RavenUnitTesting(const optStruct &Options)
   //TestConvectionSolution();
   //TestGammaSampling();
   //TestWetBulbTemps();
+  //TestDateStrings();
 
 }
 /////////////////////////////////////////////////////////////////
@@ -58,6 +59,27 @@ void DateTest()
   tt=DateStringToTimeStruct("0000/01/01","23:59:00.0000",StringToCalendar("PROLEPTIC_GREGORIAN"));
   cout<<tt.date_string<<" month, day, year: "<<tt.month <<","<<tt.day_of_month<<","<<tt.year<<" julian: "<<tt.julian_day<<endl;
   ExitGracefully("DateTest",SIMULATION_DONE);
+}
+void TestDateStrings() {
+  string test;
+  cout<<"April 23 should be 112, April 2 should be 91"<<endl;
+  test="Apr-23";
+  cout<<test<<" julian: "<<GetJulianDayFromMonthYear(test, StringToCalendar("PROLEPTIC_GREGORIAN"))<<endl;
+  test="Apr-2";
+  cout<<test<<" julian: "<<GetJulianDayFromMonthYear(test, StringToCalendar("PROLEPTIC_GREGORIAN"))<<endl;
+  test="04-23";
+  cout<<test<<" julian: "<<GetJulianDayFromMonthYear(test, StringToCalendar("PROLEPTIC_GREGORIAN"))<<endl;
+  test="4-23";
+  cout<<test<<" julian: "<<GetJulianDayFromMonthYear(test, StringToCalendar("PROLEPTIC_GREGORIAN"))<<endl;
+  test="4-2";
+  cout<<test<<" julian: "<<GetJulianDayFromMonthYear(test, StringToCalendar("PROLEPTIC_GREGORIAN"))<<endl;
+  test="4-02";
+  cout<<test<<" julian: "<<GetJulianDayFromMonthYear(test, StringToCalendar("PROLEPTIC_GREGORIAN"))<<endl;
+  test="92";
+  cout<<test<<" julian: "<<GetJulianDayFromMonthYear(test, StringToCalendar("PROLEPTIC_GREGORIAN"))<<endl;
+  test="Apr-30";
+  cout<<test<<" julian: "<<GetJulianDayFromMonthYear(test, StringToCalendar("PROLEPTIC_GREGORIAN"))<<endl;
+  ExitGracefully("TestDateStrings",SIMULATION_DONE);
 }
 void AddTimeTest( ) {
 
@@ -554,7 +576,7 @@ void BarycentricWeights() {
   TEST.open("BarycentricWeights.csv");
   for(int m=0; m<10000;m++) {
     sum=0;
-    for(int i=0;i<4;i++) { aVals[i]=rand()/(double)(RAND_MAX+1); }
+    for(int i=0;i<4;i++) { aVals[i]=rand()/(double)(RAND_MAX); }
     for(int q=0; q<N-1;q++) {
       _aWeights[q]=(1.0-sum)*(1.0-pow(1.0-aVals[q],1.0/(N-q)));
       sum+=_aWeights[q];

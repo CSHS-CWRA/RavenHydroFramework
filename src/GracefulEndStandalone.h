@@ -20,7 +20,9 @@ inline void FinalizeGracefully(const char *statement, exitcode code)
   if (pModel == NULL) {
     cout << "============== Early Gracefully Exit ==============" << endl;
     cout << "Error Statement: " << statement << endl;
+    if (code!=SIMULATION_DONE) {
     cout << "Error Code: " << code << endl;
+    }
     cout << "---------------------------------------------------" << endl;
     return;
   }
@@ -47,8 +49,10 @@ inline void FinalizeGracefully(const char *statement, exitcode code)
       string message="Unable to open errors file ("+Options->main_output_dir+"Raven_errors.txt)";
       ExitGracefully(message.c_str(),RAVEN_OPEN_ERR);
     }
-    if (code!=SIMULATION_DONE) {WARNINGS<<"ERROR    : "<<statement<<endl;}
+    if (code!=SIMULATION_DONE) {WARNINGS<<"ERROR    : "<< statement << endl;
+                                cerr    <<"ERROR    : "<< statement << endl;}
     else                       {WARNINGS<<"SIMULATION COMPLETE :)"<<endl;}
+
     WARNINGS.close();
   }
   if (code==BAD_DATA_WARN){return;}//just write these errors to a file if not in strict mode

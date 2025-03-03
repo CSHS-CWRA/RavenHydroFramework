@@ -283,7 +283,7 @@ void   CmvSoilBalance::GetRatesOfChange(const double      *state_vars,
         } //end if percf>0
 
         //- compute interflow --------------------------------------------------
-        double delta = duz * uzf_stor;
+        double delta = max(duz * uzf_stor,0.0);
         uzf_stor -= delta;
         rates[10]+=delta*Aperv/Options.timestep; //UZF->SURFACE_WATER
 

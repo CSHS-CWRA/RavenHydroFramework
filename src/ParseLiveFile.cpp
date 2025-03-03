@@ -195,7 +195,7 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
     }
     case(10):  //----------------------------------------------
     { /*:SetStreamflow [SBID] [value]*/
-      pSB=pModel->GetSubBasinByID(s_to_l(s[1]));
+      pSB=pModel->GetSubBasinByID(s_to_ll(s[1]));
       double Q=fast_s_to_d(s[2]);
       pSB->SetQout(Q);
       //or pSB->SetCurrentOutflow(Q);
@@ -203,13 +203,13 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
     }
     case(11):  //----------------------------------------------
     { /*:SetReservoirStage [SBID] [value]*/
-      pSB=pModel->GetSubBasinByID(s_to_l(s[1]));
+      pSB=pModel->GetSubBasinByID(s_to_ll(s[1]));
       pSB->GetReservoir()->SetReservoirStage(s_to_d(s[2]),s_to_d(s[2]));
       break;
     }
     case(12):  //----------------------------------------------
     { /*:SetReservoirFlow [SBID] [value]*/
-      pSB=pModel->GetSubBasinByID(s_to_l(s[1]));
+      pSB=pModel->GetSubBasinByID(s_to_ll(s[1]));
       //pSB->GetReservoir()->OverrideFlow(s_to_d(s[2]));
       //JRC: add CReservoir member _overrideQ which takes priority over override Q time series
       ExitGracefully("ParseLiveFile:SetReservoirFlow",STUB);

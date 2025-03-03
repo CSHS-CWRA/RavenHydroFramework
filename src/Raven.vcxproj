@@ -713,6 +713,7 @@
     <ClCompile Include="GWSWProcessABC.cpp" />
     <ClCompile Include="IsotopeTransport.cpp" />
     <ClCompile Include="LatEquilibrate.cpp" />
+    <ClCompile Include="LookupTable.cpp" />
     <ClCompile Include="MassLoading.cpp" />
     <ClCompile Include="Matrix.cpp" />
     <ClCompile Include="NetCDFReading.cpp" />
@@ -952,6 +953,7 @@
     </ClCompile>
     <ClCompile Include="ParsePropertyFile.cpp" />
     <ClCompile Include="ParseTimeSeriesFile.cpp" />
+    <ClCompile Include="WaterDemands.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Advection.h" />
@@ -968,6 +970,7 @@
     <ClInclude Include="Diagnostics.h" />
     <ClInclude Include="EnergyTransport.h" />
     <ClInclude Include="EnKF.h" />
+    <ClInclude Include="Expression.h" />
     <ClInclude Include="FrozenGround.h" />
     <ClInclude Include="FrozenLake.h" />
     <ClInclude Include="GracefulEndBMI.h" />
@@ -976,6 +979,7 @@
     <ClInclude Include="GWRiverConnection.h" />
     <ClInclude Include="GWSWProcesses.h" />
     <ClInclude Include="IsotopeTransport.h" />
+    <ClInclude Include="LookupTable.h" />
     <ClInclude Include="MassLoading.h" />
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="MFUSGpp.h" />

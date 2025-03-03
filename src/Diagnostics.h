@@ -15,15 +15,18 @@ enum diag_type {
   DIAG_NASH_SUTCLIFFE_RUN,
   DIAG_LOG_NASH,
   DIAG_NSE4,
+  DIAG_FUZZY_NASH,
   DIAG_RMSE,
   DIAG_RMSE_DER,
   DIAG_KLING_GUPTA,
+  DIAG_KGE_PRIME,
   DIAG_DAILY_KGE,
   DIAG_KLING_GUPTA_DER,
   DIAG_KLING_GUPTA_DEVIATION,
   DIAG_PCT_BIAS,
   DIAG_ABS_PCT_BIAS,
   DIAG_ABSERR,
+  DIAG_ABSERR_RUN,
   DIAG_ABSMAX,
   DIAG_PDIFF,
   DIAG_PCT_PDIFF,
@@ -54,6 +57,7 @@ diag_type StringToDiagnostic(string distring);
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for time series comparison diagnostics
+//
 class CDiagnostic
 {
 private:/*------------------------------------------------------*/

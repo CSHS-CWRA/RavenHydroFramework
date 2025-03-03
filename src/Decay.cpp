@@ -112,27 +112,27 @@ void   CmvDecay::GetRatesOfChange(const double      *state_vars,
     {
       //dm/dt=-km
       double decay_coeff = _pTransModel->GetGeochemParam(PAR_DECAY_COEFF,_constit_ind,ii,_process_ind,pHRU);
-      if(decay_coeff==NOT_SPECIFIED) { continue; }
-
-      rates[q]= decay_coeff*mass;
+      if(decay_coeff!=NOT_SPECIFIED) {
+        rates[q]= decay_coeff*mass;
+      }
     }
     //------------------------------------------------------------------
     else if (_dtype==DECAY_ZEROORDER)
     {
       //dm/dt=-J
       double loss_rate = _pTransModel->GetGeochemParam(PAR_MASS_LOSS_RATE,_constit_ind,ii,_process_ind,pHRU);
-      if(loss_rate==NOT_SPECIFIED) { continue; }
-
-      rates[q]= min(loss_rate,mass/Options.timestep);
+      if(loss_rate!=NOT_SPECIFIED) {
+        rates[q]= min(loss_rate,mass/Options.timestep);
+      }
     }
     //------------------------------------------------------------------
     else if (_dtype==DECAY_LINEAR) //analytical approach - preferred - solution to dm/dt=-km integrated from t to t+dt
     {
       //dm/dt=-km
       double decay_coeff = _pTransModel->GetGeochemParam(PAR_DECAY_COEFF,_constit_ind,ii,_process_ind,pHRU);
-      if(decay_coeff==NOT_SPECIFIED) { continue; }
-
-      rates[q] = mass * (1.0 - exp(-decay_coeff*Options.timestep))/Options.timestep;
+      if(decay_coeff!=NOT_SPECIFIED) {
+        rates[q] = mass * (1.0 - exp(-decay_coeff*Options.timestep))/Options.timestep;
+      }
       //cout<<" DECAY: "<<mass<<" "<<rates[q]<<" "<<decay_coeff*mass<<" "<<
       //CStateVariable::GetStateVarLongName(pModel->GetStateVarType(iStor),pModel->GetStateVarLayer(iStor))<<endl;
     }
@@ -140,21 +140,22 @@ void   CmvDecay::GetRatesOfChange(const double      *state_vars,
     else if(_dtype==DECAY_DENITRIF)
     {
       double decay_coeff = _pTransModel->GetGeochemParam(PAR_DECAY_COEFF,_constit_ind,ii,_process_ind,pHRU);
-      if(decay_coeff==NOT_SPECIFIED) { continue; }
+      if(decay_coeff!=NOT_SPECIFIED) {
 
-      double temp=pHRU->GetForcingFunctions()->temp_ave;
-      double c1     =1.0;
-      double stor    =state_vars[iStor];
-      double stor_max=pHRU->GetStateVarMax(iStor,state_vars,Options);
+        double temp=pHRU->GetForcingFunctions()->temp_ave;
+        double c1     =1.0;
+        double stor    =state_vars[iStor];
+        double stor_max=pHRU->GetStateVarMax(iStor,state_vars,Options);
 
-      if      ((temp<=5 ) || (temp>=50)) { c1=0.0; }
-      else if ((temp>=10) && (temp<=30)) { c1=1.0; }
-      else if (temp< 10)                 { c1=(temp-5.0 )/(10.0-5.0 );}
-      else if (temp> 30)                 { c1=(30.0-temp)/(30.0-50.0);}
+        if      ((temp<=5 ) || (temp>=50)) { c1=0.0; }
+        else if ((temp>=10) && (temp<=30)) { c1=1.0; }
+        else if (temp< 10)                 { c1=(temp-5.0 )/(10.0-5.0 );}
+        else if (temp> 30)                 { c1=(30.0-temp)/(30.0-50.0);}
 
-      decay_coeff *= c1 * min(stor/stor_max,1.0);
+        decay_coeff *= c1 * min(stor/stor_max,1.0);
 
-      rates[q] = mass * (1.0 - exp(-decay_coeff*Options.timestep))/Options.timestep;
+        rates[q] = mass * (1.0 - exp(-decay_coeff*Options.timestep))/Options.timestep;
+      }
     }
     //------------------------------------------------------------------
     /*else if(_dtype==DECAY_O2EXCHANGE)
