@@ -1103,7 +1103,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     double Beta  = ModAvg / ObsAvg;
     double Alpha = (fabs(ModStd) / fabs(ModAvg)) / (fabs(ObsStd) / fabs(ObsAvg)); // coefficient of vairability
 
-    if (_type==DIAG_KLING_GUPTA_DEVIATION_PRIME){Beta=1.0;} //remove penalty for difference in means} 
+    if (_type==DIAG_KLING_GUPTA_DEVIATION_PRIME){Beta=1.0;} //remove penalty for difference in means}
 
     if ((N>0) && ((ObsAvg!=0.0) || (Beta==1.0)) && (ObsStd!=0.0) && (ModStd!=0.0) && (ModAvg!=0.0))
     {
