@@ -957,8 +957,8 @@ void SetInitialStateVar(CModel *&pModel,const int SVind,const sv_type typ,const 
     int       c=pModel->GetTransportModel()->GetConstituentIndex(name);
 
     if(c==DOESNT_EXIST) {
-      cout<<name<<" "<<m<<endl;
-      ExitGracefully("Constituent in .rvc file does not exist.",BAD_DATA_WARN);
+      string warn="Constituent '"+name+"' in .rvc file does not exist in the model.";
+      WriteWarning(warn.c_str(), true);
       return;
     }
 

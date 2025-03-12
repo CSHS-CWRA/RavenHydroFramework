@@ -833,6 +833,12 @@ enum overflowmode
   OVERFLOW_ALL,     ///< calculates Q required to fix stage at max value
   OVERFLOW_NATURAL  ///< uses stage discharge curve to calculate Q
 };
+
+enum assimtype
+{
+  DA_RAVEN_DEFAULT, ///< multiplicative scaling assimilation upstream propagation
+  DA_ECCC           ///< additive assimilation upstream propagation
+};
 ////////////////////////////////////////////////////////////////////
 /// \brief Types of state variable
 /// \note If an additional state variable type is added, the following routines must be revised:
@@ -1166,6 +1172,7 @@ struct optStruct
   bool             assimilate_flow;           ///< turn on streamflow assimilation
   bool             assimilate_stage;          ///< turn on lake stage assimilation
   double           assimilation_start;        ///< assimilation start time (in model time [d])
+  assimtype        assim_method;              ///< assimilation method
   bool             management_optimization;   ///< apply water management optimization (default: false)
   netcdfatt       *aNetCDFattribs;            ///< array of NetCDF attrributes {attribute/value pair}
   int              nNetCDFattribs;            ///< size of array of NetCDF attributes

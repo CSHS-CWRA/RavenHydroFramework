@@ -30,6 +30,8 @@ CGWRiverConnection::CGWRiverConnection(CGroundwaterModel* pGWModel)
   _anSegmentsBySB = NULL;
   _aSegmentsBySB  = NULL;
 
+  _pGWModel=pGWModel;
+
   _mode = RIVER;
   _condtype = CONDUCTANCE;
 }

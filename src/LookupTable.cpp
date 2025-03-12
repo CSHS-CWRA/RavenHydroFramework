@@ -31,10 +31,12 @@ string CLookupTable::GetName() const
 }
 double CLookupTable::GetValue(const double& x) const
 {
+  if (x==RAV_BLANK_DATA){return RAV_BLANK_DATA;}
   return InterpolateCurve(x,_aX,_aY,_nItems,false);
 }
 double CLookupTable::GetSlope(const double& x) const
 {
+  if (x==RAV_BLANK_DATA){return RAV_BLANK_DATA;}
   double dx=0.001*(_aX[_nItems-1]-_aX[0]);
   return (1.0/dx)*(InterpolateCurve(x+dx,_aX,_aY,_nItems,false)-InterpolateCurve(x,_aX,_aY,_nItems,false));
 }

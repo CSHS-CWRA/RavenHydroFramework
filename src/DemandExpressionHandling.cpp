@@ -42,6 +42,7 @@ expressionStruct::expressionStruct()
   nTermsPerGrp=NULL;
   nGroups=0;
   compare=COMPARE_IS_EQUAL;
+  has_nonlin=false;
 }
 expressionStruct::~expressionStruct()
 {
@@ -78,6 +79,7 @@ managementGoal::managementGoal()
   use_stage_units=false;
   units_correction=1.0;
   reservoir_index=DOESNT_EXIST;
+  is_nonlinear=false;
 }
 managementGoal::~managementGoal()
 {
@@ -222,9 +224,20 @@ int CDemandOptimizer::GetUserDVIndex(const string s) const
   }
   return DOESNT_EXIST;
 }
-
 //////////////////////////////////////////////////////////////////
-/// \brief retrieves index of native decision variable starting with !
+/// \brief index of non-linear variable given guess string
+/// \params s [in] - string   (in format ?Q130, ?Q.RavenRiver, ?UserDV)
+/// \returns index of non-linear variable in _aNonLinNames[] array 
+//
+int CDemandOptimizer::GetNLIndexFromGuessString(const string& s) const 
+{
+  for (int i = 0; i < _nNonLinVars; i++) {
+    if (_pNonLinVars[i]->name==s){return i;}
+  }
+  return DOESNT_EXIST;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief retrieves subbasin or demand index of native decision variable starting with !
 /// \params s [in] - string
 /// \returns index of named decision variable, or DOESNT_EXIST if not found
 /// index is subbasin index p for subbasin-based DVs, or demand index ii for demand-linked DVs
@@ -276,9 +289,10 @@ string TermTypeToString(termtype t)
   if (t==TERM_CONST   ){return "TERM_CONST"; }
   if (t==TERM_WORKFLOW){return "TERM_WORKFLOW"; }
   if (t==TERM_HISTORY ){return "TERM_HISTORY"; }
+  if (t==TERM_ITER    ){return "TERM_ITER"; }   
   if (t==TERM_MAX     ){return "TERM_MAX"; }
   if (t==TERM_MIN     ){return "TERM_MIN"; }
-  if (t==TERM_CONVERT ){return "TERM_CONVERT"; }
+  if (t==TERM_POW     ){return "TERM_POW"; }
   if (t==TERM_CUMUL   ){return "TERM_CUMUL";}
   if (t==TERM_CUMUL_TS){return "TERM_CUMUL_TS";}
   if (t==TERM_UNKNOWN ){return "TERM_UNKNOWN"; }
@@ -308,11 +322,14 @@ string expTypeToString(termtype &typ){
     case(TERM_TS):      return "TERM_TS"; break;
     case(TERM_LT):      return "TERM_LT"; break;
     case(TERM_CONST):   return "TERM_CONST"; break;
+    case(TERM_HRU):     return "TERM_HRU"; break;
+    case(TERM_SB):      return "TERM_SB"; break;
     case(TERM_WORKFLOW):return "TERM_WORKFLOW"; break;
     case(TERM_HISTORY): return "TERM_HISTORY"; break;
+    case(TERM_ITER):    return "TERM_ITER"; break;
     case(TERM_MAX):     return "TERM_MAX"; break;
     case(TERM_MIN):     return "TERM_MIN"; break;
-    case(TERM_CONVERT): return "TERM_CONVERT"; break;
+    case(TERM_POW):     return "TERM_POW"; break;
     case(TERM_CUMUL):   return "TERM_CUMUL"; break;
     case(TERM_UNKNOWN): return "TERM_UNKNOWN"; break;
   }
@@ -512,6 +529,11 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
       term->value=_pDemands[d]->GetDemand();
       return true;
     }
+  }
+  //----------------------------------------------------------------------
+  else if (s[0] == '?') {
+    term->type=TERM_ITER;
+    term->DV_ind=GetNLIndexFromGuessString(s);
   }
   //----------------------------------------------------------------------
   else if (s.substr(0, 4) == "@ts(")//time series (e.g., @ts(my_time_series,n)
@@ -730,7 +752,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     }
   }
   //----------------------------------------------------------------------
-  else if (s.substr(0, 5) == "@min(") //max function (e.g., @min(exp1,exp2)
+  else if (s.substr(0, 5) == "@min(") //min function (e.g., @min(exp1,exp2)
   {
     string name;
     string x_in,y_in;
@@ -754,6 +776,33 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
       term->nested_exp1 =x_in;
       term->nested_exp2 =y_in;
       term->type        =TERM_MIN;
+    }
+  }
+  //----------------------------------------------------------------------
+  else if (s.substr(0, 5) == "@pow(") //pow function (e.g., @pow(exp1,exp2)
+  {
+    string name;
+    string x_in,y_in;
+    size_t is = s.find("@pow(");
+    size_t ie = s.find(",",is); //\todo[funct] - handle nested functions as first argument? (this only works with second argument)
+    size_t ip = s.find_last_of(")");
+    if (ie == NPOS) {
+      warn="ConvertToExpressionTerm: missing comma in @pow expression"+warnstring;
+      ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+      return false;
+    }
+    if (ip == NPOS) {
+      warn="ConvertToExpressionTerm: missing end parentheses in @pow expression"+warnstring;
+      ExitGracefully(warn.c_str(), BAD_DATA_WARN);
+      return false;
+    }
+    if ((is != NPOS) && (ie != NPOS))
+    {
+      x_in = s.substr(is+5,ie-(is+5));
+      y_in = s.substr(ie+1,ip-(ie+1));
+      term->nested_exp1 =x_in;
+      term->nested_exp2 =y_in;
+      term->type        =TERM_POW;
     }
   }
   //----------------------------------------------------------------------
@@ -945,6 +994,7 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
   }
   tmp->origexp=origexp;
 
+  tmp->has_nonlin=false;
   tmp->pTerms=new expressionTerm **[nGroups];
   tmp->nTermsPerGrp=new int[nGroups];
   for (int j = 0; j < nGroups; j++) {
@@ -952,39 +1002,40 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
     tmp->nTermsPerGrp[j]=termspergrp[j];
     for (int k = 0; k < termspergrp[j]; k++) {
       tmp->pTerms[j][k]=terms[j][k];
+      if (tmp->pTerms[j][k]->type==TERM_ITER){tmp->has_nonlin=true;}
     }
   }
 
   return tmp;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Parses :Condition within management goal or workflow variable definition
+/// \brief Parses :Condition within management goal or workflow variable definition 
 /// \param s        [in] - array of strings of [size: Len]
 /// \param Len      [in] - length of string array
 /// \param lineno   [in] - line number of original expression in input file filename, referenced in errors
 /// \param filename [in] - name of input file, referenced in errors
 /// \returns exp_condition: a pointer to an expression condition variable
-///
+/// 
 /// \todo[funct]: Would it be better to support @date(), @between, @day_of_year() in general expression??
 /// :Condition !Q32[0] < 300 + @ts(myTs,0)
-/// :Condition DATE IS_BETWEEN 1975-01-02 and 2010-01-02
+/// :Condition DATE IS_BETWEEN 1975-01-02 2010-01-02
 /// :Condition DATE > @date(1975-01-02) //\todo [NOT YET SUPPORTED]
 /// :Condition DATE < @date(2010-01-02) //\todo [NOT YET SUPPORTED]
 /// :Condition MONTH = 2
-/// :Condition DAY_OF_YEAR IS_BETWEEN 173 and 210
+/// :Condition DAY_OF_YEAR IS_BETWEEN 173 210
 /// :Condition DAY_OF_YEAR > 174
 /// :Condition DAY_OF_YEAR < 210
 /// :Condition DAY_OF_YEAR IS_BETWEEN 300 20 //wraps around
 /// :Condition DAY_OF_YEAR IS_BETWEEN Apr-1 Aug-1 //\todo [NOT YET SUPPORTED]
 /// :Condition @is_between(DAY_OF_YEAR,300,20) = 1  // \todo [NOT YET SUPPORTED]
 //
-exp_condition* CDemandOptimizer::ParseCondition(const char** s, const int Len, const int lineno, const string filename) const
+exp_condition* CDemandOptimizer::ParseCondition(const char** s, const int Len, const int lineno, const string filename) const 
 {
   bool badcond=false;
   exp_condition *pCond = new exp_condition();
   pCond->dv_name=s[1];
   const optStruct *Options=_pModel->GetOptStruct();
-
+  
   bool is_exp=false;
   for (int i = 2; i < Len; i++) {
     if ((s[i][0]=='+') || (s[i][0]=='-') || (s[i][0]=='*') || (s[i][0]=='/') || (s[i][0]=='=') || (s[i][0]=='<') || (s[i][0]=='>')){
@@ -1021,7 +1072,7 @@ exp_condition* CDemandOptimizer::ParseCondition(const char** s, const int Len, c
       char   tmp =pCond->dv_name[1];
       string tmp2=pCond->dv_name.substr(2);
       char code=pCond->dv_name[1];
-      if ((code=='Q') || (code=='h') || (code=='I')) //subbasin state decision variable
+      if ((code=='Q') || (code=='h') || (code=='I')) //subbasin state decision variable 
       {
         long long SBID=s_to_ll(tmp2.c_str());
         if (_pModel->GetSubBasinByID(SBID) == NULL) {
@@ -1060,21 +1111,22 @@ exp_condition* CDemandOptimizer::ParseCondition(const char** s, const int Len, c
 /// \brief writes out explicit details about expressionStructure contents
 /// called in ParseManagementFile under Noisy mode
 //
-void SummarizeExpression(const char **s, const int Len, expressionStruct* exp)
+void SummarizeExpression(const char **s, const int Len, expressionStruct* pExp)
 {
-  if (exp==NULL){return;}
+  if (pExp==NULL){return;}
   cout<<"*"<<endl;
   cout<<"EXPRESSION: "<<endl;
   for (int i = 0; i < Len; i++) {cout<<s[i]<<" ";}cout<<endl;
-  cout<<"--# groups="<<exp->nGroups<<"-->"<<endl;
-  for (int i = 0; i < exp->nGroups; i++) {
-    cout << "  GROUP "<<i+1<<"(" <<exp->nTermsPerGrp[i]<<" terms): " << endl;
-    for (int j = 0; j < exp->nTermsPerGrp[i]; j++) {
-      cout<<"   TERM "<<j+1<<": " << exp->pTerms[i][j]->origexp<<" ("<< expTypeToString(exp->pTerms[i][j]->type) <<") mult: "<<exp->pTerms[i][j]->mult<<endl;
+  cout<<"--# groups="<<pExp->nGroups<<"-->"<<endl;
+  for (int i = 0; i < pExp->nGroups; i++) {
+    cout << "  GROUP "<<i+1<<"(" <<pExp->nTermsPerGrp[i]<<" terms): " << endl;
+    for (int j = 0; j < pExp->nTermsPerGrp[i]; j++) {
+      cout<<"   TERM "<<j+1<<": " << pExp->pTerms[i][j]->origexp<<" ("<< expTypeToString(pExp->pTerms[i][j]->type) <<") mult: "<<pExp->pTerms[i][j]->mult<<endl;
     }
   }
   cout<<"*"<<endl<<endl;
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief checks if conditions of operating regime k or goal ii are satisfied
 /// returns true if *all* conditions of operating regime k of goal ii are satisfied
@@ -1147,7 +1199,7 @@ bool CDemandOptimizer::CheckOpRegimeConditions(const op_regime *pOperRegime, con
       }
       else {//handle user specified DVs and workflow variables
         int i=GetUserDVIndex(pCond->dv_name);
-        if (i != DOESNT_EXIST) //decision variable
+        if (i != DOESNT_EXIST) //decision variable 
         {
           dv_value =_pDecisionVars[i]->value;
         }
@@ -1187,7 +1239,7 @@ bool CDemandOptimizer::CheckOpRegimeConditions(const op_regime *pOperRegime, con
 
       if (comp == COMPARE_BETWEEN)
       {
-        if ((pCond->dv_name == "DAY_OF_YEAR") || (pCond->dv_name =="MONTH") || (pCond->dv_name=="YEAR")) { //handles wraparound
+        if ((pCond->dv_name == "DAY_OF_YEAR") || (pCond->dv_name =="MONTH")) { //handles wraparound
           if ( v2 < v ){ // wraparound
             if ((dv_value < v ) && (dv_value > v2)){return false;} //integer values - this is inclusive of end dates
           }
@@ -1224,9 +1276,11 @@ bool CDemandOptimizer::CheckOpRegimeConditions(const op_regime *pOperRegime, con
 /// \param tt [in] - time structure
 /// \param *col_ind [in] - empty array (with memory reserved) for storing column indices
 /// \param *row_val [in] - empty array (with memory reserved) for storing row values
+/// \param update [in] - true if constraint is being updated, rather than built anew
+/// \parma lpgoalrow [in] - if update is true, this is the index of the LP row to be updated
 //
 #ifdef _LPSOLVE_
-void CDemandOptimizer::AddConstraintToLP(const int ii, const int kk, lp_lib::lprec* pLinProg, const time_struct &tt, int *col_ind, double *row_val) const
+void CDemandOptimizer::AddConstraintToLP(const int ii, const int kk, lp_lib::lprec* pLinProg, const time_struct &tt, int *col_ind, double *row_val, const bool update, const int lpgoalrow) const
 {
   double coeff;
   int    i=0;
@@ -1317,8 +1371,16 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, const int kk, lp_lib::lpr
     }
   }
 
-  retval = lp_lib::add_constraintex(pLinProg,i,row_val,col_ind,constr_type,RHS);
-  ExitGracefullyIf(retval==0,"AddConstraintToLP::Error adding user-specified constraint/goal",RUNTIME_ERR);
+  if (!update){
+    retval = lp_lib::add_constraintex(pLinProg,i,row_val,col_ind,constr_type,RHS);
+    ExitGracefullyIf(retval==0,"AddConstraintToLP::Error adding user-specified constraint/goal",RUNTIME_ERR);
+  }
+  else {
+    retval = lp_lib::set_rowex(pLinProg,lpgoalrow,i,row_val,col_ind);
+    ExitGracefullyIf(retval==0,"AddConstraintToLP::Error updating user-specified constraint/goal",RUNTIME_ERR);
+    retval = lp_lib::set_rh(pLinProg,lpgoalrow,RHS);
+  }
+  
 }
 #endif
 
@@ -1446,6 +1508,10 @@ double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const
   {
     return pT->value;
   }
+  else if (pT->type == TERM_ITER)
+  {
+    return _pNonLinVars[pT->DV_ind]->guess_val;//treated as if constant 
+  }
   else if (pT->type == TERM_WORKFLOW)
   {
     int i=pT->DV_ind;
@@ -1476,16 +1542,21 @@ double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const
   else if (pT->type == TERM_MAX) {
     x=EvaluateTerm(pTerms,pT->nested_ind1,t);
     y=EvaluateTerm(pTerms,pT->nested_ind2,t);
+    if ((x==RAV_BLANK_DATA) || (y==RAV_BLANK_DATA)){return RAV_BLANK_DATA;}
     return max(x,y);
   }
   else if (pT->type == TERM_MIN) {
     x=EvaluateTerm(pTerms,pT->nested_ind1,t);
     y=EvaluateTerm(pTerms,pT->nested_ind2,t);
+    if ((x==RAV_BLANK_DATA) || (y==RAV_BLANK_DATA)){return RAV_BLANK_DATA;}
     return min(x,y);
   }
-  else if (pT->type == TERM_CONVERT) {
+  else if (pT->type == TERM_POW) {
     x=EvaluateTerm(pTerms,pT->nested_ind1,t);
-    return x*pT->value;
+    y=EvaluateTerm(pTerms,pT->nested_ind2,t);
+    if ((x==RAV_BLANK_DATA) || (y==RAV_BLANK_DATA)){return RAV_BLANK_DATA;}
+    return pow(x,y);
   }
+
   return 0;
 }

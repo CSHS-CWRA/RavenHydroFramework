@@ -45,8 +45,8 @@ CEnthalpyModel::~CEnthalpyModel()
   delete [] _aInCatch_b;
   delete [] _aKbed;
   delete [] _aSS_temperature;
-  for(int p=0;p<_pModel->GetNumSubBasins();p++) { delete[] _aEnthalpySource;  } delete [] _aEnthalpySource;
-  for(int p=0;p<_pModel->GetNumSubBasins();p++) { delete[] _aEnthalpySource2; } delete [] _aEnthalpySource2;
+  for(int p=0;p<_pModel->GetNumSubBasins();p++) { delete[] _aEnthalpySource[p];  } delete [] _aEnthalpySource;
+  for(int p=0;p<_pModel->GetNumSubBasins();p++) { delete[] _aEnthalpySource2[p]; } delete [] _aEnthalpySource2;
 }
 
 //////////////////////////////////////////////////////////////////

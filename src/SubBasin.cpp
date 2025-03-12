@@ -1375,8 +1375,9 @@ void CSubBasin::SetUnusableFlowPercentage(const double &val)
 /// \brief scales all internal flows by scale factor (for assimilation/nudging)
 /// \remark Messes with mass balance something fierce!
 /// \param &scale [in] Flow scaling factor
-/// \param &scale_last [in] True if Qlast should be scaled (overriding); false for no-data scaling
+/// \param &overriding [in] True if Qlast should be scaled (overriding); false for no-data scaling
 /// \param &tstep [in] time step [d]
+/// \param &t [in] - current model time 
 /// \return volume added to system [m3]
 //
 double CSubBasin::ScaleAllFlows(const double &scale, const bool overriding, const double &tstep, const double &t)
@@ -1417,14 +1418,15 @@ double CSubBasin::ScaleAllFlows(const double &scale, const bool overriding, cons
   _rivulet_storage*=scale; va+=_rivulet_storage*sf;
   return va;
 }
+
 //////////////////////////////////////////////////////////////////
-/// \brief adjust all internal flows by adjustment factor (for assimilation/nudging)
+/// \brief adjusts all internal flows by corresponding magnitude (for assimilation/nudging)
 /// \remark Messes with mass balance something fierce!
-/// \param &scale [in] Flow adjustment, m3/s
-/// \param &scale_last [in] True if Qlast should be scaled (overriding); false for no-data scaling
+/// \param &Qadjust [in] Qadjust
+/// \param &overriding [in] True if Qlast should be scaled (overriding); false for no-data scaling
 /// \param &tstep [in] time step [d]
 /// \return volume added to system [m3]
-//
+/// 
 double CSubBasin::AdjustAllFlows(const double &adjust, const bool overriding, const double &tstep, const double &t)
 {
   double va=0.0; //volume added [m3]
@@ -1450,7 +1452,7 @@ double CSubBasin::AdjustAllFlows(const double &adjust, const bool overriding, co
   }
 
   if(_pReservoir!=NULL) {
-    //va+=_pReservoir->ScaleFlow(scale,overriding,tstep,t);
+    va+=_pReservoir->ScaleFlow(adjust,overriding,tstep,t);
   }
 
   //Estivate volume added through scaling
@@ -2197,11 +2199,15 @@ double  CSubBasin::GetMuskingumK(const double &dx) const
 double  CSubBasin::GetMuskingumX(const double &dx) const
 {
   ///< X ranges from 0 to .5 \cite Maidment1993
-  ExitGracefullyIf(_pChannel==NULL,"CSubBasin::GetMuskingumX",BAD_DATA);
-  double bedslope=_slope;
-  if(_slope==AUTO_COMPUTE){bedslope=_pChannel->GetBedslope(); }//overridden by channel
+  if (_pChannel!=NULL){
+    double bedslope=_slope;
+    if(_slope==AUTO_COMPUTE){bedslope=_pChannel->GetBedslope(); }//overridden by channel
 
-  return max(0.0,0.5*(1.0-_Q_ref/bedslope/_w_ref/_c_ref/dx));//[m3/s]/([m]*[m/s]*[m])
+    return max(0.0,0.5*(1.0-_Q_ref/bedslope/_w_ref/_c_ref/dx));//[m3/s]/([m]*[m/s]*[m])
+  }
+  else {
+    ExitGracefully("CSubBasin::GetMuskingumX",BAD_DATA);return 0.0;
+  }
 }
 
 //This routine only used in TVD scheme

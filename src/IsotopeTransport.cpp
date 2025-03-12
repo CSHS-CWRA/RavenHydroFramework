@@ -3,6 +3,11 @@ Raven Library Source Code
 Copyright (c) 2008-2022 the Raven Development Team
 ----------------------------------------------------------------
 CIsotopeModel routines related to isotope transport
+
+Raven transports is in terms of mass concentration, mg/L or mg/mm/m2 (as is is for all species)
+this is assumed to be equivalent to mass concentrations e.g., mg18O/(mgO); units conversions are IMPLICIT
+and is internally converted to composition for advection corrections used to represent enrichment
+Raven reports these concentrations as compositions in the standard output 
 ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "IsotopeTransport.h"
@@ -98,7 +103,7 @@ double CIsotopeModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const int iF
     double h=pHRU->GetForcingFunctions()->rel_humidity;
     double T=pHRU->GetForcingFunctions()->temp_ave+ZERO_CELSIUS; //[K]
 
-    //TMP DEBUG - this should not be this hard. Should have a _pTransModel->GetConcentration(k,c,ATMOS_PRECIP,m=0);
+    //TMP DEBUG - this bit should not be this complicated. Should have a _pTransModel->GetConcentration(k,c,ATMOS_PRECIP,m=0);
     //ATMOS_PRECIP should be a dirichlet condition!
     int iAtmPrecip=_pModel->GetStateVarIndex(ATMOS_PRECIP);
     int m         =_pTransModel->GetLayerIndex(_constit_index,iAtmPrecip);
@@ -213,7 +218,7 @@ double CIsotopeModel::ConcToComposition(const double &conc) const
 {
   double RV;
   if(_isotope==ISO_O18) { RV=RV_VMOW_O18; }
-  else                  { RV=RV_VMOW_H2;}
+  else                  { RV=RV_VMOW_H2;  }
   return (conc/(1-conc)/RV-1.0)*TO_PER_MILLE; //δ
 
 }
@@ -221,12 +226,12 @@ double CIsotopeModel::ConcToComposition(const double &conc) const
 /// \brief converts from delta value (composition) [o/oo]  to concentration [mg/mg] to
 /// \param d [in] δ-value (composition) [o/oo]
 //
-double CIsotopeModel::CompositionToConc(const double& d) const
+double CIsotopeModel::CompositionToConc(const double& delta) const
 {
   double RV;
   if(_isotope==ISO_O18) { RV=RV_VMOW_O18; }
-  else                  { RV=RV_VMOW_H2;}
+  else                  { RV=RV_VMOW_H2;  }
 
-  double R=((d/TO_PER_MILLE)+1.0)*RV;
+  double R=((delta/TO_PER_MILLE)+1.0)*RV;
   return RvalToConcentration(R);
 }

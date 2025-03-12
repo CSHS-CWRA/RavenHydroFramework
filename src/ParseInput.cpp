@@ -326,7 +326,8 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.aNetCDFattribs          =NULL;
   Options.assimilate_flow         =false;
   Options.assimilate_stage        =false;
-  Options.assimilation_start      =-1.0; //start before simulation
+  Options.assim_method            =DA_RAVEN_DEFAULT;
+  Options.assimilation_start      =-1.0; //start before simulation 
   Options.time_zone               =0;
   Options.rvl_read_frequency      =0.0; //do not read at all
   Options.custom_interval         =1.0; //daily
@@ -1779,6 +1780,14 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:AssimilatReservoirStage*/
       if(Options.noisy) { cout << "Assimilate lake stage on" << endl; }
       Options.assimilate_stage=true;
+      break;
+    }
+    case(95):  //--------------------------------------------
+    {/*:AssimilationMethod [method]*/
+      if(Options.noisy) { cout << "Assimilation Method" << endl; }
+      if (Len<2){ImproperFormatWarning(":AssimilationMethod",p,Options.noisy); break;}
+      if      (!strcmp(s[1],"DA_RAVEN_DEFAULT"        )){Options.assim_method=DA_RAVEN_DEFAULT;}
+      else if (!strcmp(s[1],"DA_ECCC"                 )){Options.assim_method=DA_ECCC;}
       break;
     }
     case(97):  //--------------------------------------------

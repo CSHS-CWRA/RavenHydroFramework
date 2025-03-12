@@ -50,8 +50,6 @@ enum dv_type
   DV_SLACK    //< slack variable for goal satisfaction
 };
 
-
-
 //////////////////////////////////////////////////////////////////
 // decision variable
 //
@@ -72,6 +70,20 @@ struct decision_var
     p_index=p;
     loc_index=loc_ind;
     value=0.0;min=-ALMOST_INF;max=ALMOST_INF;dvar_type=typ;dem_index=DOESNT_EXIST;
+  }
+};
+//////////////////////////////////////////////////////////////////
+// non-linear variable
+//
+struct nonlin_var
+{
+  string name;      //< name of nonlinear variable !Qxxx or !UserVar
+  string target;    //< decision variable name Qxxx or UserVar 
+  double guess_val; //< current guess of value 
+  int    DV_index;  //index of linear decision variable (0:_nDecisionVars-1) corresponding to nonlinear variable 
+
+  nonlin_var(string nam, string targ) {
+    name=nam; target=targ; DV_index=DOESNT_EXIST; guess_val=0.0;
   }
 };
 //////////////////////////////////////////////////////////////////
@@ -130,6 +142,7 @@ struct managementGoal
   string            name;          //< goal or constraint name
 
   bool              is_goal;       //< true if constraint is soft (goal rather than constraint)
+  bool              is_nonlinear;  //< current expression has non-linear terms 
   int               priority;      //< priority (default==1, for goals only)
   double            penalty_under; //< DEFAULT penalty if under specified value (for goals only)
   double            penalty_over;  //< DEFAULT penalty if over value (for goals only)
@@ -161,7 +174,6 @@ struct managementGoal
 struct workflowVar
 {
   string            name;          //< workflow variable name
-  //expressionStruct *pExpression;   //< expression defining workflow variable
 
   double            current_val;   //< current value of workflow variable (evaluated at start of time step)
 
@@ -191,6 +203,12 @@ private: /*------------------------------------------------------*/
 
   int              _nWorkflowVars;      //< total number of workflow variables considered
   workflowVar    **_pWorkflowVars;      //< array of pointers to workflow variables [size: _nWorkflowVars]
+
+  int              _nNonLinVars;        //> total number of non-linear variables (e.g., ?Q130) 
+  nonlin_var     **_pNonLinVars;        //> array of pointers to non-linear variable pairs  
+  int              _maxIterations;      //> maximum iterations in iterative scheme (default:5) 
+  double           _iterTolerance;      //> iterative solve tolerance (%)
+  double           _relaxCoeff;         //> iterative solve relaxation coefficient (default:1.0=no relaxation)
 
   int              _nGoals;             //< number of user-defined enforced constraints/goals in management model
   managementGoal **_pGoals;             //< array of pointers to user-defined enforced constraints/goals in management model
@@ -256,13 +274,12 @@ private: /*------------------------------------------------------*/
   int               GetDVColumnInd(const dv_type typ, const int counter) const;
   double              EvaluateTerm(expressionTerm **pTerms,const int k, const double &t) const;
   bool        EvaluateConditionExp(const expressionStruct* pE,const double &t) const;
-
   bool     CheckOpRegimeConditions(const op_regime *pOperRegime, const time_struct &tt, const optStruct &Options) const;
 
 
 #ifdef _LPSOLVE_
   void            WriteLPSubMatrix(lp_lib::lprec *pLinProg, string filename, const optStruct &Options) const; //for debugging
-  void           AddConstraintToLP(const int i, const int k, lp_lib::lprec *pLinProg, const time_struct &tt,int *col_ind, double *row_val) const;
+  void           AddConstraintToLP(const int i, const int k, lp_lib::lprec *pLinProg, const time_struct &tt,int *col_ind, double *row_val, const bool update, const int lpgoalrow) const;
   void      IncrementAndSetRowName(lp_lib::lprec *pLinProg,int &rowcount,const string &name);
 #endif
 
@@ -273,6 +290,7 @@ private: /*------------------------------------------------------*/
   void     AddReservoirConstraints(const optStruct &Options);
   void     IdentifyUpstreamDemands();
   bool          VariableNameExists(const string &name) const;
+  int    GetNLIndexFromGuessString(const string &name) const;
 
 public: /*------------------------------------------------------*/
   CDemandOptimizer(CModel *pMod);
@@ -300,15 +318,19 @@ public: /*------------------------------------------------------*/
   void   SetDebugLevel         (const int lev);
   void   SetDemandAsUnrestricted(const string dname);
   void   OverrideSDCurve       (const int p);
+  void   SetMaxIterations      (const int Nmax);
+  void   SetSolverTolerance    (const double tol);
+  void   SetRelaxationCoeff    (const double relax);
 
   void   AddGoalOrConstraint   (const managementGoal *pGoal);
-
+  
   void   AddUserDecisionVar    (const decision_var *pDV);
   void   SetUserDecisionVarBounds(const string name, const double &min, const double &max);
   void   AddUserConstant       (const string name, const double &val);
   void   AddWorkflowVariable   (const workflowVar *pCV);
   void   AddUserTimeSeries     (const CTimeSeries *pTS);
   void   AddUserLookupTable    (const CLookupTable *pLUT);
+  void   AddNonLinVariable     (const string name, const string targetDV);
 
   void   AddWaterDemand        (CDemand *pDem);
   void   AddDemandGroup        (const string groupname);
@@ -327,7 +349,7 @@ public: /*------------------------------------------------------*/
   void   InitializePostRVMRead (CModel *pModel, const optStruct &Options);
   void   InitializeDemands     (CModel *pModel, const optStruct &Options);
   void   PrepDemandProblem     (CModel *pModel, const optStruct &Options, const time_struct &tt);
-  void   SolveDemandProblem    (CModel *pModel, const optStruct &Options, const double *aSBrunoff, const time_struct &tt);
+  void   SolveManagementProblem(CModel *pModel, const optStruct &Options, const double *aSBrunoff, const time_struct &tt);
 
   void   WriteOutputFileHeaders(const optStruct &Options);
   void   WriteMinorOutput      (const optStruct &Options,const time_struct &tt);

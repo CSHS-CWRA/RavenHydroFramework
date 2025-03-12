@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------
   Custom output generation
   ----------------------------------------------------------------*/
@@ -96,7 +96,7 @@ private:/*------------------------------------------------------*/
                             //(e.g., =2 if max and min are both tracked)
   int         _time_index;  ///< index tracking current output line (e.g., 3=3 years/months/days passed, dependent upon _timeAgg
 
-  int          count;       ///< counts accumulated data (# of timesteps since last output dump)
+  int          _count;      ///< counts accumulated data (# of timesteps since last output dump)
 
   int          kk_only;     ///< index of HRUGroup for which output is generated when spaceAgg==BY_SELECT_HRUS
 

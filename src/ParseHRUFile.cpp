@@ -839,7 +839,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             }
           }
         }
-        else if(!strcmp(s[4],"UPSTREAM_OF")) /*inclusive of basin*/
+        else if ( (!strcmp(s[4],"UPSTREAM_OF")) || (!strcmp(s[4],"UPSTREAM_OF_INCLUSIVE")) )/*inclusive of basin*/
         {
           SBID=s_to_ll(s[5]);
           int iter=0;

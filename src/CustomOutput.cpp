@@ -69,7 +69,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   _hist_max     =10;
   _nBins        =1; //Arbitrary default
 
-  count         =0;
+  _count        =0;
 
   kk_only       =kk;
 
@@ -870,19 +870,14 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetCumulFluxBet(_svind,_svind2);}
     }
 
-    if (k==0){count++;}//increment number of data items stored
+    if (k==0){_count++;}//increment number of data items stored
 
     //---Update diagnostics--------------------------------------------------
     //-----------------------------------------------------------------------
     if      (_aggstat==AGG_AVERAGE)
     {
-      // \todo[funct] - should handle pointwise variables (e.g., state vars) differently from periodwise variables (e.g., forcings)
-      if      (_var == VAR_STATE_VAR){
-        data[k][0]=(double)(count-1)/(double)(count)*data[k][0]+val/count; //NOT CURRENTLY STRICTLY VALID
-      }
-      else {
-        data[k][0]=(double)(count-1)/(double)(count)*data[k][0]+val/count;
-      }
+      //incrementally adding to average - 1/N*((N-1)(old mean)+(val))
+      data[k][0]=(double)(_count-1)/(double)(_count)*data[k][0]+val/(double)(_count);
     }
     else if (_aggstat==AGG_MAXIMUM)
     {
@@ -907,7 +902,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
              (_aggstat==AGG_HISTOGRAM))
     {
       //populate data
-      data [k][count-1] = val;
+      data [k][_count-1] = val;
     }
     else
     {
@@ -933,31 +928,31 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
         else if(_aggstat==AGG_MEDIAN)
         {
           double Q1,Q2,Q3;
-          quickSort(data[k],0,count-1);
-          GetQuartiles(data[k],count,Q1,Q2,Q3);
+          quickSort(data[k],0,_count-1);
+          GetQuartiles(data[k],_count,Q1,Q2,Q3);
           _CUSTOM<<FormatDouble(Q2)<<sep;
         }
         else if(_aggstat==AGG_QUARTILES) //find lower quartile, median, then upper quartile
         {
           double Q1,Q2,Q3;
-          quickSort(data[k],0,count-1);
-          GetQuartiles(data[k],count,Q1,Q2,Q3);
+          quickSort(data[k],0,_count-1);
+          GetQuartiles(data[k],_count,Q1,Q2,Q3);
           _CUSTOM<<FormatDouble(Q1)<<sep<<FormatDouble(Q2)<<sep<<FormatDouble(Q3)<<sep;
         }
         else if(_aggstat==AGG_95CI)
         {
-          quickSort(data[k],0,count-1);//take floor and ceiling of lower and upper intervals to be conservative
-          _CUSTOM  << FormatDouble(data[k][(int)floor((double)(count-1)*0.025)])<<sep;
-          _CUSTOM  << FormatDouble(data[k][(int)ceil((double)(count-1)*0.975)])<<sep;
+          quickSort(data[k],0,_count-1);//take floor and ceiling of lower and upper intervals to be conservative
+          _CUSTOM  << FormatDouble(data[k][(int)floor((double)(_count-1)*0.025)])<<sep;
+          _CUSTOM  << FormatDouble(data[k][(int)ceil((double)(_count-1)*0.975)])<<sep;
         }
         else if(_aggstat==AGG_HISTOGRAM)
         {
-          quickSort(data[k],0,count-1);
+          quickSort(data[k],0,_count-1);
           double binsize = (_hist_max-_hist_min)/_nBins;
           int bincount[MAX_HISTOGRAM_BINS];
 
           for(int bin=0;bin<_nBins;bin++){ bincount[bin]=0; }
-          for(int a=0;a<count;a++)
+          for(int a=0;a<_count;a++)
           {
             for(int bin=0;bin<_nBins;bin++){
               if((data[k][a]>=(_hist_min+bin*binsize)) && (data[k][a]<(_hist_min+(bin+1)*binsize))){ bincount[bin]++; }
@@ -982,8 +977,8 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
         else if(_aggstat==AGG_MEDIAN)
         {
           double Q1,Q2,Q3;
-          quickSort(data[k],0,count-1);
-          GetQuartiles(data[k],count,Q1,Q2,Q3);
+          quickSort(data[k],0,_count-1);
+          GetQuartiles(data[k],_count,Q1,Q2,Q3);
           out=Q2;
         }
         output[k]=out;
@@ -1011,7 +1006,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
         }
       }
       //...more stats here
-      if (k==num_data-1){count=0;}//don't reboot count until last HRU/basin is done
+      if (k==num_data-1){_count=0;}//don't reboot count until last HRU/basin is done
     }//end if (reset)
   }//end for (k=0;...
 

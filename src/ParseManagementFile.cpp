@@ -185,6 +185,11 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
 
     else if(!strcmp(s[0],":UserTimeSeries"))              { code=70; }
 
+    else if(!strcmp(s[0],":NonlinearVariable"))           { code=80; } 
+    else if(!strcmp(s[0],":MaxNLSolverIterations"))       { code=81; }
+    else if(!strcmp(s[0],":NLSolverTolerance"))           { code=82; }
+    else if(!strcmp(s[0],":NLRelaxationCoeff"))           { code=83; }
+
     switch(code)
     {
     case(-1):  //----------------------------------------------
@@ -1287,6 +1292,33 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       pModel->GetManagementOptimizer()->AddUserTimeSeries(pTimeSer);
       break;
     }
+    case (80): //---------------------------------------------
+    {/*:NonlinearVariable [?name] [corresponding DV]
+     e.g.,
+     :NonlinearVariable ?Q130 Q130
+     */
+      if(Options.noisy) { cout <<"Non-linear variable declaration"<<endl; }
+      pModel->GetManagementOptimizer()->AddNonLinVariable(s[1],s[2]);
+      break;
+    }
+    case (81): //---------------------------------------------
+    {/*:MaxNLSolverIterations [#]*/
+      if(Options.noisy) { cout <<"Maximum solver iterations"<<endl; }
+      pModel->GetManagementOptimizer()->SetMaxIterations(s_to_i(s[1]));
+      break;
+    }
+    case (82): //---------------------------------------------
+    {/*:NLSolverTolerance [#]*/
+      if(Options.noisy) { cout <<"Non-linear solver tolerance"<<endl; }
+      pModel->GetManagementOptimizer()->SetSolverTolerance(s_to_d(s[1]));
+      break;
+    }   
+    case (83): //---------------------------------------------
+    {/*:NLRelaxationCoeff [#]*/
+      if(Options.noisy) { cout <<"Non-linear solver relaxation coefficient"<<endl; }
+      pModel->GetManagementOptimizer()->SetRelaxationCoeff(s_to_d(s[1]));
+      break;
+    } 
     default://------------------------------------------------
     {
       /*cout << "UNREC LINE: (Len=" << Len << ")";

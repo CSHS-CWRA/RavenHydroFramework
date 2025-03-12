@@ -293,6 +293,7 @@ public:/*-------------------------------------------------------*/
   void              UpdateReservoir          (const time_struct &tt, const optStruct &Options);
   void              UpdateMassBalance        (const time_struct &tt, const double &tstep, const optStruct &Options);
   double            ScaleFlow                (const double &scale, const bool overriding,const double &tstep,const double &t);
+  double            AdjustFlow               (const double &Qadjust, const bool overriding,const double &tstep,const double &t);
   void              AddToDeliveredDemand     (const int ii, const double &Q);
   void              RecordReturnFlow         (const int ii, const double& Qret);
 };

@@ -77,7 +77,7 @@ void CModel::InitializeDataAssimilation(const optStruct &Options)
 
 }
 /////////////////////////////////////////////////////////////////
-/// \brief Overrides flows with observations at gauges, or
+/// \brief Overrides flows with observations at gauges and propagates adjustments upstream of gauges 
 /// \param p [in] global subbasin index
 /// \param Options [in] current model options structure
 /// \param tt [in] current model time structure
@@ -111,8 +111,15 @@ void CModel::AssimilationOverride(const int p,const optStruct& Options,const tim
 
   // actually scale flows
   //---------------------------------------------------------------------
-  double mass_added=_pSubBasins[p]->ScaleAllFlows(_aDAscale[p]/_aDAscale_last[p],_aDAoverride[p],Options.timestep,tt.model_time);
-  //double mass_added=_pSubBasins[p]->AdjustAllFlows(_aDAadjust[p],_aDAoverride[p],Options.timestep,tt.model_time);
+  double mass_added;
+  if (Options.assim_method==DA_RAVEN_DEFAULT){
+    mass_added=_pSubBasins[p]->ScaleAllFlows(_aDAscale[p]/_aDAscale_last[p],_aDAoverride[p],Options.timestep,tt.model_time);
+  }
+  else if (Options.assim_method==DA_ECCC) {
+    mass_added=_pSubBasins[p]->AdjustAllFlows(_aDAQadjust[p],_aDAoverride[p],Options.timestep,tt.model_time);
+  }
+
+  // 
   if(mass_added>0.0){_CumulInput +=mass_added/(_WatershedArea*M2_PER_KM2)*MM_PER_METER;}
   else              {_CumulOutput-=mass_added/(_WatershedArea*M2_PER_KM2)*MM_PER_METER;}
 
@@ -170,7 +177,7 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
             _aDAoverride [p]=true;
             _aDAobsQ     [p]=Qobs;
             _aDADrainSum [p]=0.0; //??? maybe doesnt matter
-            if (pdown != DOESNT_EXIST) {
+            if (pdown != DOESNT_EXIST) {      
               _aDADrainSum [pdown]+=_pSubBasins[p]->GetDrainageArea(); //DOES THIS HANDLE NESTING RIGHT?
             }
           }
@@ -182,7 +189,7 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
             _aDAlength   [p]=0.0;
             _aDAoverride [p]=false;
             _aDAobsQ     [p]=0.0;
-            if (pdown != DOESNT_EXIST) {
+            if (pdown != DOESNT_EXIST) {        
               _aDADrainSum[pdown] += _aDADrainSum[p];
             }
           }
@@ -190,9 +197,9 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
           break; //avoids duplicate observations
         }
       }
-    }
+    } 
     else {
-      if (pdown != DOESNT_EXIST) {
+      if (pdown != DOESNT_EXIST) {        
         _aDADrainSum[pdown] += _aDADrainSum[p];
       }
     }
@@ -247,6 +254,8 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
     else {
       ECCCwt=1.0;
     }
-    _aDAQadjust[p] = _aDAQadjust[p]*ECCCwt;
+    if (!_aDAoverride[p]) { //no scaling for stations being overridden, only upstream
+      _aDAQadjust[p] = _aDAQadjust[p]*ECCCwt;
+    }
   }
 }

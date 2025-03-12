@@ -18,7 +18,7 @@ protected:/*-------------------------------------------------------*/
   enum calc_mode { RIVER, DRAIN };
   enum cond_type { CONDUCTANCE, UNITCOND };
 
-  CGroundwaterModel* pGWModel;              ///< pointer to groundwater model
+  CGroundwaterModel* _pGWModel;              ///< pointer to groundwater model
   calc_mode     _mode;
   cond_type     _condtype;
   int           _nSeg;                      ///< Number of gw model segments

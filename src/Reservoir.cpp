@@ -1189,6 +1189,21 @@ double CReservoir::ScaleFlow(const double& scale,const bool overriding, const do
 
   return va;
 }
+double CReservoir::AdjustFlow(const double& Qadjust, const bool overriding, const double& tstep, const double& t) 
+{
+  double scale=(_Qout+Qadjust)/_Qout;
+  if (_Qout=0){scale=1.0;}
+
+  double va=0.0; //volume added
+  double sf=(scale-1.0)/scale;
+
+  _DAscale=scale;
+
+  //Estimate volume added through scaling
+  va+=0.5*(_Qout_last+_Qout)*sf*tstep*SEC_PER_DAY;
+
+  return va; 
+}
 /////////////////////////////////////////////////////////////////
 /// \brief update demand magnitudes, called in solver at start of every time step
 /// \param &Options [in] Global model options information
@@ -1479,8 +1494,7 @@ double  CReservoir::RouteWater(const double &Qin_old,
 {
   if ((_assimilate_stage) && (!_assim_blank))
   {
-    cout<<"ASSIMILATING STAGE "<<_stage<<endl;
-    res_outflow=_Qout;
+    res_outflow=_Qout;//stage from data, outflow calculated from SD curve in UpdateReservoir()
     return _stage;
   }
 
