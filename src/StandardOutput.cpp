@@ -603,6 +603,23 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     }
   }
 
+  // Assimilation adjustments
+  //--------------------------------------------------------------
+  if (Options.assimilate_flow){
+    ofstream ASSIM;
+    tmpFilename=FilenamePrepare("AssimilationAdjustments.csv",Options);
+    ASSIM.open(tmpFilename.c_str());
+    if (ASSIM.fail()){
+      ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
+    }
+    ASSIM<<"time,date,hour";
+    for (int p = 0; p < _nSubBasins; p++) {
+      if((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->IsEnabled())){
+        ASSIM<<","<<_pSubBasins[p]->GetName()<<" "; 
+      }
+    }
+  }
+
   // Custom output files
   //--------------------------------------------------------------
   for (int c=0;c<_nCustomOutputs;c++)
@@ -1076,9 +1093,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
           pSB=_pSubBasins[p];
           if((pSB->IsGauged()) &&  (pSB->IsEnabled()) && (pSB->GetReservoir()!=NULL))
           {
-            string name,constraint_str;
-            if(pSB->GetName()==""){ name=to_string(pSB->GetID()); }
-            else                  { name=pSB->GetName(); }
+            string constraint_str;
 
             stage         =pSB->GetReservoir()->GetResStage();//m
             area          =pSB->GetReservoir()->GetSurfaceArea();//m2
@@ -1289,6 +1304,24 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         HRUSTOR<<endl;
         HRUSTOR.close();
       }
+    }
+
+    // Assimilation adjustments
+    //--------------------------------------------------------------
+    if (Options.assimilate_flow){
+      ofstream ASSIM;
+      tmpFilename=FilenamePrepare("AssimilationAdjustments.csv",Options);
+      ASSIM.open(tmpFilename.c_str(),ios::app);
+
+      ASSIM<<usetime<<","<<usedate<<","<<usehour<<",";
+      for (int p = 0; p < _nSubBasins; p++) {
+        if((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->IsEnabled())){
+          if (Options.assim_method==DA_ECCC){ASSIM<<","<<_aDAQadjust[p]<<" ";}
+          else                              {ASSIM<<","<<_aDAscale  [p]<<" ";}
+        }
+      }
+      ASSIM<<endl;
+      ASSIM.close();
     }
   } // end of write output interval if statement
 
