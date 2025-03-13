@@ -28,7 +28,7 @@ int  NetCDFAddMetadata  (const int fileid,const int time_dimid,                 
 int  NetCDFAddMetadata2D(const int fileid,const int time_dimid,int nbasins_dimid,string shortname,string longname,string units);
 void WriteNetCDFGlobalAttributes(const int out_ncid,const optStruct &Options,const string descript);
 void AddSingleValueToNetCDF     (const int out_ncid,const string &label,const size_t time_index,const double &value);
-void WriteNetCDFBasinList       (const int ncid,const int varid,const CModel* pModel,bool is_res,const optStruct &Options);
+void WriteNetCDFBasinList       (const int ncid,const int varid,const int varid_name,const CModel* pModel,bool is_res,const optStruct &Options);
 //////////////////////////////////////////////////////////////////
 /// \brief returns true if specified observation time series is the flow series for subbasin SBID
 /// \param pObs [in] observation time series
@@ -1935,7 +1935,8 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   int         dimids1[ndims1];                       // array which will contain all dimension ids for a variable
   int         ncid, varid_pre;                       // When we create netCDF variables and dimensions, we get back an ID for each one.
   int         time_dimid, varid_time;                // dimension ID (holds number of time steps) and variable ID (holds time values) for time
-  int         nSim, nbasins_dimid, varid_bsim;       // # of sub-basins with simulated outflow, dimension ID, and
+  int         nSim, nbasins_dimid, varid_bsim,varid_bsim2;       
+  //                                                 // # of sub-basins with simulated outflow, dimension ID, and
   //                                                 // variable to write basin IDs for simulated outflows
   int         varid_qsim;                            // variable ID for simulated outflows
   int         varid_qobs;                            // variable ID for observed outflows
@@ -2010,12 +2011,22 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     // (c) create variable  and set attributes for"basin_name"
     dimids1[0] = nbasins_dimid;
     retval = nc_def_var(_HYDRO_ncid, "basin_name", NC_STRING, ndims1, dimids1, &varid_bsim);       HandleNetCDFErrors(retval);
-    tmp ="Name/ID of sub-basins with simulated outflows";
+    tmp ="ID of sub-basins with simulated outflows";
     tmp2="timeseries_id";
     tmp3="1";
     retval = nc_put_att_text(_HYDRO_ncid, varid_bsim, "long_name",  tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
     retval = nc_put_att_text(_HYDRO_ncid, varid_bsim, "cf_role"  , tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
     retval = nc_put_att_text(_HYDRO_ncid, varid_bsim, "units"    , tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
+    
+    // (d) create variable  and set attributes for"basin_fullname"
+    dimids1[0] = nbasins_dimid;
+    retval = nc_def_var(_HYDRO_ncid, "basin_fullname", NC_STRING, ndims1, dimids1, &varid_bsim2);       HandleNetCDFErrors(retval);
+    tmp ="Name of sub-basins with simulated outflows";
+    tmp2="timeseries_id";
+    tmp3="1";
+    retval = nc_put_att_text(_HYDRO_ncid, varid_bsim2, "long_name",  tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
+    retval = nc_put_att_text(_HYDRO_ncid, varid_bsim2, "cf_role"  , tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
+    retval = nc_put_att_text(_HYDRO_ncid, varid_bsim2, "units"    , tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
 
     varid_qsim= NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_sim","Simulated outflows","m**3 s**-1");
     varid_qobs= NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_obs","Observed outflows" ,"m**3 s**-1");
@@ -2033,7 +2044,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
 
   // (a) write gauged basin names/IDs to variable "basin_name"
   if (nSim>0){
-    WriteNetCDFBasinList(_HYDRO_ncid,varid_bsim,this,false,Options);
+    WriteNetCDFBasinList(_HYDRO_ncid,varid_bsim,varid_bsim2,this,false,Options);
   }
 
   //====================================================================
@@ -2084,12 +2095,23 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
       // (c) create variable  and set attributes for"basin_name"
       dimids1[0] = nbasins_dimid;
       retval = nc_def_var(_RESSTAGE_ncid,"basin_name",NC_STRING,ndims1,dimids1,&varid_bsim);         HandleNetCDFErrors(retval);
-      tmp ="Name/ID of sub-basins with simulated outflows";
+      tmp ="subbasin ID of reservoirs with simulated stage";
       tmp2="timeseries_id";
       tmp3="1";
       retval = nc_put_att_text(_RESSTAGE_ncid,varid_bsim,"long_name", tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
       retval = nc_put_att_text(_RESSTAGE_ncid,varid_bsim,"cf_role",  tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
       retval = nc_put_att_text(_RESSTAGE_ncid,varid_bsim,"units",    tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
+
+      // (d) create variable  and set attributes for"basin_fullname"
+      dimids1[0] = nbasins_dimid;
+      retval = nc_def_var(_RESSTAGE_ncid, "basin_fullname", NC_STRING, ndims1, dimids1, &varid_bsim2);       HandleNetCDFErrors(retval);
+      tmp ="subbasin name of reservoirs with simulated stage";
+      tmp2="timeseries_id";
+      tmp3="1";
+      retval = nc_put_att_text(_RESSTAGE_ncid, varid_bsim2, "long_name",  tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
+      retval = nc_put_att_text(_RESSTAGE_ncid, varid_bsim2, "cf_role"  , tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
+      retval = nc_put_att_text(_RESSTAGE_ncid, varid_bsim2, "units"    , tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
+
 
       varid_qsim= NetCDFAddMetadata2D(_RESSTAGE_ncid,time_dimid,nbasins_dimid,"h_sim","Simulated stage","m");
       varid_qobs= NetCDFAddMetadata2D(_RESSTAGE_ncid,time_dimid,nbasins_dimid,"h_obs","Observed stage","m");
@@ -2102,7 +2124,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     // write values to NetCDF
     // (a) write gauged reservoir basin names/IDs to variable "basin_name"
     if (nSim>0){
-      WriteNetCDFBasinList(_RESSTAGE_ncid,varid_bsim,this,true,Options);
+      WriteNetCDFBasinList(_RESSTAGE_ncid,varid_bsim,varid_bsim2,this,true,Options);
     }
   }
 
@@ -2246,12 +2268,22 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
       // (c) create variable  and set attributes for"basin_name"
       dimids1[0] = nbasins_dimid;
       retval = nc_def_var(_RESMB_ncid,"basin_name",NC_STRING,ndims1,dimids1,&varid_bsim);         HandleNetCDFErrors(retval);
-      tmp ="Name/ID of sub-basins with simulated outflows";
+      tmp ="subbasin ID of reservoirs with simulated stage";
       tmp2="timeseries_id";
       tmp3="1";
       retval = nc_put_att_text(_RESMB_ncid,varid_bsim,"long_name", tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
       retval = nc_put_att_text(_RESMB_ncid,varid_bsim,"cf_role",  tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
       retval = nc_put_att_text(_RESMB_ncid,varid_bsim,"units",    tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
+
+      // (d) create variable  and set attributes for"basin_fullname"
+      dimids1[0] = nbasins_dimid;
+      retval = nc_def_var(_RESMB_ncid, "basin_fullname", NC_STRING, ndims1, dimids1, &varid_bsim2);       HandleNetCDFErrors(retval);
+      tmp ="subbasin name of reservoirs with simulated stage";
+      tmp2="timeseries_id";
+      tmp3="1";
+      retval = nc_put_att_text(_RESMB_ncid, varid_bsim2, "long_name",  tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
+      retval = nc_put_att_text(_RESMB_ncid, varid_bsim2, "cf_role"  , tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
+      retval = nc_put_att_text(_RESMB_ncid, varid_bsim2, "units"    , tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
 
       varid= NetCDFAddMetadata2D(_RESMB_ncid,time_dimid,nbasins_dimid,"stage",    "stage",  "m");
       varid= NetCDFAddMetadata2D(_RESMB_ncid,time_dimid,nbasins_dimid,"area",     "area",  "m2");
@@ -2275,7 +2307,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     // write values to NetCDF
     // (a) write gauged reservoir basin names/IDs to variable "basin_name"
     if (nSim>0){
-      WriteNetCDFBasinList(_RESMB_ncid,varid_bsim,this,true,Options);
+      WriteNetCDFBasinList(_RESMB_ncid,varid_bsim,varid_bsim2,this,true,Options);
     }
   }
 #endif   // end compilation if NetCDF library is available
@@ -3011,27 +3043,30 @@ void AddSingleValueToNetCDF(const int out_ncid,const string &shortname,const siz
 /// \brief writes list of Basin IDs to NetCDF file
 /// used for hydrographs.nc, reservoirstages.nc, pollutographs.nc
 /// \param ncid [in] NetCDF file identifier
-/// \param varid [in] ID of existing basin attribute
+/// \param varid [in] netCDF ID of existing basin ID attribute
+/// \param varid_name [in] netCDF ID of existing basin name attribute
 /// \param is_res [in] true if this is a reservoir file and only reservoir basins should be included
 //
-void WriteNetCDFBasinList(const int ncid,const int varid,const CModel* pModel,bool is_res,const optStruct& Options)
+void WriteNetCDFBasinList(const int ncid,const int varid,const int varid_name,const CModel* pModel,bool is_res,const optStruct& Options)
 {
 #ifdef _RVNETCDF_
   int ibasin = 0;
   int retval;
   size_t      start[1],count[1];                    // determines where and how much will be written to NetCDF
-  char* current_basin_name[1];                       // current name of basin
+  char* current_basin_name[1];                      // current name or ID  of basin
   current_basin_name[0]=new char[200];
   for(int p=0;p<pModel->GetNumSubBasins();p++) {
     if(pModel->GetSubBasin(p)->IsGauged()  && (pModel->GetSubBasin(p)->IsEnabled())) {
       if (!( (is_res) && (pModel->GetSubBasin(p)->GetReservoir()==NULL))){
-        string bname;
-        if((pModel->GetSubBasin(p)->GetName()=="") || (Options.deltaresFEWS)) { bname = to_string(pModel->GetSubBasin(p)->GetID()); }
-        else                                                                  { bname = pModel->GetSubBasin(p)->GetName(); }
+        string bID,bname;
+        bID   = to_string(pModel->GetSubBasin(p)->GetID()); 
+        bname = pModel->GetSubBasin(p)->GetName(); 
         start[0] = ibasin;
         count[0] = 1;
-        strcpy(current_basin_name[0],bname.c_str());
+        strcpy(current_basin_name[0],bID.c_str());
         retval = nc_put_vara_string(ncid,varid,start,count,(const char**)current_basin_name);  HandleNetCDFErrors(retval);
+        strcpy(current_basin_name[0],bname.c_str());
+        retval = nc_put_vara_string(ncid,varid_name,start,count,(const char**)current_basin_name);  HandleNetCDFErrors(retval);
         ibasin++;
       }
     }

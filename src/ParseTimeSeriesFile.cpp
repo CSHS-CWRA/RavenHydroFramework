@@ -1370,8 +1370,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     }
     case(302):
     {/*:SpecifiedInflowConcentration [constit_name] [SBID]
-      {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
-      {double value} x nMeasurements
+         {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+         {double value} x nMeasurements
        :EndSpecifiedInflowConcentration
         */
       if(Options.noisy) { cout <<"Specified stream concentration"<<endl; }

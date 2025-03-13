@@ -16,7 +16,7 @@ bool IsContinuousConcObs(const CTimeSeriesABC *pObs,const long long SBID,const i
 void WriteNetCDFGlobalAttributes(const int out_ncid,const optStruct& Options,const string descript);
 int  NetCDFAddMetadata     (const int fileid,const int time_dimid,string shortname,string longname,string units);
 int  NetCDFAddMetadata2D   (const int fileid,const int time_dimid,int nbasins_dimid,string shortname,string longname,string units);
-void WriteNetCDFBasinList  (const int ncid,const int varid,const CModel* pModel,bool is_res,const optStruct& Options);
+void WriteNetCDFBasinList  (const int ncid,const int varid,const int varid_name,const CModel* pModel,bool is_res,const optStruct& Options);
 void AddSingleValueToNetCDF(const int out_ncid,const string &label,const size_t time_index,const double &value);
 //////////////////////////////////////////////////////////////////
 /// \brief Implentation of the Transport constructor
@@ -1097,7 +1097,7 @@ void CConstituentModel::WriteNetCDFOutputFileHeaders(const optStruct& Options)
     // (a) count number of simulated outflows "nSim"
     string      tmp,tmp2,tmp3;
     int nbasins_dimid;
-    int varid_bsim;
+    int varid_bsim,varid_bsim2;
     int varid_Csim,varid_Cobs,varid_pctfroz;
     int nSim = 0;
     for(int p=0;p<_pModel->GetNumSubBasins();p++) {
@@ -1112,14 +1112,24 @@ void CConstituentModel::WriteNetCDFOutputFileHeaders(const optStruct& Options)
       // (c) create variable  and set attributes for"basin_name"
       dimids1[0] = nbasins_dimid;
       retval = nc_def_var(_POLLUT_ncid,"basin_name",NC_STRING,ndims1,dimids1,&varid_bsim);       HandleNetCDFErrors(retval);
-      tmp ="Name/ID of sub-basins with simulated concentrations";
+      tmp ="ID of sub-basins with simulated concentrations";
       tmp2="timeseries_id";
       tmp3="1";
       retval = nc_put_att_text(_POLLUT_ncid,varid_bsim,"long_name",tmp.length(),tmp.c_str());    HandleNetCDFErrors(retval);
       retval = nc_put_att_text(_POLLUT_ncid,varid_bsim,"cf_role",tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
-      retval = nc_put_att_text(_POLLUT_ncid,varid_bsim,"units",tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
+      retval = nc_put_att_text(_POLLUT_ncid,varid_bsim,"units",tmp3.length(),tmp3.c_str());      HandleNetCDFErrors(retval);
 
-      // (d) create 2D pollutograph arrays [nbasins x ntime]
+      // (d) create variable  and set attributes for"basin_fullname"
+      dimids1[0] = nbasins_dimid;
+      retval = nc_def_var(_POLLUT_ncid, "basin_fullname", NC_STRING, ndims1, dimids1, &varid_bsim2);       HandleNetCDFErrors(retval);
+      tmp ="Name of sub-basins with simulated concentrations";
+      tmp2="timeseries_id";
+      tmp3="1";
+      retval = nc_put_att_text(_POLLUT_ncid, varid_bsim2, "long_name",  tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
+      retval = nc_put_att_text(_POLLUT_ncid, varid_bsim2, "cf_role"  , tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
+      retval = nc_put_att_text(_POLLUT_ncid, varid_bsim2, "units"    , tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
+
+      // (e) create 2D pollutograph arrays [nbasins x ntime]
       if(_type!=ENTHALPY) {
         varid_Csim    = NetCDFAddMetadata2D(_POLLUT_ncid,time_dimid,nbasins_dimid,"C_sim","Simulated concentrations",mgL);
         varid_Cobs    = NetCDFAddMetadata2D(_POLLUT_ncid,time_dimid,nbasins_dimid,"C_obs","Observed concentrations",mgL);
@@ -1141,7 +1151,7 @@ void CConstituentModel::WriteNetCDFOutputFileHeaders(const optStruct& Options)
     // write values to NetCDF
     if(nSim > 0)
     {
-      WriteNetCDFBasinList(_POLLUT_ncid,varid_bsim,_pModel,false,Options);
+      WriteNetCDFBasinList(_POLLUT_ncid,varid_bsim,varid_bsim2,_pModel,false,Options);
     }
   }
 
@@ -1173,7 +1183,7 @@ void CConstituentModel::WriteNetCDFOutputFileHeaders(const optStruct& Options)
     // (a) count number of simulated outflows "nSim"
     string      tmp,tmp2,tmp3;
     int nbasins_dimid;
-    int varid_bsim;
+    int varid_bsim,varid_bsim2;
     int varid_Csim,varid_Cobs;
     int nSim = 0;
     for(int p=0;p<_pModel->GetNumSubBasins();p++) {
@@ -1188,14 +1198,24 @@ void CConstituentModel::WriteNetCDFOutputFileHeaders(const optStruct& Options)
       // (c) create variable  and set attributes for"basin_name"
       dimids1[0] = nbasins_dimid;
       retval = nc_def_var(_LOADING_ncid,"basin_name",NC_STRING,ndims1,dimids1,&varid_bsim);       HandleNetCDFErrors(retval);
-      tmp ="Name/ID of sub-basins with simulated mass loadings";
+      tmp ="ID of sub-basins with simulated mass loadings";
       tmp2="timeseries_id";
       tmp3="1";
       retval = nc_put_att_text(_LOADING_ncid,varid_bsim,"long_name", tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
       retval = nc_put_att_text(_LOADING_ncid,varid_bsim,"cf_role"  ,tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
       retval = nc_put_att_text(_LOADING_ncid,varid_bsim,"units"    ,tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
 
-      // (d) create 2D pollutograph arrays [nbasins x ntime]
+      // (d) create variable  and set attributes for"basin_fullname"
+      dimids1[0] = nbasins_dimid;
+      retval = nc_def_var(_LOADING_ncid, "basin_fullname", NC_STRING, ndims1, dimids1, &varid_bsim2);       HandleNetCDFErrors(retval);
+      tmp ="Name of sub-basins with simulated mass loadings";
+      tmp2="timeseries_id";
+      tmp3="1";
+      retval = nc_put_att_text(_LOADING_ncid, varid_bsim2, "long_name",  tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
+      retval = nc_put_att_text(_LOADING_ncid, varid_bsim2, "cf_role"  , tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
+      retval = nc_put_att_text(_LOADING_ncid, varid_bsim2, "units"    , tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
+
+      // (e) create 2D loading arrays [nbasins x ntime]
       string units=kgd;
       if(_type==TRACER) { units="m3/s"; }
 
@@ -1210,7 +1230,7 @@ void CConstituentModel::WriteNetCDFOutputFileHeaders(const optStruct& Options)
     // write values to NetCDF
     if(nSim > 0)
     {
-      WriteNetCDFBasinList(_LOADING_ncid,varid_bsim,_pModel,false,Options);
+      WriteNetCDFBasinList(_LOADING_ncid,varid_bsim,varid_bsim2,_pModel,false,Options);
     }
   }
 #endif
