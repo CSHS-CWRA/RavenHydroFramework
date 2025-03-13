@@ -152,8 +152,11 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
   for(int pp=_nSubBasins-1; pp>=0; pp--)//downstream to upstream
   {
     p=GetOrderedSubBasinIndex(pp);
-    pdown = GetSubBasinByID(_pSubBasins[p]->GetDownstreamID())->GetGlobalIndex();
 
+    pdown=DOESNT_EXIST;
+    if (_pSubBasins[p]->GetDownstreamID()!=DOESNT_EXIST){
+      pdown = GetSubBasinByID(_pSubBasins[p]->GetDownstreamID())->GetGlobalIndex();
+    }
     bool ObsExists=false; //observation available in THIS basin
     // observations in this basin, determine scaling variables based upon blank/not blank
     //----------------------------------------------------------------
@@ -228,7 +231,11 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
   for(int pp=0;pp<_nSubBasins; pp++)//upstream to downstream
   {
     p=GetOrderedSubBasinIndex(pp);
-    pdown = GetSubBasinByID(_pSubBasins[p]->GetDownstreamID())->GetGlobalIndex();
+
+    pdown=DOESNT_EXIST;
+    if (_pSubBasins[p]->GetDownstreamID()!=DOESNT_EXIST){
+      pdown = GetSubBasinByID(_pSubBasins[p]->GetDownstreamID())->GetGlobalIndex();
+    }
     if (_aDAoverride[p]) {
       _aDADrainSum[p]=_pSubBasins[p]->GetDrainageArea();
     }
