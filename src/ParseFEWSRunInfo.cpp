@@ -280,6 +280,22 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
       delete[] boolean;
     }
 
+    // AssimilateReservoirStage
+    retval = nc_inq_attlen(ncid,varid_props,"AssimilateReservoirStage",&att_len);
+    if(retval != NC_ENOTATT)
+    {
+      HandleNetCDFErrors(retval);
+      char* boolean = new char[att_len + 1];
+      retval = nc_get_att_text(ncid,varid_props,"AssimilateReservoirStage",boolean);       HandleNetCDFErrors(retval);// read attribute text
+      boolean[att_len] = '\0';// add string determining character
+
+      Options.assimilate_stage = (!strcmp(boolean,"true"));
+
+      if(Options.noisy) { cout << "ParseRunInfoFile: read properties:AssimilateReservoirStage from NetCDF: " << (!strcmp(boolean,"true"))  << endl; }
+      delete[] boolean;
+    }
+
+
     // Other attributes with info embedded in attribute name
     int nAttributes;
     char att_name[NC_MAX_NAME];
