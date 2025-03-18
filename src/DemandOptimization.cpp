@@ -11,7 +11,7 @@
 
 void SummarizeExpression(const char **s, const int Len, expressionStruct* exp); //defined in DemandExpressionHandling.cpp
 string DVTypeToString(dv_type t);
-string TermTypeToString(termtype t);
+string expTypeToString(termtype &t);
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the Demand optimization constructor
@@ -880,7 +880,7 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
     expressionTerm* term=new expressionTerm();
     if (ConvertToExpressionTerm(_pNonLinVars[i]->target, term, 0, "internal")) { 
       _pNonLinVars[i]->DV_index=term->DV_ind-1; //using 0 indexing for dv rateher than lp 1 indexing
-      //cout<<" NONLINEAR TARGET FOUND : "<<term->DV_ind-1<<" "<<term->origexp<<" "<<TermTypeToString(term->type)<<endl;
+      //cout<<" NONLINEAR TARGET FOUND : "<<term->DV_ind-1<<" "<<term->origexp<<" "<<expTypeToString(term->type)<<endl;
     }
     else {
       string warn="ManagementOptimization:Initialize cannot convert target '"+_pNonLinVars[i]->target+"' of non-linear variable to decision variable";
@@ -2092,7 +2092,8 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
         if (fabs(_aSolverResiduals[j])>REAL_SMALL)
         cout<<"   -"<<_aSolverRowNames[j] << " " << _aSolverResiduals[j] << endl;
       }
-
+      
+      //lp_lib::print_debugdump(pLinProg, dumpfile.c_str()); 
       WriteLPSubMatrix(pLinProg,"overconstrained_lp_matrix.csv",Options);
       ExitGracefully("SolveManagementProblem: non-optimal solution found. Problem is over-constrained. Remove or adjust management constraints.",RUNTIME_ERR);
     }

@@ -1,3 +1,11 @@
+/*----------------------------------------------------------------
+  Raven Library Source Code
+  Copyright (c) 2008-2025 the Raven Development Team
+  ----------------------------------------------------------------
+  enum termtype
+  expressionTerm struct
+  expressionStruct structure
+  ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "TimeSeries.h"
 #include "LookupTable.h"
@@ -11,6 +19,7 @@ enum termtype
   TERM_DV,        //< decision variable !Q123 or named
   TERM_TS,        //< time series @ts(name,n)
   TERM_LT,        //< lookup table @lookup(x)
+  TERM_DLT,       //< lookup table derivative @dlookup(x)
   TERM_HRU,       //< state variable @HRU_var(SNOW,2345)
   TERM_SB,        //< state variable @SB_var(SNOW,234)
   TERM_CONST,     //< constant

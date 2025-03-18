@@ -2059,18 +2059,18 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       if((aPC[ii]==CLASS_VEGETATION) && (aP[ii]!="RELATIVE_LAI")){
-        TEMPLATE<<":SeasonalRelativeLAI"<<endl;
+        TEMPLATE<<":SeasonalCanopyLAI"<<endl;
         TEMPLATE<<"  *VEGET_1*, *J*,*F*,*M*,*A*,*M*,*J*,*J*,*A*,*S*,*O*,*N*,*D*"<<endl;
-        TEMPLATE<<":EndSeasonalRelativeLAI"<<endl;
+        TEMPLATE<<":EndSeasonalCanopyLAI"<<endl;
         break;
       }
     }
     for(int ii=0;ii<nP;ii++)
     {
       if((aPC[ii]==CLASS_VEGETATION) && (aP[ii]!="RELATIVE_HT")){
-        TEMPLATE<<":SeasonalRelativeHeight"<<endl;
+        TEMPLATE<<":SeasonalCanopyHeight"<<endl;
         TEMPLATE<<"  *VEGET_1*, *J*,*F*,*M*,*A*,*M*,*J*,*J*,*A*,*S*,*O*,*N*,*D*"<<endl;
-        TEMPLATE<<":EndSeasonalRelativeHeight"<<endl;
+        TEMPLATE<<":EndSeasonalCanopyHeight"<<endl;
         break;
       }
     }

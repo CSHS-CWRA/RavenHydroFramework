@@ -90,17 +90,16 @@ void CModel::AssimilationOverride(const int p,const optStruct& Options,const tim
   //---------------------------------------------------------------------
   if(_aDAoverride[p])
   {
-    double Qobs,Qmod;
+    double Qobs,Qmod,Qmodlast;
     double alpha = _pGlobalParams->GetParams()->assimilation_fact;
 
     Qobs = _aDAobsQ[p];
-    //Option A: mean flow
-    //Qmod = _pSubBasins[p]->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
-    //Option B: instantaneous flow
     Qmod = _pSubBasins[p]->GetOutflowRate();
+    Qmodlast= _pSubBasins[p]->GetLastOutflowRate();
     if(Qmod>PRETTY_SMALL) {
       _aDAscale  [p]=1.0+alpha*((Qobs-Qmod)/Qmod); //if alpha = 1, Q=Qobs in observation basin
-      _aDAQadjust[p]=alpha*(Qobs-Qmod);
+      //_aDAQadjust[p]=alpha*(Qobs-Qmod);//Option A: instantaneous flow
+      _aDAQadjust[p]=alpha*(2.0*Qobs-Qmodlast-Qmod);//Option B: mean flow
     }
     else {
       _aDAscale  [p]=1.0;
@@ -166,7 +165,7 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
       {
         if(IsContinuousFlowObs2(_pObservedTS[i],_pSubBasins[p]->GetID()))//flow observation is available and linked to this subbasin
         {
-          Qobs = _pObservedTS[i]->GetSampledValue(nn); //end of timestep flow
+          Qobs = _pObservedTS[i]->GetSampledValue(nn); //mean timestep flow
 
           //bool fakeblank=((tt.model_time>30) && (tt.model_time<40)) || ((tt.model_time>45) && (tt.model_time<47));//TMP DEBUG
           //if (fakeblank){Qobs=RAV_BLANK_DATA;}

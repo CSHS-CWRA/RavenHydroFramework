@@ -279,25 +279,6 @@ int CDemandOptimizer::GetNumUserDVs() const
 //////////////////////////////////////////////////////////////////
 /// \brief enum to string routines
 //
-string TermTypeToString(termtype t)
-{
-  if (t==TERM_DV      ){return "TERM_DV"; }
-  if (t==TERM_TS      ){return "TERM_TS"; }
-  if (t==TERM_LT      ){return "TERM_LT"; }
-  if (t==TERM_HRU     ){return "TERM_HRU";}
-  if (t==TERM_SB      ){return "TERM_SB"; }
-  if (t==TERM_CONST   ){return "TERM_CONST"; }
-  if (t==TERM_WORKFLOW){return "TERM_WORKFLOW"; }
-  if (t==TERM_HISTORY ){return "TERM_HISTORY"; }
-  if (t==TERM_ITER    ){return "TERM_ITER"; }   
-  if (t==TERM_MAX     ){return "TERM_MAX"; }
-  if (t==TERM_MIN     ){return "TERM_MIN"; }
-  if (t==TERM_POW     ){return "TERM_POW"; }
-  if (t==TERM_CUMUL   ){return "TERM_CUMUL";}
-  if (t==TERM_CUMUL_TS){return "TERM_CUMUL_TS";}
-  if (t==TERM_UNKNOWN ){return "TERM_UNKNOWN"; }
-  return "TERM_UNKNOWN";
-}
 string DVTypeToString(dv_type t)
 {
   if (t==DV_QOUT    ){return "DV_QOUT";     }
@@ -321,6 +302,7 @@ string expTypeToString(termtype &typ){
     case(TERM_DV):      return "TERM_DV"; break;
     case(TERM_TS):      return "TERM_TS"; break;
     case(TERM_LT):      return "TERM_LT"; break;
+    case(TERM_DLT):     return "TERM_DLT"; break;
     case(TERM_CONST):   return "TERM_CONST"; break;
     case(TERM_HRU):     return "TERM_HRU"; break;
     case(TERM_SB):      return "TERM_SB"; break;
@@ -333,7 +315,7 @@ string expTypeToString(termtype &typ){
     case(TERM_CUMUL):   return "TERM_CUMUL"; break;
     case(TERM_UNKNOWN): return "TERM_UNKNOWN"; break;
   }
-  return "?";
+  return "TERM_UNKNOWN";
 }
 //////////////////////////////////////////////////////////////////
 /// \brief parses individual expression string and converts to expression term structure
@@ -644,6 +626,43 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
       }
     }
   }
+  //----------------------------------------------------------------------
+  else if (s.substr(0, 9) == "@dlookup(")//derivative of lookup table (e.g., @dlookup(my_table,EXPRESSION))
+  {
+    string name;
+    string x_in;
+    size_t is = s.find("@dlookup(");
+    size_t ie = s.find(",",is);
+    size_t ip = s.find_last_of(")");
+    if (ie == NPOS) {
+      warn="ConvertToExpressionTerm: missing comma in @dlookup expression"+warnstring;
+      ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+    }
+    if (ip == NPOS) {
+      warn="ConvertToExpressionTerm: missing end parentheses in @dlookup expression"+warnstring;
+      ExitGracefully(warn.c_str(), BAD_DATA_WARN);
+    }
+    if ((is != NPOS) && (ie != NPOS))
+    {
+      bool found=false;
+      name = s.substr(is+9,ie-(is+9));
+      x_in = s.substr(ie+1,ip-(ie+1));
+      term->pLT=NULL;
+      for (int i = 0; i < _nUserLookupTables; i++) {
+        if (StringToUppercase(_pUserLookupTables[i]->GetName()) == StringToUppercase(name)) {
+          term->pLT = _pUserLookupTables[i];
+          found=true;
+        }
+      }
+      term->nested_exp1 =x_in;
+      term->type        =TERM_DLT;
+      if (!found) {
+        warn="ConvertToExpression: unrecognized lookup table name in @dlookup command"+warnstring;
+        ExitGracefully(warn.c_str(), BAD_DATA_WARN);
+        return false;
+      }
+    }
+  }
  //----------------------------------------------------------------------
  else if (s.substr(0, 9) == "@HRU_var(") // HRU state var (e.g., @HRU_var(SNOW,[id])
   {
@@ -922,7 +941,7 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
       if (!valid){return NULL; }
 
       //TMP DEBUG
-      //cout<<"   TERM["<<k<<" in "<< j << "]: " << s[i] << " : type = " << TermTypeToString(terms[j][k]->type) << " index : " << terms[j][k]->DV_ind << endl;
+      //cout<<"   TERM["<<k<<" in "<< j << "]: " << s[i] << " : type = " << expTypeToString(terms[j][k]->type) << " index : " << terms[j][k]->DV_ind << endl;
 
       if ((i>rhs_ind)      && (k==0)){terms[j][k]->mult*=-1.0; } //only multiply leading term by -1 to move to LHS
       if ((s[i-1][0]=='-') && (k==0)){terms[j][k]->mult*=-1.0; } //and reverse if preceded with minus sign
@@ -1492,6 +1511,12 @@ double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const
     x=EvaluateTerm(pTerms,kk,t);
     return pT->pLT->GetValue(x); //decision variable can't be in lookup table
   }
+  else if (pT->type == TERM_DLT)
+  {
+    kk=pT->nested_ind1;
+    x=EvaluateTerm(pTerms,kk,t);
+    return pT->pLT->GetSlope(x); //decision variable can't be in lookup table
+  }
   else if (pT->type == TERM_HRU)
   {
     int i=pT->SV_index;
@@ -1533,7 +1558,7 @@ double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const
     else if (tmp=='h'){return _ahhist[_aSBIndices[p]][nshift]; }
     else if (tmp=='D'){return _aDhist[_aSBIndices[p]][nshift]; }
     else if (tmp=='I'){return _aIhist[_aSBIndices[p]][nshift]; }
-    else if (tmp=='B'){return _pModel->GetSubBasin(p)->GetSpecifiedInflow(t+pT->timeshift*1.0); } //ASSUMES DAILY TIMESTEP!
+    else if (tmp=='B'){return _pModel->GetSubBasin(p)->GetSpecifiedInflow(t+pT->timeshift*1.0); } //ASSUMES DAILY TIMESTEP! \todo[funct] should be Options.timestep
     else if (tmp=='E'){return _pModel->GetSubBasin(p)->GetEnviroMinFlow  (t+pT->timeshift*1.0); } //ASSUMES DAILY TIMESTEP!
     else {
       ExitGracefully("CDemandOptimizer::EvaluateTerm: Invalid history variable ",BAD_DATA);
