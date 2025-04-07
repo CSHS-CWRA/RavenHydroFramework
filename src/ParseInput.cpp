@@ -327,7 +327,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.assimilate_flow         =false;
   Options.assimilate_stage        =false;
   Options.assim_method            =DA_RAVEN_DEFAULT;
-  Options.assimilation_start      =-1.0; //start before simulation 
+  Options.assimilation_start      =-1.0; //start before simulation
   Options.time_zone               =0;
   Options.rvl_read_frequency      =0.0; //do not read at all
   Options.custom_interval         =1.0; //daily

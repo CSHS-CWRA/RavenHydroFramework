@@ -78,9 +78,9 @@ struct decision_var
 struct nonlin_var
 {
   string name;      //< name of nonlinear variable !Qxxx or !UserVar
-  string target;    //< decision variable name Qxxx or UserVar 
-  double guess_val; //< current guess of value 
-  int    DV_index;  //index of linear decision variable (0:_nDecisionVars-1) corresponding to nonlinear variable 
+  string target;    //< decision variable name Qxxx or UserVar
+  double guess_val; //< current guess of value
+  int    DV_index;  //index of linear decision variable (0:_nDecisionVars-1) corresponding to nonlinear variable
 
   nonlin_var(string nam, string targ) {
     name=nam; target=targ; DV_index=DOESNT_EXIST; guess_val=0.0;
@@ -142,7 +142,7 @@ struct managementGoal
   string            name;          //< goal or constraint name
 
   bool              is_goal;       //< true if constraint is soft (goal rather than constraint)
-  bool              is_nonlinear;  //< current expression has non-linear terms 
+  bool              is_nonlinear;  //< current expression has non-linear terms
   int               priority;      //< priority (default==1, for goals only)
   double            penalty_under; //< DEFAULT penalty if under specified value (for goals only)
   double            penalty_over;  //< DEFAULT penalty if over value (for goals only)
@@ -204,9 +204,9 @@ private: /*------------------------------------------------------*/
   int              _nWorkflowVars;      //< total number of workflow variables considered
   workflowVar    **_pWorkflowVars;      //< array of pointers to workflow variables [size: _nWorkflowVars]
 
-  int              _nNonLinVars;        //> total number of non-linear variables (e.g., ?Q130) 
-  nonlin_var     **_pNonLinVars;        //> array of pointers to non-linear variable pairs  
-  int              _maxIterations;      //> maximum iterations in iterative scheme (default:5) 
+  int              _nNonLinVars;        //> total number of non-linear variables (e.g., ?Q130)
+  nonlin_var     **_pNonLinVars;        //> array of pointers to non-linear variable pairs
+  int              _maxIterations;      //> maximum iterations in iterative scheme (default:5)
   double           _iterTolerance;      //> iterative solve tolerance (%)
   double           _relaxCoeff;         //> iterative solve relaxation coefficient (default:1.0=no relaxation)
 
@@ -323,7 +323,7 @@ public: /*------------------------------------------------------*/
   void   SetRelaxationCoeff    (const double relax);
 
   void   AddGoalOrConstraint   (const managementGoal *pGoal);
-  
+
   void   AddUserDecisionVar    (const decision_var *pDV);
   void   SetUserDecisionVarBounds(const string name, const double &min, const double &max);
   void   AddUserConstant       (const string name, const double &val);

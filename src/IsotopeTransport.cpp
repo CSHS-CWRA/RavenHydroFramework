@@ -7,7 +7,7 @@ CIsotopeModel routines related to isotope transport
 Raven transports is in terms of mass concentration, mg/L or mg/mm/m2 (as is is for all species)
 this is assumed to be equivalent to mass concentrations e.g., mg18O/(mgO); units conversions are IMPLICIT
 and is internally converted to composition for advection corrections used to represent enrichment
-Raven reports these concentrations as compositions in the standard output 
+Raven reports these concentrations as compositions in the standard output
 ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "IsotopeTransport.h"
