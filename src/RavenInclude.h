@@ -389,7 +389,7 @@ enum flux_method
 //
 enum routing_method
 {
-  ROUTE_NONE,            ///< No routing to be simulated
+  ROUTE_NONE,            ///< No in-channel routing to be simulated
   ROUTE_PLUG_FLOW,       ///< Plug flow routing - no dissipation of wave travelling at reach celerity
   ROUTE_MUSKINGUM,       ///< standard Muskingum algorithm
   ROUTE_MUSKINGUM_CUNGE, ///< Muskingum-Cunge algorithm
@@ -1347,8 +1347,9 @@ void        JulianConvert(               double      model_time,
                                                      time_struct &tt);
 string      DecDaysToHours(        const double      dec_date,
                                    const bool        truncate=false);
-double      InterpolateMo(         const double      aVal[12],
-                                   const time_struct &tt,
+double      InterpolateMo(         const double          aVal[12],
+                                   const time_struct    &tt,
+                                   const monthly_interp &method,
                                    const optStruct   &Options);
 time_struct DateStringToTimeStruct(const string      sDate,
                                          string      sTime,

@@ -470,6 +470,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":AssimilationStartTime"     )){code=92; }
     else if  (!strcmp(s[0],":AssimilateStreamflow"      )){code=93; }
     else if  (!strcmp(s[0],":AssimilateReservoirStage"  )){code=94; }
+    else if  (!strcmp(s[0],":AssimilationMethod"        )){code=95; }
     else if  (!strcmp(s[0],":TimeZone"                  )){code=97; }
     else if  (!strcmp(s[0],":Alias"                     )){code=98; }
     else if  (!strcmp(s[0],":CustomOutput"              )){code=99; }

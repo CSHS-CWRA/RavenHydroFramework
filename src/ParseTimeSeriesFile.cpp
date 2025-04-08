@@ -1520,7 +1520,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks are only allowed when NetCDF library is available!",BAD_DATA);
 #endif
       ExitGracefullyIf(pGrid==NULL, "ParseTimeSeriesFile: :ForcingType command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
-      ExitGracefullyIf(grid_initialized,"ParseTimeSeriesFile: :ForcingType command must be before :GaugeWeights command",BAD_DATA);
+      ExitGracefullyIf(grid_initialized,"ParseTimeSeriesFile: :ForcingType command must be before :GridWeights command",BAD_DATA);
 
       pGrid->SetForcingType(GetForcingTypeFromString(s[1]));
 
@@ -1533,7 +1533,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks are only allowed when NetCDF library is available!",BAD_DATA);
 #else
       ExitGracefullyIf(pGrid==NULL,     "ParseTimeSeriesFile: :FileNameNC command must be within a :GriddedForcings or :StationForcing block",BAD_DATA);
-      ExitGracefullyIf(grid_initialized,"ParseTimeSeriesFile: :FileNameNC command must be before :GaugeWeights command",BAD_DATA);
+      ExitGracefullyIf(grid_initialized,"ParseTimeSeriesFile: :FileNameNC command must be before :GridWeights command",BAD_DATA);
 
       string filename=s[1];
       filename =CorrectForRelativePath(filename ,Options.rvt_filename);
@@ -1561,7 +1561,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks are only allowed when NetCDF library is available!",BAD_DATA);
 #endif
       ExitGracefullyIf(pGrid==NULL,     "ParseTimeSeriesFile: :VarNameNC command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
-      ExitGracefullyIf(grid_initialized,"ParseTimeSeriesFile: :VarNameNC command must be before :GaugeWeights command",BAD_DATA);
+      ExitGracefullyIf(grid_initialized,"ParseTimeSeriesFile: :VarNameNC command must be before :GridWeights command",BAD_DATA);
       pGrid->SetVarname(s[1]);
       break;
     }
@@ -1572,7 +1572,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks are only allowed when NetCDF library is available!",BAD_DATA);
 #endif
       ExitGracefullyIf(pGrid==NULL,      "ParseTimeSeriesFile: :DimNamesNC command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
-      ExitGracefullyIf(grid_initialized, "ParseTimeSeriesFile: :DimNamesNC command must be before :GaugeWeights command",BAD_DATA);
+      ExitGracefullyIf(grid_initialized, "ParseTimeSeriesFile: :DimNamesNC command must be before :GridWeights command",BAD_DATA);
       string tmp[3];
       tmp[0] = s[1];
       tmp[1] = s[2];
@@ -1659,11 +1659,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
             pHRU=NULL;
             pHRU = pModel->GetHRUByID(atoll(s[0]));
             if (pHRU == NULL) {
-              printf("\n\n");
-              printf("Wrong HRU ID in :GridWeights: HRU_ID = %s\n",s[0]);
-              ExitGracefully("ParseTimeSeriesFile: HRU ID found in :GridWeights which does not exist in :HRUs!",BAD_DATA);
+              string warn="ParseTimeSeriesFile: HRU ID ("+to_string(s[0])+")found in :GridWeights which does not exist in :HRUs!";
+              ExitGracefully(warn.c_str(), BAD_DATA);
             }
-            pGrid->SetWeightVal(pHRU->GetGlobalIndex(),atoi(s[1]),atof(s[2]));
+            pGrid->SetWeightVal(pHRU->GetGlobalIndex(),atoi(s[1]),fast_s_to_d(s[2]));
           }
           else {
             ExitGracefully("ParseTimeSeriesFile: :NumberHRUs must be given in :GridWeights block",BAD_DATA);
@@ -1675,10 +1674,14 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       bool WeightArrayOK = pGrid->CheckWeightArray(nHydroUnits,nGridCells,pModel);
       ExitGracefullyIf(!WeightArrayOK,
                        "ParseTimeSeriesFile: Check of weights for gridded forcing failed. Sum of gridweights for ALL enabled HRUs must be 1.0.",BAD_DATA);
-
+      bool *disabledHRUs=new bool[nHydroUnits];
+      for (int k = 0; k < nHydroUnits; k++) {
+        disabledHRUs[k]=(!pModel->GetHydroUnit(k)->IsEnabled());
+      }
       // store (sorted) grid cell ids with non-zero weight in array
-      pGrid->SetIdxNonZeroGridCells(nHydroUnits,nGridCells,Options);
+      pGrid->SetIdxNonZeroGridCells(nHydroUnits,nGridCells,disabledHRUs,Options);
       pGrid->CalculateChunkSize(Options);
+      delete [] disabledHRUs;
       break;
     }
 
@@ -1716,7 +1719,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Options.noisy){cout <<"   :LinearTransform"<<endl;}
       ExitGracefullyIf(pGrid==NULL,     "ParseTimeSeriesFile: :LinearTransform command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
       ExitGracefullyIf(Len!=3,          "ParseTimeSeriesFile: :LinearTransform expects exactly two arguments",BAD_DATA);
-      ExitGracefullyIf(grid_initialized,"ParseTimeSeriesFile: :LinearTransform command must be before :GaugeWeights command",BAD_DATA);
+      ExitGracefullyIf(grid_initialized,"ParseTimeSeriesFile: :LinearTransform command must be before :GridWeights command",BAD_DATA);
 
       double LinTrans_a=atof(s[1]);
       double LinTrans_b=atof(s[2]);
@@ -1727,7 +1730,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     {/*:PeriodEndingNC  */
       if (Options.noisy){cout <<"   :PeriodEnding"<<endl;}
       ExitGracefullyIf(pGrid==NULL     ,"ParseTimeSeriesFile: :PeriodEnding command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
-      ExitGracefullyIf(grid_initialized,"ParseTimeSeriesFile: :PeriodEndingNC command must be before :GaugeWeights command",BAD_DATA);
+      ExitGracefullyIf(grid_initialized,"ParseTimeSeriesFile: :PeriodEndingNC command must be before :GridWeights command",BAD_DATA);
       pGrid->SetAsPeriodEnding();
       break;
     }
@@ -1850,8 +1853,13 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         "ParseTimeSeriesFile: Check of weights for gridded forcing failed. Sum of gridweights for ALL enabled HRUs must be 1.0.",BAD_DATA);
 
       // store (sorted) grid cell ids with non-zero weight in array
-      pGrid->SetIdxNonZeroGridCells(nHydroUnits,nGridCells,Options);
+      bool *disabledHRUs=new bool[nHydroUnits];
+      for (int k = 0; k < nHydroUnits; k++) {
+        disabledHRUs[k]=(!pModel->GetHydroUnit(k)->IsEnabled());
+      }
+      pGrid->SetIdxNonZeroGridCells(nHydroUnits,nGridCells,disabledHRUs,Options);
       pGrid->CalculateChunkSize(Options);
+      delete [] disabledHRUs;
       break;
 
     }
@@ -1864,7 +1872,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
      :EndStationElevations
      # where station IDs consistent with StationIDNameNC
      */
-      ExitGracefullyIf(!grid_initialized,"ParseTimeSeriesFile: :StationElevations command must be after :GaugeWeights command",BAD_DATA);
+      ExitGracefullyIf(!grid_initialized,"ParseTimeSeriesFile: :StationElevations command must be after :GridWeights command",BAD_DATA);
       ExitGracefullyIf(pGrid==NULL,
         "ParseTimeSeriesFile: :StationElevations command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
 
@@ -1897,7 +1905,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
      :EndStationElevationsByIdx
      # where station indices are same as nc file order
      */
-      ExitGracefullyIf(!grid_initialized,"ParseTimeSeriesFile: :StationElevationsByIdx command must be after :GaugeWeights command",BAD_DATA);
+      ExitGracefullyIf(!grid_initialized,"ParseTimeSeriesFile: :StationElevationsByIdx command must be after :GridWeights command",BAD_DATA);
       ExitGracefullyIf(pGrid==NULL,
         "ParseTimeSeriesFile: :StationElevations command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
 
@@ -1995,9 +2003,13 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
                        "ParseTimeSeriesFile: Check of weights for gridded forcing in :MapToStations command failed. Sum of gridweights for ALL enabled HRUs must be 1.0.",BAD_DATA);
 
       // store (sorted) station ids with non-zero weight in array
-      pGrid->SetIdxNonZeroGridCells(pModel->GetNumHRUs(),nStations,Options);
+      bool *disabledHRUs=new bool[nStations];
+      for (int k = 0; k < nStations; k++) {
+        disabledHRUs[k]=false;
+      }
+      pGrid->SetIdxNonZeroGridCells(pModel->GetNumHRUs(),nStations,disabledHRUs,Options);
       pGrid->CalculateChunkSize(Options);
-
+      delete [] disabledHRUs;
       delete [] StatIDs;
       delete [] junk;
       break;

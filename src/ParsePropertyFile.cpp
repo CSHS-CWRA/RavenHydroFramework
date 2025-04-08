@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Properties.h"
@@ -464,9 +464,10 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
                            (!string(s[0]).compare("GLACIER")) ||
                            (!string(s[0]).compare("PAVEMENT")) ||
                            (!string(s[0]).compare("WATER")) ||
+                           (!string(s[0]).compare("WETLAND")) ||
                            (!string(s[0]).compare("ROCK")));
           ExitGracefullyIf((nhoriz==0) && (!is_special),
-                           "ParseClassPropertiesFile:  only special soil profiles (LAKE,WATER,GLACIER,PAVEMENT, or ROCK) can have zero horizons",BAD_DATA);
+                           "ParseClassPropertiesFile:  only special soil profiles (LAKE,WATER,GLACIER,PAVEMENT,WETLAND, or ROCK) can have zero horizons",BAD_DATA);
 
           for (int m=0;m<nhoriz;m++)
           {
@@ -1883,6 +1884,10 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
   for (int ii=0;ii<nP;ii++)
   {
     repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
+    if (aP[ii]=="TOC_MULTIPLIER"         ) { repeat = true; }/*dont include these in .rvp*/
+    if (aP[ii]=="GAMMA_SHAPE_MULTIPLIER" ) { repeat = true; }
+    if (aP[ii]=="GAMMA_SCALE_MULTIPLIER" ) { repeat = true; }
+    if (aP[ii]=="TIME_TO_PEAK_MULTIPLIER") { repeat = true; }
     if ((aPC[ii]==CLASS_GLOBAL) && (!repeat)){
       TEMPLATE<<":GlobalParameter "<<std::setw (sp+5) <<aP[ii]<<std::setw (1) <<" ** "<<endl;
     }
@@ -2012,7 +2017,8 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_VEGETATION) && (!repeat) && (aP[ii]!="MAX_LAI")&& (aP[ii]!="RELATIVE_LAI")&& (aP[ii]!="RELATIVE_HT")){
+      if ((aP[ii]=="MAX_LAI") || (aP[ii]=="RELATIVE_LAI")||  (aP[ii]=="RELATIVE_HT")){repeat=true;}
+      if ((aPC[ii]==CLASS_VEGETATION) && (!repeat)){
         TEMPLATE<<std::setw(sp) <<aP[ii]<<std::setw(1)<<", ";
       }
     }
@@ -2021,7 +2027,8 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_VEGETATION) && (!repeat) && (aP[ii]!="MAX_LAI") && (aP[ii]!="RELATIVE_LAI")&& (aP[ii]!="RELATIVE_HT")){
+      if ((aP[ii]=="MAX_LAI") || (aP[ii]=="RELATIVE_LAI")||  (aP[ii]=="RELATIVE_HT")){repeat=true;}
+      if ((aPC[ii]==CLASS_VEGETATION) && (!repeat)){
         TEMPLATE<<std::setw(sp) <<"-"<<std::setw(1)<<", ";
       }
     }
@@ -2030,7 +2037,8 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_VEGETATION) && (!repeat) && (aP[ii]!="MAX_LAI") && (aP[ii]!="RELATIVE_LAI")&& (aP[ii]!="RELATIVE_HT")){
+      if ((aP[ii]=="MAX_LAI") || (aP[ii]=="RELATIVE_LAI")||  (aP[ii]=="RELATIVE_HT")){repeat=true;}
+      if ((aPC[ii]==CLASS_VEGETATION) && (!repeat)){
         TEMPLATE<<std::setw(sp) <<"**"<<std::setw(1)<<", ";
       }
     }
@@ -2039,7 +2047,8 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_VEGETATION) && (!repeat) && (aP[ii]!="MAX_LAI") && (aP[ii]!="RELATIVE_LAI")&& (aP[ii]!="RELATIVE_HT")){
+      if ((aP[ii]=="MAX_LAI") || (aP[ii]=="RELATIVE_LAI")||  (aP[ii]=="RELATIVE_HT")){repeat=true;}
+      if ((aPC[ii]==CLASS_VEGETATION) && (!repeat)){
         TEMPLATE<<std::setw(sp) <<"**"<<std::setw(1)<<", ";
       }
     }
@@ -2048,7 +2057,8 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_VEGETATION) && (!repeat) && (aP[ii]!="MAX_LAI") && (aP[ii]!="RELATIVE_LAI")&& (aP[ii]!="RELATIVE_HT")){
+      if ((aP[ii]=="MAX_LAI") || (aP[ii]=="RELATIVE_LAI")||  (aP[ii]=="RELATIVE_HT")){repeat=true;}
+      if ((aPC[ii]==CLASS_VEGETATION) && (!repeat)){
         TEMPLATE<<std::setw(sp) <<"**"<<std::setw(1)<<", ";
       }
     }

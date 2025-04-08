@@ -812,7 +812,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long lon
   }
 
   // ANNUALCYCLE FORMAT ==========================================================
-  if(!strcmp(s[0],":AnnualCycle"))
+  if ((!strcmp(s[0],":AnnualCycle")) || (!strcmp(s[0],":AnnualCycleStep")))
   {
     if(Len<13){ ExitGracefully("CTimeSeries::Parse: incorrect format of AnnualCycle command",BAD_DATA); return NULL; }
     double *aVal;
@@ -821,9 +821,13 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long lon
     time_struct tt;
     double aMonVal[12];
     for(int i=0;i<12;i++){ aMonVal[i]=s_to_d(s[i+1]); }
+    
+    monthly_interp interp_method=Options.month_interp;
+    if (!strcmp(s[0],":AnnualCycleStep")){interp_method=MONTHINT_UNIFORM;}
+
     for(int n=0;n<nVals;n++){
       JulianConvert(double(n),Options.julian_start_day,Options.julian_start_year-1,Options.calendar,tt);
-      aVal[n]=InterpolateMo(aMonVal,tt,Options);
+      aVal[n]=InterpolateMo(aMonVal,tt,interp_method,Options);
     }
     pTimeSeries=new CTimeSeries(name,loc_ID,p->GetFilename(),Options.julian_start_day,Options.julian_start_year-1,1.0,aVal,nVals,is_pulse);
     delete[] aVal; aVal =NULL;

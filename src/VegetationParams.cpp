@@ -99,11 +99,11 @@ void CVegetationClass::RecalculateCanopyParams (      veg_var_struct    &VV,
 
   //Vegetation Height
   //------------------------------------------------------------
-  VV.height=max_height*InterpolateMo(pHRU->GetVegetationProps()->relative_ht,tt,Options);
+  VV.height=max_height*InterpolateMo(pHRU->GetVegetationProps()->relative_ht,tt,Options.month_interp,Options);
 
   //LAI/SAI
   //------------------------------------------------------------
-  VV.LAI=(1.0-sparseness)*max_LAI*InterpolateMo(pHRU->GetVegetationProps()->relative_LAI,tt,Options);// \ref From Brook90 CANOPY Routine \cite Federer2010
+  VV.LAI=(1.0-sparseness)*max_LAI*InterpolateMo(pHRU->GetVegetationProps()->relative_LAI,tt,Options.month_interp,Options);// \ref From Brook90 CANOPY Routine \cite Federer2010
   VV.SAI=(1.0-sparseness)*(VV.height*SAI_ht_ratio);/// \ref From Brook90 CANOPY Routine
 
   //LAI /SAI snow corrections From Brook90 CANOPY Routine

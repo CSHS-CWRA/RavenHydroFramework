@@ -1137,12 +1137,12 @@ void CReservoir::SetDZTRModel(const double Qmc,const double Smax,
 //
 double CReservoir::GetDZTROutflow(const double &V, const double &Qin, const time_struct &tt, const optStruct &Options) const
 {
-  double Vci=InterpolateMo(_pDZTR->Vci,tt,Options);
-  double Vni=InterpolateMo(_pDZTR->Vni,tt,Options);
-  double Vmi=InterpolateMo(_pDZTR->Vmi,tt,Options);
-  double Qci=InterpolateMo(_pDZTR->Qci,tt,Options);
-  double Qni=InterpolateMo(_pDZTR->Qni,tt,Options);
-  double Qmi=InterpolateMo(_pDZTR->Qmi,tt,Options);
+  double Vci=InterpolateMo(_pDZTR->Vci,tt,Options.month_interp,Options);
+  double Vni=InterpolateMo(_pDZTR->Vni,tt,Options.month_interp,Options);
+  double Vmi=InterpolateMo(_pDZTR->Vmi,tt,Options.month_interp,Options);
+  double Qci=InterpolateMo(_pDZTR->Qci,tt,Options.month_interp,Options);
+  double Qni=InterpolateMo(_pDZTR->Qni,tt,Options.month_interp,Options);
+  double Qmi=InterpolateMo(_pDZTR->Qmi,tt,Options.month_interp,Options);
   double Vmin=0.1*_pDZTR->Vmax;
   double Qmc=_pDZTR->Qmc;
   double tstep=Options.timestep*SEC_PER_DAY;

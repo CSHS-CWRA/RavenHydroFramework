@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef FORCINGGRID_H
 #define FORCINGGRID_H
@@ -188,7 +188,9 @@ public:/*------------------------------------------------------*/
   void         SetAsPeriodEnding           ();                                      ///< set _period_ending
   void         SetIs3D(                    const bool   is3D);                      ///< set _is3D                      of class
   void         SetIdxNonZeroGridCells(     const int    nHydroUnits,
-                                           const int    nGridCells, const optStruct &Options);
+                                           const int    nGridCells, 
+                                           const bool  *disabledHRUs,
+                                           const optStruct &Options);
                                                                                     ///< set _IdxNonZeroGridCells       of class
   void         CalculateChunkSize         (const optStruct &Options);
 

@@ -856,11 +856,12 @@ string GetCurrentMachineTime(void)
 ///
 /// \param aVal     [in] Array of doubles representing monthly data
 /// \param &tt      [in] Time structure which specifies interpolation
-/// \param &Options [in] Global model options information
+/// \param &method [in] Interpolation method
 /// \return Interpolated value at time denoted by &tt
 double InterpolateMo(const double       aVal[12],
                      const time_struct &tt,
-                     const optStruct   &Options)
+                     const monthly_interp &method,
+                     const optStruct &Options)
 {
   double wt;
   int leap(0),mo,nextmo;
@@ -870,11 +871,11 @@ double InterpolateMo(const double       aVal[12],
   month  =tt.month;
   year   =tt.year;
 
-  if      (Options.month_interp==MONTHINT_UNIFORM)//uniform over month
+  if      (method==MONTHINT_UNIFORM)//uniform over month
   {
     return aVal[month-1];
   }
-  else if (Options.month_interp==MONTHINT_LINEAR_FOM)//linear from first of month
+  else if (method==MONTHINT_LINEAR_FOM)//linear from first of month
   {
     mo=month-1;
     nextmo=mo+1;
@@ -883,13 +884,13 @@ double InterpolateMo(const double       aVal[12],
     wt=1.0-(double)(day)/(DAYS_PER_MONTH[mo]+leap);
     return wt*aVal[mo]+(1-wt)*aVal[nextmo];
   }
-  else if ((Options.month_interp==MONTHINT_LINEAR_21) ||
-           (Options.month_interp==MONTHINT_LINEAR_MID))
+  else if ((method==MONTHINT_LINEAR_21) ||
+           (method==MONTHINT_LINEAR_MID))
     //linear from 21st of month to 21st of next month (e.g., UBC_WM) or other day
   {
     double pivot=0.0;
-    if      (Options.month_interp==MONTHINT_LINEAR_21){pivot=21;}
-    else if (Options.month_interp==MONTHINT_LINEAR_MID){
+    if      (method==MONTHINT_LINEAR_21){pivot=21;}
+    else if (method==MONTHINT_LINEAR_MID){
       pivot=0.5*DAYS_PER_MONTH[month-1];
       if ((IsLeapYear(year,Options.calendar)) && (month==2)){pivot+=0.5;}
     }

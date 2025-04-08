@@ -609,6 +609,10 @@ void MassEnergyBalance( CModel            *pModel,
       }
     }
   }//end for pp...
+
+  pModel->AssimilationBackPropagate(Options,tt); //modifies flows using upstream propagation, if needed
+
+
   delete [] res_Qstruct;
 
 

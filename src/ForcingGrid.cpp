@@ -1232,7 +1232,7 @@ void CForcingGrid::SetGridDims(const int GridDims[3])
 /// \param nHydroUnits number of HRUs
 /// \param nGridCells number of grid cells
 //
-void CForcingGrid::SetIdxNonZeroGridCells(const int nHydroUnits, const int nGridCells, const optStruct &Options)
+void CForcingGrid::SetIdxNonZeroGridCells(const int nHydroUnits, const int nGridCells, const bool  *disabledHRUs,const optStruct &Options)
 {
   int row, col;
   int minrow=_GridDims[1];
@@ -1249,7 +1249,7 @@ void CForcingGrid::SetIdxNonZeroGridCells(const int nHydroUnits, const int nGrid
   if (_GridWeight != NULL){
     for(int k=0; k<nHydroUnits; k++) {  // loop over HRUs
       for(int i=0; i<_nWeights[k]; i++) { // loop over all cells of NetCDF
-        if(_GridWeight[k][i] > 0.00001) {
+        if ((_GridWeight[k][i] > 0.00001) && (!disabledHRUs[k])){ // AND HRU not disabled!!!
           nonzero[_GridWtCellIDs[k][i]] = true;
           CellIdxToRowCol(_GridWtCellIDs[k][i],row,col);
           if(row>maxrow) { maxrow=row; }

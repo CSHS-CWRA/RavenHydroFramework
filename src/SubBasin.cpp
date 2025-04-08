@@ -1434,7 +1434,8 @@ double CSubBasin::AdjustAllFlows(const double &adjust, const bool overriding, co
   if(!overriding)
   {
     for(int n=0;n<_nQinHist; n++) {
-      _aQinHist[n]+=adjust; upperswap(_aQinHist[n],0.0);
+      _aQinHist[n]+=adjust*(_drainage_area-_basin_area)/_drainage_area; 
+      upperswap(_aQinHist[n],0.0);
       va+=adjust*tstep*SEC_PER_DAY;
     }
     for(int i=0;i<_nSegments;i++) {
@@ -1442,8 +1443,7 @@ double CSubBasin::AdjustAllFlows(const double &adjust, const bool overriding, co
       va+=adjust*tstep*SEC_PER_DAY;
     }
   }
-
-  if((overriding) && (_pReservoir==NULL)) {
+  else if((overriding) && (_pReservoir==NULL)) {
     for (int i=0;i<_nSegments;i++)
     {
       _aQout[i]+=adjust;  upperswap(_aQout[i],0.0);

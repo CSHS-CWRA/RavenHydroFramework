@@ -67,8 +67,8 @@ double CRadiation::EstimateShortwaveRadiation(CModel* pModel,
     ET_rad_flat=ET_rad;
     double orient=1.0-fabs(pHRU->GetAspect()/PI-1.0);        //=0 for north, 1.0 for south
     if(pHRU->GetLatRad()<0.0) { orient=1.0-orient; }//southern hemisphere phase shift
-    double shortwave_corr_S = InterpolateMo(pModel->GetGlobalParams()->GetParams()->UBC_s_corr, tt, *Options);
-    double shortwave_corr_N = InterpolateMo(pModel->GetGlobalParams()->GetParams()->UBC_n_corr, tt, *Options);
+    double shortwave_corr_S = InterpolateMo(pModel->GetGlobalParams()->GetParams()->UBC_s_corr, tt,Options->month_interp, *Options);
+    double shortwave_corr_N = InterpolateMo(pModel->GetGlobalParams()->GetParams()->UBC_n_corr, tt,Options->month_interp, *Options);
     double shortwave_corr=((orient)* shortwave_corr_S + (1.0-orient)*shortwave_corr_N);
     ET_rad*=shortwave_corr;
     return solar_rad * shortwave_corr;

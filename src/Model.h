@@ -544,6 +544,8 @@ public:/*-------------------------------------------------------*/
   void         AssimilationOverride      (const int p,
                                           const optStruct &Options, const time_struct &tt);
   void         PrepareAssimilation       (const optStruct &Options, const time_struct &tt);
+  void         AssimilationBackPropagate (const optStruct &Options, const time_struct &tt);
+
   void         PrepareForcingPerturbation(const optStruct &Options, const time_struct &tt);
   void         ApplyForcingPerturbation  (const forcing_type f, force_struct &F, const int k, const optStruct& Options, const time_struct& tt);
 

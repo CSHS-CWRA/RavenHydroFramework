@@ -607,17 +607,26 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
   //--------------------------------------------------------------
   if (Options.assimilate_flow){
     ofstream ASSIM;
-    tmpFilename=FilenamePrepare("AssimilationAdjustments.csv",Options);
+    tmpFilename=FilenamePrepare("AssimilationAdjustments_BySubbasin.csv",Options);
     ASSIM.open(tmpFilename.c_str());
     if (ASSIM.fail()){
       ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
     }
-    ASSIM<<"time,date,hour";
+    ASSIM<<"time,date";
+    
     for (int p = 0; p < _nSubBasins; p++) {
       if((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->IsEnabled())){
-        ASSIM<<","<<_pSubBasins[p]->GetName()<<" "; 
+        ASSIM<<","<<_pSubBasins[p]->GetID()<<" "; 
       }
     }
+    ASSIM<<endl;
+    for (int p = 0; p < _nSubBasins; p++) {
+      if((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->IsEnabled())){
+        ASSIM<<", "; 
+      }
+    }
+    ASSIM<<endl;
+    ASSIM.close();
   }
 
   // Custom output files
@@ -1216,7 +1225,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
     //----------------------------------------------------------------
     if ((Options.write_forcings) && (Options.output_format==OUTPUT_STANDARD))
     {
-      if((Options.period_starting) && (t==0)){}//don't write anything at time zero
+      if(t==0){}//don't write anything at time zero
       else{
         force_struct *pFave;
         force_struct faveStruct = GetAverageForcings();
@@ -1310,10 +1319,10 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
     //--------------------------------------------------------------
     if (Options.assimilate_flow){
       ofstream ASSIM;
-      tmpFilename=FilenamePrepare("AssimilationAdjustments.csv",Options);
+      tmpFilename=FilenamePrepare("AssimilationAdjustments_BySubbasin.csv",Options);
       ASSIM.open(tmpFilename.c_str(),ios::app);
 
-      ASSIM<<usetime<<","<<usedate<<","<<usehour<<",";
+      ASSIM<<usetime<<","<<usedate;
       for (int p = 0; p < _nSubBasins; p++) {
         if((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->IsEnabled())){
           if (Options.assim_method==DA_ECCC){ASSIM<<","<<_aDAQadjust[p]<<" ";}

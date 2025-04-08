@@ -810,12 +810,15 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
 
       if (Options.noisy){cout<<"Override Stage Discharge Curve"<<endl; }
       CSubBasin *pSB=pModel->GetSubBasinByID(s_to_ll(s[1]));
-
-      ExitGracefullyIf(pSB->GetGlobalIndex()==DOESNT_EXIST,"ParseManagementFile: subbasin ID in :OverrideStageDischargeCurve is invalid",BAD_DATA_WARN);
-
+      if (pSB == NULL) {
+        ExitGracefullyIf(pSB==NULL,"ParseManagementFile: subbasin ID in :OverrideStageDischargeCurve is invalid",BAD_DATA_WARN);
+        break;
+      }
+      
       if (pSB->GetReservoir()==NULL){
         string advice="ParseManagementFile:The reservoir in subbasin "+to_string(pSB->GetID()) + " doesnt exist and stage discharge curve cannot be overridden.";
         ExitGracefully(advice.c_str(), BAD_DATA_WARN);
+        break;
       }
       else{
         pDO->OverrideSDCurve(pSB->GetGlobalIndex());
@@ -1045,7 +1048,8 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           pModel->GetManagementOptimizer()->AddWaterDemand(pDemand);
         }
         else {
-           ExitGracefully("Invalid subbasin ID in :WaterDemand command header.",BAD_DATA_WARN);
+          string warn="Invalid subbasin ID ("+to_string(demandSBID)+") in :WaterDemand command for demand "+to_string(s[3]);
+           ExitGracefully(warn.c_str(), BAD_DATA_WARN);
            break;
         }
       }

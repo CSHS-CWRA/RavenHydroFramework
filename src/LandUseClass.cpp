@@ -481,7 +481,6 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
   else if (!name.compare("DEP_MAX"                )){S.dep_max =value;}
   else if (!name.compare("DEP_MAX_FLOW"           )){S.dep_max_flow =value;}
   else if (!name.compare("DEP_N"                  )){S.dep_n =value;}
-  else if (!name.compare("DEP_THRESHHOLD"         )){S.dep_threshold =value;}/*old typo-backward compat*/
   else if (!name.compare("DEP_THRESHOLD"          )){S.dep_threshold =value;}
   else if (!name.compare("DEP_CRESTRATIO"         )){S.dep_crestratio =value;}
   else if (!name.compare("PDMROF_B"               )){S.PDMROF_b =value; }
@@ -588,7 +587,6 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("DEP_MAX"                )){return S.dep_max ;}
   else if (!name.compare("DEP_MAX_FLOW"           )){return S.dep_max_flow;}
   else if (!name.compare("DEP_N"                  )){return S.dep_n;}
-  else if (!name.compare("DEP_THRESHHOLD"         )){return S.dep_threshold;}/*old typo*/
   else if (!name.compare("DEP_THRESHOLD"          )){return S.dep_threshold;}
   else if (!name.compare("DEP_K"                  )){return S.dep_k;}
   else if (!name.compare("DEP_SEEP_K"             )){return S.dep_seep_k;}
