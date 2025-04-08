@@ -79,7 +79,7 @@ CDemandOptimizer::CDemandOptimizer(CModel *pMod)
 
   _nNonLinVars=0;
   _pNonLinVars=NULL;
-  _maxIterations=5;   
+  _maxIterations=5;
   _iterTolerance=0.01;
   _relaxCoeff=1.0;
 }
@@ -230,7 +230,7 @@ void   CDemandOptimizer::SetMaxIterations      (const int Nmax    )
 
 //////////////////////////////////////////////////////////////////
 /// \brief sets nonlinear solver tolerance
-/// \params tol [in] - tolerance, as ratio dX/X 
+/// \params tol [in] - tolerance, as ratio dX/X
 //
 void   CDemandOptimizer::SetSolverTolerance    (const double tol  )
 {
@@ -354,7 +354,7 @@ void CDemandOptimizer::AddUserDecisionVar(const decision_var* pDV)
 //////////////////////////////////////////////////////////////////
 /// \brief disables stage discharge curve handling for reservoir in subbasin p
 //
-void CDemandOptimizer::OverrideSDCurve(const int p) 
+void CDemandOptimizer::OverrideSDCurve(const int p)
 {
   _aDisableSDCurve[p]=true;
  }
@@ -401,7 +401,7 @@ void CDemandOptimizer::AddUserConstant(const string name, const double& val)
 //////////////////////////////////////////////////////////////////
 /// \brief adds nonlinearvariable
 //
-void CDemandOptimizer::AddNonLinVariable(const string name, const string targetDV) 
+void CDemandOptimizer::AddNonLinVariable(const string name, const string targetDV)
 {
   if (name[0]!='?'){
     ExitGracefully("CDemandOptimizer::AddNonLinVariable: non-linear variable must start with ? character",BAD_DATA_WARN);
@@ -472,7 +472,7 @@ bool CDemandOptimizer::VariableNameExists(const string &name) const
   for (int i = 0; i < _nUserConstants; i++) {
     if (_aUserConstNames[i]==name){return true;}
   }
-  
+
   if (GetUnitConversion(name)!=RAV_BLANK_DATA){return true;}
 
   return false;
@@ -878,7 +878,7 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
   //------------------------------------------------------------------
   for (int i = 0; i < _nNonLinVars; i++) {
     expressionTerm* term=new expressionTerm();
-    if (ConvertToExpressionTerm(_pNonLinVars[i]->target, term, 0, "internal")) { 
+    if (ConvertToExpressionTerm(_pNonLinVars[i]->target, term, 0, "internal")) {
       _pNonLinVars[i]->DV_index=term->DV_ind-1; //using 0 indexing for dv rateher than lp 1 indexing
       //cout<<" NONLINEAR TARGET FOUND : "<<term->DV_ind-1<<" "<<term->origexp<<" "<<expTypeToString(term->type)<<endl;
     }
@@ -959,7 +959,7 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
       cout<<"    "<<i<<" [WORKFLOWVAR]: "<<_pWorkflowVars[i]->name<<endl;
       for (int k=0; k<_pWorkflowVars[i]->nOperRegimes; k++)
       {
-        
+
         cout<<"      +oper regime: "<<_pWorkflowVars[i]->pOperRegimes[k]->reg_name<<endl;
         cout<<"        +expression: "<<_pWorkflowVars[i]->pOperRegimes[k]->pExpression->origexp<<endl;
         comparison ctype=_pWorkflowVars[i]->pOperRegimes[k]->pExpression->compare;
@@ -1368,12 +1368,12 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
 
   int    *col_ind=new int    [_nDecisionVars]; //index of column to insert value in current row (1:nDV, not zero-indexed)
   double *row_val=new double [_nDecisionVars]; //values of row[col_ind]
-  double *dDV    =new double [_nDecisionVars]; //change in decision variables between iterations 
+  double *dDV    =new double [_nDecisionVars]; //change in decision variables between iterations
   double *h_iter =new double [_pModel->GetNumSubBasins()]; //value of stage from previous iteration for all reservoirs
-  double *Q_iter =new double [_pModel->GetNumSubBasins()]; //value of reservoir outflows from previous iteration for all reservoirs 
+  double *Q_iter =new double [_pModel->GetNumSubBasins()]; //value of reservoir outflows from previous iteration for all reservoirs
   int    *lprow  =new int    [_pModel->GetNumSubBasins()]; //index of goal equation for non-linear reservoir stage discharge curve in subbasin p
   int    *lpsbrow=new int    [_pModel->GetNumSubBasins()]; //index of constraint equation for subbasin reaches
-  int  *lpgoalrow=new int    [_nGoals];                    //index of goal equation for all user-specified goals 
+  int  *lpgoalrow=new int    [_nGoals];                    //index of goal equation for all user-specified goals
 
   // instantiate linear programming solver
   // ----------------------------------------------------------------
@@ -1715,7 +1715,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
       retval = lp_lib::add_constraintex(pLinProg,i,row_val,col_ind,ROWTYPE_EQ,RHS);
       ExitGracefullyIf(retval==0,"SolveManagementProblem::Error adding mass balance constraint",RUNTIME_ERR);
       IncrementAndSetRowName(pLinProg,rowcount,"reach_MB_"+to_string(pSB->GetID()));
-        
+
       lpsbrow[p]=lp_lib::get_Nrows(pLinProg);
     }
   }
@@ -2022,7 +2022,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
   int nInfeasibleIters=0;
   int iter=0;
   double norm;
-  do 
+  do
   {
     if (_do_debug_level==2)//EXTREME OUTPUT!!
     {
@@ -2092,8 +2092,8 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
         if (fabs(_aSolverResiduals[j])>REAL_SMALL)
         cout<<"   -"<<_aSolverRowNames[j] << " " << _aSolverResiduals[j] << endl;
       }
-      
-      //lp_lib::print_debugdump(pLinProg, dumpfile.c_str()); 
+
+      //lp_lib::print_debugdump(pLinProg, dumpfile.c_str());
       WriteLPSubMatrix(pLinProg,"overconstrained_lp_matrix.csv",Options);
       ExitGracefully("SolveManagementProblem: non-optimal solution found. Problem is over-constrained. Remove or adjust management constraints.",RUNTIME_ERR);
     }
@@ -2120,7 +2120,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
     double val;
     for (int i=0;i<_nDecisionVars;i++)
     {
-      if ((typ == DV_STAGE) || (typ == DV_QOUT)) { 
+      if ((typ == DV_STAGE) || (typ == DV_QOUT)) {
         val=_pDecisionVars[i]->value;
         if (val==0){val=1.0;}
         norm+=dDV[i]*dDV[i]/val/val; N++;
@@ -2130,7 +2130,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
       int i=_pNonLinVars[j]->DV_index;
       val=_pDecisionVars[i]->value;
       if (val==0){val=1.0;}
-      norm+=dDV[i]*dDV[i]/val/val; N++; 
+      norm+=dDV[i]*dDV[i]/val/val; N++;
     }
     norm=sqrt(norm)/N;
 

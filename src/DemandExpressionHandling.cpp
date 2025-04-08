@@ -227,9 +227,9 @@ int CDemandOptimizer::GetUserDVIndex(const string s) const
 //////////////////////////////////////////////////////////////////
 /// \brief index of non-linear variable given guess string
 /// \params s [in] - string   (in format ?Q130, ?Q.RavenRiver, ?UserDV)
-/// \returns index of non-linear variable in _aNonLinNames[] array 
+/// \returns index of non-linear variable in _aNonLinNames[] array
 //
-int CDemandOptimizer::GetNLIndexFromGuessString(const string& s) const 
+int CDemandOptimizer::GetNLIndexFromGuessString(const string& s) const
 {
   for (int i = 0; i < _nNonLinVars; i++) {
     if (_pNonLinVars[i]->name==s){return i;}
@@ -1028,13 +1028,13 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
   return tmp;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Parses :Condition within management goal or workflow variable definition 
+/// \brief Parses :Condition within management goal or workflow variable definition
 /// \param s        [in] - array of strings of [size: Len]
 /// \param Len      [in] - length of string array
 /// \param lineno   [in] - line number of original expression in input file filename, referenced in errors
 /// \param filename [in] - name of input file, referenced in errors
 /// \returns exp_condition: a pointer to an expression condition variable
-/// 
+///
 /// \todo[funct]: Would it be better to support @date(), @between, @day_of_year() in general expression??
 /// :Condition !Q32[0] < 300 + @ts(myTs,0)
 /// :Condition DATE IS_BETWEEN 1975-01-02 2010-01-02
@@ -1048,13 +1048,13 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
 /// :Condition DAY_OF_YEAR IS_BETWEEN Apr-1 Aug-1 //\todo [NOT YET SUPPORTED]
 /// :Condition @is_between(DAY_OF_YEAR,300,20) = 1  // \todo [NOT YET SUPPORTED]
 //
-exp_condition* CDemandOptimizer::ParseCondition(const char** s, const int Len, const int lineno, const string filename) const 
+exp_condition* CDemandOptimizer::ParseCondition(const char** s, const int Len, const int lineno, const string filename) const
 {
   bool badcond=false;
   exp_condition *pCond = new exp_condition();
   pCond->dv_name=s[1];
   const optStruct *Options=_pModel->GetOptStruct();
-  
+
   bool is_exp=false;
   for (int i = 2; i < Len; i++) {
     if ((s[i][0]=='+') || (s[i][0]=='-') || (s[i][0]=='*') || (s[i][0]=='/') || (s[i][0]=='=') || (s[i][0]=='<') || (s[i][0]=='>')){
@@ -1091,7 +1091,7 @@ exp_condition* CDemandOptimizer::ParseCondition(const char** s, const int Len, c
       char   tmp =pCond->dv_name[1];
       string tmp2=pCond->dv_name.substr(2);
       char code=pCond->dv_name[1];
-      if ((code=='Q') || (code=='h') || (code=='I')) //subbasin state decision variable 
+      if ((code=='Q') || (code=='h') || (code=='I')) //subbasin state decision variable
       {
         long long SBID=s_to_ll(tmp2.c_str());
         if (_pModel->GetSubBasinByID(SBID) == NULL) {
@@ -1218,7 +1218,7 @@ bool CDemandOptimizer::CheckOpRegimeConditions(const op_regime *pOperRegime, con
       }
       else {//handle user specified DVs and workflow variables
         int i=GetUserDVIndex(pCond->dv_name);
-        if (i != DOESNT_EXIST) //decision variable 
+        if (i != DOESNT_EXIST) //decision variable
         {
           dv_value =_pDecisionVars[i]->value;
         }
@@ -1399,7 +1399,7 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, const int kk, lp_lib::lpr
     ExitGracefullyIf(retval==0,"AddConstraintToLP::Error updating user-specified constraint/goal",RUNTIME_ERR);
     retval = lp_lib::set_rh(pLinProg,lpgoalrow,RHS);
   }
-  
+
 }
 #endif
 
@@ -1535,7 +1535,7 @@ double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const
   }
   else if (pT->type == TERM_ITER)
   {
-    return _pNonLinVars[pT->DV_ind]->guess_val;//treated as if constant 
+    return _pNonLinVars[pT->DV_ind]->guess_val;//treated as if constant
   }
   else if (pT->type == TERM_WORKFLOW)
   {

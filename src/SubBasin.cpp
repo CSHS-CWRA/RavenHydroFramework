@@ -1377,7 +1377,7 @@ void CSubBasin::SetUnusableFlowPercentage(const double &val)
 /// \param &scale [in] Flow scaling factor
 /// \param &overriding [in] True if Qlast should be scaled (overriding); false for no-data scaling
 /// \param &tstep [in] time step [d]
-/// \param &t [in] - current model time 
+/// \param &t [in] - current model time
 /// \return volume added to system [m3]
 //
 double CSubBasin::ScaleAllFlows(const double &scale, const bool overriding, const double &tstep, const double &t)
@@ -1426,7 +1426,7 @@ double CSubBasin::ScaleAllFlows(const double &scale, const bool overriding, cons
 /// \param &overriding [in] True if Qlast should be scaled (overriding); false for no-data scaling
 /// \param &tstep [in] time step [d]
 /// \return volume added to system [m3]
-/// 
+///
 double CSubBasin::AdjustAllFlows(const double &adjust, const bool overriding, const double &tstep, const double &t)
 {
   double va=0.0; //volume added [m3]
