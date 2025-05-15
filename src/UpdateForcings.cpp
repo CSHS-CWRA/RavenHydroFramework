@@ -516,7 +516,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
             F.precip_5day    += wt*gauge_corr*Fg[g].precip_5day;
           }
         }
-		else {
+		    else {
           // Gauge-less precip and snowfall correction
           gauge_corr         = (F.snow_frac * sc) + ((1.0-F.snow_frac)*rc);
           F.precip           = gauge_corr * _pHydroUnits[k]->GetForcingFunctions()->precip;
@@ -542,6 +542,13 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       ApplyForcingPerturbation(F_PRECIP  , F, k, Options, tt);
       ApplyForcingPerturbation(F_RAINFALL, F, k, Options, tt);
       ApplyForcingPerturbation(F_SNOWFALL, F, k, Options, tt);
+
+      //-------------------------------------------------------------------
+      //  Recharge Corrections
+      //-------------------------------------------------------------------
+      double rhc;
+      rhc=_pSubBasins[p]->GetRechargeCorrection();
+      F.recharge*=rhc;
 
       //-------------------------------------------------------------------
       //  Wind Velocity
@@ -1052,7 +1059,7 @@ double CModel::EstimateSnowFraction(const rainsnow_method method,
 	}
 	//-----------------------------------------------------------
 	else if (method == RAINSNOW_THRESHOLD)
-	{ //abrupt threshold temperature (e.g., HYMOD)
+	{ //abrupt threshold temperature (e.g., HYMOD; CLASS when IPCP==1)
 	  double temp = this->_pGlobalParams->GetParams()->rainsnow_temp;
 	  if (F->temp_ave <= temp) { return 1.0; }
 	  else                     { return 0.0; }
@@ -1148,6 +1155,18 @@ double CModel::EstimateSnowFraction(const rainsnow_method method,
     else if (Ta>2.0){return 0.6;}
     else if (Ta>0.5){return 1.0-(0.4/1.5)*(Ta-0.5); }
     else            {return 1.0;}
+  }
+  else if (method == RAINSNOW_CLASS) 
+  {
+    //from ECCC's CLASSI code IPCP==3
+    double Ta=F->temp_ave;
+
+    if      (Ta>6.0){return 0.0;}
+    else if (Ta<0.0){return 1.0;}
+    else if (Ta>0.5){
+      double frac=0.000202*pow(Ta,6)-0.003660*pow(Ta,5)+0.020399*pow(Ta,4)-0.015089*pow(Ta,3)-0.15038*pow(Ta,2)+0.046664*Ta+1.0;
+      return min(max(frac,0.0),1.0);
+    }
   }
   return 0.0;
   //Should check/add:

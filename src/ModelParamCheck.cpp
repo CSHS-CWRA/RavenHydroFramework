@@ -422,7 +422,7 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
     aP[nP]="RAINSNOW_TEMP";  aPC[nP]=CLASS_GLOBAL; nP++;
     aP[nP]="RAINSNOW_DELTA"; aPC[nP]=CLASS_GLOBAL; nP++;
   }
-  else if(Options.rainsnow==RAINSNOW_HARDER) {
+  else if ((Options.rainsnow==RAINSNOW_HARDER) || (Options.rainsnow==RAINSNOW_CLASS)) {
 
   }
   else if ((Options.rainsnow==RAINSNOW_WANG) || (Options.rainsnow==RAINSNOW_SNTHERM89)) {

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef SUBBASIN_H
 #define SUBBASIN_H
@@ -89,11 +89,12 @@ private:/*------------------------------------------------------*/
   double          _diffusivity;   ///< channel diffusivity (specified or calculated, if =AUTO_COMPUTE) [m2/s]
 
   //Other params
-  double            _rain_corr;   ///< correction factor for rainfall [-]
-  double            _snow_corr;   ///< correction factor for snowfall [-]
-  double            _temperature_corr;   ///< correction factor (additive) for temperature [-]
+  double            _rain_corr;        ///< correction factor for rainfall [-]
+  double            _snow_corr;        ///< correction factor for snowfall [-]
+  double            _recharge_corr;    ///< correction factor for recharge [-]
+  double            _temperature_corr; ///< correction factor (additive) for temperature [-]
 
-  int               _nSegments;   ///< Number of river segments used in routing(>=1)
+  int               _nSegments;        ///< Number of river segments used in routing( >=1)
 
   //Reservoir
   CReservoir      *_pReservoir;   ///< Reservoir object (or NULL, if no reservoir)
@@ -200,6 +201,7 @@ public:/*-------------------------------------------------------*/
   bool                 IsHeadwater          () const;
   double               GetRainCorrection    () const;
   double               GetSnowCorrection    () const;
+  double               GetRechargeCorrection() const;
   double               GetTemperatureCorrection () const;
   int                  GetReachHRUIndex     () const;
   double               GetRiverDepth        () const;

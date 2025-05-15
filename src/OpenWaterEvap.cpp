@@ -31,7 +31,7 @@ CmvOWEvaporation::CmvOWEvaporation(owevap_type owtype,
   else { //Default
     CHydroProcessABC::DynamicSpecifyConnections(2);//nConnections=2
     iFrom[0]=i_from;                          iTo[0]=pModel->GetStateVarIndex(ATMOSPHERE);    //rates[0]: PONDED_WATER/DEPRESSION->ATMOSPHERE
-    iFrom[1]=pModel->GetStateVarIndex(AET);   iTo[1]=iFrom[1];                                  //rates[1]: AET->AET
+    iFrom[1]=pModel->GetStateVarIndex(AET);   iTo[1]=iFrom[1];                                //rates[1]: AET->AET
   }
 }
 
@@ -95,9 +95,9 @@ void CmvOWEvaporation::GetParticipatingStateVarList(owevap_type owtype, sv_type 
   if(owtype==OPEN_WATER_UWFS)
   {
     nSV=3;
-    aSV[0] = ATMOSPHERE;      aLev[0]=DOESNT_EXIST;
-    aSV[1] = AET;             aLev[1]=DOESNT_EXIST;
-    aSV[2]=MIN_DEP_DEFICIT;   aLev[2]=DOESNT_EXIST;
+    aSV[0]=ATMOSPHERE;      aLev[0]=DOESNT_EXIST;
+    aSV[1]=AET;             aLev[1]=DOESNT_EXIST;
+    aSV[2]=MIN_DEP_DEFICIT; aLev[2]=DOESNT_EXIST;
   }
 }
 

@@ -113,6 +113,8 @@ private:/*------------------------------------------------------*/
   void   ReadAttGridFromNetCDF (const int ncid,const string varname,const int nrows,const int ncols,double *&values);
   void   ReadAttGridFromNetCDF2(const int ncid,const string varname,const int nrows,const int ncols,string *values);
 
+  void   Deaccumulate ();
+
 public:/*------------------------------------------------------*/
   //Constructors:
 
@@ -226,7 +228,6 @@ public:/*------------------------------------------------------*/
   int          GetChunkSize()                                     const; ///< Current chunk size
   int          GetnHydroUnits()                                   const; ///< get number of HRUs _nHydroUnits
   forcing_type GetForcingType()                                   const; ///< Type of forcing data, e.g. PRECIP, TEMP
-  bool         ShouldDeaccumulate()                               const; ///< true if data must be deaccumulated
   double       GetSnowfallCorr()                                  const; ///< snowfall correction factor
   double       GetRainfallCorr()                                  const; ///< rainfall correction factor
   double       GetTemperatureCorr()                               const; ///< temperature correction factor

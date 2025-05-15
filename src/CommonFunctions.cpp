@@ -935,13 +935,13 @@ double GetSaturatedVaporPressure(const double &T)//[C]
   const double A3=237.3;
   const double A4=21.87456;
   const double A5=265.5;
-
+                     
   //0.61115*exp(22.452*T/(T+ZERO_CELSIUS)); //MESH
 
   //0.611*exp(17.27*Ta/(Ta+237.3)); //Common simplification of Dingman for T>0
 
   if (T>=0){return A1*exp(A2*T/(T+A3));}  // Dingman/Brook90 version (Tetens equation, 1930)
-  else     {return A1*exp(A4*T/(T+A5));}
+  else     {return A1*exp(A4*T/(T+A5));}  // same as in CLASSI
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1626,8 +1626,9 @@ double IncompleteGamma(const double &x, const double &a)
   //cumulative distribution
   /// \ref from http://algolist.manual.ru/maths/count_fast/gamma_function.php
   const int N=100;
-  if (x<=0){return 0.0;}
-  double num=1;
+  if (x<=0  ){return 0.0;}
+  if (x> 50 ){return IncompleteGamma(49.9,a);}
+  double num=1.0;
   double sum=0.0;
   double prod=1.0;
   for (int n=0;n<N;n++){

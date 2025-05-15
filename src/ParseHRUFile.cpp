@@ -708,6 +708,10 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
               WriteWarning(":SBGroupPropertyMultiplier: invalid subbasin property (" + to_string(s[2]) + ") specified", Options.noisy);
             }
           }
+          else {
+            string warn=":SBGroupPropertyMultiplier: because subbasin property (" + to_string(s[2]) + ") set to be computed by Raven (rather than user-supplied in :SubBasinProperties command), it cannot be adjusted with the multiplier.";
+            WriteWarning(warn.c_str(), Options.noisy);
+          }
         }
       }
       else {

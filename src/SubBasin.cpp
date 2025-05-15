@@ -60,13 +60,14 @@ CSubBasin::CSubBasin( const long long      Identifier,
   _t_conc            =AUTO_COMPUTE;
   _t_peak            =AUTO_COMPUTE;
   _t_lag             =AUTO_COMPUTE;
-  _gamma_shape       =3.0;
-  _gamma_scale       =1.0;
+  _gamma_shape       =AUTO_COMPUTE;
+  _gamma_scale       =AUTO_COMPUTE;
   _reservoir_constant=AUTO_COMPUTE;
   _num_reservoirs    =1;
 
   _rain_corr         =1.0;
   _snow_corr         =1.0;
+  _recharge_corr     =1.0;
   _temperature_corr = 0.0;
   _unusable_flow_pct =0.0;
 
@@ -261,6 +262,13 @@ double            CSubBasin::GetRainCorrection         () const {return _rain_co
 /// \return snowfall correction factor for basin
 //
 double            CSubBasin::GetSnowCorrection         () const{ return _snow_corr;     }
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns recharge correction factor for basin
+/// \return recharge correction factor for basin
+//
+double            CSubBasin::GetRechargeCorrection     () const {return _recharge_corr;     }
+
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns temperature correction factor for basin
@@ -1130,6 +1138,7 @@ bool CSubBasin::SetBasinProperties(const string label,
 
   else if (!label_n.compare("RAIN_CORR"     ))  {_rain_corr=value;}
   else if (!label_n.compare("SNOW_CORR"     ))  {_snow_corr=value;}
+  else if (!label_n.compare("RECHARGE_CORR" ))  {_recharge_corr=value;}
   else if (!label_n.compare("TEMP_CORR"     ))  {_temperature_corr=value; }
 
   else if (!label_n.compare("REACH_HRU_ID"  ))  { _reach_HRUindex=(int)(value); }
@@ -1183,6 +1192,7 @@ double CSubBasin::GetBasinProperties(const string label) const
 
   else if (!label_n.compare("RAIN_CORR"     ))  { return _rain_corr;}
   else if (!label_n.compare("SNOW_CORR"     ))  { return _snow_corr;}
+  else if (!label_n.compare("RECHARGE_CORR" ))  { return _recharge_corr;}
   else if (!label_n.compare("TEMP_CORR"     ))  { return _temperature_corr; }
 
   else if (!label_n.compare("REACH_HRU_ID"  ))  { return (double)(_reach_HRUindex); }
@@ -1191,14 +1201,27 @@ double CSubBasin::GetBasinProperties(const string label) const
   else if (!label_n.compare("SENS_EXCH_COEFF")) { return _sens_exch_coeff; }
   else if (!label_n.compare("GW_EXCH_COEFF"))   { return _GW_exch_coeff; }
 
+  else if (!label_n.compare("RIVERBED_CONDUCTIVITY")){ return _bed_conductivity; }
+  else if (!label_n.compare("RIVERBED_THICKNESS"   )){ return _bed_thickness; }
+  else if (!label_n.compare("LAKEBED_CONDUCTIVITY")) {
+    if (_pReservoir != NULL) {return _pReservoir->GetLakebedConductivity(); } 
+    else                     {return 0.0;}
+  }
+  else if (!label_n.compare("LAKEBED_THICKNESS")) {
+    if (_pReservoir != NULL) {return _pReservoir->GetLakebedThickness(); }
+    else                     {return 1.0;}
+  }
+  else if (!label_n.compare("LAKE_CONVECT_COEFF")) {
+    if (_pReservoir != NULL) {_pReservoir->GetLakeConvectionCoeff();}
+    else                     {return 0.0;}
+  }
+
   else if (!label_n.compare("RESERVOIR_DISABLED")) { return (double)(_res_disabled); }
   else if (!label_n.compare("CORR_REACH_LENGTH"))  { return _reach_length2; }
 
   else if (!label_n.compare("RESERVOIR_CREST_WIDTH")) {
-    if(_pReservoir!=NULL) {
-      return _pReservoir->GetCrestWidth();
-    }
-    else{return 0.0;}
+    if(_pReservoir!=NULL) {return _pReservoir->GetCrestWidth();}
+    else                  {return 0.0;}
   }
   else{
     return INDEX_NOT_FOUND;//bad string
@@ -1997,7 +2020,6 @@ void CSubBasin::GenerateCatchmentHydrograph(const double    &Qlat_avg,
       t=n*tstep-_t_lag;
       _aUnitHydro[n]=GammaCumDist(t+tstep,alpha, beta)-sum;
 
-      //ExitGracefullyIf(!_finite(_aUnitHydro[n]),
       ExitGracefullyIf(_aUnitHydro[n]>ALMOST_INF,
         "GenerateCatchmentHydrograph: issues with gamma distribution. Time to peak may be too small relative to timestep",RUNTIME_ERR);
 
@@ -2039,6 +2061,12 @@ void CSubBasin::GenerateCatchmentHydrograph(const double    &Qlat_avg,
   //---------------------------------------------------------------
   sum=0.0;
   for (n=0;n<_nQlatHist;n++){sum+=_aUnitHydro[n];}
+  if (sum == 0) {
+    cout<<"shape: "<<_gamma_shape<<endl;
+    cout<<"scale: "<<_gamma_scale<<endl;
+    cout<<"area:  "<<_basin_area <<endl;
+    for (n=0;n<_nQlatHist;n++){cout<<_aUnitHydro[n]<<" "; }cout<<endl;
+  }
   ExitGracefullyIf(sum==0.0,"CSubBasin::GenerateCatchmentHydrograph: bad unit hydrograph constructed",RUNTIME_ERR);
   if(fabs(sum-1.0)>0.05){ WriteWarning("CSubBasin::GenerateCatchmentHydrograph: unit hydrograph truncated",Options.noisy); }
   for (n=0;n<_nQlatHist;n++){_aUnitHydro[n]/=sum;}

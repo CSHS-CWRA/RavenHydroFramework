@@ -256,6 +256,9 @@ int CDemandOptimizer::GetIndexFromDVString(string s) const //String in format !Q
     }
     else{
       long long  SBID=s_to_ll(s.substr(2).c_str());
+      if (SBID==0){return DOESNT_EXIST;}//if string, not number
+      int p= _pModel->GetSubBasinIndex(SBID);
+      if (p==INDEX_NOT_FOUND){return DOESNT_EXIST;}
       return _pModel->GetSubBasinIndex(SBID);
     }
   }

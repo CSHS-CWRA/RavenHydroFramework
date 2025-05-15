@@ -1147,11 +1147,12 @@ double CReservoir::GetDZTROutflow(const double &V, const double &Qin, const time
   double Qmc=_pDZTR->Qmc;
   double tstep=Options.timestep*SEC_PER_DAY;
 
-  if      (V<Vmin){return 0.0;}
-  else if (V<Vci ){return min(Qci,(V-Vmin)/tstep); }
-  else if (V<Vni ){return Qci+(Qni-Qci)*(V-Vci)/(Vni-Vci);}
-  else if (V<Vmi ){return Qni+max((Qin-Qni),(Qmi-Qni))*(V-Vni)/(Vmi-Vni); }
-  else            {return min(Qmc,max(Qmi,(V-Vmi)/tstep));}
+  if      (V<Vmin){return 0.0;}                                                  //zone 0
+  else if (V<Vci ){return min(Qmc,min(Qci,(V-Vmin)/tstep)); }                    //zone 1 
+  else if (V<Vni ){return min(Qmc,Qci+(Qni-Qci)*(V-Vci)/(Vni-Vci));}             //zone 2
+  else if (V<Vmi ){return min(Qmc,Qni+(Qmi-Qni)*(V-Vni)/(Vmi-Vni)); }            //zone 3A
+  //else if (V<Vmi ){return min(Qmc,Qni+max((Qin-Qni),(Qmi-Qni))*(V-Vni)/(Vmi-Vni)); } //zone 3B
+  else            {return min(Qmc,max(Qmi,(V-Vmi)/tstep));}                      //zone 4
 
 }
 //////////////////////////////////////////////////////////////////

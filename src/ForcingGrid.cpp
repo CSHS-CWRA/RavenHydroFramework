@@ -592,6 +592,7 @@ void CForcingGrid::ReallocateArraysInForcingGrid( )
 ///         chunk = nchunks-1 --> data[(nchunks-1)*buffersize : _nPulses]      [:][:] \\
 /// \return Returns 'true' if new chunk was read, otherwise 'false'.
 ///         Updates class variable _aVal containing current chunk of data
+///         Deaccumulates data if needed
 ///
 /// \param &Options          [in] Global model options information
 /// \param global_model_time [in] current simulation time (in days)
@@ -1002,6 +1003,9 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
         }
       }
     }
+    // Deaccumulate 
+    // -------------------------------
+    Deaccumulate();
 
     //delete dynamic arrays
     // -------------------------------
@@ -1056,7 +1060,25 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
   return new_chunk_read;
 
 }
-
+///////////////////////////////////////////////////////////////////
+/// \brief   Deaccumulates gridded forcing
+/// called from ReadData
+///
+void CForcingGrid::Deaccumulate()
+{
+  int ic,it;
+  if(_deaccumulate)
+  {
+    for(it=0; it<_ChunkSize-1; it++) {                   // loop over time points in buffer
+      for(ic=0; ic<_nNonZeroWeightedGridCells; ic++) {       // loop over non-zero grid cell indexes
+        _aVal[it][ic] = (_aVal[it+1][ic]-_aVal[it][ic])/_interval;
+      }
+    }
+    for(ic=0; ic<_nNonZeroWeightedGridCells; ic++) {       // loop over non-zero grid cell indexes
+      _aVal[_ChunkSize-1][ic] = 0.0;
+    }
+  }
+}
 ///////////////////////////////////////////////////////////////////
 /// \brief   Enables queries of time series values using model time
 /// \details Calculates _t_corr, correction to global model time, checks for overlap
@@ -2089,12 +2111,6 @@ double CForcingGrid::DailyTempCorrection(const double t) const
 {
   return -cos(2.0*PI*(t-PEAK_TEMP_HR/HR_PER_DAY));
 }
-
-///////////////////////////////////////////////////////////////////
-/// \brief  true if the variable should be deaccumulated
-/// \return true if the variable should be deaccumulated
-///
-bool CForcingGrid::ShouldDeaccumulate()      const{return _deaccumulate;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns forcing type

@@ -357,7 +357,7 @@ void CDemandOptimizer::AddUserDecisionVar(const decision_var* pDV)
 void CDemandOptimizer::OverrideSDCurve(const int p)
 {
   _aDisableSDCurve[p]=true;
- }
+}
 //////////////////////////////////////////////////////////////////
 /// \brief sets bounds for user specified decision variable
 //
@@ -1375,6 +1375,22 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
   int    *lpsbrow=new int    [_pModel->GetNumSubBasins()]; //index of constraint equation for subbasin reaches
   int  *lpgoalrow=new int    [_nGoals];                    //index of goal equation for all user-specified goals
 
+  double **aQiterHist=NULL,**ahiterHist=NULL;
+
+  aQiterHist=new double *[_pModel->GetNumSubBasins()];
+  ahiterHist=new double *[_pModel->GetNumSubBasins()];
+  ExitGracefullyIf(ahiterHist==NULL,"CDemandOptimizer::InitializePostRVMRead",OUT_OF_MEMORY);
+  for (int p=0;p<_pModel->GetNumSubBasins();p++){
+    ahiterHist[p]=NULL;
+    aQiterHist[p] = new double[_maxIterations];
+    ahiterHist[p] = new double[_maxIterations];
+    ExitGracefullyIf(ahiterHist[p]==NULL,"CDemandOptimizer::InitializePostRVMRead (2)",OUT_OF_MEMORY);
+    for (int i = 0; i < _maxIterations; i++) {
+      aQiterHist[p][i]=0.0;
+      ahiterHist[p][i]=0.0;
+    }
+  }
+
   // instantiate linear programming solver
   // ----------------------------------------------------------------
   lp_lib::lprec *pLinProg;
@@ -1807,7 +1823,6 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
 
       IncrementAndSetRowName(pLinProg,rowcount,"dh_def_"+to_string(pSB->GetID()));
 
-
       if (!_aDisableSDCurve[p])
       {
         // Second goal equation (relation between Qout and h):
@@ -1852,6 +1867,12 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
         ExitGracefullyIf(retval==0,"SolveManagementProblem::Error adding stage discharge constraint B",RUNTIME_ERR);
         IncrementAndSetRowName(pLinProg,rowcount,"reserv_Q_B"+to_string(pSB->GetID()));
 
+        //------------------------------------------------------------------------
+        //Eqn  3 :     Q^n+1 + M*(b) <= M
+        // M must be >> Q^n+1
+        // enforces Q^n+1==0 when b==1
+        //------------------------------------------------------------------------
+
         col_ind[0]=GetDVColumnInd(DV_QOUTRES,_aResIndices[p]); row_val[0]=1.0/sqrt(LARGE_NUMBER);
         col_ind[1]=GetDVColumnInd(DV_BINRES ,_aResIndices[p]); row_val[1]=+sqrt(LARGE_NUMBER);
         RHS       =+sqrt(LARGE_NUMBER);
@@ -1861,10 +1882,10 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
         IncrementAndSetRowName(pLinProg,rowcount,"reserv_Q_D"+to_string(pSB->GetID()));
 
         //------------------------------------------------------------------------
-        //Eqns 5 & 6 : Q^n+1 >= Qout_guess + dQ/dh * (h^n+1-h_guess) - M(b)
+        //Eqns 4 & 5 : Q^n+1 >= Qout_guess + dQ/dh * (h^n+1-h_guess) - M(b)
         //             Q^n+1 <= Qout_guess + dQ/dh * (h^n+1-h_guess) + M(b)
-        //             Q^n+1 - dQdh* h^n+1 + Mb >= [Qout_guess - dQ/dh * h_guess]
-        //             Q^n+1 - dQdh* h^n+1 - Mb <= [Qout_guess - dQ/dh * h_guess]
+        //             Q^n+1 - dQ/dh* h^n+1 + Mb >= [Qout_guess - dQ/dh * h_guess]
+        //             Q^n+1 - dQ/dh* h^n+1 - Mb <= [Qout_guess - dQ/dh * h_guess]
         //  dQ << M
         //------------------------------------------------------------------------
 
@@ -1889,6 +1910,8 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
         ExitGracefullyIf(retval==0,"SolveManagementProblem::Error adding stage discharge constraint F",RUNTIME_ERR);
         IncrementAndSetRowName(pLinProg,rowcount,"reserv_Q_F"+to_string(pSB->GetID()));
 
+        Q_iter[p]=Q_guess;
+        h_iter[p]=h_guess;
       }
       else /* if (aDisableSDCurve[p])*/ //keep same rows - make inert equations
       {
@@ -1904,6 +1927,9 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
         IncrementAndSetRowName(pLinProg,rowcount,"reserv_Q_E"+to_string(pSB->GetID()));
         retval = lp_lib::add_constraintex(pLinProg,1,row_val,col_ind,ROWTYPE_LE,RHS);
         IncrementAndSetRowName(pLinProg,rowcount,"reserv_Q_F"+to_string(pSB->GetID()));
+
+        Q_iter[p]=-1;
+        h_iter[p]=-1;
 
         s+=2; //to ensure EnvMin counter is working
       }
@@ -2024,11 +2050,6 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
   double norm;
   do
   {
-    if (_do_debug_level==2)//EXTREME OUTPUT!!
-    {
-      WriteLPSubMatrix(pLinProg,"lp_matrix.csv",Options);
-    }
-
     // ----------------------------------------------------------------
     // Solve the LP problem!
     // ----------------------------------------------------------------
@@ -2038,6 +2059,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
     //lp_lib::set_break_numeric_accuracy(pLinProg, 1e-6);
     //lp_lib::set_basiscrash(pLinProg, CRASH_MOSTFEASIBLE);
     //lp_lib::set_verbose(pLinProg, DETAILED); //FOR DEBUGGING - BUT THIS IS WAY WAY TOO MUCH INFO
+    //lp_lib::set_epspivot(pLinProg, 1e-9);
     retval = lp_lib::solve(pLinProg);
     if (retval!=OPTIMAL)
     {
@@ -2084,33 +2106,61 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
       cout<<"  lp_lib::solve error code: "<<retval<<" ("<<code<<")"<<endl;
       cout<<"  lp accuracy: "<<lp_lib::get_accuracy(pLinProg)<<endl;
       cout<<"  date: "<<tt.date_string << endl;
-      cout<<"  loop iteration: "<<iter<<" of "<<_maxIterations<<endl;
+      cout<<"  loop iteration: "<<iter+1<<" of "<<_maxIterations<<endl;
 
       cout<<"  Problematic Constraints? (largest residuals): "<<endl;
       for (int j=0;j<nrows;j++)
       {
         if (fabs(_aSolverResiduals[j])>REAL_SMALL)
-        cout<<"   -"<<_aSolverRowNames[j] << " " << _aSolverResiduals[j] << endl;
+        cout<<"   >"<<_aSolverRowNames[j] << " " << _aSolverResiduals[j] << endl;
       }
 
-      //lp_lib::print_debugdump(pLinProg, dumpfile.c_str());
+      cout<<" Iteration Sequence: "<<endl;
+      for (int p = 0; p < pModel->GetNumSubBasins(); p++) {
+        if (pModel->GetSubBasin(p)->GetReservoir()!=NULL){
+          long long SBID=pModel->GetSubBasin(p)->GetID();
+          ahiterHist[p][iter]=h_iter[p];
+          aQiterHist[p][iter]=Q_iter[p];
+          cout << "   >Q " << SBID << ": "; for (int i = 0; i <= iter; i++) { cout << aQiterHist[p][i] << " "; }cout << endl;
+          cout << "   >h " << SBID << ": "; for (int i = 0; i <= iter; i++) { cout << ahiterHist[p][i] << " "; }cout << endl;
+        }
+      }
+      char dump[256];
+      dump[0] = '\0';
+      strcpy(dump, dumpfile.c_str());
+      lp_lib::print_debugdump(pLinProg,dump);
       WriteLPSubMatrix(pLinProg,"overconstrained_lp_matrix.csv",Options);
+
+      lp_lib::delete_lp(pLinProg);
       ExitGracefully("SolveManagementProblem: non-optimal solution found. Problem is over-constrained. Remove or adjust management constraints.",RUNTIME_ERR);
+    }
+    if (_do_debug_level==2)//EXTREME OUTPUT!! - last valid lp
+    {
+      WriteLPSubMatrix(pLinProg,"lp_matrix.csv",Options);
     }
 
     // grab and store improved estimate of reservoir stage + flow diversion
     // ----------------------------------------------------------------
     double  value;
     dv_type typ;
+    double relax=0.0;
     for (int i=0;i<_nDecisionVars;i++)
     {
       p     = _pDecisionVars[i]->p_index;
       value = _pDecisionVars[i]->value;
       typ   = _pDecisionVars[i]->dvar_type;
 
-      if      (typ == DV_STAGE) {h_iter[p]=value;}
-      else if (typ == DV_QOUT ) {Q_iter[p]=value;}
+      if      (typ == DV_STAGE) {ahiterHist[p][iter]=h_iter[p]; h_iter[p]=(1.0-relax)*value+(relax)*h_iter[p];  }
+      else if (typ == DV_QOUT ) {aQiterHist[p][iter]=Q_iter[p]; Q_iter[p]=(1.0-relax)*value+(relax)*h_iter[p];  }
     }
+
+    /*for (int p = 0; p < pModel->GetNumSubBasins(); p++) {
+      if (pModel->GetSubBasin(p)->GetReservoir()!=NULL){
+        long long SBID=pModel->GetSubBasin(p)->GetID();
+        cout << "   >Q " << SBID << ": "; for (int i = 0; i <= iter; i++) { cout << aQiterHist[p][i] << " "; }cout << endl;
+        //break;
+      }
+    }*/
 
     // Calculate Non-linear solver residual
     // sum of squared relative changes

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef UNITTESTING_H
 #define UNITTESTING_H
@@ -25,4 +25,5 @@ void ADRCumDistTest();
 void TestGammaSampling();
 void TestWetBulbTemps();
 void TestDateStrings();
+void IncGammaLimit();
 #endif

@@ -1465,6 +1465,35 @@ void CModel::WriteMajorOutput(const time_struct &tt, string solfile, bool final)
     BAS.close();
   }
 
+  if (Options->write_basinauto){
+    ofstream BAS;
+
+    tmpFilename=CorrectForRelativePath("SubbasinProperties_Auto.rvh", Options->rvh_filename);
+    BAS.open(tmpFilename.c_str());
+    if(BAS.fail()) {
+      WriteWarning(("CModel::WriteMinorOutput: Unable to open output file "+tmpFilename+" for writing.").c_str(),Options->noisy);
+    }
+    BAS<<":SubBasinProperties"<<endl;
+    BAS<<"  :Parameters, Q_REFERENCE, TIME_CONC, TIME_TO_PEAK, GAMMA_SHAPE, GAMMA_SCALE, CELERITY, DIFFUSIVITY"<<endl;
+
+    BAS<<":EndSubBasinProperties"<<endl;
+
+    for(int pp=0;pp<_nSubBasins;pp++) 
+    {
+      BAS<<"  "<<_pSubBasins[pp]->GetID();
+      BAS<<","<<_pSubBasins[pp]->GetReferenceFlow();
+      BAS<<","<<_pSubBasins[pp]->GetBasinProperties("TIME_CONC");
+      BAS<<","<<_pSubBasins[pp]->GetBasinProperties("TIME_TO_PEAK");
+      BAS<<","<<_pSubBasins[pp]->GetBasinProperties("GAMMA_SHAPE");
+      BAS<<","<<_pSubBasins[pp]->GetBasinProperties("GAMMA_SCALE");
+      BAS<<","<<_pSubBasins[pp]->GetBasinProperties("CELERITY");
+      BAS<<","<<_pSubBasins[pp]->GetBasinProperties("DIFFUSIVITY");
+      BAS<<endl;
+    }
+    BAS.close();
+    ExitGracefully("Finished Writing subbasin property file.",SIMULATION_DONE);
+  }
+
   // rating_curves.csv
   //--------------------------------------------------------------
   if(Options->write_channels){

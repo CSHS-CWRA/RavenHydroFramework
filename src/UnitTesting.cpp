@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -35,7 +35,7 @@ void RavenUnitTesting(const optStruct &Options)
   //TestGammaSampling();
   //TestWetBulbTemps();
   //TestDateStrings();
-
+  //IncGammaLimit();
 }
 /////////////////////////////////////////////////////////////////
 /// \brief Tests DateStringToTimeStruct() function
@@ -603,4 +603,11 @@ void TestWetBulbTemps() {
   T=5; RH=0.35;
   cout<<T<<" ,"<<RH<<" "<<GetWetBulbTemperature(P,T,RH)<<endl;
   ExitGracefully("UnitTesting:: TestWetBulbTemps",SIMULATION_DONE);
+}
+void IncGammaLimit() {
+  for (int x = 0; x < 1500; x += 1) {
+    double xx=(double)(x);
+    cout<<x<<" "<<IncompleteGamma(xx,1.0)<<" "<<IncompleteGamma(xx,2.0)<<" "<<IncompleteGamma(xx,3.0)<<" "<<IncompleteGamma(xx,4.0)<<" "<<IncompleteGamma(xx,5.0)<<endl;
+  }
+  ExitGracefully("UnitTesting:: IncGammaLimit",SIMULATION_DONE);
 }
