@@ -57,24 +57,6 @@ void CModel::InitializeDataAssimilation(const optStruct &Options)
     }
   }
 
-  //Connect Lake assimilation observations
-  if(Options.assimilate_stage)
-  {
-    for(int i=0;i<_nObservedTS;i++) {
-      if((!strcmp(_pObservedTS[i]->GetName().c_str(),"RESERVOIR_STAGE")) && (_pObservedTS[i]->GetType() == CTimeSeriesABC::TS_REGULAR)) {
-        CSubBasin *pBasin=GetSubBasinByID(_pObservedTS[i]->GetLocID());
-        CReservoir *pRes=pBasin->GetReservoir();
-        if(pRes!=NULL) {
-          pRes->TurnOnAssimilation(_pObservedTS[i]);
-        }
-        else {
-          ExitGracefully("Reservoir stage observations assigned to basin without lake or reservoir. Data cannot be assimilated",BAD_DATA_WARN);
-        }
-      }
-    }
-    WriteAdvisory("Lake stage data assimilation will lead to mass balance error estimates in the WatershedStorage output file. This is a natural side effect of assimilation.",Options.noisy);
-  }
-
 }
 /////////////////////////////////////////////////////////////////
 /// \brief Overrides flows with observations at gauges and propagates adjustments upstream of gauges 
@@ -99,9 +81,7 @@ void CModel::AssimilationOverride(const int p,const optStruct& Options,const tim
     Qmodlast= _pSubBasins[p]->GetLastOutflowRate();
     if(Qmod>PRETTY_SMALL) {
       _aDAscale  [p]=1.0+alpha*((Qobs-Qmod)/Qmod); //if alpha = 1, Q=Qobs in observation basin
-      //_aDAQadjust[p]=alpha*(Qobs-Qmod);//Option A: instantaneous flow (should set second argument to AdjustAllFlows() to true)
       _aDAQadjust[p]=0.5*alpha*(2.0*Qobs-Qmodlast-Qmod);//Option B: mean flow
-      //_aDAQadjust[p]=1.0;//TMP DEBUG - TESTING
     }
     else {
       _aDAscale  [p]=1.0;

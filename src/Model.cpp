@@ -5,6 +5,8 @@
 #include "Model.h"
 #include "EnergyTransport.h"
 
+bool IsContinuousFlowObs(const CTimeSeriesABC *pObs,long long SBID);
+
 /*****************************************************************
    Constructor/Destructor
 ------------------------------------------------------------------
@@ -336,9 +338,28 @@ int    CModel::GetNumObservedTS() const { return _nObservedTS; }
 /// \param i [in] index of observation time series
 /// \return pointer to observation time series i
 //
-const CTimeSeriesABC *CModel::GetObservedTS(const int i) const {
+const CTimeSeriesABC *CModel::GetObservedTS(const int i) const 
+{
   return _pObservedTS[i];
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Returns observed flow in basin p at time step n
+/// \param p [in] subbasin index
+/// \param n [in] time step index
+/// \return  observed flow in basin p at time step n, or RAV_BLANK_DATA if no observation available
+/// \todo[optimize] - this call could be slow with lots of observations
+//
+double CModel::GetObservedFlow(const int p, const int n) const 
+{
+  long long SBID=_pSubBasins[p]->GetID(); 
+  for(int i=0; i<_nObservedTS; i++) {
+    if(IsContinuousFlowObs(_pObservedTS[i], SBID)) {
+      return _pObservedTS[i]->GetSampledValue(n);
+    }
+  }
+  return RAV_BLANK_DATA;
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief Returns simulated equivalent of observation time series i
 /// \param i [in] index of observation time series
@@ -1712,11 +1733,12 @@ void  CModel::SetNumSnowLayers     (const int          nLayers)
   delete [] aLev;
 }
 
-bool IsContinuousFlowObs(const CTimeSeriesABC *pObs,long long SBID);
+
 
 //////////////////////////////////////////////////////////////////
 /// \brief overrides streamflow with observed streamflow
 /// \param SBID [in] valid subbasin identifier of basin with observations at outflow
+/// called only once upon call of :OverrideStreamflow command in time series file
 //
 void CModel::OverrideStreamflow   (const long long SBID)
 {
@@ -2804,16 +2826,34 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
   sv_type    svtyp;
   int        layer_ind;
   CSubBasin *pBasin=NULL;
+  bool       invalid_data;
 
   for (int i=0;i<_nObservedTS;i++)
   {
     datatype = _pObservedTS[i]->GetName();
     svtyp    = _pStateVar->StringToSVType(datatype, layer_ind, false);
 
-    if      (datatype=="HYDROGRAPH")//===============================================
+    invalid_data=false;
+    pBasin=GetSubBasinByID (_pObservedTS[i]->GetLocID());
+    if (pBasin==NULL)
     {
-      pBasin=GetSubBasinByID (_pObservedTS[i]->GetLocID());
+      invalid_data=true;
+    }
+    else if ( (datatype == "RESERVOIR_STAGE") ||
+              (datatype == "RESERVOIR_INFLOW") ||
+              (datatype == "RESERVOIR_NETINFLOW") ||
+              (datatype == "LAKE_AREA")) {
+      if (pBasin->GetReservoir() == NULL) {
+        invalid_data=true;
+      }
+    }
 
+    if (invalid_data) 
+    {
+      value=RAV_BLANK_DATA;
+    }
+    else if (datatype=="HYDROGRAPH")//===============================================
+    {
       if ((Options.ave_hydrograph) && (tt.model_time!=0)){
         value=pBasin->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
       }
@@ -2823,17 +2863,14 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
     }
     else if (datatype == "RESERVOIR_STAGE")//=======================================
     {
-      pBasin=GetSubBasinByID(_pObservedTS[i]->GetLocID());
       value = pBasin->GetReservoir()->GetResStage();
     }
     else if (datatype == "RESERVOIR_INFLOW")//======================================
     {
-      pBasin =  GetSubBasinByID(_pObservedTS[i]->GetLocID());
       value = pBasin->GetIntegratedReservoirInflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
     }
     else if (datatype == "RESERVOIR_NETINFLOW")//===================================
     {
-      pBasin = GetSubBasinByID(_pObservedTS[i]->GetLocID());
       CReservoir *pRes= pBasin->GetReservoir();
       double avg_area=0.0;
       if (pRes->GetHRUIndex()!=DOESNT_EXIST){ avg_area = _pHydroUnits[pRes->GetHRUIndex()]->GetArea(); }
@@ -2859,12 +2896,10 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
     }
     else if(datatype == "WATER_LEVEL")//=======================================
     {
-      pBasin=GetSubBasinByID(_pObservedTS[i]->GetLocID());
       value = pBasin->GetWaterLevel();
     }
     else if (datatype == "LAKE_AREA")//========================================
     {
-      pBasin=GetSubBasinByID(_pObservedTS[i]->GetLocID());
       value = pBasin->GetReservoir()->GetSurfaceArea();
     }
     else if (svtyp!=UNRECOGNIZED_SVTYPE)//==========================================
@@ -2884,7 +2919,7 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
       }
       value=0;
     }
-
+    
     _pModeledTS[i]->SetValue(n,value);
     _pModeledTS[i]->SetSampledValue(n,value); //Handles blank value issue in final time  step
 

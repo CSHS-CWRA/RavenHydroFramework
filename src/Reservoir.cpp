@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Reservoir.h"
 #include "Model.h"     // needed to define CModel
@@ -434,6 +434,11 @@ double  CReservoir::GetMaxStage          (const int nn) const {
   return ALMOST_INF;
 }
 //////////////////////////////////////////////////////////////////
+/// \returns stage at which reservoir dries out [m]
+//
+double  CReservoir::GetDryStage          () const { return _min_stage;}
+
+//////////////////////////////////////////////////////////////////
 /// \returns sill elevation [m]
 /// supports time-variable discharge curves and weir height adjustments
 //
@@ -445,6 +450,28 @@ double  CReservoir::GetSillElevation(const int nn) const
   }
   return _crest_ht+weir_adj;
 }
+
+//////////////////////////////////////////////////////////////////
+/// \returns observed stage  [m]
+//
+double  CReservoir::GetObsStage(const int nn) const 
+{
+  if (_pObsStage!=NULL){
+    return _pObsStage->GetSampledValue(nn);
+  }
+  else{
+    return RAV_BLANK_DATA;
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \returns true if this reservoir/lake is used in assimilation
+//
+bool    CReservoir::UseInStageAssimilation() const 
+{
+  return _assimilate_stage;
+}
+
 //////////////////////////////////////////////////////////////////
 /// \returns current surface area [m2]
 //
@@ -1103,7 +1130,7 @@ void CReservoir::SetDataAssimFactors(const double& da_scale,const double& da_sca
 /// \brief enables lake stage assimilation
 /// \param pObs -time series of observed lake stage (can have NULL entries)
 //
-void CReservoir::TurnOnAssimilation(CTimeSeriesABC *pObs)
+void CReservoir::TurnOnAssimilation(const CTimeSeriesABC *pObs)
 {
   _assimilate_stage=true;
   _pObsStage=pObs;

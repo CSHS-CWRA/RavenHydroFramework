@@ -507,6 +507,28 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           }
         }
         //----------------------------------------------
+        else if(!strcmp(s[0], ":RevertToSDCurve"))
+        {
+          if (Options.noisy){cout<<" Revert To Stage Discharge Curve "<<endl; }
+          if (pGoal->GetCurrentExpression() != NULL) {
+            ExitGracefully("ParseManagementFile: :RevertToSDCurve cannot be used if an :Expression already provided in :OperatingRegime command block .",BAD_DATA_WARN);
+            break;
+          }
+          expressionStruct *pExp=new expressionStruct();
+          //special expression structure with zero groups
+          pExp->origexp=":RevertToSDCurve";
+          if (pExp!=NULL){
+            pGoal->AddExpression(pExp);
+          }
+          else {
+            string warn ="Invalid expression in :Expression command at line " + to_string(pp->GetLineNumber());
+            WriteWarning(warn.c_str(),Options.noisy);
+          }
+          if (pDO->GetDebugLevel()>=1){
+            SummarizeExpression((const char**)(s),Len,pExp);
+          }
+        }
+        //----------------------------------------------
         else if (!strcmp(s[0], ":Condition"))
         {
           if (Options.noisy){cout<<" Condition "<<endl; }

@@ -288,6 +288,7 @@ string DVTypeToString(dv_type t)
   if (t==DV_QOUTRES ){return "DV_QOUTRES";  }
   if (t==DV_STAGE   ){return "DV_STAGE";    }
   if (t==DV_DSTAGE  ){return "DV_DSTAGE";   }
+  if (t==DV_DSTAGE2 ){return "DV_DSTAGE2";   }
   if (t==DV_BINRES  ){return "DV_BINRES";   }
   if (t==DV_DELIVERY){return "DV_DELIVERY"; }
   if (t==DV_RETURN  ){return "DV_RETURN";   }
@@ -1318,6 +1319,17 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, const int kk, lp_lib::lpr
   if (kk!=DOESNT_EXIST)
   {
     pE= pC->pOperRegimes[kk]->pExpression; //active expression
+
+    if (pE->nGroups == 0) {
+      // special case - revert to SD curve - blank row
+      row_val[0]=0.0;
+      col_ind[0]=0;
+      RHS=0.0;
+      retval = lp_lib::set_rowex(pLinProg,lpgoalrow,1,row_val,col_ind);
+      ExitGracefullyIf(retval==0,"AddConstraintToLP::Error updating user-specified constraint/goal",RUNTIME_ERR);
+      retval = lp_lib::set_rh(pLinProg,lpgoalrow,RHS);
+      return; 
+    }
 
     RHS=0.0;
     for (int j = 0; j < pE->nGroups; j++)

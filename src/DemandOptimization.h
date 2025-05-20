@@ -42,7 +42,8 @@ enum dv_type
   DV_QOUT,    //< outflow from reach
   DV_QOUTRES, //< outflow from reservoir
   DV_STAGE,   //< reservoir stage
-  DV_DSTAGE,  //< change in reservoir stage over time step
+  DV_DSTAGE,  //< positive change in reservoir stage over time step
+  DV_DSTAGE2, //< negative change in reservoir stage over time step
   DV_BINRES,  //< binary integer value for above/beneath stage-discharge sill
   DV_DELIVERY,//< delivery of water demand
   DV_RETURN,  //< return flows to reach
@@ -217,6 +218,7 @@ private: /*------------------------------------------------------*/
   int             *_aSBIndices;         //< local index of enabled subbasins (0:_nEnabledSubBasins) [size: _nSubBasins]
 
   bool            *_aDisableSDCurve;    //< array of booleans to determine whether reservoir stage-discharge curve is overridden [size: _nSubBasins]
+  bool            *_aRevertToSDCurve;   //< array of boolean to determine when to ignore SD curve disabling [size: _nSubBasins]
 
   int              _nReservoirs;        //< local storage of number of enabled lakes/reservoirs
   int             *_aResIndices;        //< storage of enabled reservoir indices (0:_nReservoirs or DOESNT_EXIST) [size:_nSubBasins]

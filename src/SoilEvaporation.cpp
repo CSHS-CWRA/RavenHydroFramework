@@ -387,7 +387,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     //From HBV Model (Bergstrom,1995)
     double stor,tens_stor; //[mm]
 
-    stor      = state_vars[iFrom[0]];
+    stor      = max(state_vars[iFrom[0]],0.0);
     tens_stor = pHRU->GetSoilTensionStorageCapacity(0);
 
     rates[0]  = PET * min(stor/tens_stor,1.0);  //evaporation rate [mm/d]

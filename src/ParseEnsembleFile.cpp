@@ -469,7 +469,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
     case(101)://----------------------------------------------
     {/*:AssimilateStreamflow  [SBID]*/
       if(Options.noisy) { cout <<"Assimilate streamflow"<<endl; }
-      long SBID=s_to_l(s[1]);
+      long long SBID=s_to_ll(s[1]);
       if(pModel->GetSubBasinByID(SBID)==NULL) {
         WriteWarning("ParseTimeSeries::Trying to assimilate streamflow at non-existent subbasin "+to_string(SBID),Options.noisy);
         break;

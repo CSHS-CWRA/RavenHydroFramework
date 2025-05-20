@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "SubBasin.h"
 
@@ -1176,18 +1176,18 @@ bool CSubBasin::SetBasinProperties(const string label,
 double CSubBasin::GetBasinProperties(const string label) const
 {
   string label_n = StringToUppercase(label);
-  if      (!label_n.compare("TIME_CONC"     ))  {return _t_conc;}
-  else if (!label_n.compare("TIME_TO_PEAK"  ))  {return _t_peak;}
-  else if (!label_n.compare("TIME_LAG"      ))  {return _t_lag;}
-  else if (!label_n.compare("RES_CONSTANT"  ))  {return _reservoir_constant;}
-  else if (!label_n.compare("NUM_RESERVOIRS"))  {return (double)(_num_reservoirs);}
-  else if (!label_n.compare("GAMMA_SHAPE"   ))  {return _gamma_shape;}
-  else if (!label_n.compare("GAMMA_SCALE"   ))  {return _gamma_scale;}
+  if      (!label_n.compare("TIME_CONC"     ))  { return _t_conc;}
+  else if (!label_n.compare("TIME_TO_PEAK"  ))  { return _t_peak;}
+  else if (!label_n.compare("TIME_LAG"      ))  { return _t_lag;}
+  else if (!label_n.compare("RES_CONSTANT"  ))  { return _reservoir_constant;}
+  else if (!label_n.compare("NUM_RESERVOIRS"))  { return (double)(_num_reservoirs);}
+  else if (!label_n.compare("GAMMA_SHAPE"   ))  { return _gamma_shape;}
+  else if (!label_n.compare("GAMMA_SCALE"   ))  { return _gamma_scale;}
 
-  else if (!label_n.compare("Q_REFERENCE"   ))  {return _Q_ref;}
-  else if (!label_n.compare("MANNINGS_N"    ))  {return _mannings_n;}
-  else if (!label_n.compare("SLOPE"         ))  {return _slope;}
-  else if (!label_n.compare("DIFFUSIVITY"   ))  {return _diffusivity; }
+  else if (!label_n.compare("Q_REFERENCE"   ))  { return _Q_ref;}
+  else if (!label_n.compare("MANNINGS_N"    ))  { return _mannings_n;}
+  else if (!label_n.compare("SLOPE"         ))  { return _slope;}
+  else if (!label_n.compare("DIFFUSIVITY"   ))  { return _diffusivity; }
   else if (!label_n.compare("CELERITY"      ))  { return _c_ref; }
 
   else if (!label_n.compare("RAIN_CORR"     ))  { return _rain_corr;}
@@ -1203,25 +1203,24 @@ double CSubBasin::GetBasinProperties(const string label) const
 
   else if (!label_n.compare("RIVERBED_CONDUCTIVITY")){ return _bed_conductivity; }
   else if (!label_n.compare("RIVERBED_THICKNESS"   )){ return _bed_thickness; }
-  else if (!label_n.compare("LAKEBED_CONDUCTIVITY")) {
-    if (_pReservoir != NULL) {return _pReservoir->GetLakebedConductivity(); } 
-    else                     {return 0.0;}
+  else if (!label_n.compare("LAKEBED_CONDUCTIVITY" )){
+    if (_pReservoir != NULL)                    { return _pReservoir->GetLakebedConductivity(); } 
+    else                                        { return 0.0;}
   }
-  else if (!label_n.compare("LAKEBED_THICKNESS")) {
-    if (_pReservoir != NULL) {return _pReservoir->GetLakebedThickness(); }
-    else                     {return 1.0;}
+  else if (!label_n.compare("LAKEBED_THICKNESS"    )){
+    if (_pReservoir != NULL)                    { return _pReservoir->GetLakebedThickness(); }
+    else                                        { return 1.0;}
   }
-  else if (!label_n.compare("LAKE_CONVECT_COEFF")) {
-    if (_pReservoir != NULL) {_pReservoir->GetLakeConvectionCoeff();}
-    else                     {return 0.0;}
+  else if (!label_n.compare("LAKE_CONVECT_COEFF"   )){
+    if (_pReservoir != NULL)                    { return _pReservoir->GetLakeConvectionCoeff();}
+    else                                        { return 0.0;}
   }
-
   else if (!label_n.compare("RESERVOIR_DISABLED")) { return (double)(_res_disabled); }
   else if (!label_n.compare("CORR_REACH_LENGTH"))  { return _reach_length2; }
 
   else if (!label_n.compare("RESERVOIR_CREST_WIDTH")) {
-    if(_pReservoir!=NULL) {return _pReservoir->GetCrestWidth();}
-    else                  {return 0.0;}
+    if(_pReservoir!=NULL)                       { return _pReservoir->GetCrestWidth();}
+    else                                        { return 0.0;}
   }
   else{
     return INDEX_NOT_FOUND;//bad string
@@ -2019,10 +2018,6 @@ void CSubBasin::GenerateCatchmentHydrograph(const double    &Qlat_avg,
     {
       t=n*tstep-_t_lag;
       _aUnitHydro[n]=GammaCumDist(t+tstep,alpha, beta)-sum;
-
-      ExitGracefullyIf(_aUnitHydro[n]>ALMOST_INF,
-        "GenerateCatchmentHydrograph: issues with gamma distribution. Time to peak may be too small relative to timestep",RUNTIME_ERR);
-
       sum+=_aUnitHydro[n];
     }
     _aUnitHydro[_nQlatHist-1]=0.0;//must truncate infinite distribution
@@ -2052,7 +2047,7 @@ void CSubBasin::GenerateCatchmentHydrograph(const double    &Qlat_avg,
   //---------------------------------------------------------------
   else if (Options.catchment_routing==ROUTE_DUMP)
   {
-    for (n=0;n<_nQlatHist;n++){_aUnitHydro[n]=0.0;}
+    for (n=1;n<_nQlatHist;n++){_aUnitHydro[n]=0.0;}
     _aUnitHydro[0]=1.0;
   }
   //---------------------------------------------------------------

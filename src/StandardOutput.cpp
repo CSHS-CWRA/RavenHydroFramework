@@ -75,7 +75,7 @@ bool IsContinuousConcObs(const CTimeSeriesABC *pObs,const long long SBID, const 
 /// \param pObs [in] observation time series
 /// \param SBID [in] subbasin ID
 //
-bool IsContinuousStageObs(CTimeSeriesABC *pObs,long long SBID)
+bool IsContinuousStageObs(const CTimeSeriesABC *pObs,long long SBID)
 {
  // clears up  terribly ugly repeated if statements
   if (pObs==NULL)                                   { return false; }
@@ -88,7 +88,7 @@ bool IsContinuousStageObs(CTimeSeriesABC *pObs,long long SBID)
 /// \param pObs [in] observation time series
 /// \param SBID [in] subbasin ID
 //
-bool IsContinuousInflowObs(CTimeSeriesABC *pObs, long long SBID)
+bool IsContinuousInflowObs(const CTimeSeriesABC *pObs, long long SBID)
 {
   if (pObs==NULL)                                   { return false; }
   if (pObs->GetLocID() != SBID)                     { return false; }
@@ -100,7 +100,7 @@ bool IsContinuousInflowObs(CTimeSeriesABC *pObs, long long SBID)
 /// \param pObs [in] observation time series
 /// \param SBID [in] subbasin ID
 //
-bool IsContinuousNetInflowObs(CTimeSeriesABC *pObs, long long SBID)
+bool IsContinuousNetInflowObs(const CTimeSeriesABC *pObs, long long SBID)
 {
   if (pObs==NULL)                                   { return false; }
   if (pObs->GetLocID() != SBID)                     { return false; }
@@ -1475,9 +1475,6 @@ void CModel::WriteMajorOutput(const time_struct &tt, string solfile, bool final)
     }
     BAS<<":SubBasinProperties"<<endl;
     BAS<<"  :Parameters, Q_REFERENCE, TIME_CONC, TIME_TO_PEAK, GAMMA_SHAPE, GAMMA_SCALE, CELERITY, DIFFUSIVITY"<<endl;
-
-    BAS<<":EndSubBasinProperties"<<endl;
-
     for(int pp=0;pp<_nSubBasins;pp++) 
     {
       BAS<<"  "<<_pSubBasins[pp]->GetID();
@@ -1490,6 +1487,7 @@ void CModel::WriteMajorOutput(const time_struct &tt, string solfile, bool final)
       BAS<<","<<_pSubBasins[pp]->GetBasinProperties("DIFFUSIVITY");
       BAS<<endl;
     }
+    BAS<<":EndSubBasinProperties"<<endl;
     BAS.close();
     ExitGracefully("Finished Writing subbasin property file.",SIMULATION_DONE);
   }

@@ -9,6 +9,7 @@
 #include "ParseLib.h"
 
 void AllocateReservoirDemand(CModel *&pModel,const optStruct &Options,long long SBID, long long SBIDres,double pct_met,int jul_start,int jul_end);
+bool IsContinuousStageObs(const CTimeSeriesABC *pObs,long long SBID);
 bool IsContinuousFlowObs2(const CTimeSeriesABC* pObs,long long SBID);
 void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid,int &stat_varid, long *&aStations, string *&aStat_string,int &nStations);
 //////////////////////////////////////////////////////////////////
@@ -136,6 +137,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":OverrideStreamflow"          )){code=100;}
     else if  (!strcmp(s[0],":AssimilateStreamflow"        )){code=101;}
     else if  (!strcmp(s[0],":SpecifyGaugeForHRU"          )){code=102;}
+    else if  (!strcmp(s[0],":AssimilateReservoirStage"    )){code=103;}
     //-----------------TRANSPORT--------------------------------
     else if  (!strcmp(s[0],":FixedConcentrationTimeSeries")){code=300; const_name=s[1];}
     else if  (!strcmp(s[0],":FixedTemperatureTimeSeries"  )){code=300; const_name="TEMPERATURE";}
@@ -1261,6 +1263,32 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         break;
       }
       pModel->GetHRUByID(HRUID)->SetSpecifiedGaugeIndex(g);
+      break;
+    }
+    case(103)://----------------------------------------------
+    {/*:AssimilateReservoirStage  [SBID]*/
+      if(Options.noisy) { cout <<"Assimilate reservoir stage"<<endl; }
+      SBID=s_to_ll(s[1]);
+      if(pModel->GetSubBasinByID(SBID)==NULL) {
+        WriteWarning("ParseTimeSeries::Trying to assimilate reservoir stage at non-existent subbasin "+to_string(SBID),Options.noisy);
+        break;
+      }
+      if(pModel->GetSubBasinByID(SBID)->GetReservoir() == NULL) {
+        WriteWarning("ParseTimeSeries:: Reservoir stage assimilation requested for basin without lake or reservoir. Data cannot be assimilated",Options.noisy);
+        break;
+      }
+      bool ObsExists=false;
+      for(int i=0; i<pModel->GetNumObservedTS(); i++) {
+        if(IsContinuousStageObs(pModel->GetObservedTS(i),SBID)) {
+          pModel->GetSubBasinByID(SBID)->GetReservoir()->TurnOnAssimilation(pModel->GetObservedTS(i));
+          ObsExists=true;
+          break;
+        }
+      }
+      if(!ObsExists){
+        warn="ParseTimeSeriesFile::AssimilateReservoirStage: no observation time series associated with subbasin "+to_string(SBID)+". Cannot assimilate flow in this subbasin.";
+        WriteWarning(warn.c_str(),Options.noisy);
+      }
       break;
     }
     case (300)://----------------------------------------------

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------
   Reservoir.h
   ------------------------------------------------------------------
@@ -200,6 +200,9 @@ public:/*-------------------------------------------------------*/
   double            GetMinStage              (const int nn) const;//[m]
   double            GetMaxStage              (const int nn) const;//[m]
   double            GetSillElevation         (const int nn) const;//[m]
+  double            GetObsStage              (const int nn) const;//[m]
+  bool              UseInStageAssimilation   () const; 
+  double            GetDryStage              () const;
 
   int               GetNumWaterDemands       () const;
   CDemand          *GetWaterDemandObj        (const int ii) const;
@@ -233,7 +236,7 @@ public:/*-------------------------------------------------------*/
   void              SetGWParameters          (const double &coeff, const double &h_ref);
   void              SetCrestWidth            (const double &width);
   void              SetDataAssimFactors      (const double &da_scale, const double &da_scale_last);
-  void              TurnOnAssimilation       (CTimeSeriesABC *pObs);
+  void              TurnOnAssimilation       (const CTimeSeriesABC *pObs);
   void              SetPrecip                (const double &precip_m3);
   void              SetDownstreamBasin       (const CSubBasin *pDownBasin);
   void              SetLakebedThickness      (const double &thick);
