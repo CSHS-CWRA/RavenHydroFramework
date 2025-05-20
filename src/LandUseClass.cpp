@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
@@ -256,6 +256,10 @@ void CLandUseClass::AutoCalculateLandUseProps(surface_struct &Stmp,
   if(autocalc) {
     S.wind_vel_corr = 1.0;
   }
+  autocalc = SetCalculableValue(S.divert_fract,Stmp.divert_fract,Sdefault.divert_fract);
+  if(autocalc) {
+    S.divert_fract = 0.0;
+  }
 
   /*for(i=0;i<N_LU_PARAMETERS;i++) {
   if (!S.params[i].iscomputable){
@@ -290,6 +294,7 @@ void CLandUseClass::AutoCalculateLandUseProps(surface_struct &Stmp,
   SetSpecifiedValue(S.AWBM_areafrac1,Stmp.AWBM_areafrac1,Sdefault.AWBM_areafrac1,needed,"AWBM_AREAFRAC1");
   SetSpecifiedValue(S.AWBM_areafrac2,Stmp.AWBM_areafrac2,Sdefault.AWBM_areafrac2,needed,"AWBM_AREAFRAC2");
   SetSpecifiedValue(S.AWBM_bflow_index,Stmp.AWBM_bflow_index,Sdefault.AWBM_bflow_index,needed,"AWBM_BFLOW_INDEX");
+
   SetSpecifiedValue(S.lake_rel_coeff,Stmp.lake_rel_coeff,Sdefault.lake_rel_coeff,needed,"LAKE_REL_COEFF");
   SetSpecifiedValue(S.abst_percent,Stmp.abst_percent,Sdefault.abst_percent,needed,"ABST_PERCENT");
   SetSpecifiedValue(S.HBV_glacier_Kmin,Stmp.HBV_glacier_Kmin,Sdefault.HBV_glacier_Kmin,needed,"HBV_GLACIER_KMIN");
@@ -373,6 +378,7 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
   S.stream_fraction  =DefaultParameterValue(is_template,true);//0
   S.relhum_corr      =DefaultParameterValue(is_template,true);//1.0
   S.wind_vel_corr    =DefaultParameterValue(is_template,true);//1.0
+  S.divert_fract     =DefaultParameterValue(is_template,true);//0.0
 
   //User-specified parameters
   S.partition_coeff   =DefaultParameterValue(is_template,false);//0.4;//needs reasonable defaults
@@ -496,6 +502,7 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
   else if (!name.compare("AWBM_AREAFRAC1"         )){S.AWBM_areafrac1 =value; }
   else if (!name.compare("AWBM_AREAFRAC2"         )){S.AWBM_areafrac2 =value; }
   else if (!name.compare("AWBM_BFLOW_INDEX"       )){S.AWBM_bflow_index =value; }
+  else if (!name.compare("DIVERT_FRACT"           )){S.divert_fract =value; }
   else if (!name.compare("LAKE_REL_COEFF"         )){S.lake_rel_coeff =value;}
   else if (!name.compare("DEP_K"                  )){S.dep_k =value;}
   else if (!name.compare("DEP_SEEP_K"             )){S.dep_seep_k =value;}
@@ -604,6 +611,7 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("AWBM_AREAFRAC1"         )){return S.AWBM_areafrac1; }
   else if (!name.compare("AWBM_AREAFRAC2"         )){return S.AWBM_areafrac2; }
   else if (!name.compare("AWBM_BFLOW_INDEX"       )){return S.AWBM_bflow_index; }
+  else if (!name.compare("DIVERT_FRACT"           )){return S.divert_fract; }
   else if (!name.compare("LAKE_REL_COEFF"         )){return S.lake_rel_coeff;}
   else if (!name.compare("ABST_PERCENT"           )){return S.abst_percent;}
   else if (!name.compare("OW_PET_CORR"            )){return S.ow_PET_corr;}

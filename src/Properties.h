@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------
   Properties.h
   ------------------------------------------------------------------
@@ -295,6 +295,7 @@ struct surface_struct
   double AWBM_areafrac1;    ///< [0..1]    fraction of infiltration to smallest landscape store in AWBM model (nonzero)
   double AWBM_areafrac2;    ///< [0..1]    fraction of infiltration to medium landscape store in AWBM model (nonzero)
   double AWBM_bflow_index;  ///< [0..1]    fraction of excess going to groundwater in AWBM model
+  double divert_fract;      ///< [0..1]    fraction of available water diverted in :LateralDivert run (default=0.0)
 
   double ow_PET_corr;       ///< [-]       fraction of PET to apply to open water evaporation
   double lake_PET_corr;     ///< [-]       fraction of PET to apply to lake evaporation

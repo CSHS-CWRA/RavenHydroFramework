@@ -17,6 +17,7 @@ CmvLatFlush::CmvLatFlush(int   from_sv_ind,
                          int    from_HRU_grp,
                          int    to_HRU_grp,
                          bool   constrain_to_SBs,
+                         bool   divert,
                          CModel *pModel)
   :CLateralExchangeProcessABC(LAT_FLUSH, pModel)
 {
@@ -25,19 +26,20 @@ CmvLatFlush::CmvLatFlush(int   from_sv_ind,
   _kk_from   =from_HRU_grp;
   _kk_to     =to_HRU_grp;
   _constrain_to_SBs=constrain_to_SBs;
+  _divert    =divert;
 
   DynamicSpecifyConnections(0); //purely lateral flow, no vertical
 
   //check for valid SVs, HRU group indices
   bool badHRU;
   badHRU=(to_HRU_grp<0) || (to_HRU_grp>_pModel->GetNumHRUGroups()-1);
-  ExitGracefullyIf(badHRU,"CmvLatFlush::unrecognized 'to' HRU group specified in :LateralFlush command",BAD_DATA_WARN);
+  ExitGracefullyIf(badHRU,"CmvLatFlush::unrecognized 'to' HRU group specified in :LateralFlush/:LateralDivert command",BAD_DATA_WARN);
 
   badHRU=(from_HRU_grp<0) || (from_HRU_grp>_pModel->GetNumHRUGroups()-1);
-  ExitGracefullyIf(badHRU,"CmvLatFlush::unrecognized 'from' HRU group specified in :LateralFlush command",BAD_DATA_WARN);
+  ExitGracefullyIf(badHRU,"CmvLatFlush::unrecognized 'from' HRU group specified in :LateralFlush/:LateralDivert command",BAD_DATA_WARN);
 
-  ExitGracefullyIf(from_sv_ind==DOESNT_EXIST,"CmvLatFlush::unrecognized 'from' state variable specified in :LateralFlush command",BAD_DATA_WARN);
-  ExitGracefullyIf(to_sv_ind  ==DOESNT_EXIST,"CmvLatFlush::unrecognized 'to' state variable specified in :LateralFlush command",BAD_DATA_WARN);
+  ExitGracefullyIf(from_sv_ind==DOESNT_EXIST,"CmvLatFlush::unrecognized 'from' state variable specified in :LateralFlush/:LateralDivert command",BAD_DATA_WARN);
+  ExitGracefullyIf(to_sv_ind  ==DOESNT_EXIST,"CmvLatFlush::unrecognized 'to' state variable specified in :LateralFlush/:LateralDivert command",BAD_DATA_WARN);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the default destructor
@@ -152,6 +154,9 @@ void CmvLatFlush::GetParticipatingStateVarList(sv_type *aSV,int *aLev,int &nSV)
 void  CmvLatFlush::GetParticipatingParamList(string *aP,class_type *aPC,int &nP) const
 {
   nP=0;
+  if (_divert) {
+    aP[0]="DIVERT_FRACTION"; aPC[0]=CLASS_LANDUSE; nP++;
+  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns lateral exchange rates (mm/d) between from and to HRU/SV combinations
@@ -169,6 +174,7 @@ void CmvLatFlush::GetLateralExchange( const double * const     *state_vars, //ar
 {
   double stor,Afrom,Ato;
   double to_stor,max_to_stor,max_rate;
+  double mult=1.0; //default: flush 100%
 
   for(int q=0; q<_nLatConnections; q++)
   {
@@ -179,7 +185,11 @@ void CmvLatFlush::GetLateralExchange( const double * const     *state_vars, //ar
     max_to_stor=pHRUs[_kTo  [q]]->GetStateVarMax(_iToLat[q],state_vars[_kTo[q]],Options);
     max_rate   =max(max_to_stor-to_stor,0.0)/Options.timestep*Ato;
 
-    exchange_rates[q]=max(stor,0.0)/Options.timestep*Afrom; //[mm-m2/d]
+    if (_divert) {
+      mult=pHRUs[_kFrom[q]]->GetSurfaceProps()->divert_fract;
+    }
+
+    exchange_rates[q]=max(mult*stor,0.0)/Options.timestep*Afrom; //[mm-m2/d]
     exchange_rates[q]=min(exchange_rates[q],max_rate); //constrains so that it does not overfill receiving compartment
   }
 }

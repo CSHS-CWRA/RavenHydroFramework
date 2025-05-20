@@ -575,6 +575,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":SoilBalance"               )){code=237;}
     else if  (!strcmp(s[0],":LateralEquilibrate"        )){code=238;}
     else if  (!strcmp(s[0],":LakeFreeze"                )){code=239;}
+    else if  (!strcmp(s[0],":LateralDivert"             )){code=240;}
     //...
     else if  (!strcmp(s[0],":-->RedirectFlow"           )){code=294;}
     else if  (!strcmp(s[0],":ProcessGroup"              )){code=295;}
@@ -2886,7 +2887,7 @@ bool ParseMainInputFile (CModel     *&pModel,
                                 pModel->GetStateVarIndex(tmpS[1],tmpLev[1]),//to SV index
                                 pModel->GetHRUGroup(s[2])->GetGlobalIndex(),
                                 pModel->GetHRUGroup(s[5])->GetGlobalIndex(),
-                                !interbasin, pModel);
+                                !interbasin, false, pModel);
         AddProcess(pModel,pMover,pProcGroup);
       }
       break;
@@ -3057,6 +3058,30 @@ bool ParseMainInputFile (CModel     *&pModel,
 
       pMover = new CmvFrozenLake(lf_type, pModel->GetTransportModel(), pModel);
       AddProcess(pModel, pMover, pProcGroup);
+      break;
+    }
+    case(240):  //----------------------------------------------
+    {/*Lateral Diversion
+       :LateralDivert RAVEN_DEFAULT [FROM_HRUGroup] [FROM_SV] To [TO_HRUGROUP] [TO_SV] */
+      if(Options.noisy){ cout <<"Lateral Divert Process"<<endl; }
+      bool interbasin=false;
+      if(Len<7){ ImproperFormatWarning(":LateralDivert",p,Options.noisy); break; }
+
+      tmpS[0] = pModel->GetStateVarInfo()->StringToSVType(s[3],tmpLev[0],true);
+      tmpS[1] = pModel->GetStateVarInfo()->StringToSVType(s[6],tmpLev[1],true);
+      pModel->AddStateVariables(tmpS,tmpLev,2);
+
+      if((pModel->GetHRUGroup(s[2])==NULL) || (pModel->GetHRUGroup(s[5])==NULL)){
+        ExitGracefully("ParseInput: Lateral Flush - invalid 'to' or 'from' HRU Group used. Must define using :DefineHRUGroups command.",BAD_DATA_WARN);
+      }
+      else{
+        pMover=new CmvLatFlush( pModel->GetStateVarIndex(tmpS[0],tmpLev[0]),//from SV index
+                                pModel->GetStateVarIndex(tmpS[1],tmpLev[1]),//to SV index
+                                pModel->GetHRUGroup(s[2])->GetGlobalIndex(),
+                                pModel->GetHRUGroup(s[5])->GetGlobalIndex(),
+                                true, true, pModel);
+        AddProcess(pModel,pMover,pProcGroup);
+      }
       break;
     }
     case(294):  //----------------------------------------------

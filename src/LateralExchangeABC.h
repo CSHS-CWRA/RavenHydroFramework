@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef LATERALEXCHANGE_H
 #define LATERALEXCHANGE_H
@@ -84,6 +84,8 @@ private:/*------------------------------------------------------*/
   int _kk_from;    //< HRU group index of source HRUs
   int _kk_to;      //< HRU group index of target HRUs
 
+  bool _divert;    //< true if this is simulation partial flushing using HRU land use property DIVERT_FRACTION
+
   bool _constrain_to_SBs; // all transfer is within one sub-basin; otherwise, requires only one recipient HRU in model
 
 
@@ -94,6 +96,7 @@ public:/*-------------------------------------------------------*/
               int   from_HRU_grp,
               int   to_HRU_grp,
               bool  constrain_to_SBs,
+              bool  divert,
               CModel *pModel);
   ~CmvLatFlush();
 
