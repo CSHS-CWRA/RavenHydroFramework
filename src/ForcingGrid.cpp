@@ -1902,16 +1902,18 @@ double CForcingGrid::GetWeightedAverageSnowFrac(const int k,const double &t,cons
   if ((k<0) || (k>_nHydroUnits)){ExitGracefully("CForcingGrid::GetWeightedAverageSnowFrac: invalid HRU index",RUNTIME_ERR); }
 #endif
 
+  int idx_new = GetTimeIndex(t,tstep);
   int nSteps = max(1,(int)(rvn_round(tstep/_interval)));//# of intervals in time step
   double wt,sum=0.0;
   double snow; double rain;
+  int ic;
   for (int i=0;i<_nWeights[k];i++)
   {
-    int ic=_CellIDToIdx[_GridWtCellIDs[k][i]];
+    ic=_CellIDToIdx[_GridWtCellIDs[k][i]];
     wt   = _GridWeight[k][i];
-    snow = GetValue_avg(ic, t, nSteps);
+    snow = GetValue_avg(ic, idx_new, nSteps);
     if(snow>0.0){
-      rain=pRain->GetValue_avg(ic, t, nSteps);
+      rain=pRain->GetValue_avg(ic, idx_new, nSteps);
       sum+= wt * snow/(snow+rain);
     }
   }

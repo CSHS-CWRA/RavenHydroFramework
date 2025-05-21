@@ -1232,8 +1232,8 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         pFave = &faveStruct;
         _FORCINGS<<usetime<<","<<usedate<<","<<usehour<<",";
         _FORCINGS<<pFave->day_angle<<",";
-        _FORCINGS<<pFave->precip*(1-pFave->snow_frac) <<",";
-        _FORCINGS<<pFave->precip*(pFave->snow_frac) <<",";
+        _FORCINGS<<pFave->precip*(1.0-pFave->snow_frac) <<",";
+        _FORCINGS<<pFave->precip*(    pFave->snow_frac) <<",";
         _FORCINGS<<pFave->temp_ave<<",";
         _FORCINGS<<pFave->temp_daily_min<<",";
         _FORCINGS<<pFave->temp_daily_max<<",";
