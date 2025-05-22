@@ -124,6 +124,7 @@ private:/*-------------------------------------------------------*/
 
   double       _crest_ht;            ///< absolute crest height, m.a.s.l (0 by default)
   double       _crest_width;         ///< crest width [m]
+  double       _Qunder_sill;         ///< elevation at which underflow ceases
 
   int          _Np;                   ///< number of points on rating curves
   double      *_aStage;              ///< Rating curve for stage elevation [m]

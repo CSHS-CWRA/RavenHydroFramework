@@ -1395,6 +1395,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
   int  *lpgoalrow=new int    [_nGoals];                    //index of goal equation for all user-specified goals
 
   double **aQiterHist=NULL,**ahiterHist=NULL;
+  bool   *aInfeasHist= new bool [_maxIterations];
 
   aQiterHist=new double *[_pModel->GetNumSubBasins()];
   ahiterHist=new double *[_pModel->GetNumSubBasins()];
@@ -1409,7 +1410,9 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
       ahiterHist[p][i]=0.0;
     }
   }
-
+  for (int i = 0; i < _maxIterations; i++) {
+    aInfeasHist[i]=false;
+  }
   // instantiate linear programming solver
   // ----------------------------------------------------------------
   lp_lib::lprec *pLinProg;
@@ -1448,8 +1451,9 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
   }
 
   // Set lower bounds of flows (Q) to something a bit less than zero for cushion
+  // can't do this- messes up weir formulation
   // ----------------------------------------------------------------
-  int nESB = 0;
+  /*int nESB = 0;
   for (int pp = 0; pp<pModel->GetNumSubBasins(); pp++)
   {
     p  =pModel->GetOrderedSubBasinIndex(pp);
@@ -1469,14 +1473,15 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
     pSB=pModel->GetSubBasin(p);
     if (pSB->IsEnabled() && (pSB->GetReservoir()!=NULL))
     {
-       retval=lp_lib::set_lowbo(pLinProg,GetDVColumnInd(DV_QOUTRES,res_count), -0.001);
-       ExitGracefullyIf(retval!=1,"SolveManagementProblem::Error adding stage lower bound",RUNTIME_ERR);
-       res_count++;
+      retval=lp_lib::set_lowbo(pLinProg,GetDVColumnInd(DV_QOUTRES,res_count), -0.001);
+      ExitGracefullyIf(retval!=1,"SolveManagementProblem::Error adding stage lower bound",RUNTIME_ERR);
+      res_count++;
     }
-  }
+  }*/
+  
   // Set lower bounds of stages to min stage -2m
   // ----------------------------------------------------------------
-  res_count=0;
+  int res_count=0;
   for (int pp = 0; pp<pModel->GetNumSubBasins(); pp++)
   {
     p  =pModel->GetOrderedSubBasinIndex(pp);
@@ -1798,9 +1803,9 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
           RHS+=U_n*pSB->GetSpecifiedInflow(t-n*Options.timestep);
         }
         for (int n = 1; n < pSB->GetLatHistorySize(); n++) {
-          RHS += pSB->GetUnitHydrograph()[n] * pSB->GetLatHistory()[n-1];   // [n-1] is because this inflow history has not yet been updated
+          RHS += pSB->GetUnitHydrograph()[n] * max(pSB->GetLatHistory()[n-1],0.0);   // [n-1] is because this inflow history has not yet been updated
         }
-        RHS+=aSBrunoff[p]/(tstep*SEC_PER_DAY)*pSB->GetUnitHydrograph()[0];  // [m3]->[m3/s]
+        RHS+=max(aSBrunoff[p],0.0)/(tstep*SEC_PER_DAY)*pSB->GetUnitHydrograph()[0];  // [m3]->[m3/s]
       }
       else //assimilating - skip mass balance
       {
@@ -1964,11 +1969,11 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
         // ------------------------------------------------------------------------
         // linearized storage -discharge curve
         //   Qout = Qout_guess + dQ/dh * (h-h_guess) if h>h_sill
-        //   Qout = 0                                if h<h_sill
+        //   Qout = 0                                if h<=h_sill
         // handled via 5 constraint equations
 
-        const double LARGE_NUMBER=1e6;
-        const double LARGE_NUMBER2=1000;
+        const double LARGE_NUMBER=1e6;    //for flow variables 
+        const double LARGE_NUMBER2=100;  //for stage variables
 
         //------------------------------------------------------------------------
         //Eqns 1 & 2 : h^n+1 - M*(1-b) <= h_sill
@@ -2025,7 +2030,8 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
         //             Q^n+1 <= Qout_guess + dQ/dh * (h^n+1-h_guess) + M(b)
         //             Q^n+1 - dQ/dh* h^n+1 + Mb >= [Qout_guess - dQ/dh * h_guess]
         //             Q^n+1 - dQ/dh* h^n+1 - Mb <= [Qout_guess - dQ/dh * h_guess]
-        //  dQ << M
+        //  dQ << M 
+        // enforces stage-discharge linearization when b==0
         //------------------------------------------------------------------------
 
         //col_ind[0]=GetDVColumnInd(DV_QOUTRES,_aResIndices[p]); row_val[0]=1.0;
@@ -2223,6 +2229,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
   lp_lib::set_verbose    (pLinProg,IMPORTANT);
 
   int nInfeasibleIters=0;
+  bool lastInfeasible;
   int iter=0;
   double norm;
   do
@@ -2242,6 +2249,12 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
     {
       if (_do_debug_level>0){ cout<<"LP instability found."<<endl; }
       nInfeasibleIters++;
+      lastInfeasible=true;
+      aInfeasHist[iter]=true;
+    }
+    else{
+      lastInfeasible=false;
+      aInfeasHist[iter]=false;
     }
 
     // assign decision variables
@@ -2293,6 +2306,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
       }
 
       cout<<" Iteration Sequence: "<<endl;
+      cout<<"   >infeasible?: "; for (int i = 0; i <= iter; i++) { cout << aInfeasHist[i] << " "; }cout << endl;
       for (int p = 0; p < pModel->GetNumSubBasins(); p++) {
         if (pModel->GetSubBasin(p)->GetReservoir()!=NULL){
           long long SBID=pModel->GetSubBasin(p)->GetID();
@@ -2334,15 +2348,18 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
     // ----------------------------------------------------------------
     double  value;
     dv_type typ;
+    double wobble=0.0;
     double relax=0.0;
     for (int i=0;i<_nDecisionVars;i++)
     {
       p     = _pDecisionVars[i]->p_index;
       value = _pDecisionVars[i]->value;
       typ   = _pDecisionVars[i]->dvar_type;
+      //if (lastInfeasible){wobble=0.005;}
+      //else               {wobble=0.0;}
 
-      if      (typ == DV_STAGE) {ahiterHist[p][iter]=h_iter[p]; h_iter[p]=(1.0-relax)*value+(relax)*h_iter[p];  }
-      else if (typ == DV_QOUT ) {aQiterHist[p][iter]=Q_iter[p]; Q_iter[p]=(1.0-relax)*value+(relax)*h_iter[p];  }
+      if      (typ == DV_STAGE) {ahiterHist[p][iter]=h_iter[p]; h_iter[p]=(1.0-relax)*value+(relax)*h_iter[p]+wobble;  }
+      else if (typ == DV_QOUT ) {aQiterHist[p][iter]=Q_iter[p]; Q_iter[p]=(1.0-relax)*value+(relax)*Q_iter[p];  }
     }
 
     /*for (int p = 0; p < pModel->GetNumSubBasins(); p++) {
@@ -2462,9 +2479,15 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
   delete [] lpgoalrow;
   delete [] aDivert;
   delete [] aDivGuess;
+  delete [] aInfeasHist;
+  for (p = 0; p < _pModel->GetNumSubBasins(); p++) {
+    delete [] aQiterHist[p]; delete [] ahiterHist[p];
+  }
+  delete [] aQiterHist;
+  delete [] ahiterHist;
 
   //set state variables corresponding to decision variables
-  // SHOULD REALLY ONLY UPDATE DELIVERY, RES_EXTRACT, AND RESERVOIR OUTFLOW - ADD SWITCH TO HAVE OPT MODEL GENERATE STATE VARS OR REGULAR RAVEN SETUP
+  // SHOULD REALLY ONLY UPDATE DELIVERY, RES_EXTRACT, AND RESERVOIR OUTFLOW - ADD SWITCH TO HAVE OPT MODEL GENERATE STATE VARS OR REGULAR RAVEN SETUP?
   // ----------------------------------------------------------------
   double  value;
   dv_type typ;
@@ -2726,25 +2749,41 @@ void CDemandOptimizer::WriteLPSubMatrix(lp_lib::lprec* pLinProg,string file, con
   for (int i = 0; i < ncols; i++) {
     LPMAT<<lp_lib::get_col_name(pLinProg,i+1)<<",";
   }
-  LPMAT<<"compare,RHS"<<endl;
+  LPMAT<<"compare,RHS,,prevLHS,test"<<endl;
 
   string comp;
   REAL *val=new REAL [ncols+1];
+  double sumprod;
+  double RHS;
+  bool bo;
   for (int j=0; j<=nrows; j++)
   {
+    sumprod=0.0;
     LPMAT<<lp_lib::get_row_name(pLinProg,j)<<",";
     lp_lib::get_row(pLinProg,j,val);
+    RHS=lp_lib::get_rh(pLinProg,j);
     for (int i = 0; i < ncols; i++) {
       LPMAT<<val[i+1]<<",";
+      sumprod+=val[i+1]*_pDecisionVars[i]->value; //LHS vector
     }
     int ctype=lp_lib::get_constr_type(pLinProg,j);
-    if      (ctype==1){comp="<="; }
-    else if (ctype==2){comp=">="; }
-    else if (ctype==3){comp="=="; }
+    if      (ctype==1){comp="<="; bo = (sumprod <=RHS+REAL_SMALL); }
+    else if (ctype==2){comp=">="; bo = (sumprod >=RHS-REAL_SMALL); }
+    else if (ctype==3){comp="=="; bo = (fabs(sumprod-RHS)/fabs(0.5*(RHS+sumprod))<0.01); }
 
     LPMAT<<comp<<",";
-    LPMAT<<lp_lib::get_rh(pLinProg,j)<<endl;
+    LPMAT<<RHS<<",";
+    LPMAT<<","<<sumprod<<",";
+    if (bo){LPMAT<<"TRUE";}else{LPMAT<<"FALSE"; }
+    LPMAT<< endl;
   }
+  LPMAT<<endl;
+  LPMAT<<"last_solution,";
+  for (int i=0;i<_nDecisionVars;i++){
+    LPMAT<<_pDecisionVars[i]->value<<",";
+  }
+  LPMAT<<endl;
+
   LPMAT.close();
   delete [] val;
 }

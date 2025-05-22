@@ -155,7 +155,7 @@ void  CmvLatFlush::GetParticipatingParamList(string *aP,class_type *aPC,int &nP)
 {
   nP=0;
   if (_divert) {
-    aP[0]="DIVERT_FRACTION"; aPC[0]=CLASS_LANDUSE; nP++;
+    aP[0]="DIVERT_FRACT"; aPC[0]=CLASS_LANDUSE; nP++;
   }
 }
 //////////////////////////////////////////////////////////////////

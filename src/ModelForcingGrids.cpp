@@ -452,25 +452,4 @@ void CModel::GenerateZeroSnow(const optStruct &Options)
   AddForcingGrid(pSnow,F_SNOWFALL);
 }
 
-//////////////////////////////////////////////////////////////////
-/// \brief Returns average fraction of snow in precipitation between time t and following n timesteps
-/// \param x_col  [in] Column index
-/// \param y_row  [in] Row index
-/// \param t      [in] Time index
-/// \param n      [in] Number of time steps
-/// \return average fraction of snow in precipitation between time t and following n timesteps
-//
-double CModel::GetAverageSnowFrac(const int ic, const double t, const int n) const
-{
 
-  CForcingGrid *pSnow,*pRain;
-  pSnow=GetForcingGrid((F_SNOWFALL));
-  pRain=GetForcingGrid((F_RAINFALL));
-
-  double snow = pSnow->GetValue_avg(ic, t, n);
-  double rain = pRain->GetValue_avg(ic, t, n);
-
-  if ((snow+rain)==0.0){return 0.0;}
-  return snow/(snow+rain);
-
-}

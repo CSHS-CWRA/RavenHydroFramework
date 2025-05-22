@@ -297,7 +297,6 @@ private:/*------------------------------------------------------*/
 
   bool         ForcingGridIsInput                       (const forcing_type &ftype) const;
   bool         ForcingGridIsAvailable                   (const forcing_type &ftype) const;
-  double       GetAverageSnowFrac                       (const int idx, const double t, const int n) const;
 
   void         AddFromPETParamList                      (string *aP,class_type *aPC,int &nP,
                                                          const evap_method &evaporation, const netSWRad_method &SW_radia_net) const;

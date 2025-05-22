@@ -69,6 +69,7 @@ void CReservoir::BaseConstructor(const string Name,const long long SBID)
 
   _crest_ht=0.0;
   _crest_width=DOESNT_EXIST;
+  _Qunder_sill=RAV_BLANK_DATA;
 
   _max_capacity=0.0;
 
@@ -202,7 +203,8 @@ CReservoir::CReservoir(const string Name, const long long SBID,
     if(a_Qund==NULL){ _aQunder[i]=0.0; }
     else            { _aQunder[i]=a_Qund[i];   }
 
-    if (_aQ[i]==0){_crest_ht=_aStage[i];}
+    if (_aQ     [i]==0.0){_crest_ht   =_aStage[i];}
+    if ((_aQunder[i]==0.0) && (a_Qund!=NULL)){_Qunder_sill=_aStage[i];}
 
     // QA/QC:
     if ((i > 0) && ((_aStage[i]-_aStage[i-1])<0)){
@@ -439,14 +441,18 @@ double  CReservoir::GetMaxStage          (const int nn) const {
 double  CReservoir::GetDryStage          () const { return _min_stage;}
 
 //////////////////////////////////////////////////////////////////
-/// \returns sill elevation [m]
+/// \returns sill elevation [m] (elevation at which outflow should be zero)
 /// supports time-variable discharge curves and weir height adjustments
 //
 double  CReservoir::GetSillElevation(const int nn) const
 {
+  
   double weir_adj=0.0;
   if (_pWeirHeightTS!=NULL){
     weir_adj=_pWeirHeightTS->GetSampledValue(nn);
+  }
+  if (_Qunder_sill!=RAV_BLANK_DATA){
+    return min(_crest_ht+weir_adj,_Qunder_sill);
   }
   return _crest_ht+weir_adj;
 }
