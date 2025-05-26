@@ -484,6 +484,11 @@ bool    CReservoir::UseInStageAssimilation() const
 double  CReservoir::GetSurfaceArea       () const { return GetArea(_stage); }
 
 //////////////////////////////////////////////////////////////////
+/// \returns surface area given stage [m2]
+//
+double   CReservoir::GetSurfaceAreaFromStage  (const double h) const {return GetArea(h);}
+
+//////////////////////////////////////////////////////////////////
 /// \returns start-of-timestep surface area [m2]
 //
 double  CReservoir::GetOldSurfaceArea    () const { return GetArea(_stage_last); }
@@ -648,6 +653,8 @@ double CReservoir::GetStageDischargeDerivative(const double &stage, const int nn
   if(_pWeirHeightTS!=NULL) {
     weir_adj=_pWeirHeightTS->GetSampledValue(nn);
   }
+  double h_sill=GetSillElevation(nn);
+  if (stage <=h_sill){return 0.0;}
 
   return (GetWeirOutflow(stage+dh,weir_adj)-GetWeirOutflow(stage,weir_adj))/dh;
 }

@@ -44,6 +44,7 @@ enum dv_type
   DV_STAGE,   //< reservoir stage
   DV_DSTAGE,  //< positive change in reservoir stage over time step
   DV_DSTAGE2, //< negative change in reservoir stage over time step
+  DV_RSLACK,  //< slack variable for res outflow adjustment
   DV_BINRES,  //< binary integer value for above/beneath stage-discharge sill
   DV_DELIVERY,//< delivery of water demand
   DV_RETURN,  //< return flows to reach

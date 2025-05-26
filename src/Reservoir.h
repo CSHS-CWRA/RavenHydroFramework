@@ -193,6 +193,7 @@ public:/*-------------------------------------------------------*/
   double            GetOldStage              () const; //[m]
   double            GetSurfaceArea           () const; //[m2]
   double            GetOldSurfaceArea        () const; //[m2]
+  double            GetSurfaceAreaFromStage  (const double h) const;//[m2]
   double            GetLakebedThickness      () const; //[m]
   double            GetLakebedConductivity   () const; //[MJ/m/K/d]
   double            GetLakeConvectionCoeff   () const; //[MJ/m2/d/K]

@@ -288,7 +288,8 @@ string DVTypeToString(dv_type t)
   if (t==DV_QOUTRES ){return "DV_QOUTRES";  }
   if (t==DV_STAGE   ){return "DV_STAGE";    }
   if (t==DV_DSTAGE  ){return "DV_DSTAGE";   }
-  if (t==DV_DSTAGE2 ){return "DV_DSTAGE2";   }
+  if (t==DV_DSTAGE2 ){return "DV_DSTAGE2";  }
+  if (t==DV_RSLACK  ){return "DV_RSLACK";   }
   if (t==DV_BINRES  ){return "DV_BINRES";   }
   if (t==DV_DELIVERY){return "DV_DELIVERY"; }
   if (t==DV_RETURN  ){return "DV_RETURN";   }

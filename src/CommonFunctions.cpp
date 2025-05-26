@@ -1949,7 +1949,6 @@ double InterpolateCurve(const double x,const double *xx,const double *y,int N,bo
   {
     //int i=0; while ((x>xx[i+1]) && (i<(N-2))){i++;}//Dumb Search
     int i=SmartIntervalSearch(x,xx,N,ilast);
-    if(i==DOESNT_EXIST) { return 0.0; }
     ExitGracefullyIf(i==DOESNT_EXIST,"InterpolateCurve::mis-ordered list or infinite x",RUNTIME_ERR);
     ilast=i;
     if (fabs(xx[i+1]-xx[i]) < REAL_SMALL) { return (y[i]+y[i+1])/2; }  // x locations too close to each other

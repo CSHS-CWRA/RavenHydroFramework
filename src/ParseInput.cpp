@@ -1782,7 +1782,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(94):  //--------------------------------------------
-    {/*:AssimilatReservoirStage*/
+    {/*:AssimilateReservoirStage*/
       if(Options.noisy) { cout << "Assimilate lake stage on" << endl; }
       Options.assimilate_stage=true;
       break;

@@ -1757,16 +1757,18 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
 //
 void CSubBasin::InitializePostRVM(const optStruct &Options)
 {
-  if (_nWaterDemands>0){
-    _aQdelivered=new double [_nWaterDemands];
-    _aQreturned =new double [_nWaterDemands];
-    for (int ii=0;ii<_nWaterDemands;ii++){
-      _pWaterDemands[ii]->Initialize(Options);
-      _aQdelivered  [ii]=0.0;
-      _aQreturned   [ii]=0.0;
+  if (!_disabled) {
+    if (_nWaterDemands>0){
+      _aQdelivered=new double [_nWaterDemands];
+      _aQreturned =new double [_nWaterDemands];
+      for (int ii=0;ii<_nWaterDemands;ii++){
+        _pWaterDemands[ii]->Initialize(Options);
+        _aQdelivered  [ii]=0.0;
+        _aQreturned   [ii]=0.0;
+      }
     }
+    if (_pReservoir!=NULL){_pReservoir->InitializePostRVM(Options); }
   }
-  if (_pReservoir!=NULL){_pReservoir->InitializePostRVM(Options); }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes channel flows, channel storage, rivulet storage from estimated mean inflows
