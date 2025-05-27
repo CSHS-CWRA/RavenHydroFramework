@@ -574,11 +574,14 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           if (Options.noisy){cout<<" Use Stage Units Correction "<<endl; }
           CSubBasin *pSB=pModel->GetSubBasinByID(s_to_ll(s[1]));
 
-          ExitGracefullyIf(pSB->GetGlobalIndex()==DOESNT_EXIST,"ParseManagementFile: subbasin ID in :UseStageUnitsCorrection is invalid",BAD_DATA_WARN);
-
+          if (pSB==NULL){
+            ExitGracefully("ParseManagementFile: subbasin ID in :UseStageUnitsCorrection is invalid",BAD_DATA_WARN);
+            break;
+          }
           if (pSB->GetReservoir()==NULL){
             string advice="ParseManagementFile:The reservoir in subbasin "+to_string(pSB->GetID()) + " doesnt exist and cannot be used to calculate a stage units correction.";
             ExitGracefully(advice.c_str(), BAD_DATA_WARN);
+            break;
           }
           else{
             int k=pSB->GetReservoir()->GetHRUIndex();
@@ -759,11 +762,12 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         }
         //----------------------------------------------
         else if (!strcmp(s[0], ":EndWorkflowVarDefinition")) {
-          if (Options.noisy){cout<<endl; }
+          if (Options.noisy){cout<<":EndWorkflowVarDefinition"<<endl; }
           break;
         }
         else {
-          WriteWarning("ParseManagementFile: Unrecognized command in :WorkflowVarDefinition command block",Options.noisy);
+          string warn="ParseManagementFile: Unrecognized command "+to_string(s[0])+"in :WorkflowVarDefinition command block at line "+to_string(pp->GetLineNumber())+" of "+pp->GetFilename();
+          WriteWarning(warn.c_str(),Options.noisy);
         }
         firstword=pp->Peek();
         if (firstword == ":Expression") {pp->NextIsMathExp();}
@@ -1232,7 +1236,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     {/*:DemandExpression [expression]*/
       if(Options.noisy) { cout <<"Demand expression"<<endl; }
       if (pDemand==NULL){
-        ExitGracefully(":DemandExpression must be between :WaterDemand and :EndWaterDemand commands.",BAD_DATA_WARN);
+        ExitGracefully(":DemandExpression must be between :WaterDemand and :EndWaterDemand or :ReservoirWaterDemand and :EndReservoirWaterDemand commands.",BAD_DATA_WARN);
       }
       else {
         expressionStruct *pExp;
@@ -1253,7 +1257,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       }
       break;
     }
-    case (63): //--------------------------------------------
+    case (64): //--------------------------------------------
     { /*
       :ReservoirWaterDemand [SBID] [ID] [Name]
          ...
@@ -1289,13 +1293,13 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       }
       break;
     }
-    case (64): //--------------------------------------------
+    case (65): //--------------------------------------------
     {/*:EndReservoirWaterDemand*/
       if(Options.noisy) { cout <<"..end reservoir water demand object"<<endl; }
       pDemand=NULL;
       break;
     }
-    case (65): //--------------------------------------------
+    case (66): //--------------------------------------------
     {/*:IsUnrestricted*/
       if(Options.noisy) { cout <<"Set demand as Unrestricted"<<endl; }
       if (pDemand == NULL) {
