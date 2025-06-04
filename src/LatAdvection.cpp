@@ -165,7 +165,7 @@ void   CmvLatAdvection::GetLateralExchange(const double * const *state_vars, //a
       Asource=Ato;
     }
     corr=1.0;
-    corr=pTransModel->GetAdvectionCorrection(_constit_ind,pHRUs[kFrom],iFromWater,iToWater,mass/vol*MM_PER_METER/LITER_PER_M3);//mg/m2/mm->mg/L
+    corr=pTransModel->GetAdvectionCorrection(_constit_ind,pHRUs[kFrom],iFromWater,iToWater,mass,vol,Q[q]);
 
     exchange_rates[q]=0.0;
     if(vol>1e-6) //note: otherwise Q should generally be constrained to be <vol/tstep & 0.0<rates[q]<(m/tstep/Rf)

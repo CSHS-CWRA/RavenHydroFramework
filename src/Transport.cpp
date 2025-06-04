@@ -450,16 +450,33 @@ double CTransportModel::GetConcentration(const int k,const int sv_index) const
 
   return _pConstitModels[c]->CalculateReportingConcentration(mass,vol);
 }
+//////////////////////////////////////////////////////////////////
+/// \brief returns concentration (or temperature, or isotopic composition) in HRU k in storage variable of type typ and layer=layer
+/// \param k - global HRU index of interest
+/// \param c - constituent index
+/// \param typ - state variable 
+//
+double CTransportModel::GetConcentration(const int k, const int c, const sv_type typ, const int layer) const 
+{
+  int i_stor=pModel->GetStateVarIndex(typ,layer);
+  int m =GetLayerIndex(c,i_stor);
+  int i =pModel->GetStateVarIndex(CONSTITUENT,m);
+  return GetConcentration(k,i);
+}
 
 //////////////////////////////////////////////////////////////////
-/// \brief adds new transportable constituent to model
-/// \note adds corresponding state variables to model
-/// \param name [in] name of constituent
-/// \param type [in] constit_type - type of constituent (mass/energy/tracer)
+/// \brief returns correction factor for adjusting advected mass transport
+/// \param c [in] - constituent index
+/// \param pHRU [in] - HRU
+/// \param iFromWater [in] - state variable index of source 
+/// \param iToWater [in] - state variable index of recipient
+/// \param mass [in] - source mass prior to advection [mg]
+/// \param vol [in] - source volume prior to advection [mm] or [mm-m2]
+/// \param Q [in] - flow between source and recipient [mm/d] or [mm-m2] 
 //
-double CTransportModel::GetAdvectionCorrection(const int c,const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double& C) const
+double CTransportModel::GetAdvectionCorrection(const int c,const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double& mass, const double &vol, const double &Q) const
 {
-  return _pConstitModels[c]->GetAdvectionCorrection(pHRU,iFromWater,iToWater,C);
+  return _pConstitModels[c]->GetAdvectionCorrection(pHRU,iFromWater,iToWater,mass,vol,Q);
 }
 
 //////////////////////////////////////////////////////////////////

@@ -3278,7 +3278,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 
           double C1=s_to_d(s[3+add]);
           double C2=s_to_d(s[3+add]);
-          if ((add2==1) && (Len>=5)){C2=s_to_d(s[5]);} // for isotope
+          if ((add2==1) && (Len>=5)){C2=s_to_d(s[4]);} // for isotope
           pModel->GetTransportModel()->GetConstituentModel(c)->AddDirichletCompartment(i_stor,kk,C1,C2);
           //if time series is specified, s_to_d(time series file) returns zero
         }

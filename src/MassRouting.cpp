@@ -131,9 +131,9 @@ void   CConstituentModel::ApplySpecifiedMassInflows(const int p,const double t,d
   {
     if(_pSpecFlowConcs[i]->GetLocID()==SBID) {
       C=_pSpecFlowConcs[i]->GetValue(t); //mg/L or C
-      if(_type==ENTHALPY) { C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3
-      else                { C*=LITER_PER_M3; } //mg/m3
-      ExitGracefullyIf(_type==ISOTOPE,"ApplySpecifiedMassInflows: cannot handle isotopes",BAD_DATA);
+      if      (_type==ENTHALPY){ C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3
+      else if (_type==ISOTOPE ){ C=ConvertConcentration(C)*LITER_PER_M3; } //mg/m3
+      else                     { C*=LITER_PER_M3; } //mg/m3
 
       Minnew=Q*C;  //[m3/d]*[mg/m3] or [m3/d]*[MJ/m3]
     }
@@ -171,19 +171,18 @@ double   CConstituentModel::GetMassAddedFromInflowSources(const double &t,const 
 
     Q=_pModel->GetSubBasinByID(SBID)->GetOutflowRate()*SEC_PER_DAY; //[m3/d] Flow at end of time step
     C=_pSpecFlowConcs[i]->GetValue(t+tstep);                             //mg/L or C
-    if(_type==ENTHALPY) { C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3
-    else                { C*=LITER_PER_M3; } //mg/m3
-
-    //TMP DEBUG - DOES NOT HANDLE ISOTOPES PROPERLY !!!
-    ExitGracefullyIf(_type==ISOTOPE,"GetMassAddedFromInflowSources: cannot handle isotopes",BAD_DATA);
+    if      (_type==ENTHALPY){ C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3
+    else if (_type==ISOTOPE ){ C=ConvertConcentration(C)*LITER_PER_M3; } //mg/m3
+    else                     { C*=LITER_PER_M3; } //mg/m3
 
     mass+=0.5*Q*C*tstep;  //[mg] or [MJ]
 
     if(t>0) {
       Qold=_pModel->GetSubBasinByID(SBID)->GetLastOutflowRate()*SEC_PER_DAY;//[m3/d] Flow at start of time step
       C=_pSpecFlowConcs[i]->GetValue(t);                             //mg/L or C
-      if(_type==ENTHALPY) { C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3
-      else                { C*=LITER_PER_M3; } //mg/m3
+      if      (_type==ENTHALPY){ C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3
+      else if (_type==ISOTOPE ){ C=ConvertConcentration(C)*LITER_PER_M3; } //mg/m3
+      else                     { C*=LITER_PER_M3; } //mg/m3
       mass+=0.5*Qold*C*tstep;
     }
   }

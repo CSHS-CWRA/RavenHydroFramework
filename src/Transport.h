@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2022 the Raven Development Team
+Copyright (c) 2008-2025 the Raven Development Team
 ----------------------------------------------------------------*/
 
 #ifndef TRANSPORTMODEL_H
@@ -157,8 +157,9 @@ public:/*-------------------------------------------------------*/
   const CEnthalpyModel *GetEnthalpyModel() const;
 
   double GetConcentration           (const int k,const int sv_index) const;
+  double GetConcentration           (const int k,const int c,const sv_type typ,const int layer) const;
 
-  double GetAdvectionCorrection     (const int c,const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double& C) const;
+  double GetAdvectionCorrection     (const int c,const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double& mass, const double &vol, const double &Q) const;
 
   int    GetProcessIndex            (const string name) const;
 
@@ -270,7 +271,7 @@ public:/*-------------------------------------------------------*/
   bool   IsDirichlet             (const int i_stor,const int k,const time_struct &tt,double &Cs, const double blend=1.0) const;
   double GetSpecifiedMassFlux    (const int i_stor,const int k,const time_struct &tt) const;
 
-  virtual double GetAdvectionCorrection(const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double& C) const;
+  virtual double GetAdvectionCorrection(const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double& mass, const double &vol, const double &Q) const;
 
   virtual double CalculateReportingConcentration(const double &M,const double &V) const;
   virtual double ConvertConcentration  (const double &Cs) const; //converts T->MJ/mm/m2 or C->mg/mm/m2 or Ciso->mg/mm/m2
@@ -317,6 +318,7 @@ public:/*-------------------------------------------------------*/
           void   UpdateMassOutflows       (const int p,const double *aMoutnew,const double &Mlat_new,const double &ResMass,const double &ResSedMass, double &MassOutflow,
                                            const optStruct &Options,const time_struct &tt,const bool initialize);
 
+  virtual void   UpdateInitialConditions     (const optStruct &Options);
   virtual void   WriteOutputFileHeaders      (const optStruct &Options);
   virtual void   WriteMinorOutput            (const optStruct &Options,const time_struct &tt);
   virtual void   WriteEnsimOutputFileHeaders (const optStruct &Options);

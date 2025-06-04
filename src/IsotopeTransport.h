@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2022 the Raven Development Team
+Copyright (c) 2008-2025 the Raven Development Team
 ----------------------------------------------------------------*/
 
 #ifndef ISOTOPE_TRANSPORT_H
@@ -11,8 +11,8 @@ Copyright (c) 2008-2022 the Raven Development Team
 
 /// Isotope global constants
 const double TO_PER_MILLE=1000.0;   // convert from raw ratio to per mille (per thousand)
-const double RV_VMOW_O18 =0.002228; // Vienna Mean Ocean Water Mass Ratio  (O18/O16)
-const double RV_VMOW_H2  =0.000156; // Vienna Mean Ocean Water Mass Ratio  (H2/H1)
+const double RV_VMOW_O18 =0.0020052; //0.002228; // Vienna Mean Ocean Water Mass Ratio  (O18/O16)
+const double RV_VMOW_H2  =0.00015576; // Vienna Mean Ocean Water Mass Ratio  (H2/H1)
 
 /// Isotope types
 enum iso_type
@@ -31,8 +31,8 @@ class CIsotopeModel :public CConstituentModel
 private:
   iso_type _isotope;
 
-  double RvalToConcentration(const double &Rv  ) const;
-  double ConcentrationToRval(const double &conc) const;
+  double   _initSWconc; // initial concentration of isotopes in all surface water bodies o/oo
+
   double ConcToComposition  (const double &conc) const;
   double CompositionToConc  (const double &d   ) const;
 
@@ -40,14 +40,17 @@ public:/*-------------------------------------------------------*/
   CIsotopeModel(CModel *pMod,CTransportModel *pTMod,string name,const int c);
   ~CIsotopeModel();
 
+  void   SetSurfaceWaterConc(const double &delta);
+
   double CalculateReportingConcentration(const double &mass, const double &vol) const; //returns [o/oo]
-  double ConvertConcentration(const double &Cs) const;
+  double ConvertConcentration(const double &delta) const;
   double GetOutflowConcentration(const int p) const;
 
-  double GetAdvectionCorrection(const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double &C) const;
+  double GetAdvectionCorrection(const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double& mass, const double &vol, const double &Q) const;
 
   //Manipulators (inherited from CConstitModel)
-  void   Initialize                 (const optStruct& Options);
+  void   Initialize                 (const optStruct &Options);
+  void   UpdateInitialConditions    (const optStruct &Options);
   void   WriteEnsimOutputFileHeaders(const optStruct &Options);
   void   WriteEnsimMinorOutput      (const optStruct &Options,const time_struct &tt);
 };

@@ -187,16 +187,19 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
       vol =sv[iToWater];
       iF=iToWater;iT=iFromWater;
     }
-    if (vol>1e-6)//note: otherwise Q should generally be constrained to be <vol/tstep & 0.0<rates[q]<(m/tstep*corr)
+    if ((vol>1e-6) && (Q[q]!=0))//note: otherwise Q should generally be constrained to be <vol/tstep & 0.0<rates[q]<(m/tstep*corr)
     {
-      corr=pTransModel->GetAdvectionCorrection(_constit_ind,pHRU,iF,iT,mass/vol*MM_PER_METER/LITER_PER_M3);//mg/m2/mm->mg/L
+      corr=pTransModel->GetAdvectionCorrection(_constit_ind,pHRU,iF,iT,mass,vol,Q[q]);
 
       rates[q]=Q[q]*mass/vol*corr; //[mg/m2/d] or [MJ/m2/d]
       if(fabs(rates[q])>mass/tstep) { rates[q]=(Q[q]/fabs(Q[q]))*mass/tstep; }//emptying out compartment
 
-      if ((!isEnthalpy) && (!isIsotope)){ //negative enthalpy/temperature/isotopic composition allowed
+      if ((!isEnthalpy)){ //negative enthalpy/temperature allowed
         if(mass<-1e-9) { ExitGracefully("CmvAdvection - negative mass",RUNTIME_ERR); }
       }
+    }
+    else {
+      rates[q]=0.0;
     }
 
     //special consideration - atmospheric precip can have negative storage but still specified concentration or temperature
@@ -205,7 +208,7 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
       (pConstit->IsDirichlet(iF,k,tt,Cs,1.0-pHRU->GetForcingFunctions()->snow_frac)))
     {
       if(!isEnthalpy) {
-        Cs=pConstit->ConvertConcentration(Cs);
+        Cs=pConstit->ConvertConcentration(Cs);//[mg/L]->[mg/mm-m2] or [o/oo]->[mg/mm-m2]
       }
       else {
         Cs=pTransModel->GetEnthalpyModel()->GetDirichletEnthalpy(pHRU,Cs);
@@ -227,7 +230,7 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
     if(pConstit->IsDirichlet(iFromWater,k,tt,Cs))
     {
       if(!isEnthalpy) {
-        Cs=pConstit->ConvertConcentration(Cs);//[mg/L]->[mg/mm-m2]
+        Cs=pConstit->ConvertConcentration(Cs);//[mg/L]->[mg/mm-m2] or [o/oo]->[mg/mm-m2]
       }
       else{
         Cs=pTransModel->GetEnthalpyModel()->GetDirichletEnthalpy(pHRU,Cs);
@@ -244,7 +247,7 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
     if(pConstit->IsDirichlet(iToWater,k,tt,Cs))
     {
       if(!isEnthalpy) {
-        Cs=pConstit->ConvertConcentration(Cs);
+        Cs=pConstit->ConvertConcentration(Cs);//[mg/L]->[mg/mm-m2] or [o/oo]->[mg/mm-m2]
       }
       else{
         Cs=pTransModel->GetEnthalpyModel()->GetDirichletEnthalpy(pHRU,Cs);

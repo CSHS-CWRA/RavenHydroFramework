@@ -412,7 +412,7 @@ void CDemandOptimizer::AddNonLinVariable(const string name, const string targetD
   nonlin_var *pNonLinVar=new nonlin_var(name,targetDV);
 
   if(!DynArrayAppend((void**&)(_pNonLinVars),(void*)(pNonLinVar),_nNonLinVars)) {
-    ExitGracefully("CConstituentModel::AddDirichletCompartment: adding NULL source",BAD_DATA);
+    ExitGracefully("CDemandOptimizer::AddNonLinVariable: adding NULL source",BAD_DATA);
   }
 }
 //////////////////////////////////////////////////////////////////

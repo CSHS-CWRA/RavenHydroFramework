@@ -99,7 +99,7 @@ bool  CConstituentModel::IsPassive() const {
 /// \param iToWater   [in] index of "to" water storage state variable
 /// \param Cs         [in] RAW constituent concentration (mg/L or MJ/L or L/L, not mg/L or C or o/oo)
 //
-double CConstituentModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double& Cs) const
+double CConstituentModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double& mass, const double &vol, const double &Q) const
 {
   /*sv_type fromType=_pModel->GetStateVarType(iFromWater);
   sv_type toType  =_pModel->GetStateVarType(iToWater);
@@ -171,17 +171,18 @@ double CConstituentModel::GetCatchmentTransitLosses(const int p) const
 bool  CConstituentModel::IsDirichlet(const int i_stor,const int k,const time_struct &tt,double &Cs,const double blend) const
 {
   Cs=0.0;
+  double Cs2=0.0;
   int i_source=_aSourceIndices[i_stor][k];
   if(i_source==DOESNT_EXIST)          { return false; }
   if(!_pSources[i_source]->dirichlet) { return false; }
-  Cs = _pSources[i_source]->concentration;
-  if (blend!=1.0){Cs=Cs*blend+(1-blend)*_pSources[i_source]->concentration2;}
 
-  if(Cs != DOESNT_EXIST) { return true; }
-  else {//time series
-    Cs = _pSources[i_source]->pTS->GetValue(tt.model_time);
-    return true;
-  }
+  Cs =_pSources[i_source]->concentration;
+  Cs2=_pSources[i_source]->concentration2;
+  if (blend!=1.0){Cs=(blend)*Cs+(1-blend)*Cs2; }
+
+  if(Cs == DOESNT_EXIST) {Cs = _pSources[i_source]->pTS->GetValue(tt.model_time);}//time series
+
+  return true;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns specified mass flux for given constitutent and water storage unit at time tt
@@ -666,6 +667,13 @@ void GetUnitNames(constit_type type,bool writemass,string &kg,string &kgd,string
       kg="[1/m2]"; kgd="[1/m2/d]"; mgL="[1/m2]"; //very hard to interpret these units
     }
   }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief update initial conditions
+/// \details Called prior to simulation (but after initialization) from CModel::Initialize()
+//
+void CConstituentModel::UpdateInitialConditions(const optStruct& Options) {
+  //default: does nothing
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Write transport output file headers
@@ -1325,7 +1333,12 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
 
     if(_pTransModel->GetStorWaterIndex(ii)!=iCumPrecip)
     {
-      _OUTPUT<<","<<concentration;     //print column entry
+      if ((V < 1e-6) && (_type == ISOTOPE)) {
+        _OUTPUT<<",";
+      }
+      else {
+        _OUTPUT<<","<<concentration;     //print column entry
+      }
       currentMass+=M*(area*M2_PER_KM2); //[mg]  or [MJ]  //increment total mass in system
     }
     else {

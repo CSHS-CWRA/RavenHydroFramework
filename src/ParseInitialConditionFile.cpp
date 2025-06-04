@@ -8,6 +8,7 @@
 #include "HydroUnits.h"
 #include "ParseLib.h"
 #include "EnergyTransport.h"
+#include "IsotopeTransport.h"
 
 void SetInitialStateVar(CModel *&pModel,const int SVind,const sv_type typ,const int m,const int k,const double &val);
 //////////////////////////////////////////////////////////////////
@@ -114,6 +115,8 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
 
     else if  (!strcmp(s[0],":InitialReservoirFlow"        )){code=7;  }
     else if  (!strcmp(s[0],":InitialReservoirStage"       )){code=8;  }
+
+    else if  (!strcmp(s[0],":InitialSurfaceWaterConcentration")){code=9;}
 
     //else if  (!strcmp(s[0],":InitialReservoirConcentration"       )){code=9;  concname=s[1];  }
     //else if  (!strcmp(s[0],":InitialReservoirTemperature"         )){code=9;  concname="TEMPERATURE"; }
@@ -675,6 +678,25 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       }
       break;
     }
+    case(9):  //----------------------------------------------
+    {
+      //:InitialSurfaceWaterConcentration [constit_name] [val] # (only for isotopes)
+      if (Len<3){break;}
+      CIsotopeModel *pIsoModel;
+      int c=pModel->GetTransportModel()->GetConstituentIndex(s[1]);
+      if(c==DOESNT_EXIST) {
+        WriteWarning("ParseInitialConditions: Unrecognized constituent entry in :InitialSurfaceWaterConcentration within .rvc file. Command was ignored.",Options.noisy);
+        break;
+      }
+      CConstituentModel *pConstit=pModel->GetTransportModel()->GetConstituentModel(c);
+      if (pConstit->GetType() != ISOTOPE) {
+        WriteWarning("ParseInitialConditions: :InitialSurfaceWaterConcentration can only be used with isotope constituents. Command was ignored.",Options.noisy);
+        break;
+      }
+      pIsoModel=(CIsotopeModel*)(pConstit);
+      pIsoModel->SetSurfaceWaterConc(s_to_d(s[2]));
+      break;
+    }
     case(10):  //----------------------------------------------
     {
       //:TimeStamp [yyyy-mm-dd] [00:00:00]
@@ -911,6 +933,12 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
   } //end while !end_of_file
   IC.close();
 
+  // update initial conditions for transport models 
+  //======================================================================
+  for (int c = 0; c < pModel->GetTransportModel()->GetNumConstituents(); c++) {
+    pModel->GetTransportModel()->GetConstituentModel(c)->UpdateInitialConditions(Options);
+  }
+
   // check quality of initial state variables
   //======================================================================
   CHydroUnit *pHRU;
@@ -952,7 +980,7 @@ void SetInitialStateVar(CModel *&pModel,const int SVind,const sv_type typ,const 
   {
     pModel->GetHydroUnit(k)->SetStateVarValue(SVind,val);
   }
-  else { // specifying mg/L or degrees C, must be converted to mg/m2 or MJ/m2
+  else { // specifying mg/L, o/oo or degrees C, must be converted to mg/m2 or MJ/m2
     string name =pModel->GetTransportModel()->GetConstituentTypeName(m);
     int       c=pModel->GetTransportModel()->GetConstituentIndex(name);
 

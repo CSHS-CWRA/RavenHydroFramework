@@ -68,7 +68,7 @@ double CEnthalpyModel::CalculateReportingConcentration(const double &M,const dou
 //
 double CEnthalpyModel::ConvertConcentration(const double &T) const
 {
-  //specified in C, convert to MJ/m2
+  //specified in degrees C, convert to MJ/mm/m2
   double pctfroz=0.0;
   if (T<0.0){pctfroz=1.0;} //treats all 0 degree water as unfrozen
   return ConvertTemperatureToVolumetricEnthalpy(T,pctfroz)/MM_PER_METER; //[C]->[MJ/m3]*[M/mm]=[MJ/mm-m2]
@@ -546,12 +546,14 @@ void CEnthalpyModel::Initialize(const optStruct& Options)
     for(int p=0;p<_pModel->GetNumSubBasins();p++)
     {
       pBasin=_pModel->GetSubBasin(p);
-      const double *aQin=pBasin->GetInflowHistory();
+      
       for(int i=0; i<pBasin->GetNumSegments(); i++)
       {
         _aMout[p][i]=pBasin->GetOutflowArray()[_pModel->GetSubBasin(p)->GetNumSegments()-1] * SEC_PER_DAY * hv; //not really - requires outflow rate from all segments in general case. Don't have access to this. assumes nSegs=1
       }
       _aMout_last[p]=_aMout[p][0];
+
+      const double *aQin=pBasin->GetInflowHistory();
       for(int i=0; i<_nMinHist[p]; i++)
       {
         _aMinHist[p][i]=aQin[i]*SEC_PER_DAY*hv;
