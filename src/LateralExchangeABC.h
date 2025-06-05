@@ -83,6 +83,7 @@ private:/*------------------------------------------------------*/
   int _iFlushTo;   //< global state variable index of target state var
   int _kk_from;    //< HRU group index of source HRUs
   int _kk_to;      //< HRU group index of target HRUs
+  double *_aFrac;  //< fractional area of the recipient HRUs in each subbasin (1.0 if only one recipient)
 
   bool _divert;    //< true if this is simulation partial flushing using HRU land use property DIVERT_FRACTION
 

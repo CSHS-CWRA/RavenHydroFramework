@@ -27,6 +27,7 @@ CmvLatFlush::CmvLatFlush(int   from_sv_ind,
   _kk_to     =to_HRU_grp;
   _constrain_to_SBs=constrain_to_SBs;
   _divert    =divert;
+  _aFrac     =NULL;
 
   DynamicSpecifyConnections(0); //purely lateral flow, no vertical
 
@@ -44,7 +45,9 @@ CmvLatFlush::CmvLatFlush(int   from_sv_ind,
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the default destructor
 //
-CmvLatFlush::~CmvLatFlush(){}
+CmvLatFlush::~CmvLatFlush(){
+  delete [] _aFrac;
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Initialization (prior to solution)
@@ -56,6 +59,7 @@ void CmvLatFlush::Initialize()
   int *kTo  =new int[_pModel->GetNumHRUs()];
   string fromHRUGrp=_pModel->GetHRUGroup(_kk_from)->GetName();
   string toHRUGrp  =_pModel->GetHRUGroup(  _kk_to)->GetName();
+  _aFrac=new double [MAX_LAT_CONNECTIONS];
   int q=0;
   int k;
 
@@ -92,28 +96,41 @@ void CmvLatFlush::Initialize()
     //Alternate approach: multiple recipient stores
     bool source_sink_issue=false;
     int k1,k2;
+    int nRecipients;
+    double Asum,area;
     for(int p=0;p<_pModel->GetNumSubBasins();p++)
     {
-      for(int ks=0; ks<_pModel->GetSubBasin(p)->GetNumHRUs(); ks++)
+      
+      for(int ks=0; ks<_pModel->GetSubBasin(p)->GetNumHRUs(); ks++) //sources
       {
         k1=_pModel->GetSubBasin(p)->GetHRU(ks)->GetGlobalIndex();
-        for(int ks2=0; ks2<_pModel->GetSubBasin(p)->GetNumHRUs(); ks2++)
-        {
-          k2=_pModel->GetSubBasin(p)->GetHRU(ks2)->GetGlobalIndex();
-
-          if ((_pModel->IsInHRUGroup(k1,toHRUGrp)) && (_pModel->IsInHRUGroup(k2,fromHRUGrp)))
+        Asum=0.0;
+        nRecipients=0;
+        if (_pModel->IsInHRUGroup(k1,fromHRUGrp)){
+          for(int ks2=0; ks2<_pModel->GetSubBasin(p)->GetNumHRUs(); ks2++) //recipients
           {
-            if (k1!=k2){
-              kTo  [q]=k1;
-              kFrom[q]=k2;
-              q++;
-              ExitGracefullyIf(q>=MAX_LAT_CONNECTIONS,"Number of HRU connections in LateralFlush or LateralDivert exceeds MAX_LAT_CONNECTIONS limit.",BAD_DATA);
-            }
-            else {
-              //may want to throw warning if source is also sink
-              source_sink_issue=true;
+            k2=_pModel->GetSubBasin(p)->GetHRU(ks2)->GetGlobalIndex();
+
+            if (_pModel->IsInHRUGroup(k2,toHRUGrp))
+            {
+              if (k1!=k2){
+                kFrom[q]=k1;
+                kTo  [q]=k2;
+                area=_pModel->GetSubBasin(p)->GetHRU(ks2)->GetArea();
+                _aFrac[q]=area;
+                Asum+=area;//sum of recipient areas
+                nRecipients++;
+                q++;
+                ExitGracefullyIf(q>=MAX_LAT_CONNECTIONS,"Number of HRU connections in LateralFlush or LateralDivert exceeds MAX_LAT_CONNECTIONS limit.",BAD_DATA);
+              }
+              else {
+                source_sink_issue=true;//throw warning if source is also sink
+              }
             }
           }
+        }
+        for (int qq = 0; qq < nRecipients; qq++) {//once sum is known for each source, calculate fraction
+          _aFrac[q-qq]=_aFrac[q-qq]/Asum;
         }
       }
     }
@@ -145,6 +162,7 @@ void CmvLatFlush::Initialize()
       if(_pModel->IsInHRUGroup(k,fromHRUGrp) && (kToSB!=DOESNT_EXIST)) {
         kFrom[q]=k;
         kTo[q]=kToSB;
+        _aFrac[q]=1.0; //only a single recipient
         q++;
       }
     }
@@ -219,7 +237,7 @@ void CmvLatFlush::GetLateralExchange( const double * const     *state_vars, //ar
       mult=pHRUs[_kFrom[q]]->GetSurfaceProps()->divert_fract;
     }
 
-    exchange_rates[q]=max(mult*stor,0.0)/Options.timestep*Afrom; //[mm-m2/d]
+    exchange_rates[q]=max(mult*stor,0.0)/Options.timestep*Afrom*_aFrac[q]; //[mm-m2/d]
     exchange_rates[q]=min(exchange_rates[q],max_rate); //constrains so that it does not overfill receiving compartment
   }
 }
