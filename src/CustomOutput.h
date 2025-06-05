@@ -90,15 +90,15 @@ private:/*------------------------------------------------------*/
   string       _statStr;    ///< statistic type string
   string       _spaceAggStr;///< spatial aggregation type string
 
-  double     **data;        ///< stores accumulated data for each HRU,Basin, or WShed (size:[num_store][num_data])
-  int          num_data;    ///< number of data points
-  int          num_store;   ///< number of data items needed for each HRU, Basin or WShed
+  double     **_aData;      ///< stores accumulated data for each HRU,Basin, or WShed (size:[_nDataItems][_nData])
+  int          _nData;      ///< number of data points
+  int          _nDataItems; ///< number of data items needed for each HRU, Basin or WShed
                             //(e.g., =2 if max and min are both tracked)
-  int         _time_index;  ///< index tracking current output line (e.g., 3=3 years/months/days passed, dependent upon _timeAgg
+  int          _time_index; ///< index tracking current output line (e.g., 3=3 years/months/days passed, dependent upon _timeAgg
 
   int          _count;      ///< counts accumulated data (# of timesteps since last output dump)
 
-  int          kk_only;     ///< index of HRUGroup for which output is generated when spaceAgg==BY_SELECT_HRUS
+  int          _kk_only;     ///< index of HRUGroup for which output is generated when spaceAgg==BY_SELECT_HRUS
 
   const CModel *pModel;     ///< Reference to model
 

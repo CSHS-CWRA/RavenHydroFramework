@@ -58,8 +58,7 @@ private:/*------------------------------------------------------*/
 
   double     **_aVal;                        ///< Array of magnitudes of pulses (variable units)
   ///                                        ///< [size _ChunkSize, _nNonZeroWeightedGridCells]
-  ///                                        ///< time steps are in model resolution (means original input data are
-  ///                                        ///< already aggregated to match model resolution)
+  ///                                        ///< time steps are in model resolution (means original input data are already aggregated to match model resolution)
 
   double     **_GridWeight;                  ///< Sparse array of weights for each HRU for a list of cells
   //                                         ///< Dimensions : [_nHydroUnits][_nWeights[k]] (variable)

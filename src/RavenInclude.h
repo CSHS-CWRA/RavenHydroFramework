@@ -1,4 +1,4 @@
-/*----------------------------------------------------------------
+﻿/*----------------------------------------------------------------
   Raven Library Source Code
   Copyright (c) 2008-2025 the Raven Development Team
 
@@ -332,7 +332,7 @@ const int     MAX_SV_LAYERS       =160;         ///< Max number of layers per st
 const int     MAX_SOILLAYERS      =50;          ///< Max number of soil layers in profile
 const int     MAX_STATE_VAR_TYPES =100;         ///< Max number of *types* of state variables in model
 const int     MAX_STATE_VARS      =500;         ///< Max number of simulated state variables manipulable by one process (CAdvection worst offender)
-const int     MAX_CONNECTIONS     =650;         ///< Max number of to/from connections in any single process (CAdvection worst offender)
+const int     MAX_CONNECTIONS     =1000;        ///< Max number of to/from connections in any single process (CAdvection worst offender)
 const int     MAX_LAT_CONNECTIONS =4000;        ///< Max number of lateral HRU flow connections
 const int     MAX_SOIL_PROFILES   =200;         ///< Max number of soil profiles
 const int     MAX_VEG_CLASSES     =200;         ///< Max number of vegetation classes

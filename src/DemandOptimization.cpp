@@ -2254,7 +2254,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
       else if (retval==ACCURACYERROR){code="ACCURACYERROR "; }
 
       cout<<"=========================================="<<endl;
-      cout<<"LP SOLVE CANNOT SOLVE OPTIMZIATION PROBLEM"<<endl;
+      cout<<"LP SOLVE CANNOT SOLVE OPTIMIZATION PROBLEM"<<endl;
       cout<<"=========================================="<<endl;
       cout<<"Diagnostics:"<<endl;
       cout<<"  lp_lib::solve error code: "<<retval<<" ("<<code<<")"<<endl;

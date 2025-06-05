@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team, Ayman Khedr
+  Copyright (c) 2008-2025 the Raven Development Team, Ayman Khedr
   ----------------------------------------------------------------*/
 
 #include "CustomOutput.h"
@@ -62,8 +62,9 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   _spaceAggStr    ="UNKNOWN";
   _filename       =filename_spec;
 
-  num_data      =1;
-  data          =NULL;  // pointer to data storage for aggregation
+  _nData        =1;
+  _aData        =NULL;  // pointer to data storage for aggregation
+  _nDataItems   =1;
 
   _hist_min     =0;
   _hist_max     =10;
@@ -71,9 +72,9 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
 
   _count        =0;
 
-  kk_only       =kk;
+  _kk_only      =kk;
 
-  ExitGracefullyIf((kk_only==DOESNT_EXIST) && (_spaceAgg==BY_SELECT_HRUS),
+  ExitGracefullyIf((_kk_only==DOESNT_EXIST) && (_spaceAgg==BY_SELECT_HRUS),
                    "CCustomOutput Constructor: invalid HRU group index for Select HRU Aggregation. Undefined HRU group?",BAD_DATA);
   _time_index=0;
 
@@ -185,7 +186,8 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
 //
 CCustomOutput::~CCustomOutput()
 {
-  delete [] data; data=NULL;
+  for (int k=0;k<_nData;k++){delete [] _aData[k];}
+  delete [] _aData; _aData=NULL;
   CloseFiles(*pModel->GetOptStruct());
 }
 
@@ -210,42 +212,42 @@ void CCustomOutput::SetHistogramParams(const double minv,const double maxv, cons
 void CCustomOutput::InitializeCustomOutput(const optStruct &Options)
 {
 // figure out how much space we need
-  if      (_spaceAgg==BY_HRU        ){num_data=pModel->GetNumHRUs();}
-  else if (_spaceAgg==BY_BASIN      ){num_data=pModel->GetNumSubBasins();}
-  else if (_spaceAgg==BY_WSHED      ){num_data=1;}
-  else if (_spaceAgg==BY_HRU_GROUP  ){num_data=pModel->GetNumHRUGroups();}
-  else if (_spaceAgg==BY_SB_GROUP   ){num_data=pModel->GetNumSubBasinGroups(); }
-  else if (_spaceAgg==BY_SELECT_HRUS){num_data=pModel->GetHRUGroup(kk_only)->GetNumHRUs();}
+  if      (_spaceAgg==BY_HRU        ){_nData=pModel->GetNumHRUs();}
+  else if (_spaceAgg==BY_BASIN      ){_nData=pModel->GetNumSubBasins();}
+  else if (_spaceAgg==BY_WSHED      ){_nData=1;}
+  else if (_spaceAgg==BY_HRU_GROUP  ){_nData=pModel->GetNumHRUGroups();}
+  else if (_spaceAgg==BY_SB_GROUP   ){_nData=pModel->GetNumSubBasinGroups(); }
+  else if (_spaceAgg==BY_SELECT_HRUS){_nData=pModel->GetHRUGroup(_kk_only)->GetNumHRUs();}
 
-  if      (_aggstat==AGG_AVERAGE ){num_store=1;}
-  else if (_aggstat==AGG_MAXIMUM ){num_store=1;}
-  else if (_aggstat==AGG_MINIMUM ){num_store=1;}
-  else if (_aggstat==AGG_CUMULSUM){num_store=1;}
-  else if (_aggstat==AGG_RANGE   ){num_store=2;}
+  if      (_aggstat==AGG_AVERAGE ){_nDataItems=1;}
+  else if (_aggstat==AGG_MAXIMUM ){_nDataItems=1;}
+  else if (_aggstat==AGG_MINIMUM ){_nDataItems=1;}
+  else if (_aggstat==AGG_CUMULSUM){_nDataItems=1;}
+  else if (_aggstat==AGG_RANGE   ){_nDataItems=2;}
   else if ((_aggstat==AGG_MEDIAN   ) ||
            (_aggstat==AGG_95CI     ) ||
            (_aggstat==AGG_QUARTILES) ||
            (_aggstat==AGG_HISTOGRAM))
   {
-    if      (_timeAgg==YEARLY      ){num_store=(int)ceil(366/Options.timestep)+1;}
-    else if (_timeAgg==WATER_YEARLY){num_store=(int)ceil(366/Options.timestep)+1;}
-    else if (_timeAgg==EVERY_NDAYS ){num_store=(int)ceil(Options.custom_interval/Options.timestep)+1; }
-    else if (_timeAgg==MONTHLY     ){num_store=(int)ceil( 31/Options.timestep)+1;}
-    else if (_timeAgg==DAILY       ){num_store=(int)ceil(  1/Options.timestep)+1;}
-    else if (_timeAgg==EVERY_TSTEP ){num_store=1;}
+    if      (_timeAgg==YEARLY      ){_nDataItems=(int)ceil(366/Options.timestep)+1;}
+    else if (_timeAgg==WATER_YEARLY){_nDataItems=(int)ceil(366/Options.timestep)+1;}
+    else if (_timeAgg==EVERY_NDAYS ){_nDataItems=(int)ceil(Options.custom_interval/Options.timestep)+1; }
+    else if (_timeAgg==MONTHLY     ){_nDataItems=(int)ceil( 31/Options.timestep)+1;}
+    else if (_timeAgg==DAILY       ){_nDataItems=(int)ceil(  1/Options.timestep)+1;}
+    else if (_timeAgg==EVERY_TSTEP ){_nDataItems=1;}
   }
   else{
     ExitGracefully("CCustomOutput::InitializeCustomOutput(): bad aggregator",BAD_DATA);
   }
 
   // allocate space for the aggregation
-  data =new double *[num_data];
-  for (int k=0;k<num_data;k++)
+  _aData =new double *[_nData];
+  for (int k=0;k<_nData;k++)
   {
-    data[k]=NULL;
-    data[k]=new double [num_store];
-    ExitGracefullyIf(data[k]==NULL,"CCustomOutput constructor",OUT_OF_MEMORY);
-    for (int a=0;a<num_store;a++){data[k][a]=0.0;}
+    _aData[k]=NULL;
+    _aData[k]=new double [_nDataItems];
+    ExitGracefullyIf(_aData[k]==NULL,"CCustomOutput constructor",OUT_OF_MEMORY);
+    for (int a=0;a<_nDataItems;a++){_aData[k][a]=0.0;}
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -298,8 +300,8 @@ void CCustomOutput::WriteFileHeader(const optStruct &Options)
     WriteWarning("CCustomOutput::WriteFileHeader: Unable to create file "+_filename,true);
   }
   // clear data (for ensembles)
-  for(int k=0;k<num_data;k++){
-    for(int a=0;a<num_store;a++) { data[k][a]=0.0; }
+  for(int k=0;k<_nData;k++){
+    for(int a=0;a<_nDataItems;a++) { _aData[k][a]=0.0; }
   }
 
   // write the appropriately formatted header
@@ -338,7 +340,7 @@ void CCustomOutput::WriteCSVFileHeader(void)
   else if (_spaceAgg==BY_SB_GROUP   ){_CUSTOM<<"SubbasinGroup:,";}
   else if (_spaceAgg==BY_SELECT_HRUS){_CUSTOM<<"HRU:,";}
 
-  for (int k=0;k<num_data;k++)
+  for (int k=0;k<_nData;k++)
   {
     string title;
     ostrstream  TMP;
@@ -347,7 +349,7 @@ void CCustomOutput::WriteCSVFileHeader(void)
     else if (_spaceAgg==BY_SB_GROUP   ){TMP<<pModel->GetSubBasinGroup(k)->GetName()<<ends;}
     else if (_spaceAgg==BY_WSHED      ){TMP<<"Watershed"                      <<ends;}
     else if (_spaceAgg==BY_BASIN      ){TMP<<pModel->GetSubBasin(k)->GetID()  <<ends;}
-    else if (_spaceAgg==BY_SELECT_HRUS){TMP<<pModel->GetHRUGroup(kk_only)->GetHRU(k)->GetHRUID()<<ends;}
+    else if (_spaceAgg==BY_SELECT_HRUS){TMP<<pModel->GetHRUGroup(_kk_only)->GetHRU(k)->GetHRUID()<<ends;}
 
     title=TMP.str();
 
@@ -359,7 +361,7 @@ void CCustomOutput::WriteCSVFileHeader(void)
       for (int bin=0;bin<_nBins;bin++){_CUSTOM<<",";}
     }
     else    {
-      _CUSTOM<<title<<",";for (int i=1;i<num_store;i++){_CUSTOM<<",";}
+      _CUSTOM<<title<<",";for (int i=1;i<_nDataItems;i++){_CUSTOM<<",";}
     }
   }
   _CUSTOM<<endl;
@@ -371,7 +373,7 @@ void CCustomOutput::WriteCSVFileHeader(void)
   else if (_timeAgg==MONTHLY     ){_CUSTOM<<"time,month,";}
   else if (_timeAgg==DAILY       ){_CUSTOM<<"time,day,";}
   else if (_timeAgg==EVERY_TSTEP ){_CUSTOM<<"time,day,hour,";}
-  for (int k=0;k<num_data;k++)
+  for (int k=0;k<_nData;k++)
   {
     if      (_aggstat==AGG_AVERAGE  ){_CUSTOM<<"mean,";}
     else if (_aggstat==AGG_MAXIMUM  ){_CUSTOM<<"maximum,";}
@@ -446,7 +448,7 @@ void CCustomOutput::WriteEnSimFileHeader(const optStruct &Options)
 
 // Build the rest of the column names
   int dataColumnCount = 0;
-  for (int k=0;k<num_data;k++)
+  for (int k=0;k<_nData;k++)
   {
     ostrstream  curSpaceIdentifier;
     switch(_spaceAgg)
@@ -456,7 +458,7 @@ void CCustomOutput::WriteEnSimFileHeader(const optStruct &Options)
     case BY_SB_GROUP:               curSpaceIdentifier<<"SubbasinGroup_" <<pModel->GetSubBasinGroup(k)->GetName()<<ends; break;
     case BY_WSHED:                  curSpaceIdentifier<<"Watershed_"     <<"Watershed"                      <<ends; break;
     case BY_BASIN:                  curSpaceIdentifier<<"SubBasin_"      <<pModel->GetSubBasin(k)->GetID()  <<ends; break;
-    case BY_SELECT_HRUS:            curSpaceIdentifier<<"HRU_"           <<pModel->GetHRUGroup(kk_only)->GetHRU(k)->GetHRUID()  <<ends; break;
+    case BY_SELECT_HRUS:            curSpaceIdentifier<<"HRU_"           <<pModel->GetHRUGroup(_kk_only)->GetHRU(k)->GetHRUID()  <<ends; break;
     }
     string title=curSpaceIdentifier.str();
 
@@ -571,10 +573,10 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   // ----------------------------------------------------------
   // custom data
   // ----------------------------------------------------------
-  if (num_data > 0)
+  if (_nData > 0)
   {
     // (a) create dimension "ndata"
-    retval = nc_def_dim(_netcdf_ID, "ndata", num_data, &ndata_dimid);                             HandleNetCDFErrors(retval);
+    retval = nc_def_dim(_netcdf_ID, "ndata", _nData, &ndata_dimid);                             HandleNetCDFErrors(retval);
 
     // (b) create variable "HRUID" or "SBID" or...
     string group_name="HRU_ID";
@@ -626,7 +628,7 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   char *group_name[1];                         // HRU/watershed/basin name
   group_name[0]=new char[200];
 
-  for(k=0; k<num_data; k++)
+  for(k=0; k<_nData; k++)
   {
     ostrstream  TMP;
     string temp;
@@ -635,7 +637,7 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
     else if (_spaceAgg==BY_SB_GROUP   ){TMP<<pModel->GetSubBasinGroup(k)->GetName()<<ends;}
     else if (_spaceAgg==BY_WSHED      ){TMP<<"Watershed"                           <<ends;}
     else if (_spaceAgg==BY_BASIN      ){TMP<<pModel->GetSubBasin(k)->GetID()       <<ends;}
-    else if (_spaceAgg==BY_SELECT_HRUS){TMP<<pModel->GetHRUGroup(kk_only)->GetHRU(k)->GetHRUID()<<ends;}
+    else if (_spaceAgg==BY_SELECT_HRUS){TMP<<pModel->GetHRUGroup(_kk_only)->GetHRU(k)->GetHRUID()<<ends;}
     temp=TMP.str();
     strcpy(group_name[0],temp.c_str());
 
@@ -736,7 +738,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
   if (t==0){return;} //initial conditions should not be printed to custom output, only period data.
 
   double *output=NULL;
-  if(Options.output_format==OUTPUT_NETCDF){output=new double[num_data]; }
+  if(Options.output_format==OUTPUT_NETCDF){output=new double[_nData]; }
 
   //Check to see if it is time to write to file
   //------------------------------------------------------------------------------
@@ -817,8 +819,8 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
 
   //Sift through HRUs, BASINs or watershed, updating aggregate statistics
   //--------------------------------------------------------------------------
-  //numdata=1 if BY_WATERSHED, =nSubBasins if BY_BASIN, =nHRUs if BY_HRU...
-  for (int k=0;k<num_data;k++)
+  //_nData=1 if BY_WATERSHED, =nSubBasins if BY_BASIN, =nHRUs if BY_HRU...
+  for (int k=0;k<_nData;k++)
   {
     //---access current diagnostic variable (from end of timestep)------------
     if (is_concentration){
@@ -827,7 +829,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       else if (_spaceAgg==BY_WSHED      ) { val=pModel->                     GetAvgConcentration(_svind); }
       else if (_spaceAgg==BY_HRU_GROUP  ) { val=pModel->GetHRUGroup     (k)->GetAvgConcentration(_svind); }
       else if (_spaceAgg==BY_SB_GROUP   ) { val=pModel->GetSubBasinGroup(k)->GetAvgConcentration(_svind); }
-      else if (_spaceAgg==BY_SELECT_HRUS) { val=pModel->GetTransportModel()->GetConcentration(pModel->GetHRUGroup(kk_only)->GetHRU(k)->GetGlobalIndex(),_svind);}
+      else if (_spaceAgg==BY_SELECT_HRUS) { val=pModel->GetTransportModel()->GetConcentration(pModel->GetHRUGroup(_kk_only)->GetHRU(k)->GetGlobalIndex(),_svind);}
     }
     else if (_var==VAR_STATE_VAR){
       if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit     (k)->GetStateVarValue(_svind);}
@@ -835,7 +837,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       else if (_spaceAgg==BY_WSHED      ){val=pModel->                      GetAvgStateVar  (_svind);}
       else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup      (k)->GetAvgStateVar  (_svind);}
       else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetAvgStateVar  (_svind);}
-      else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup(kk_only)->GetHRU(k)->GetStateVarValue(_svind);}
+      else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup(_kk_only)->GetHRU(k)->GetStateVarValue(_svind);}
     }
     else if (_var==VAR_FORCING_FUNCTION){
       if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit     (k)->GetForcing   (_ftype);}
@@ -843,7 +845,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       else if (_spaceAgg==BY_WSHED      ){val=pModel->                      GetAvgForcing(_ftype);}
       else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup      (k)->GetAvgForcing(_ftype);}
       else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetAvgForcing(_ftype);}
-      else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetForcing(_ftype);}
+      else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup (_kk_only)->GetHRU(k)->GetForcing(_ftype);}
     }
     else if (_var == VAR_TO_FLUX){
       if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit     (k)->GetCumulFlux   (_svind,true);}
@@ -851,7 +853,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       else if (_spaceAgg==BY_WSHED      ){val=pModel->                      GetAvgCumulFlux(_svind,true);}
       else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup      (k)->GetAvgCumulFlux(_svind,true);}
       else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetAvgCumulFlux(_svind,true);}
-      else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetCumulFlux(_svind,true);}
+      else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup (_kk_only)->GetHRU(k)->GetCumulFlux(_svind,true);}
     }
     else if (_var == VAR_FROM_FLUX){
       if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit     (k)->GetCumulFlux   (_svind,false);}
@@ -859,7 +861,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       else if (_spaceAgg==BY_WSHED      ){val=pModel->                      GetAvgCumulFlux(_svind,false);}
       else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup      (k)->GetAvgCumulFlux(_svind,false);}
       else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetAvgCumulFlux(_svind,false);}
-      else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetCumulFlux(_svind,false);}
+      else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup (_kk_only)->GetHRU(k)->GetCumulFlux(_svind,false);}
     }
     else if (_var == VAR_BETWEEN_FLUX){
       if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit     (k)->GetCumulFluxBet   (_svind,_svind2);}
@@ -867,7 +869,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       else if (_spaceAgg==BY_WSHED      ){val=pModel->                      GetAvgCumulFluxBet(_svind,_svind2);}
       else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup      (k)->GetAvgCumulFluxBet(_svind,_svind2);}
       else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetAvgCumulFluxBet(_svind,_svind2);}
-      else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetCumulFluxBet(_svind,_svind2);}
+      else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup (_kk_only)->GetHRU(k)->GetCumulFluxBet(_svind,_svind2);}
     }
 
     if (k==0){_count++;}//increment number of data items stored
@@ -877,24 +879,24 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
     if      (_aggstat==AGG_AVERAGE)
     {
       //incrementally adding to average - 1/N*((N-1)(old mean)+(val))
-      data[k][0]=(double)(_count-1)/(double)(_count)*data[k][0]+val/(double)(_count);
+      _aData[k][0]=(double)(_count-1)/(double)(_count)*_aData[k][0]+val/(double)(_count);
     }
     else if (_aggstat==AGG_MAXIMUM)
     {
-      upperswap(data[k][0],val);
+      upperswap(_aData[k][0],val);
     }
     else if (_aggstat==AGG_MINIMUM)
     {
-      lowerswap(data[k][0],val);
+      lowerswap(_aData[k][0],val);
     }
     else if(_aggstat==AGG_CUMULSUM)
     {
-      data[k][0]+=val*Options.timestep;
+      _aData[k][0]+=val*Options.timestep;
     }
     else if (_aggstat==AGG_RANGE)
     {
-      lowerswap(data[k][0],val);
-      upperswap(data[k][1],val);
+      lowerswap(_aData[k][0],val);
+      upperswap(_aData[k][1],val);
     }
     else if ((_aggstat==AGG_MEDIAN)    ||
              (_aggstat==AGG_QUARTILES) ||
@@ -902,11 +904,11 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
              (_aggstat==AGG_HISTOGRAM))
     {
       //populate data
-      data [k][_count-1] = val;
+      _aData[k][_count-1] = val;
     }
     else
     {
-      data[k][0]=val;//most recent value
+      _aData[k][0]=val;//most recent value
     }
 
     //---Write output to file and reinitialize statistics, if needed---------
@@ -920,34 +922,34 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
         string sep=",";
         if(Options.output_format==OUTPUT_ENSIM){ sep=" "; }//space separated
         //write to .csv or .tb0 file
-        if     (_aggstat==AGG_AVERAGE ){ _CUSTOM<<FormatDouble(data[k][0])      <<sep; }
-        else if(_aggstat==AGG_MAXIMUM ){ _CUSTOM<<FormatDouble(data[k][0])      <<sep; }
-        else if(_aggstat==AGG_MINIMUM ){ _CUSTOM<<FormatDouble(data[k][0])      <<sep; }
-        else if(_aggstat==AGG_CUMULSUM){ _CUSTOM<<FormatDouble(data[k][0])      <<sep; }
-        else if(_aggstat==AGG_RANGE   ){ _CUSTOM<<FormatDouble(data[k][0])      <<sep<<FormatDouble(data[k][1])<<sep; }
+        if     (_aggstat==AGG_AVERAGE ){ _CUSTOM<<FormatDouble(_aData[k][0])      <<sep; }
+        else if(_aggstat==AGG_MAXIMUM ){ _CUSTOM<<FormatDouble(_aData[k][0])      <<sep; }
+        else if(_aggstat==AGG_MINIMUM ){ _CUSTOM<<FormatDouble(_aData[k][0])      <<sep; }
+        else if(_aggstat==AGG_CUMULSUM){ _CUSTOM<<FormatDouble(_aData[k][0])      <<sep; }
+        else if(_aggstat==AGG_RANGE   ){ _CUSTOM<<FormatDouble(_aData[k][0])      <<sep<<FormatDouble(_aData[k][1])<<sep; }
         else if(_aggstat==AGG_MEDIAN)
         {
           double Q1,Q2,Q3;
-          quickSort(data[k],0,_count-1);
-          GetQuartiles(data[k],_count,Q1,Q2,Q3);
+          quickSort(_aData[k],0,_count-1);
+          GetQuartiles(_aData[k],_count,Q1,Q2,Q3);
           _CUSTOM<<FormatDouble(Q2)<<sep;
         }
         else if(_aggstat==AGG_QUARTILES) //find lower quartile, median, then upper quartile
         {
           double Q1,Q2,Q3;
-          quickSort(data[k],0,_count-1);
-          GetQuartiles(data[k],_count,Q1,Q2,Q3);
+          quickSort(_aData[k],0,_count-1);
+          GetQuartiles(_aData[k],_count,Q1,Q2,Q3);
           _CUSTOM<<FormatDouble(Q1)<<sep<<FormatDouble(Q2)<<sep<<FormatDouble(Q3)<<sep;
         }
         else if(_aggstat==AGG_95CI)
         {
-          quickSort(data[k],0,_count-1);//take floor and ceiling of lower and upper intervals to be conservative
-          _CUSTOM  << FormatDouble(data[k][(int)floor((double)(_count-1)*0.025)])<<sep;
-          _CUSTOM  << FormatDouble(data[k][(int)ceil((double)(_count-1)*0.975)])<<sep;
+          quickSort(_aData[k],0,_count-1);//take floor and ceiling of lower and upper intervals to be conservative
+          _CUSTOM  << FormatDouble(_aData[k][(int)floor((double)(_count-1)*0.025)])<<sep;
+          _CUSTOM  << FormatDouble(_aData[k][(int)ceil((double)(_count-1)*0.975)])<<sep;
         }
         else if(_aggstat==AGG_HISTOGRAM)
         {
-          quickSort(data[k],0,_count-1);
+          quickSort(_aData[k],0,_count-1);
           double binsize = (_hist_max-_hist_min)/_nBins;
           int bincount[MAX_HISTOGRAM_BINS];
 
@@ -955,7 +957,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
           for(int a=0;a<_count;a++)
           {
             for(int bin=0;bin<_nBins;bin++){
-              if((data[k][a]>=(_hist_min+bin*binsize)) && (data[k][a]<(_hist_min+(bin+1)*binsize))){ bincount[bin]++; }
+              if((_aData[k][a]>=(_hist_min+bin*binsize)) && (_aData[k][a]<(_hist_min+(bin+1)*binsize))){ bincount[bin]++; }
             }
           }
 
@@ -970,15 +972,15 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
 #ifdef _RVNETCDF_
         // Collect Data
         double out=0.0;
-        if     (_aggstat==AGG_AVERAGE ){ out=data[k][0]; }
-        else if(_aggstat==AGG_MAXIMUM ){ out=data[k][0]; }
-        else if(_aggstat==AGG_MINIMUM ){ out=data[k][0]; }
-        else if(_aggstat==AGG_CUMULSUM){ out=data[k][0]; }
+        if     (_aggstat==AGG_AVERAGE ){ out=_aData[k][0]; }
+        else if(_aggstat==AGG_MAXIMUM ){ out=_aData[k][0]; }
+        else if(_aggstat==AGG_MINIMUM ){ out=_aData[k][0]; }
+        else if(_aggstat==AGG_CUMULSUM){ out=_aData[k][0]; }
         else if(_aggstat==AGG_MEDIAN)
         {
           double Q1,Q2,Q3;
-          quickSort(data[k],0,_count-1);
-          GetQuartiles(data[k],_count,Q1,Q2,Q3);
+          quickSort(_aData[k],0,_count-1);
+          GetQuartiles(_aData[k],_count,Q1,Q2,Q3);
           out=Q2;
         }
         output[k]=out;
@@ -987,26 +989,26 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
 
       //-reset to initial conditions
       //-----------------------------------------------------------------------
-      if      (_aggstat==AGG_AVERAGE ){data[k][0]= 0.0;}
-      else if (_aggstat==AGG_MAXIMUM ){data[k][0]=-ALMOST_INF;}
-      else if (_aggstat==AGG_MINIMUM ){data[k][0]= ALMOST_INF;}
-      else if (_aggstat==AGG_CUMULSUM){data[k][0]= 0.0;}
+      if      (_aggstat==AGG_AVERAGE ){_aData[k][0]= 0.0;}
+      else if (_aggstat==AGG_MAXIMUM ){_aData[k][0]=-ALMOST_INF;}
+      else if (_aggstat==AGG_MINIMUM ){_aData[k][0]= ALMOST_INF;}
+      else if (_aggstat==AGG_CUMULSUM){_aData[k][0]= 0.0;}
       else if (_aggstat==AGG_RANGE   )
       {
-        data[k][0]= ALMOST_INF;
-        data[k][1]=-ALMOST_INF;
+        _aData[k][0]= ALMOST_INF;
+        _aData[k][1]=-ALMOST_INF;
       }
       else if ((_aggstat==AGG_MEDIAN)    ||
                (_aggstat==AGG_QUARTILES) ||
                (_aggstat==AGG_95CI)      ||
                (_aggstat==AGG_HISTOGRAM))
       {
-        for(int j=0;j<num_store;j++){
-          data[k][j]=0;
+        for(int j=0;j<_nDataItems;j++){
+          _aData[k][j]=0;
         }
       }
       //...more stats here
-      if (k==num_data-1){_count=0;}//don't reboot count until last HRU/basin is done
+      if (k==_nData-1){_count=0;}//don't reboot count until last HRU/basin is done
     }//end if (reset)
   }//end for (k=0;...
 
@@ -1022,12 +1024,12 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
 #ifdef _RVNETCDF_
       // Write to NetCDF (done entire vector of data at once)
 
-      if (num_data > 0)
+      if (_nData > 0)
       {
         int retval,data_id;
         size_t start2[2], count2[2];
         start2[0]=_time_index;  count2[0] = 1;         // writes exactly one time interval (yr/mo/day/hr)
-        start2[1] = 0;          count2[1] = num_data;  // writes exactly num_data elements
+        start2[1] = 0;          count2[1] = _nData;    // writes exactly num_data elements
 
         string netCDFtag=_statStr+"_"+_varName;
         retval = nc_inq_varid      (_netcdf_ID, netCDFtag.c_str(), &data_id);          HandleNetCDFErrors(retval);

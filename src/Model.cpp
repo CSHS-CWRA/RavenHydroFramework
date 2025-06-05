@@ -249,83 +249,69 @@ CModel::~CModel()
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns pointer to global parameters object
-///
 /// \return Pointer to global parameters object
 //
-CGlobalParams* CModel::GetGlobalParams() const {
-  return _pGlobalParams;
-}
+CGlobalParams* CModel::GetGlobalParams() const { return _pGlobalParams;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns number of sub basins in model
-///
 /// \return Integer number of sub basins
 //
 int CModel::GetNumSubBasins   () const{return _nSubBasins;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns number of SB groups
-///
 /// \return Integer number of SB groups
 //
 int CModel::GetNumSubBasinGroups() const { return _nSBGroups; }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns number of HRUs in model
-///
 /// \return Integer number of HRUs
 //
 int CModel::GetNumHRUs        () const{return _nHydroUnits;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns number of HRU groups
-///
 /// \return Integer number of HRU groups
 //
 int CModel::GetNumHRUGroups   () const{return _nHRUGroups;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns number of gauges in model
-///
 /// \return Integer number of gauges in model
 //
 int CModel::GetNumGauges      () const{return _nGauges;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns number of gridded forcings in model
-///
 /// \return Integer number of gridded forcings in model
 //
 int CModel::GetNumForcingGrids () const{return _nForcingGrids;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns number of state variables per HRU in model
-///
 /// \return Integer number of state variables per HRU in model
 //
 int CModel::GetNumStateVars   () const{return _nStateVars;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns number of soil layers
-///
 /// \return Integer number of soil layers
 //
 int CModel::GetNumSoilLayers  () const{return _nSoilVars;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns number of hydrologic processes simulated by model
-///
 /// \return Integer number of hydrologic processes simulated by model
 //
 int CModel::GetNumProcesses   () const{return _nProcesses;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns total modeled watershed area
-///
 /// \return total modeled watershed area [km2]
 //
 double CModel::GetWatershedArea () const{return _WatershedArea;}
-
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns number of observation time series
@@ -371,13 +357,11 @@ const CTimeSeriesABC* CModel::GetSimulatedTS(const int i) const {
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns specific hydrologic process denoted by parameter
-///
 /// \param j [in] Process index
 /// \return pointer to hydrologic process corresponding to passed index j
 //
 CHydroProcessABC *CModel::GetProcess(const int j) const
 {
-
 #ifdef _STRICTCHECK_
   ExitGracefullyIf((j<0) || (j>=_nProcesses),"CModel GetProcess::improper index",BAD_DATA);
 #endif
@@ -386,7 +370,6 @@ CHydroProcessABC *CModel::GetProcess(const int j) const
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns specific gauge denoted by index
-///
 /// \param g [in] Gauge index
 /// \return pointer to gauge corresponding to passed index g
 //
@@ -400,7 +383,6 @@ CGauge *CModel::GetGauge(const int g) const
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns specific forcing grid denoted by index
-///
 /// \param f [in] Forcing Grid index
 /// \return pointer to gauge corresponding to passed index g
 //
@@ -417,7 +399,6 @@ CForcingGrid *CModel::GetForcingGrid(const forcing_type &ftyp) const
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns specific HRU denoted by index k
-///
 /// \param k [in] HRU index
 /// \return pointer to HRU corresponding to passed index k
 //
@@ -431,7 +412,6 @@ CHydroUnit *CModel::GetHydroUnit(const int k) const
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns specific HRU with HRU identifier HRUID
-///
 /// \param HRUID [in] HRU identifier
 /// \return pointer to HRU corresponding to passed ID HRUID, NULL if no such HRU exists
 //
@@ -449,7 +429,6 @@ CHydroUnit *CModel::GetHRUByID(const long long int HRUID) const
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns specific HRU group denoted by parameter kk
-///
 /// \param kk [in] HRU group index
 /// \return pointer to HRU group corresponding to passed index kk
 //
@@ -463,7 +442,6 @@ CHRUGroup  *CModel::GetHRUGroup(const int kk) const
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns specific HRU group denoted by string parameter
-///
 /// \param name [in] String name of HRU group
 /// \return pointer to HRU group corresponding to passed name, or NULL if this group doesn't exist
 //
@@ -513,7 +491,6 @@ CSubBasin  *CModel::GetSubBasin(const int p) const
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns index of subbasin downstream from subbasin referred to by index
-///
 /// \param p [in] List index for accessing subbasin
 /// \return downstream subbasin index, if input index is valid; -1 if there is no downstream basin
 //
@@ -527,7 +504,6 @@ int         CModel::GetDownstreamBasin(const int p) const
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns subbasin object corresponding to passed subbasin ID
-///
 /// \param SBID [in] long long integer sub basin ID
 /// \return pointer to Sub basin object corresponding to passed ID, if ID is valid
 //
@@ -546,7 +522,6 @@ CSubBasin  *CModel::GetSubBasinByID(const long long SBID) const
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns sub basin index corresponding to passed subbasin ID
-///
 /// \param SBID [in] Integer subbasin ID
 /// \return SubBasin index corresponding to passed ID, if ID is valid
 //
@@ -564,7 +539,6 @@ int         CModel::GetSubBasinIndex(const long long SBID) const
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns array of pointers to subbasins upstream of subbasin SBID, including that subbasin
-///
 /// \param SBID [in] long long int subbasin ID
 /// \param nUpstream [out] size of array of pointers of subbasins
 /// \return array of pointers to subbasins upstream of subbasin SBID, including that subbasin
@@ -774,7 +748,6 @@ int         CModel::GetStateVarLayer(const int ii) const
 
 //////////////////////////////////////////////////////////////////
 /// \brief Checks if state variable passed exists in model
-///
 /// \param typ [in] State variable type
 /// \return Boolean indicating whether state variable exists in model
 //
@@ -785,14 +758,12 @@ bool        CModel::StateVarExists(sv_type typ) const
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns lake storage variable index
-///
 /// \return Integer index of lake storage variable
 //
 int         CModel::GetLakeStorageIndex() const{return _lake_sv;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns gauge index of gauge with specified name
-///
 /// \return Integer index of gauge
 /// \param name [in] specified name
 //
@@ -806,7 +777,6 @@ int  CModel::GetGaugeIndexFromName (const string name) const
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns forcing grid index of forcing grid with specified type
-///
 /// \return Integer index of forcing grid
 /// \param name [in] specified type
 //
@@ -821,7 +791,6 @@ int  CModel::GetForcingGridIndexFromType (const forcing_type &typ) const
 //////////////////////////////////////////////////////////////////
 /// \brief Returns current mass/energy flux (mm/d, MJ/m2/d, mg/m2/d) between two storage compartments iFrom and iTo
 /// \details required for advective transport processes
-///
 /// \param k [in] HRU index
 /// \param js [in] index of process connection (i.e., j*)
 /// \param &Options [in] Global model options information
@@ -836,7 +805,6 @@ double CModel::GetFlux(const int k, const int js, const optStruct &Options) cons
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns concentration or temperature within hru k with storage index i
-///
 /// \param k [in] HRU index
 /// \param i [in] mass/energy state variable index
 //
@@ -848,7 +816,6 @@ double CModel::GetConcentration(const int k, const int i) const
 //////////////////////////////////////////////////////////////////
 /// \brief Returns current mass/energy flow (mm-m2/d, MJ/d, mg/d) between two storage compartments iFrom and iTo
 /// \details required for advective transport processes
-///
 /// \param k [in] HRU index
 /// \param qs [in] global index of process connection (i.e., q*)
 /// \param &Options [in] Global model options information
@@ -862,7 +829,6 @@ double CModel::GetLatFlow(const int qs,const optStruct &Options) const
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns cumulative flux to/from storage unit i
-///
 /// \param k [in] index of HRU
 /// \param i [in] index of storage compartment
 /// \param to [in] true if evaluating cumulative flux to storage compartment, false for 'from'
@@ -903,7 +869,6 @@ double CModel::GetCumulativeFlux(const int k, const int i, const bool to) const
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns cumulative gross flux between unit iFrom and iTo in HRU k
-///
 /// \param k [in] index of HRU
 /// \param iFrom [in] index of storage compartment
 /// \param iTo [in] index of storage compartment

@@ -62,7 +62,7 @@ void CmvLatFlush::Initialize()
   if(_constrain_to_SBs)
   {
     //sift through all HRUs
-    for(int p=0;p<_pModel->GetNumSubBasins();p++)
+    /*for (int p = 0; p<_pModel->GetNumSubBasins(); p++)
     {
       //find 'to' HRU (only one allowed per SB)
       int kToSB=DOESNT_EXIST;
@@ -88,10 +88,43 @@ void CmvLatFlush::Initialize()
           q++;
         }
       }
+    }*/
+    //Alternate approach: multiple recipient stores
+    bool source_sink_issue=false;
+    int k1,k2;
+    for(int p=0;p<_pModel->GetNumSubBasins();p++)
+    {
+      for(int ks=0; ks<_pModel->GetSubBasin(p)->GetNumHRUs(); ks++)
+      {
+        k1=_pModel->GetSubBasin(p)->GetHRU(ks)->GetGlobalIndex();
+        for(int ks2=0; ks2<_pModel->GetSubBasin(p)->GetNumHRUs(); ks2++)
+        {
+          k2=_pModel->GetSubBasin(p)->GetHRU(ks2)->GetGlobalIndex();
+
+          if ((_pModel->IsInHRUGroup(k1,toHRUGrp)) && (_pModel->IsInHRUGroup(k2,fromHRUGrp)))
+          {
+            if (k1!=k2){
+              kTo  [q]=k1;
+              kFrom[q]=k2;
+              q++;
+              ExitGracefullyIf(q>=MAX_LAT_CONNECTIONS,"Number of HRU connections in LateralFlush or LateralDivert exceeds MAX_LAT_CONNECTIONS limit.",BAD_DATA);
+            }
+            else {
+              //may want to throw warning if source is also sink
+              source_sink_issue=true;
+            }
+          }
+        }
+      }
     }
+
     nConn=q;
     if(nConn==0) {
       string warning="CmvLatFlush::Initialize: no connections found between from and to HRU groups in any of the basins. if INTERBASIN flag not used, only transfer within basins is supported. ";
+      WriteWarning(warning,true);
+    }
+    if (source_sink_issue) {
+      string warning="CmvLatFlush::Initialize: one or more HRUs belongs to both source and recipient HRU groups in LateralFlush or LateralDivert process. This may have unintentended consequences. ";
       WriteWarning(warning,true);
     }
   }
@@ -102,7 +135,7 @@ void CmvLatFlush::Initialize()
     for(k=0;k<_pModel->GetNumHRUs();k++) {
       if(_pModel->IsInHRUGroup(k,toHRUGrp)) {
         ExitGracefullyIf(kToSB!=DOESNT_EXIST,
-          "LatFlush::Initialize - only one HRU in the model can recieve flush output. More than one recipient HRU found.",BAD_DATA_WARN);
+          "LatFlush::Initialize - only one HRU in the model can recieve flush output if INTERBASIN is used. More than one recipient HRU found.",BAD_DATA_WARN);
         kToSB=k;
       }
     }
@@ -128,9 +161,6 @@ void CmvLatFlush::Initialize()
     _kTo     [q]    =kTo[q];
     _iFromLat[q]    =_iFlushFrom;
     _iToLat  [q]    =_iFlushTo;
-    /*cout << "latflush connections: " << _pModel->GetHydroUnit(_kFrom[q])->GetID() << " " << _pModel->GetHydroUnit(_kTo[q])->GetID() << " ";
-    cout<<_pModel->GetStateVarInfo()->SVTypeToString(_pModel->GetStateVarType(_iFromLat[q]),-1)<<" ";
-    cout<<_pModel->GetStateVarInfo()->SVTypeToString(_pModel->GetStateVarType(_iToLat[q]),-1)<<endl;*/
   }
   delete [] kFrom;
   delete [] kTo;
