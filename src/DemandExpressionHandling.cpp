@@ -1334,13 +1334,15 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, const int kk, lp_lib::lpr
       return; 
     }
 
+    //bool is_stage;
+    //double h_min;
     RHS=0.0;
     for (int j = 0; j < pE->nGroups; j++)
     {
       coeff=1.0;
       group_has_dv=false;
       DV_ind=DOESNT_EXIST;
-
+      //is_stage=false;
       for (int k = 0; k < pE->nTermsPerGrp[j]; k++)
       {
         if (pE->pTerms[j][k]->type == TERM_DV)
@@ -1348,6 +1350,11 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, const int kk, lp_lib::lpr
           DV_ind=pE->pTerms[j][k]->DV_ind;
           group_has_dv=true;
           coeff *= (pE->pTerms[j][k]->mult);
+
+          //is_stage= ((pE->pTerms[j][k]->origexp[0]=='!') && (pE->pTerms[j][k]->origexp[1] == 'h'));
+          //if (is_stage){
+          //  h_min=_pModel->GetSubBasin(pE->pTerms[j][k]->p_index)->GetReservoir()->GetDryStage();
+          //}
         }
         else if (!(pE->pTerms[j][k]->is_nested))
         {
@@ -1362,6 +1369,7 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, const int kk, lp_lib::lpr
           else {
             coeff *= (pE->pTerms[j][k]->mult) * term;
           }
+          
         }
       }
 
@@ -1372,6 +1380,9 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, const int kk, lp_lib::lpr
         col_ind[i]=DV_ind;
         row_val[i]=coeff;
         i++;
+        //if (is_stage) {
+        //  RHS-=coeff*h_min;
+        //}
       }
     }
   }

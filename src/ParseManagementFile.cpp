@@ -552,14 +552,18 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
             pGoal->pOperRegimes[k]->penalty_over  = s_to_d(s[1]);
             if (Len >= 3) {
               pGoal->pOperRegimes[k]->penalty_over = s_to_d(s[2]);
+              ExitGracefullyIf(s_to_d(s[2]) > PENALTY_MAXIMUM,"ParseManagementFile: :Penalty cannot be larger than 1e6",BAD_DATA_WARN);
             }
+            ExitGracefullyIf(s_to_d(s[1]) > PENALTY_MAXIMUM,"ParseManagementFile: :Penalty cannot be larger than 1e6",BAD_DATA_WARN);
           }
           else{
             pGoal->penalty_under = s_to_d(s[1]);
             pGoal->penalty_over  = s_to_d(s[1]);
             if (Len >= 3) {
               pGoal->penalty_over = s_to_d(s[2]);
+              ExitGracefullyIf(s_to_d(s[2]) > PENALTY_MAXIMUM,"ParseManagementFile: :Penalty cannot be larger than 1e6",BAD_DATA_WARN);
             }
+            ExitGracefullyIf(s_to_d(s[1]) > PENALTY_MAXIMUM,"ParseManagementFile: :Penalty cannot be larger than 1e6",BAD_DATA_WARN);
           }
         }
         //----------------------------------------------

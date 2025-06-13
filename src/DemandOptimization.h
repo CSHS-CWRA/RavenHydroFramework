@@ -24,6 +24,8 @@ namespace lp_lib  {
 }
 #endif
 
+const double PENALTY_MAXIMUM=1000001; //1e6+1
+
 ///////////////////////////////////////////////////////////////////
 /// \brief different expression types
 //
