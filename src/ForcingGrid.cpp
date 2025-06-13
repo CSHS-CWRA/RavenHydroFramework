@@ -680,7 +680,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
 
     // determine chunk size
     // -------------------------------
-    iChunkSize = min(_ChunkSize,int((Options.duration - global_model_time) / _interval));
+    iChunkSize = min(_ChunkSize,static_cast<int>((Options.duration - global_model_time) / _interval+0.1));//0.1 handles rounding error
 
     // Open NetCDF file, Get the id of the forcing data, varid_f
     // -------------------------------

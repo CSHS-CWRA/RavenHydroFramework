@@ -287,12 +287,11 @@ void CModel::AssimilationBackPropagate(const optStruct &Options,const time_struc
 
   // Apply time and space correction factors
   //----------------------------------------------------------------
-  double time_fact = _pGlobalParams->GetParams()->assim_time_decay;
   double distfact  = _pGlobalParams->GetParams()->assim_upstream_decay/M_PER_KM; //[1/km]->[1/m]
   double ECCCwt;
   for(p=0; p<_nSubBasins; p++)
   {
-    //_aDAQadjust[p] *=exp(-distfact*_aDAlength[p])*exp(-time_fact*_aDAtimesince[p]);
+    _aDAQadjust[p] *=exp(-distfact*_aDAlength[p]);
     ECCCwt=1.0;
     if (_aDADrainSum[p]!=0.0){
       ECCCwt = (_pSubBasins[p]->GetDrainageArea() - _aDADrainSum[p])/(_aDADownSum[p]-_aDADrainSum[p]);

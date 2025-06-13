@@ -296,7 +296,7 @@ void CGlobalParams::AutoCalculateGlobalParams(const global_struct &Gtmp, const g
   autocalc=SetCalculableValue(G.assim_upstream_decay,Gtmp.assim_upstream_decay,Gtemplate.assim_upstream_decay);
   if(autocalc)
   {
-    G.assim_upstream_decay=0.01; //[1/km]
+    G.assim_upstream_decay=0.0; //[1/km]
   }
   autocalc=SetCalculableValue(G.assim_time_decay,Gtmp.assim_time_decay,Gtemplate.assim_time_decay);
   if(autocalc)
@@ -382,7 +382,7 @@ void CGlobalParams::InitializeGlobalParameters(global_struct &g, bool is_templat
 
   g.max_reach_seglength  =DEFAULT_MAX_REACHLENGTH;//defaults to one segment per reach
   g.reservoir_relax      =0.4;
-  g.assim_upstream_decay =0.01;
+  g.assim_upstream_decay =0.0;
   g.assim_time_decay     =0.2;
   g.assimilation_fact    =1.0;
   g.reservoir_demand_mult=1.0;
