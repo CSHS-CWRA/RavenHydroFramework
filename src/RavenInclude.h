@@ -1682,6 +1682,7 @@ double IncompleteGamma  (const double &betat, const double &a);
 double TriCumDist       (const double &t, const double &tc, const double &tp);
 double NashCumDist      (const double &t, const double &k, const int &NR);
 double ADRCumDist       (const double &t, const double &L, const double &v, const double &D);
+double DiffusiveWaveUH  (const int n, const double& L, const double& v, const double& D, const double& dt);
 double TimeVaryingADRCumDist(const double &t,const double &L,const double *v,int nv,const double &D,const double &dt);
 void   CalcWeightsFromUniformNums(const double* aVals, double* aWeights, const int N);
 

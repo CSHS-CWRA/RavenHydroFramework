@@ -1907,20 +1907,22 @@ void CSubBasin::GenerateRoutingHydrograph(const double &Qin_avg,
                      "ROUTE_DIFFUSIVE_WAVE only valid for single-segment rivers",BAD_DATA);
     sum=0.0;
     double cc         =_c_ref*SEC_PER_DAY; //[m/day]
-	double diffusivity=_diffusivity*SEC_PER_DAY; //[m2/d]
+    double diffusivity=_diffusivity*SEC_PER_DAY; //[m2/d]
 
     for (n=0;n<_nQinHist;n++)
     {
-      _aRouteHydro[n  ]=max(ADRCumDist(n*tstep,_reach_length,cc,diffusivity)-sum,0.0);
-      sum+=_aRouteHydro[n];
+      //_aRouteHydro[n  ]=max(ADRCumDist(n*tstep,_reach_length,cc,diffusivity)-sum,0.0);
+      //_aRouteHydro[n  ]=max(ADRCumDist((n+1)*tstep,_reach_length,cc,diffusivity)-sum,0.0); //upstream weighting approach (as done with in-catchment routing)
+      _aRouteHydro[n  ]=DiffusiveWaveUH(n,_reach_length,cc,diffusivity,tstep);
+      //sum+=_aRouteHydro[n];
     }
-    _aRouteHydro[_nQinHist-1]=0.0;//must truncate infinite distrib.
+    /*_aRouteHydro[_nQinHist - 1] = 0.0;//must truncate infinite distrib.
 
-    if (travel_time<tstep){ //very sharp ADR CDF or reach length==0 -override
+    if (travel_time<tstep) { //very sharp ADR CDF or reach length==0 -override
       _aRouteHydro[0]=1.0-travel_time/tstep;
       _aRouteHydro[1]=travel_time/tstep;
       for (n=2;n<_nQinHist;n++){_aRouteHydro[n]=0.0;}
-    }
+    }*/
   }
   //---------------------------------------------------------------
   else if(Options.routing==ROUTE_DIFFUSIVE_VARY)

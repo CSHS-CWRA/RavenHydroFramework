@@ -1729,26 +1729,10 @@ double NashCumDist(const double &t, const double &k, const int &NR)
 /// \return Returns cumulative kinematic wave solution distribution
 //
 //int_0^time L/2/t^(3/2)/sqrt(pi*D)*exp(-(v*t-L)^2/(4*D*t)) dt
-// extreme case (D->0): =1 for v*t<L, 0 otherwise
 double ADRCumDist(const double &t, const double &L, const double &v, const double &D)
 {
   ExitGracefullyIf(D<=0,"ADRCumDist: Invalid diffusivity",RUNTIME_ERR);
 
- /* double term =L/2.0*pow(PI*D,-0.5);
-  double beta =L/sqrt(D);
-  double alpha=v/sqrt(D);
-  double dt   =t/5000.0; //t in [day] (5000.0 is # of integral divisions)
-  double integ=0.0;
-  for (double tt=0.5*dt;tt<t;tt+=dt)
-  {
-    // D: unit = m2 / day
-    // [m]/[day]^1.5/[m]/[day]^0.5 * exp([m/day]*[day]-[m])^2/([m]^2)/[day])
-    integ+=pow(tt,-1.5)*exp(-((alpha*tt-beta)*(alpha*tt-beta))/4.0/tt);
-    // equivalent to (old) version, but more stable since alpha, beta ~1-10 whereas both v^2 and D can be very large
-    //integ+=pow(tt,-1.5)*exp(-((v*tt-L)*(v*tt-L))/4.0/D/tt); //old version
-  }
-  return integ*term*dt;
-  */
   //Analytical- Ogata Banks, 1969
   double F=0;
   if (t<=0){return 0.0;}
@@ -1758,6 +1742,49 @@ double ADRCumDist(const double &t, const double &L, const double &v, const doubl
   F+=0.5*(rvn_erfc((L-v*t)/sqrt(4.0*D*t)));
   return F;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Calculates integral needed for kinematic wave solution distribution
+///
+/// \param &t time [d]
+/// \param &L reach length [m]
+/// \param &v celerity [m/d]
+/// \param &D diffusivity [m2/d]
+/// \return Returns integral 
+//
+//int_0^time L/2/t^(1/2)/sqrt(pi*D)*exp(-(v*t-L)^2/(4*D*t)) dt
+// extreme case (D->0): =1 for v*t<L, 0 otherwise
+double G_integral(const double& t, const double& L, const double& v, const double& D) 
+{
+  double G=0;
+  if (t<=0){return 0.0;}
+  if(L < 500*(D/v)) {
+    G=-0.5*(exp((v*L)/D)*rvn_erfc((L+v*t)/sqrt(4.0*D*t)));
+  }
+  G+=0.5*(rvn_erfc((L-v*t)/sqrt(4.0*D*t)));
+  return L/v*G;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Calculates discrete integrated UH corresponding to diffusive wave exact solution
+///
+/// \param n index of unit hydrograph [0..N]
+/// \param &t time [d]
+/// \param &L reach length [m]
+/// \param &v celerity [m/d]
+/// \param &D diffusivity [m2/d]
+/// \return Returns Unit hydrograph - sums to one 
+//
+double DiffusiveWaveUH(const int n, const double& L, const double& v, const double& D, const double& dt)
+{
+  if (n == 0) {
+    return 1.0/dt*(G_integral(0.0,L,v,D)-G_integral(dt,L,v,D))+ADRCumDist(dt,L,v,D)-ADRCumDist(0.0,L,v,D); 
+  }
+  else {
+    double UH=1.0/dt*(2*G_integral(n*dt,L,v,D)-      G_integral((n-1)*dt,L,v,D)-      G_integral((n+1)*dt,L,v,D));
+    UH+=         -(2*n)*ADRCumDist(n*dt,L,v,D)+(n-1)*ADRCumDist((n-1)*dt,L,v,D)+(n+1)*ADRCumDist((n+1)*dt,L,v,D);
+    return UH;
+  }
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates time-varying cumulative kinematic wave solution distribution
 ///

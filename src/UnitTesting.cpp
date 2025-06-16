@@ -263,15 +263,19 @@ void ADRCumDistTest()
   for(int j=0;j<10;j++) {
     v[j]=1.0+5.0*((double)(rand())/RAND_MAX);
   }
-  for(double t=0;t<10;t+=0.125) {
+  //for(double t=0;t<10;t+=0.125) {
+  for (int n=0;n<80;n++){
+    double t=(double)(n)*0.125;
     TEST<<t<<",";
     for(double D=0.03; D<0.3;D+=0.03) {
       //TEST<<ADRCumDist(t,5,1.0,D)<<",";
-      TEST<<ADRCumDist(t+0.125,5,1.0,D)-ADRCumDist(t,5,1.0,D)<<",";
+      TEST<<ADRCumDist(t+0.125,0.2,1.0,D)-ADRCumDist(t,0.2,1.0,D)<<",";
+      TEST<<DiffusiveWaveUH(n,0.2,1.0,D,0.125)<<",";
     }
     TEST<<endl;
   }
   TEST<<endl;
+  ExitGracefully("ADRCumDistTest",SIMULATION_DONE);
   for(int j=0;j<10;j++) {
     TEST<<v[j]<<",";
   }
