@@ -361,7 +361,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
       }
       pRes=ReservoirParse(pp,s[1],pModel,HRUID,Options);
       pSB=pModel->GetSubBasinByID(pRes->GetSubbasinID());
-      if (HRUID!=DOESNT_EXIST){
+      if ((HRUID!=DOESNT_EXIST) && (pModel->GetHRUByID(HRUID)!=NULL)){
         pRes->SetHRU(pModel->GetHRUByID(HRUID));
       }
       if (pSB!=NULL){pSB->AddReservoir(pRes);}
@@ -1937,10 +1937,15 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
     ExitGracefullyIf(max_depth==DOESNT_EXIST,"CReservoir::Parse: :LakeDepth must be specified for lake-type reservoirs",BAD_DATA_WARN);
 
    if (HRUID != DOESNT_EXIST) {
-     double HRUarea =pModel->GetHRUByID(HRUID)->GetArea() * M2_PER_KM2;
-     if (fabs((HRUarea - lakearea) / lakearea) > 0.2) {
-       string warn="CReservoirParse: specified :LakeArea and corresponding HRU area (in .rvh file) do not seem to agree for reservoir in subbasin "+to_string(SBID);
-       WriteWarning(warn.c_str(), Options.noisy);
+     if (pModel->GetHRUByID(HRUID)!=NULL){
+       double HRUarea =pModel->GetHRUByID(HRUID)->GetArea() * M2_PER_KM2;
+       if (fabs((HRUarea - lakearea) / lakearea) > 0.2) {
+         string warn="CReservoirParse: specified :LakeArea and corresponding HRU area (in .rvh file) do not seem to agree for reservoir in subbasin "+to_string(SBID);
+         WriteWarning(warn.c_str(), Options.noisy);
+       }
+     }
+     else {
+       ExitGracefullyIf(max_depth==DOESNT_EXIST,"CReservoir::Parse: invalid HRU ID in :Reservoir command",BAD_DATA_WARN);
      }
     }
 

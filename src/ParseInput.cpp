@@ -276,6 +276,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.interception_factor     =PRECIP_ICEPT_USER;
   Options.recharge                =RECHARGE_NONE;
   Options.snow_depletion          =SNOWCOV_NONE;
+  Options.TOC_method              =TOC_MCDERMOTT_PILGRIM;
   Options.direct_evap             =false;
   Options.keepUBCWMbugs           =false;
   Options.suppressCompetitiveET   =false;
@@ -486,6 +487,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":FEWSStateInfoFile"         )){code=110;}
     else if  (!strcmp(s[0],":FEWSParamInfoFile"         )){code=111;}
     else if  (!strcmp(s[0],":FEWSBasinStateInfoFile"    )){code=112;}
+    else if  (!strcmp(s[0],":TimeOfConcentrationMethod" )){code=113;}
 
     else if  (!strcmp(s[0],":WriteGroundwaterHeads"     )){code=510;}//GWMIGRATE -TO REMOVE
     else if  (!strcmp(s[0],":WriteGroundwaterFlows"     )){code=511;}//GWMIGRATE -TO REMOVE
@@ -1946,6 +1948,17 @@ bool ParseMainInputFile (CModel     *&pModel,
       Options.flowinfo_filename = CorrectForRelativePath(s[1], Options.rvi_filename);//with .nc extension!
       break;
     }
+    case(113):  //
+    {/*:TimeOfConcentrationMethod [method]*/
+      if (Options.noisy) { cout <<  " Time of concentration method" << endl; }
+      if (Len<2){ImproperFormatWarning(":TimeOfConcentrationMethod",p,Options.noisy); break;}
+      if      (!strcmp(s[1],"TOC_MCDERMOTT_PILGRIM")){Options.TOC_method=TOC_MCDERMOTT_PILGRIM;}
+      else if (!strcmp(s[1],"TOC_AIRPORT"          )){Options.TOC_method=TOC_AIRPORT;}
+      else if (!strcmp(s[1],"TOC_BRANSBY_WILLIAMS" )){Options.TOC_method=TOC_BRANSBY_WILLIAMS;}
+      else if (!strcmp(s[1],"TOC_WILLIAMS_1922"    )){Options.TOC_method=TOC_WILLIAMS_1922;}
+      else {ExitGracefully("ParseInput :TimeOfConcentrationMethod: Unrecognized method",BAD_DATA_WARN);}
+      break;
+    }
     case(160):  //--------------------------------------------
     {/*:rvh_Filename [filename.rvh]*/
       if(Options.noisy) { cout <<"rvh filename: "<<s[1]<<endl; }
@@ -2501,7 +2514,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(215):  //----------------------------------------------
     {/*Flush
-       :Flush RAVEN_DEFAULT [state_var from] [state_var to] {Optional percentage}*/
+      :Flush RAVEN_DEFAULT [state_var from] [state_var to] {Optional percentage}*/
       if (Options.noisy){cout <<"Flushing Process"<<endl;}
       double pct=1.0;
       if (Len<4){ImproperFormatWarning(":Flush",p,Options.noisy); break;}

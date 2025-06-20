@@ -60,6 +60,9 @@ private:/*------------------------------------------------------*/
   bool             _assimilate;   ///< true if observed data in this basin should be assimilated.
   const CSubBasin    *_pDownSB;   ///< pointer to downstream subbasin instance
 
+  double           _mean_slope;   ///< mean slope of basin [rad] 
+  double         _basin_length;   ///< watershed length (travel distance to reach) [km] 
+
   //catchment routing properties
   double               _t_conc;   ///< basin time of concentration [d]
   double               _t_peak;   ///< basin time to peak [d] (<=_t_conc)
@@ -161,6 +164,8 @@ private:/*------------------------------------------------------*/
   double                    TVDTheta(double In_old,double In_new,double Out_old,double Out_new,double th_in,double dx,double tstep) const;
 
   void            UpdateRoutingHydro(const double &tstep);
+
+  double                CalculateTOC(const toc_method method);
 public:/*-------------------------------------------------------*/
   //Constructors:
   CSubBasin(const long long      ID,

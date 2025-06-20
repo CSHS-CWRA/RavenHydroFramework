@@ -62,7 +62,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   _spaceAggStr    ="UNKNOWN";
   _filename       =filename_spec;
 
-  _nData        =1;
+  _nData        =0;
   _aData        =NULL;  // pointer to data storage for aggregation
   _nDataItems   =1;
 

@@ -48,6 +48,7 @@ CSubBasin::CSubBasin( const long long      Identifier,
   _drainage_area     =0.0;
   _reach_length      =reach_len;
   _reach_length2     =reach_len;
+  _basin_length      =AUTO_COMPUTE;
   _is_headwater      =true;
   _reach_HRUindex    =DOESNT_EXIST; //default
   _hyporheic_flux    =0.0; //default
@@ -1596,7 +1597,37 @@ double    CSubBasin::CalculateBasinArea()
 
   return _basin_area;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Calculates time of concentration, in days
+//
+double CSubBasin::CalculateTOC(const toc_method method)
+{
+  double slope_pct=tan(_mean_slope)*100;
+  double A=max(_basin_area,0.001); //to handle zero area issues
 
+  if      (method==TOC_MCDERMOTT_PILGRIM) // Austrailian Rainfall and runoff guidelines [McDermott and Pilgrim (1982)]
+  {
+    return 0.76*pow(A,0.38)/HR_PER_DAY; //[d]
+  }
+  else if (method==TOC_AIRPORT) // MTO Drainage Manual 1997
+  {
+    double C=0.3; //TMP DEBUG - cant have a single rational coeff for entire basin
+    return 3.26*(1.1-C)*sqrt(_basin_length*M_PER_KM)*pow(slope_pct,-0.33)/MIN_PER_DAY;
+  }
+  else if (method == TOC_BRANSBY_WILLIAMS) //MTO Drainage Manual 1997 
+  {
+    return 0.057*(_basin_length*M_PER_KM)*pow(slope_pct,-0.2)*pow(A*HECTARE_PER_KM2,-0.1);
+  }
+  else if (method == TOC_WILLIAMS_1922) 
+  {
+    return 0.2426*_reach_length*pow(A,-0.1)*pow(slope_pct/100,-0.2)/HR_PER_DAY;
+  }
+  else if (method == TOC_TEMEZ) 
+  {
+    return 0.3*pow(_reach_length,0.76)*pow(slope_pct/100,-0.19)/HR_PER_DAY;
+  }
+  return 0.0;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes SB attributes
 /// \details Calculates total subbasin area; initializes _basin_area, _drainage_area,
@@ -1652,6 +1683,20 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     if(_pChannel!=NULL) {
       _pChannel->CheckReferenceFlow(_Q_ref,_slope,_mannings_n,_ID);
     }
+    
+    //Calculate mean slope from HRUs
+    //------------------------------------------------------------------------
+    double area;
+    for (int k=0;k<_nHydroUnits;k++){
+      area=_pHydroUnits[k]->GetArea();
+      _mean_slope = (_pHydroUnits[k]->GetSlope()) * area / _basin_area; //[radians]
+    }
+    
+    //Estimate basin length from area if not provided
+    //------------------------------------------------------------------------
+    if (_basin_length == AUTO_COMPUTE) {
+      _basin_length = 0.5*sqrt(_basin_area); //[km] assume square watershed
+    }
 
     //Estimate reach length from area if not provided
     //------------------------------------------------------------------------
@@ -1665,7 +1710,8 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     ///< \ref from Williams (1922), as cited in Handbook of Hydrology, eqn. 9.4.3 \cite williams1922
     if (_t_conc==AUTO_COMPUTE)
     {
-      _t_conc=0.76*pow(max(_basin_area,0.001),0.38)/HR_PER_DAY;// [d] \ref Austrailian Rainfall and runoff guidelines [McDermott and Pilgrim (1982)]
+      _t_conc=CalculateTOC(Options.TOC_method);
+
       _t_conc *= _pModel->GetGlobalParams()->GetParams()->TOC_multiplier;
     }
     if(Options.catchment_routing==ROUTE_GAMMA_CONVOLUTION ){_t_peak=AUTO_COMPUTE;}

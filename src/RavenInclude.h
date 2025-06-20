@@ -126,6 +126,7 @@ const double  CM3_PER_METER3          =1e6;                                     
 const double  METER_PER_CM            =0.01;                                    ///< [cm] to [m]
 const double  M2_PER_KM2              =1e6;                                     ///< [km2] to [m2]
 const double  MM2_PER_M2              =1e6;                                     ///< [m2] to [mm2]
+const double  HECTARE_PER_KM2         =100;                                     ///< [km2] to [ha]
 const double  M_PER_KM                =1000;                                    ///< [km] to [m]
 const double  GRAMS_PER_KG            =1000;                                    ///< [kg] to [g]
 const double  MG_PER_KG               =1000000;                                 ///< [kg] to [mg]
@@ -836,6 +837,15 @@ enum overflowmode
   OVERFLOW_NATURAL  ///< uses stage discharge curve to calculate Q
 };
 
+enum toc_method
+{
+  TOC_MCDERMOTT_PILGRIM,///< uses Austrailian Rainfall and runoff guidelines [McDermott and Pilgrim (1982)] [DEFAULT]
+  TOC_WILLIAMS_1922,    ///< uses Williams (1922) [DEFAULT]
+  TOC_AIRPORT,          ///< uses Airport equation (MTO Drainage Management Manual, 1997)
+  TOC_BRANSBY_WILLIAMS, ///< uses Bransby-Williams equation (MTO Drainage Management Manual, 1997)
+  TOC_TEMEZ             ///< uses Temez (1978)
+};
+
 enum assimtype
 {
   DA_RAVEN_DEFAULT, ///< multiplicative scaling assimilation upstream propagation
@@ -1111,6 +1121,7 @@ struct optStruct
   recharge_method    recharge;                ///< aquifer/soil recharge method
   bool               direct_evap;             ///< true if PET is used to directly reduce precipitation
   snowcov_method     snow_depletion;          ///< method for handling snowcover depletion curve
+  toc_method         TOC_method;              ///< method for calculating time of concentration
 
   precip_icept_method interception_factor;    ///< method for calculating canopy interception factor
 
