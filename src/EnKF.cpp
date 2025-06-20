@@ -661,7 +661,7 @@ void CEnKFEnsemble::UpdateFromStateMatrix(CModel* pModel,optStruct& Options,cons
        {
           CHydroUnit *pHRU=pModel->GetHRUGroup(kk)->GetHRU(k);
           int iii=pModel->GetStateVarIndex(_aAssimStates[i],_aAssimLayers[i]);
-          pHRU->SetStateVarValue(iii,_state_matrix[e][ii]); ii++;
+          pHRU->SetStateVarValue(iii,max(_state_matrix[e][ii],0.0)); ii++;
        }
     }
   }

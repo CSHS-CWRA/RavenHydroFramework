@@ -130,7 +130,7 @@ void CmvLatFlush::Initialize()
           }
         }
         for (int qq = 0; qq < nRecipients; qq++) {//once sum is known for each source, calculate fraction
-          _aFrac[q-qq]=_aFrac[q-qq]/Asum;
+          _aFrac[q-qq-1]=_aFrac[q-qq-1]/Asum;
         }
       }
     }
@@ -235,6 +235,7 @@ void CmvLatFlush::GetLateralExchange( const double * const     *state_vars, //ar
 
     if (_divert) {
       mult=pHRUs[_kFrom[q]]->GetSurfaceProps()->divert_fract;
+      //cout<<" Lat Flush "<<q<<" kFrom: "<<_kFrom[q]<<" "<<_kTo[q] <<" iFrom: "<<_iFromLat[q]<<" "<< mult << " " << _aFrac[q] << " " << stor << endl;
     }
 
     exchange_rates[q]=max(mult*stor,0.0)/Options.timestep*Afrom*_aFrac[q]; //[mm-m2/d]
