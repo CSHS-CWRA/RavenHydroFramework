@@ -203,7 +203,7 @@ public:/*-------------------------------------------------------*/
   double            GetMaxStage              (const int nn) const;//[m]
   double            GetSillElevation         (const int nn) const;//[m]
   double            GetObsStage              (const int nn) const;//[m]
-  bool              UseInStageAssimilation   () const; 
+  bool              UseInStageAssimilation   () const;
   double            GetDryStage              () const;
 
   int               GetNumWaterDemands       () const;

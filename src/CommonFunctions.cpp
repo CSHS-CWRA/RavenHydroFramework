@@ -935,7 +935,7 @@ double GetSaturatedVaporPressure(const double &T)//[C]
   const double A3=237.3;
   const double A4=21.87456;
   const double A5=265.5;
-                     
+
   //0.61115*exp(22.452*T/(T+ZERO_CELSIUS)); //MESH
 
   //0.611*exp(17.27*Ta/(Ta+237.3)); //Common simplification of Dingman for T>0
@@ -1749,11 +1749,11 @@ double ADRCumDist(const double &t, const double &L, const double &v, const doubl
 /// \param &L reach length [m]
 /// \param &v celerity [m/d]
 /// \param &D diffusivity [m2/d]
-/// \return Returns integral 
+/// \return Returns integral
 //
 //int_0^time L/2/t^(1/2)/sqrt(pi*D)*exp(-(v*t-L)^2/(4*D*t)) dt
 // extreme case (D->0): =1 for v*t<L, 0 otherwise
-double G_integral(const double& t, const double& L, const double& v, const double& D) 
+double G_integral(const double& t, const double& L, const double& v, const double& D)
 {
   double G=0;
   if (t<=0){return 0.0;}
@@ -1771,12 +1771,12 @@ double G_integral(const double& t, const double& L, const double& v, const doubl
 /// \param &L reach length [m]
 /// \param &v celerity [m/d]
 /// \param &D diffusivity [m2/d]
-/// \return Returns Unit hydrograph - sums to one 
+/// \return Returns Unit hydrograph - sums to one
 //
 double DiffusiveWaveUH(const int n, const double& L, const double& v, const double& D, const double& dt)
 {
   if (n == 0) {
-    return 1.0/dt*(G_integral(0.0,L,v,D)-G_integral(dt,L,v,D))+ADRCumDist(dt,L,v,D)-ADRCumDist(0.0,L,v,D); 
+    return 1.0/dt*(G_integral(0.0,L,v,D)-G_integral(dt,L,v,D))+ADRCumDist(dt,L,v,D)-ADRCumDist(0.0,L,v,D);
   }
   else {
     double UH=1.0/dt*(2*G_integral(n*dt,L,v,D)-      G_integral((n-1)*dt,L,v,D)-      G_integral((n+1)*dt,L,v,D));

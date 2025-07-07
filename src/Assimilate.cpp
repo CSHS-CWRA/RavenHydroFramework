@@ -59,7 +59,7 @@ void CModel::InitializeDataAssimilation(const optStruct &Options)
 
 }
 /////////////////////////////////////////////////////////////////
-/// \brief Overrides flows with observations at gauges and propagates adjustments upstream of gauges 
+/// \brief Overrides flows with observations at gauges and propagates adjustments upstream of gauges
 /// \param p [in] global subbasin index
 /// \param Options [in] current model options structure
 /// \param tt [in] current model time structure
@@ -102,7 +102,7 @@ void CModel::AssimilationOverride(const int p,const optStruct& Options,const tim
     }
   }
 
-  // 
+  //
   if(mass_added>0.0){_CumulInput +=mass_added/(_WatershedArea*M2_PER_KM2)*MM_PER_METER;}
   else              {_CumulOutput-=mass_added/(_WatershedArea*M2_PER_KM2)*MM_PER_METER;}
 
@@ -151,7 +151,7 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
           break; //avoids duplicate observations
         }
       }
-    } 
+    }
 
     pdown=GetDownstreamBasin(p);
 
@@ -184,7 +184,7 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
         _aDAscale      [p]= _aDAscale    [pdown];
         _aDAlength     [p]+=_pSubBasins  [pdown]->GetReachLength();
         _aDAtimesince  [p]= _aDAtimesince[pdown];
-        _aDAoverride   [p]=false; 
+        _aDAoverride   [p]=false;
       }
       else{ //Nothing downstream or reservoir present in this basin, no assimilation
         _aDAscale    [p]=1.0;
@@ -194,7 +194,7 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
       }
     }
   }// end downstream to upstream
-  
+
   //Calculate _aDADrainSum, sum of assimilated drainage areas upstream of a subbasin outlet
   // and _aDADownSum, drainage of nearest assimilated flow observation
   // dynamic because data can disappear mid simulation
@@ -221,7 +221,7 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
       _aDADrainSum[pdown]+=_aDADrainSum[p];
     }
   }
-  for(int pp=_nSubBasins-1;pp>=0; pp--)// downstream to upstream 
+  for(int pp=_nSubBasins-1;pp>=0; pp--)// downstream to upstream
   {
     p=GetOrderedSubBasinIndex(pp);
     pdown=GetDownstreamBasin(p);
@@ -266,7 +266,7 @@ void CModel::AssimilationBackPropagate(const optStruct &Options,const time_struc
     if (_pSubBasins[p]->GetDownstreamID()!=DOESNT_EXIST){
       pdown = GetSubBasinByID(_pSubBasins[p]->GetDownstreamID())->GetGlobalIndex();
     }
-    
+
     // no observations in this basin, get scaling from downstream
     //----------------------------------------------------------------
     pdown=GetDownstreamBasin(p);
@@ -302,7 +302,7 @@ void CModel::AssimilationBackPropagate(const optStruct &Options,const time_struc
     }
   }
 
-  // Actually update flows 
+  // Actually update flows
   //----------------------------------------------------------------
   for(p=0; p<_nSubBasins; p++)
   {

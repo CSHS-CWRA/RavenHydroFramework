@@ -451,5 +451,3 @@ void CModel::GenerateZeroSnow(const optStruct &Options)
 
   AddForcingGrid(pSnow,F_SNOWFALL);
 }
-
-

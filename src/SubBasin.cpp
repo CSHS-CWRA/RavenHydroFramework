@@ -1205,7 +1205,7 @@ double CSubBasin::GetBasinProperties(const string label) const
   else if (!label_n.compare("RIVERBED_CONDUCTIVITY")){ return _bed_conductivity; }
   else if (!label_n.compare("RIVERBED_THICKNESS"   )){ return _bed_thickness; }
   else if (!label_n.compare("LAKEBED_CONDUCTIVITY" )){
-    if (_pReservoir != NULL)                    { return _pReservoir->GetLakebedConductivity(); } 
+    if (_pReservoir != NULL)                    { return _pReservoir->GetLakebedConductivity(); }
     else                                        { return 0.0;}
   }
   else if (!label_n.compare("LAKEBED_THICKNESS"    )){
@@ -1457,7 +1457,7 @@ double CSubBasin::AdjustAllFlows(const double &adjust, const bool overriding, co
   if(!overriding)
   {
     for(int n=0;n<_nQinHist; n++) {
-      _aQinHist[n]+=adjust*(_drainage_area-_basin_area)/_drainage_area; 
+      _aQinHist[n]+=adjust*(_drainage_area-_basin_area)/_drainage_area;
       upperswap(_aQinHist[n],0.0);
       va+=adjust*tstep*SEC_PER_DAY;
     }
@@ -1614,15 +1614,15 @@ double CSubBasin::CalculateTOC(const toc_method method)
     double C=0.3; //TMP DEBUG - cant have a single rational coeff for entire basin
     return 3.26*(1.1-C)*sqrt(_basin_length*M_PER_KM)*pow(slope_pct,-0.33)/MIN_PER_DAY;
   }
-  else if (method == TOC_BRANSBY_WILLIAMS) //MTO Drainage Manual 1997 
+  else if (method == TOC_BRANSBY_WILLIAMS) //MTO Drainage Manual 1997
   {
     return 0.057*(_basin_length*M_PER_KM)*pow(slope_pct,-0.2)*pow(A*HECTARE_PER_KM2,-0.1);
   }
-  else if (method == TOC_WILLIAMS_1922) 
+  else if (method == TOC_WILLIAMS_1922)
   {
     return 0.2426*_reach_length*pow(A,-0.1)*pow(slope_pct/100,-0.2)/HR_PER_DAY;
   }
-  else if (method == TOC_TEMEZ) 
+  else if (method == TOC_TEMEZ)
   {
     return 0.3*pow(_reach_length,0.76)*pow(slope_pct/100,-0.19)/HR_PER_DAY;
   }
@@ -1683,7 +1683,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     if(_pChannel!=NULL) {
       _pChannel->CheckReferenceFlow(_Q_ref,_slope,_mannings_n,_ID);
     }
-    
+
     //Calculate mean slope from HRUs
     //------------------------------------------------------------------------
     double area;
@@ -1691,7 +1691,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
       area=_pHydroUnits[k]->GetArea();
       _mean_slope = (_pHydroUnits[k]->GetSlope()) * area / _basin_area; //[radians]
     }
-    
+
     //Estimate basin length from area if not provided
     //------------------------------------------------------------------------
     if (_basin_length == AUTO_COMPUTE) {

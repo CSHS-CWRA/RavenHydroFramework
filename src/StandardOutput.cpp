@@ -613,16 +613,16 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
     }
     ASSIM<<"time,date";
-    
+
     for (int p = 0; p < _nSubBasins; p++) {
       if((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->IsEnabled())){
-        ASSIM<<","<<_pSubBasins[p]->GetID()<<" "; 
+        ASSIM<<","<<_pSubBasins[p]->GetID()<<" ";
       }
     }
     ASSIM<<endl;
     for (int p = 0; p < _nSubBasins; p++) {
       if((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->IsEnabled())){
-        ASSIM<<", "; 
+        ASSIM<<", ";
       }
     }
     ASSIM<<endl;
@@ -1477,7 +1477,7 @@ void CModel::WriteMajorOutput(const time_struct &tt, string solfile, bool final)
     }
     BAS<<":SubBasinProperties"<<endl;
     BAS<<"  :Parameters, Q_REFERENCE, TIME_CONC, TIME_TO_PEAK"<<endl;//, GAMMA_SHAPE, GAMMA_SCALE, CELERITY, DIFFUSIVITY"<<endl;
-    for(int pp=0;pp<_nSubBasins;pp++) 
+    for(int pp=0;pp<_nSubBasins;pp++)
     {
       BAS<<"  "<<_pSubBasins[pp]->GetID();
       BAS<<","<<_pSubBasins[pp]->GetReferenceFlow();
@@ -1973,7 +1973,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   int         dimids1[ndims1];                       // array which will contain all dimension ids for a variable
   int         ncid, varid_pre;                       // When we create netCDF variables and dimensions, we get back an ID for each one.
   int         time_dimid, varid_time;                // dimension ID (holds number of time steps) and variable ID (holds time values) for time
-  int         nSim, nbasins_dimid, varid_bsim,varid_bsim2;       
+  int         nSim, nbasins_dimid, varid_bsim,varid_bsim2;
   //                                                 // # of sub-basins with simulated outflow, dimension ID, and
   //                                                 // variable to write basin IDs for simulated outflows
   int         varid_qsim;                            // variable ID for simulated outflows
@@ -2055,7 +2055,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     retval = nc_put_att_text(_HYDRO_ncid, varid_bsim, "long_name",  tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
     retval = nc_put_att_text(_HYDRO_ncid, varid_bsim, "cf_role"  , tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
     retval = nc_put_att_text(_HYDRO_ncid, varid_bsim, "units"    , tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
-    
+
     // (d) create variable  and set attributes for"basin_fullname"
     dimids1[0] = nbasins_dimid;
     retval = nc_def_var(_HYDRO_ncid, "basin_fullname", NC_STRING, ndims1, dimids1, &varid_bsim2);       HandleNetCDFErrors(retval);
@@ -3097,8 +3097,8 @@ void WriteNetCDFBasinList(const int ncid,const int varid,const int varid_name,co
     if(pModel->GetSubBasin(p)->IsGauged()  && (pModel->GetSubBasin(p)->IsEnabled())) {
       if (!( (is_res) && (pModel->GetSubBasin(p)->GetReservoir()==NULL))){
         string bID,bname;
-        bID   = to_string(pModel->GetSubBasin(p)->GetID()); 
-        bname = pModel->GetSubBasin(p)->GetName(); 
+        bID   = to_string(pModel->GetSubBasin(p)->GetID());
+        bname = pModel->GetSubBasin(p)->GetName();
         start[0] = ibasin;
         count[0] = 1;
         strcpy(current_basin_name[0],bID.c_str());

@@ -324,7 +324,7 @@ int    CModel::GetNumObservedTS() const { return _nObservedTS; }
 /// \param i [in] index of observation time series
 /// \return pointer to observation time series i
 //
-const CTimeSeriesABC *CModel::GetObservedTS(const int i) const 
+const CTimeSeriesABC *CModel::GetObservedTS(const int i) const
 {
   return _pObservedTS[i];
 }
@@ -335,9 +335,9 @@ const CTimeSeriesABC *CModel::GetObservedTS(const int i) const
 /// \return  observed flow in basin p at time step n, or RAV_BLANK_DATA if no observation available
 /// \todo[optimize] - this call could be slow with lots of observations
 //
-double CModel::GetObservedFlow(const int p, const int n) const 
+double CModel::GetObservedFlow(const int p, const int n) const
 {
-  long long SBID=_pSubBasins[p]->GetID(); 
+  long long SBID=_pSubBasins[p]->GetID();
   for(int i=0; i<_nObservedTS; i++) {
     if(IsContinuousFlowObs(_pObservedTS[i], SBID)) {
       return _pObservedTS[i]->GetSampledValue(n);
@@ -2813,7 +2813,7 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
       }
     }
 
-    if (invalid_data) 
+    if (invalid_data)
     {
       value=RAV_BLANK_DATA;
     }
@@ -2884,7 +2884,7 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
       }
       value=0;
     }
-    
+
     _pModeledTS[i]->SetValue(n,value);
     _pModeledTS[i]->SetSampledValue(n,value); //Handles blank value issue in final time  step
 
