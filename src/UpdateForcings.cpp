@@ -1156,7 +1156,7 @@ double CModel::EstimateSnowFraction(const rainsnow_method method,
     else if (Ta>0.5){return 1.0-(0.4/1.5)*(Ta-0.5); }
     else            {return 1.0;}
   }
-  else if (method == RAINSNOW_CLASS) 
+  else if (method == RAINSNOW_CLASS)
   {
     //from ECCC's CLASSI code IPCP==3
     double Ta=F->temp_ave;

@@ -844,7 +844,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         ExitGracefullyIf(pSB==NULL,"ParseManagementFile: subbasin ID in :OverrideStageDischargeCurve is invalid",BAD_DATA_WARN);
         break;
       }
-      
+
       if (pSB->GetReservoir()==NULL){
         string advice="ParseManagementFile:The reservoir in subbasin "+to_string(pSB->GetID()) + " doesnt exist and stage discharge curve cannot be overridden.";
         ExitGracefully(advice.c_str(), BAD_DATA_WARN);

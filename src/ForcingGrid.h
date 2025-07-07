@@ -189,7 +189,7 @@ public:/*------------------------------------------------------*/
   void         SetAsPeriodEnding           ();                                      ///< set _period_ending
   void         SetIs3D(                    const bool   is3D);                      ///< set _is3D                      of class
   void         SetIdxNonZeroGridCells(     const int    nHydroUnits,
-                                           const int    nGridCells, 
+                                           const int    nGridCells,
                                            const bool  *disabledHRUs,
                                            const optStruct &Options);
                                                                                     ///< set _IdxNonZeroGridCells       of class

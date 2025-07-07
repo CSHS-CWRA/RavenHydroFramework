@@ -100,7 +100,7 @@ void CmvLatFlush::Initialize()
     double Asum,area;
     for(int p=0;p<_pModel->GetNumSubBasins();p++)
     {
-      
+
       for(int ks=0; ks<_pModel->GetSubBasin(p)->GetNumHRUs(); ks++) //sources
       {
         k1=_pModel->GetSubBasin(p)->GetHRU(ks)->GetGlobalIndex();

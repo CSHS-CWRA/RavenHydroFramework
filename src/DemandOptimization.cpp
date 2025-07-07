@@ -572,7 +572,7 @@ void CDemandOptimizer::Initialize(CModel* pModel, const optStruct& Options)
       }
     }
   }
-  // add reservoir delta stage DVs 
+  // add reservoir delta stage DVs
   res_count=0;
   for (int pp=0;pp<pModel->GetNumSubBasins();pp++)
   {
@@ -1325,7 +1325,7 @@ void CDemandOptimizer::IncrementAndSetRowName(lp_lib::lprec *pLinProg,int &rowco
 //
 int CDemandOptimizer::GetDVColumnInd(const dv_type typ, const int counter) const
 {
-  int N=5; 
+  int N=5;
 
   if      (typ==DV_QOUT    ){return counter+1;}
   else if (typ==DV_QOUTRES ){return _nEnabledSubBasins+counter+1;}
@@ -1474,7 +1474,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
       r++;
     }
   }
-  
+
   // Set lower bounds of stages to min stage -2m
   // ----------------------------------------------------------------
   int res_count=0;
@@ -1710,7 +1710,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
     // Mass balance equation at reach outlet:
     // Q_p = (Qin +Qin2 )*U0 + sum(Ui*Qn-i) + Runoff - Div_out(Q) + Div_in - Delivered + Qadded + U_0*Qadded2 +Qreturn
     // Q_p-U_0*Qin-U_0*Qin2... +Delivered -Qreturn= sum(Ui*Qn-i) + Runoff - Div_out(Q) + Div_in + Qadded + U_0*Qadded2
-    // 
+    //
     // or, if assimilating flows, use direct insertion:
     // Q_p = Q*_p
     //------------------------------------------------------------------------
@@ -1721,7 +1721,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
 
       i=0;
       Qobs=_pModel->GetObservedFlow(p,nn);
-      assimilating = ((Options.assimilate_flow) && (pSB->UseInFlowAssimilation()) && (Qobs!=RAV_BLANK_DATA) && (pSB->GetReservoir()==NULL));  
+      assimilating = ((Options.assimilate_flow) && (pSB->UseInFlowAssimilation()) && (Qobs!=RAV_BLANK_DATA) && (pSB->GetReservoir()==NULL));
 
       // outflow term  =============================
       col_ind[i]=GetDVColumnInd(DV_QOUT,_aSBIndices[p]);
@@ -1811,7 +1811,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
   double      Adt,ET,precip,seepage(0);
   double      h_old,dQdh,Qout_last,Qin_last,h_obs,h_dry;
   bool        assim_stage(false);
-  
+
   for (int pp = 0; pp<pModel->GetNumSubBasins(); pp++)
   {
     p   =pModel->GetOrderedSubBasinIndex(pp);
@@ -1822,7 +1822,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
     {
       Qobs=_pModel->GetObservedFlow(p,nn);
       assimilating = ((Options.assimilate_flow) && (pSB->UseInFlowAssimilation()) && (Qobs!=RAV_BLANK_DATA));
-    
+
       h_obs = pRes->GetObsStage(nn);
       assim_stage = ((Options.assimilate_stage) &&  (pRes->UseInStageAssimilation()) && (h_obs!=RAV_BLANK_DATA));
 
@@ -1867,11 +1867,11 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
         row_val[i]=+0.5;
         i++;
 
-        col_ind[i]=GetDVColumnInd(DV_DSTAGE  ,_aResIndices[p]); 
+        col_ind[i]=GetDVColumnInd(DV_DSTAGE  ,_aResIndices[p]);
         row_val[i]=Adt;
         i++;
-      
-        col_ind[i]=GetDVColumnInd(DV_DSTAGE2  ,_aResIndices[p]); 
+
+        col_ind[i]=GetDVColumnInd(DV_DSTAGE2  ,_aResIndices[p]);
         row_val[i]=-Adt;
         i++;
 
@@ -1882,7 +1882,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
             row_val[i]=+1.0;
             i++;
         }
-        
+
         RHS=(precip-ET)-seepage-0.5*Qout_last+0.5*Qin_last;
 
         retval = lp_lib::add_constraintex(pLinProg,i,row_val,col_ind,ROWTYPE_EQ,RHS);
@@ -1894,8 +1894,8 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
       else  //(assim_stage==true)
       {
         // lake assimilation equation - solves for dh
-        // dh+-dh- = h_obs-h_old 
-        
+        // dh+-dh- = h_obs-h_old
+
         col_ind[0]=GetDVColumnInd(DV_DSTAGE  ,_aResIndices[p]);  row_val[0]=1.0;
         col_ind[1]=GetDVColumnInd(DV_DSTAGE2 ,_aResIndices[p]);  row_val[1]=-1.0;
         RHS=h_obs-h_old;
@@ -1905,7 +1905,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
         IncrementAndSetRowName(pLinProg,rowcount,"reser_MB_"+to_string(pSB->GetID()));
       }
 
-      // Equation: Definition of delta h 
+      // Equation: Definition of delta h
       //-------------------------------------------------------
       col_ind[0]=GetDVColumnInd(DV_STAGE,_aResIndices[p]);    row_val[0]= 1.0;
       col_ind[1]=GetDVColumnInd(DV_DSTAGE,_aResIndices[p]);   row_val[1]=-1.0;
@@ -1948,10 +1948,10 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
 
         lprow[p]=lp_lib::get_Nrows(pLinProg);
       }
-      else if (assimilating) 
+      else if (assimilating)
       {
         //------------------------------------------------------------------------
-        // Assimilating 
+        // Assimilating
         //  Q^n+1 == Qobs
         //------------------------------------------------------------------------
 
@@ -2107,7 +2107,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
     //lp_lib::set_epslevel(pLinProg, EPS_MEDIUM);
 
     retval = lp_lib::solve(pLinProg);
-    
+
     if (retval!=OPTIMAL)
     {
       if (_do_debug_level>0){ cout<<"LP instability found."<<endl; }
@@ -2184,7 +2184,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
           cout << "   >h " << SBID << ": "; for (int i = 0; i <= iter; i++) { cout << setprecision(10)<<ahiterHist[p][i] << " "; }cout << endl;
           cout << "   >B " << SBID << ": "; for (int i = 0; i <= iter; i++) { cout <<   aBinHist[p][i] << " "; }cout << endl;
           cout << "   >Sill ht "<< SBID<<": "<< sill_ht<< " diff: "<< h_iter[p]-sill_ht<<endl;
-          
+
           if (fabs(h_iter[p] - sill_ht) < 0.001) {
           cout << "   > VERY CLOSE TO SILL: PROBLEM LAKE IS "<<SBID<<endl;
           }
@@ -2263,7 +2263,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
     {
       p   =pModel->GetOrderedSubBasinIndex(pp);
       pSB =pModel->GetSubBasin(p);
-      
+
       long long SBID=pSB->GetID();
       if ((pSB->IsEnabled()) && (pSB->GetReservoir() != NULL))
       {
@@ -2427,7 +2427,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
     else if (typ == DV_QOUTRES)
     {
       if (_aDisableSDCurve[p]){ // no need to report if this is handled properly by Raven default solver
-        pModel->GetSubBasin(p)->GetReservoir()->SetOptimizedOutflow(value); 
+        pModel->GetSubBasin(p)->GetReservoir()->SetOptimizedOutflow(value);
       }
     }
     else if (typ == DV_DELIVERY)

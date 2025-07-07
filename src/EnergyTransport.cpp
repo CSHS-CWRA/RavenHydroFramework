@@ -546,7 +546,7 @@ void CEnthalpyModel::Initialize(const optStruct& Options)
     for(int p=0;p<_pModel->GetNumSubBasins();p++)
     {
       pBasin=_pModel->GetSubBasin(p);
-      
+
       for(int i=0; i<pBasin->GetNumSegments(); i++)
       {
         _aMout[p][i]=pBasin->GetOutflowArray()[_pModel->GetSubBasin(p)->GetNumSegments()-1] * SEC_PER_DAY * hv; //not really - requires outflow rate from all segments in general case. Don't have access to this. assumes nSegs=1

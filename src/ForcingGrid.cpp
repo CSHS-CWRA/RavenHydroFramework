@@ -1003,7 +1003,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
         }
       }
     }
-    // Deaccumulate 
+    // Deaccumulate
     // -------------------------------
     Deaccumulate();
 

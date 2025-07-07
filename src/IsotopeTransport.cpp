@@ -55,7 +55,7 @@ void CIsotopeModel::UpdateInitialConditions(const optStruct& Options)
     pBasin=_pModel->GetSubBasin(p);
 
     int nSegments=pBasin->GetNumSegments();
-    
+
     for(int i=0; i<pBasin->GetNumSegments(); i++)
     {
       _aMout[p][i]=pBasin->GetOutflowArray()[nSegments-1] * SEC_PER_DAY * Cinit; // assumes nSegs=1
@@ -63,7 +63,7 @@ void CIsotopeModel::UpdateInitialConditions(const optStruct& Options)
     _aMout_last[p]=_aMout[p][0];
 
     const double *aQin=_pModel->GetSubBasin(p)->GetInflowHistory();
-    for(int i=0; i<_nMinHist[p]; i++) { 
+    for(int i=0; i<_nMinHist[p]; i++) {
       _aMinHist [p][i]=aQin[i]*SEC_PER_DAY*Cinit;
     }
     const double *aQlat=_pModel->GetSubBasin(p)->GetLatHistory();
@@ -73,7 +73,7 @@ void CIsotopeModel::UpdateInitialConditions(const optStruct& Options)
     _aMlat_last[p]=_aMlatHist[p][0];
     _aMlocal   [p]=_aMlat_last[p];
     _aMlocLast [p]=_aMlat_last[p];
-    
+
     //_channel_storage[p]=0.0;
     //_rivulet_storage[p]=0.0;
 
@@ -93,7 +93,7 @@ void CIsotopeModel::UpdateInitialConditions(const optStruct& Options)
 //////////////////////////////////////////////////////////////////
 /// \brief set initial surface water concentration
 //
-void CIsotopeModel::SetSurfaceWaterConc(const double& delta) 
+void CIsotopeModel::SetSurfaceWaterConc(const double& delta)
 {
   _initSWconc=delta;
 }
@@ -137,7 +137,7 @@ double CIsotopeModel::ConvertConcentration(const double &delta) const
 /// \param iToWater   [in] index of "to" water storage state variable
 /// \param mass       [in] source mass prior to advection [mg]
 /// \param vol        [in] source volume prior to advection [mm] or [mm-m2]
-/// \param Q          [in] flow between source and recipient [mm/d] or [mm-m2] 
+/// \param Q          [in] flow between source and recipient [mm/d] or [mm-m2]
 ///
 double CIsotopeModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double& mass, const double &vol, const double &Q) const
 {
@@ -186,7 +186,7 @@ double CIsotopeModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const int iF
       CK0=25.0/TO_PER_MILLE;
     }
     ep_star   =alpha_star-1.0; //[-]
-    
+
     if      (fromType==DEPRESSION   ) {eta=0.6;}
     else if (fromType==SOIL         ) {eta=1.0;}
     else if (fromType==SURFACE_WATER) {eta=0.5;}
@@ -200,7 +200,7 @@ double CIsotopeModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const int iF
     dStar=(h*dA/TO_PER_MILLE+ekin+ep_star/alpha_star)/(h - ekin - ep_star/alpha_star)*TO_PER_MILLE; //[o/oo]
 
     dE   =((dL/TO_PER_MILLE-ep_star)/alpha_star - h*dA/TO_PER_MILLE - ekin) / (1.0-h+ekin)*TO_PER_MILLE; //[o/oo]
-    
+
     if (dE>dL){dE=dL;}
 
     double C_E  =CompositionToConc(dE);
@@ -225,7 +225,7 @@ double CIsotopeModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const int iF
   }
   else if ( ((fromType==SNOW_LIQ) || (toType==SNOW)) ) //refreeze - dilutes snow
   {
-    // \todo[funct] 
+    // \todo[funct]
   }
 
   return 1.0;

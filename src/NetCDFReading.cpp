@@ -95,7 +95,7 @@ Copyright (c) 2008-2021 the Raven Development Team
    else {
      ExitGracefully("GetTimeInfoFromNetCDF: this unit in time is not implemented yet (only days, hours, minutes, seconds)",BAD_DATA);
    }
-   string warn="GetTimeInfoFromNetCDF: Time interval in netCDF file "+filename+" is negative or zero!"; 
+   string warn="GetTimeInfoFromNetCDF: Time interval in netCDF file "+filename+" is negative or zero!";
    ExitGracefullyIf(tstep<=0,warn.c_str(), BAD_DATA);
 
    //Get julian date/year of time[0]

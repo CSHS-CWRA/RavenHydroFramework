@@ -821,7 +821,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long lon
     time_struct tt;
     double aMonVal[12];
     for(int i=0;i<12;i++){ aMonVal[i]=s_to_d(s[i+1]); }
-    
+
     monthly_interp interp_method=Options.month_interp;
     if (!strcmp(s[0],":AnnualCycleStep")){interp_method=MONTHINT_UNIFORM;}
 

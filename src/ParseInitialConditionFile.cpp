@@ -933,7 +933,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
   } //end while !end_of_file
   IC.close();
 
-  // update initial conditions for transport models 
+  // update initial conditions for transport models
   //======================================================================
   for (int c = 0; c < pModel->GetTransportModel()->GetNumConstituents(); c++) {
     pModel->GetTransportModel()->GetConstituentModel(c)->UpdateInitialConditions(Options);

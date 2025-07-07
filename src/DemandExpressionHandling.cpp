@@ -1331,7 +1331,7 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, const int kk, lp_lib::lpr
       retval = lp_lib::set_rowex(pLinProg,lpgoalrow,1,row_val,col_ind);
       ExitGracefullyIf(retval==0,"AddConstraintToLP::Error updating user-specified constraint/goal",RUNTIME_ERR);
       retval = lp_lib::set_rh(pLinProg,lpgoalrow,RHS);
-      return; 
+      return;
     }
 
     //bool is_stage;
@@ -1369,7 +1369,7 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, const int kk, lp_lib::lpr
           else {
             coeff *= (pE->pTerms[j][k]->mult) * term;
           }
-          
+
         }
       }
 

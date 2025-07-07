@@ -60,8 +60,8 @@ private:/*------------------------------------------------------*/
   bool             _assimilate;   ///< true if observed data in this basin should be assimilated.
   const CSubBasin    *_pDownSB;   ///< pointer to downstream subbasin instance
 
-  double           _mean_slope;   ///< mean slope of basin [rad] 
-  double         _basin_length;   ///< watershed length (travel distance to reach) [km] 
+  double           _mean_slope;   ///< mean slope of basin [rad]
+  double         _basin_length;   ///< watershed length (travel distance to reach) [km]
 
   //catchment routing properties
   double               _t_conc;   ///< basin time of concentration [d]

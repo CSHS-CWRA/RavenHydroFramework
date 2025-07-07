@@ -446,7 +446,7 @@ double  CReservoir::GetDryStage          () const { return _min_stage;}
 //
 double  CReservoir::GetSillElevation(const int nn) const
 {
-  
+
   double weir_adj=0.0;
   if (_pWeirHeightTS!=NULL){
     weir_adj=_pWeirHeightTS->GetSampledValue(nn);
@@ -460,7 +460,7 @@ double  CReservoir::GetSillElevation(const int nn) const
 //////////////////////////////////////////////////////////////////
 /// \returns observed stage  [m]
 //
-double  CReservoir::GetObsStage(const int nn) const 
+double  CReservoir::GetObsStage(const int nn) const
 {
   if (_pObsStage!=NULL){
     return _pObsStage->GetSampledValue(nn);
@@ -473,7 +473,7 @@ double  CReservoir::GetObsStage(const int nn) const
 //////////////////////////////////////////////////////////////////
 /// \returns true if this reservoir/lake is used in assimilation
 //
-bool    CReservoir::UseInStageAssimilation() const 
+bool    CReservoir::UseInStageAssimilation() const
 {
   return _assimilate_stage;
 }
@@ -1188,7 +1188,7 @@ double CReservoir::GetDZTROutflow(const double &V, const double &Qin, const time
   double tstep=Options.timestep*SEC_PER_DAY;
 
   if      (V<Vmin){return 0.0;}                                                  //zone 0
-  else if (V<Vci ){return min(Qmc,min(Qci,(V-Vmin)/tstep)); }                    //zone 1 
+  else if (V<Vci ){return min(Qmc,min(Qci,(V-Vmin)/tstep)); }                    //zone 1
   else if (V<Vni ){return min(Qmc,Qci+(Qni-Qci)*(V-Vci)/(Vni-Vci));}             //zone 2
   else if (V<Vmi ){return min(Qmc,Qni+(Qmi-Qni)*(V-Vni)/(Vmi-Vni)); }            //zone 3A
   //else if (V<Vmi ){return min(Qmc,Qni+max((Qin-Qni),(Qmi-Qni))*(V-Vni)/(Vmi-Vni)); } //zone 3B
