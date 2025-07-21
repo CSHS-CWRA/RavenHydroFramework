@@ -53,7 +53,7 @@ void CModel::InitializeDataAssimilation(const optStruct &Options)
       }
     }
     if(count==0) {
-      ExitGracefully("InitializeDataAssimlation: :AssimilateStreamflow command was used in .rvi file, but no observations were enabled for assimilation using :AssimilateStreamflow command in .rvt file",BAD_DATA_WARN);
+      WriteWarning("InitializeDataAssimlation: :AssimilateStreamflow command was used in .rvi file, but no observations were enabled for assimilation using :AssimilateStreamflow command in .rvt file",Options.noisy);
     }
   }
 

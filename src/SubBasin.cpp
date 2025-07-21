@@ -1475,10 +1475,10 @@ double CSubBasin::AdjustAllFlows(const double &adjust, const bool overriding, co
   }
 
   if(_pReservoir!=NULL) {
-    va+=_pReservoir->ScaleFlow(adjust,overriding,tstep,t);
+    va+=_pReservoir->AdjustFlow(adjust,overriding,tstep,t);
   }
 
-  //Estivate volume added through scaling
+  //Estimate volume added through scaling
   //_channel_storage+=adjust*tstep*SEC_PER_DAY; //va+=_channel_storage*sf;
   //_rivulet_storage+=adjust*tstep*SEC_PER_DAY; //va+=_rivulet_storage*sf;
   return va;
