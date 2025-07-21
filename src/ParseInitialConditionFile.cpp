@@ -624,7 +624,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         else if(!strcmp(s[0],":ResFlow"))
         {
           if(Len>=3) {
-            pBasin->GetReservoir()->SetInitialFlow(s_to_d(s[1]),s_to_d(s[2]),tt,Options);
+            pBasin->GetReservoir()->SetInitialFlow(s_to_d(s[1]),s_to_d(s[2]),true,tt,Options);
           }
         }
         else if (!strcmp(s[0], ":ControlFlow"))
@@ -657,7 +657,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       time_struct tt;
       JulianConvert(0.0,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
       pBasin->GetReservoir()->UpdateReservoir(tt,Options); //ensures correct discharge rating curve is used to calculate flow
-      pBasin->GetReservoir()->SetInitialFlow(AutoOrDouble(s[2]),AutoOrDouble(s[2]),tt,Options);
+      pBasin->GetReservoir()->SetInitialFlow(AutoOrDouble(s[2]),AutoOrDouble(s[2]),false,tt,Options); //iteratively calculates  corresponding stage
       break;
     }
     case(8):  //----------------------------------------------

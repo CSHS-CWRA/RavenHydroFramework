@@ -1404,15 +1404,18 @@ void CReservoir::UpdateReservoir(const time_struct &tt, const optStruct &Options
 //////////////////////////////////////////////////////////////////
 /// \brief initialize stage,volume, area to specified initial inflow
 /// \param initQ [in] initial inflow
+/// \param initQlast [in] inflow at start of last timestep
+/// \param justFlow [in] true if reading from .rvc file :ResFlow - assumes :ResStage read elsewhere (false if using :InitialReservoirFlow)
 /// \note - ignores extraction and PET ; won't work for initQ=0, which could be non-uniquely linked to stage
 //
-void  CReservoir::SetInitialFlow(const double &initQ,const double &initQlast,const time_struct &tt,const optStruct& Options)
+void  CReservoir::SetInitialFlow(const double &initQ,const double &initQlast,const bool justFlow,const time_struct &tt,const optStruct& Options)
 {
-  if(initQ!=initQlast) {//reading from .rvc file
+  if ((initQ == 0.0) || (justFlow)) {//reading from .rvc file - don't iteratively estimate stage
     _Qout=initQ;
     _Qout_last=initQlast;
     return;
   }
+
   const double RES_TOLERANCE=0.001; //[m]
   const int RES_MAXITER=20;
   double dh=0.0001;

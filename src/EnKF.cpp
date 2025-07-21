@@ -633,7 +633,7 @@ void CEnKFEnsemble::UpdateFromStateMatrix(CModel* pModel,optStruct& Options,cons
          if (pBasin->GetReservoir() != NULL)
          {
            time_struct tt_dummy;
-           pBasin->GetReservoir()->SetInitialFlow(_state_matrix[e][ii],_state_matrix[e][ii+1],tt_dummy,Options);
+           pBasin->GetReservoir()->SetInitialFlow(_state_matrix[e][ii],_state_matrix[e][ii+1],false,tt_dummy,Options);
            ii+=2;
          }
 

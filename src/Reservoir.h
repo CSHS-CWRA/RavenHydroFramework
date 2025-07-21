@@ -229,7 +229,7 @@ public:/*-------------------------------------------------------*/
   //Manipulators
   void              SetMinStage              (const double &min_z);
   void              SetMaxCapacity           (const double &max_cap);
-  void              SetInitialFlow           (const double &Q,const double &Qlast,const time_struct &tt, const optStruct &Options);
+  void              SetInitialFlow           (const double &Q,const double &Qlast,const bool justFlow, const time_struct &tt, const optStruct &Options);
   void              SetReservoirStage        (const double &ht, const double &ht_last);
   void              SetControlFlow           (const int i, const double &Q, const double &Qlast);
   void              SetOptimizedOutflow      (const double &Qout);
