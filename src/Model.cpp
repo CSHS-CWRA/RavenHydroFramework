@@ -2726,15 +2726,17 @@ void CModel::RecalculateHRUDerivedParams(const optStruct    &Options,
 //
 void CModel::PrepareForcingPerturbation(const optStruct &Options, const time_struct &tt)
 {
+  if (_nPerturbations==0){return;}
+  
+  double partday      = Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
+  int    nn           = (int)(rvn_round((tt.model_time+partday-floor(tt.model_time+partday+TIME_CORRECTION))/Options.timestep));
+  bool   start_of_day = ((nn==0) || tt.day_changed); //nn==0 corresponds to midnight
 
-  for(int i=0;i<_nPerturbations;i++)
-  {
+  if (start_of_day)  { //get all random perturbation samples for the day
     int    nStepsPerDay = (int)(rvn_round(1.0/Options.timestep));
-    double partday      = Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
-    int    nn           = (int)(rvn_round((tt.model_time+partday-floor(tt.model_time+partday+TIME_CORRECTION))/Options.timestep));
-    bool   start_of_day = ((nn==0) || tt.day_changed); //nn==0 corresponds to midnight
 
-    if (start_of_day)  { //get all random perturbation samples for the day
+    for(int i=0;i<_nPerturbations;i++)
+    {
       for (int n=0;n<nStepsPerDay;n++){
         _pPerturbations[i]->eps[n]=SampleFromDistribution(_pPerturbations[i]->distribution,_pPerturbations[i]->distpar);
       }

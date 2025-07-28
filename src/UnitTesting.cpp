@@ -36,6 +36,7 @@ void RavenUnitTesting(const optStruct &Options)
   //TestWetBulbTemps();
   //TestDateStrings();
   //IncGammaLimit();
+  //TestRandomSampling();
 }
 /////////////////////////////////////////////////////////////////
 /// \brief Tests DateStringToTimeStruct() function
@@ -614,4 +615,13 @@ void IncGammaLimit() {
     cout<<x<<" "<<IncompleteGamma(xx,1.0)<<" "<<IncompleteGamma(xx,2.0)<<" "<<IncompleteGamma(xx,3.0)<<" "<<IncompleteGamma(xx,4.0)<<" "<<IncompleteGamma(xx,5.0)<<endl;
   }
   ExitGracefully("UnitTesting:: IncGammaLimit",SIMULATION_DONE);
+}
+double GaussRandom();
+void TestRandomSampling() {
+  ofstream TEST;
+  TEST.open("GaussSample.csv");
+  for(int m=0; m<10000;m++) {
+    TEST<<GaussRandom()<<endl;
+  }
+  ExitGracefully("UnitTesting:: TestRandomSampling",SIMULATION_DONE);
 }

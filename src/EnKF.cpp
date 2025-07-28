@@ -188,6 +188,10 @@ EnKF_mode CEnKFEnsemble::GetEnKFMode() const
 
 //////////////////////////////////////////////////////////////////
 /// \brief initializes EnKF assimilation run
+/// - performs QA/QC on inputs 
+/// - gets #s and names of state variables adjusted during assimilation
+/// - allocate & populate _output_matrix, _obs_matrix, _noise_matrix
+/// - open blank EnKFOutput.csv file 
 /// \param &Options [out] Global model options information
 //
 void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
@@ -197,8 +201,8 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
 
   // QA/QC
   //-----------------------------------------------
-  if(_nMembers==0) {
-    ExitGracefully("CEnKFEnsemble::Initialize: number of EnKF ensemble members must be >0",BAD_DATA);
+  if(_nMembers<=1) {
+    ExitGracefully("CEnKFEnsemble::Initialize: number of EnKF ensemble members must be >1",BAD_DATA);
   }
   if ((pModel->GetNumForcingPerturbations() == 0) && (_EnKF_mode != ENKF_FORECAST) && (_EnKF_mode != ENKF_OPEN_FORECAST)) {
     ExitGracefully("CEnKFEnsemble::Initialize: at least one forcing perturbation must be set using :ForcingPerturbation command",BAD_DATA);
@@ -358,7 +362,7 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
     ExitGracefullyIf(_noise_matrix[e]==NULL,"EnKF Initialization: noise matrix",OUT_OF_MEMORY);
   }
 
-  //populate _output_matrix, _obs_matrix
+  //populate _output_matrix, _obs_matrix, _noise_matrix
   //-----------------------------------------------
   int j;
   double eps;
@@ -427,7 +431,7 @@ void CEnKFEnsemble::StartTimeStepOps(CModel* pModel,optStruct& Options,const tim
   }
 }
 //////////////////////////////////////////////////////////////////
-/// \brief called at end of each time step
+/// \brief called at end of each time step - updates state matrix and builds output matrix
 /// \param pModel [out] pointer to global model instance
 /// \param &Options [out] Global model options information
 /// \params tt [in] time structure
@@ -439,7 +443,7 @@ void CEnKFEnsemble::CloseTimeStepOps(CModel* pModel,optStruct& Options,const tim
     AddToStateMatrix(pModel,Options,e);
   }
 
-  //Build output Matrix
+  //Build output Matrix (typically final timestep of simulation)
   //----------------------------------------------------------
   int curr_nn=(int)((tt.model_time+TIME_CORRECTION)/Options.timestep);//current timestep index
 
@@ -680,7 +684,7 @@ void CEnKFEnsemble::AddToStateMatrix(CModel* pModel,optStruct& Options,const int
   for(int i=0;i<_nAssimStates;i++)
   {
     kk=_aAssimGroupID[i];
-    if(_aAssimStates[i]==STREAMFLOW)
+    if     (_aAssimStates[i]==STREAMFLOW)
     {
       //cout<<"RETRIEVE STATES : # subbasins: "<<pModel->GetSubBasinGroup(kk)->GetNumSubbasins()<<endl;
       for(int pp=0;pp<pModel->GetSubBasinGroup(kk)->GetNumSubbasins();pp++)
@@ -808,62 +812,66 @@ void CEnKFEnsemble::FinishEnsembleRun(CModel *pModel,optStruct &Options,const ti
 
   if(e==_nEnKFMembers-1) //After all ensemble members have run
   {
-    _ENKFOUT<<"PRE-ASSIMILATION STATE MATRIX:"<<endl;
-    _ENKFOUT<<"member"<<",";
-    for (int i = 0; i<_nStateVars; i++) {
-      _ENKFOUT<<_state_names[i]<<",";
-    }
-    _ENKFOUT<<endl;
-    for(int ee=0;ee<_nEnKFMembers;ee++) {
-      _ENKFOUT<<ee+1<<",";
-      for(int i=0;i<_nStateVars;i++) {
-        _ENKFOUT<<_state_matrix[ee][i]<<",";
+    {
+      _ENKFOUT<<"PRE-ASSIMILATION STATE MATRIX:"<<endl;
+      _ENKFOUT<<"member"<<",";
+      for (int i = 0; i<_nStateVars; i++) {
+        _ENKFOUT<<_state_names[i]<<",";
       }
       _ENKFOUT<<endl;
+      for(int ee=0;ee<_nEnKFMembers;ee++) {
+        _ENKFOUT<<ee+1<<",";
+        for(int i=0;i<_nStateVars;i++) {
+          _ENKFOUT<<_state_matrix[ee][i]<<",";
+        }
+        _ENKFOUT<<endl;
+      }
     }
 
     cout<<endl<<"ENKF: Performing Assimilation Calculations with "<<_nObsDatapoints<<" observation datapoints..."<<endl;
     AssimilationCalcs();
 
-    _ENKFOUT<<"POST-ASSIMILATION STATE MATRIX:"<<endl;
-    _ENKFOUT<<"member"<<",";
-    for (int i = 0; i<_nStateVars; i++) {
-      _ENKFOUT<<_state_names[i]<<",";
-    }
-    _ENKFOUT<<endl;
-    for(int ee=0;ee<_nEnKFMembers;ee++) {
-      _ENKFOUT<<ee+1<<",";
-      for(int i=0;i<_nStateVars;i++) {
-        _ENKFOUT<<_state_matrix[ee][i]<<",";
+    {
+      _ENKFOUT<<"POST-ASSIMILATION STATE MATRIX:"<<endl;
+      _ENKFOUT<<"member"<<",";
+      for (int i = 0; i<_nStateVars; i++) {
+        _ENKFOUT<<_state_names[i]<<",";
       }
       _ENKFOUT<<endl;
-    }
+      for(int ee=0;ee<_nEnKFMembers;ee++) {
+        _ENKFOUT<<ee+1<<",";
+        for(int i=0;i<_nStateVars;i++) {
+          _ENKFOUT<<_state_matrix[ee][i]<<",";
+        }
+        _ENKFOUT<<endl;
+      }
 
-    _ENKFOUT<<"NOISE MATRIX:"<<endl;
-    for(int ee=0;ee<_nEnKFMembers;ee++) {
-      _ENKFOUT<<ee+1<<",";
-      for(int i=0;i<_nObsDatapoints;i++) {
-        _ENKFOUT<<_noise_matrix[ee][i]<<",";
+      _ENKFOUT<<"NOISE MATRIX:"<<endl;
+      for(int ee=0;ee<_nEnKFMembers;ee++) {
+        _ENKFOUT<<ee+1<<",";
+        for(int i=0;i<_nObsDatapoints;i++) {
+          _ENKFOUT<<_noise_matrix[ee][i]<<",";
+        }
+        _ENKFOUT<<endl;
       }
-      _ENKFOUT<<endl;
-    }
-    _ENKFOUT<<"OBSERVATION MATRIX:"<<endl;
-    for(int ee=0;ee<_nEnKFMembers;ee++) {
-      _ENKFOUT<<ee+1<<",";
-      for(int i=0;i<_nObsDatapoints;i++) {
-        _ENKFOUT<<_obs_matrix[ee][i]<<",";
+      _ENKFOUT<<"OBSERVATION MATRIX:"<<endl;
+      for(int ee=0;ee<_nEnKFMembers;ee++) {
+        _ENKFOUT<<ee+1<<",";
+        for(int i=0;i<_nObsDatapoints;i++) {
+          _ENKFOUT<<_obs_matrix[ee][i]<<",";
+        }
+        _ENKFOUT<<endl;
       }
-      _ENKFOUT<<endl;
-    }
-    _ENKFOUT<<"SIMULATED OUTPUT MATRIX:"<<endl;
-    for(int ee=0;ee<_nEnKFMembers;ee++) {
-      _ENKFOUT<<ee+1<<",";
-      for(int i=0;i<_nObsDatapoints;i++) {
-        _ENKFOUT<<_output_matrix[ee][i]<<",";
+      _ENKFOUT<<"SIMULATED OUTPUT MATRIX:"<<endl;
+      for(int ee=0;ee<_nEnKFMembers;ee++) {
+        _ENKFOUT<<ee+1<<",";
+        for(int i=0;i<_nObsDatapoints;i++) {
+          _ENKFOUT<<_output_matrix[ee][i]<<",";
+        }
+        _ENKFOUT<<endl;
       }
-      _ENKFOUT<<endl;
+      _ENKFOUT.close();
     }
-    _ENKFOUT.close();
 
     //Write EnKF-updated solution files
     // requires full re-reading of ensemble member solution files

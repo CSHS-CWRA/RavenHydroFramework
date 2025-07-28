@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
 }
 
 //////////////////////////////////////////////////////////////////
-/// \param argc [in] number of arguments to executable
+/// \param argc [in] number of command line arguments to executable
 /// \param argv[] [in] executable arguments; Raven.exe [filebase] [-p rvp_file] [-h hru_file] [-t rvt_file] [-c rvc_file] [-o output_dir]
 /// \details initializes input files and output directory
 /// \details filebase has no extension, all others require .rv* extension

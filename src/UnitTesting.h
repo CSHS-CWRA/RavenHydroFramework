@@ -26,4 +26,5 @@ void TestGammaSampling();
 void TestWetBulbTemps();
 void TestDateStrings();
 void IncGammaLimit();
+void TestRandomSampling();
 #endif

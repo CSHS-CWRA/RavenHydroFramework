@@ -23,7 +23,7 @@ double UniformRandom()
 //
 double GaussRandom()
 {
-  double u1=(double)(rand())/RAND_MAX;
+  double u1=(double)(rand()+1)/(RAND_MAX+1.0); //avoid zero
   double u2=(double)(rand())/RAND_MAX;
   return sqrt(-2.0*log(u1))*cos(2.0*PI*u2);
 }
