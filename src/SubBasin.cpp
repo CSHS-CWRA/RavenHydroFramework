@@ -71,6 +71,7 @@ CSubBasin::CSubBasin( const long long      Identifier,
   _recharge_corr     =1.0;
   _temperature_corr = 0.0;
   _unusable_flow_pct =0.0;
+  _divert_fract      =1.0;
 
   _res_disabled      =false;
   _assimilate        =false;
@@ -1078,7 +1079,12 @@ double CSubBasin::GetTopWidth() const {
 double CSubBasin::GetUnusableFlowPercentage() const {
   return _unusable_flow_pct;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief gets diversion fraction
+//
+double CSubBasin::GetDivertFract       () const{
+  return _divert_fract;
+}
 /*****************************************************************
    Manipulators
 *****************************************************************/
@@ -1130,6 +1136,7 @@ bool CSubBasin::SetBasinProperties(const string label,
   else if (!label_n.compare("NUM_RESERVOIRS"))  {_num_reservoirs=(int)(value);}
   else if (!label_n.compare("GAMMA_SHAPE"   ))  {_gamma_shape=value;}
   else if (!label_n.compare("GAMMA_SCALE"   ))  {_gamma_scale=value;}
+  else if (!label_n.compare("DIVERT_FRACT"  ))  {_divert_fract=value;}
 
   else if (!label_n.compare("Q_REFERENCE"   ))  {_Q_ref=value;}
   else if (!label_n.compare("MANNINGS_N"    ))  {_mannings_n=value;}
@@ -1169,10 +1176,89 @@ bool CSubBasin::SetBasinProperties(const string label,
   }
   return true;
 }
+
+/*enum basin_props {
+  BP_TIME_CONC,
+  BP_TIME_TO_PEAK,
+  BP_TIME_LAG,
+  BP_RES_CONSTANT,
+  BP_NUM_RESERVOIRS,
+  BP_GAMMA_SHAPE,
+  BP_GAMMA_SCALE,
+  BP_DIVERT_FRACT,
+  BP_Q_REFERENCE,
+  BP_MANNINGS_N,
+  BP_SLOPE,
+  BP_DIFFUSIVITY,
+  BP_CELERITY,
+
+  BP_RAIN_CORR,
+  BP_SNOW_CORR,
+  BP_RECHARGE_CORR,
+  BP_TEMP_CORR,
+
+  BP_REACH_HRU_ID,
+  BP_HYPORHEIC_FLUX,
+  BP_CONVECT_COEFF,
+  BP_SENS_EXCH_COEFF,
+  BP_GW_EXCH_COEFF,
+
+  BP_RIVERBED_CONDUCTIVITY,
+  BP_RIVERBED_THICKNESS,
+  BP_RESERVOIR_DISABLED,
+  BP_CORR_REACH_LENGTH,
+  BP_LAKEBED_CONDUCTIVITY,
+  BP_LAKEBED_THICKNESS,
+  BP_LAKE_CONVECT_COEFF,
+  BP_RESERVOIR_CREST_WIDTH
+};
+double CSubBasin::GetBasinProperties(const basin_props prop)
+{
+  switch (prop) 
+  {
+    case BP_TIME_CONC:        return _t_conc;
+    case BP_TIME_TO_PEAK:     return _t_peak;
+    case BP_TIME_LAG:         return _t_lag;
+    case BP_RES_CONSTANT:     return _reservoir_constant;
+    case BP_NUM_RESERVOIRS:   return _num_reservoirs;
+    case BP_GAMMA_SHAPE:      return _gamma_shape;
+    case BP_GAMMA_SCALE:      return _gamma_scale;
+    case BP_DIVERT_FRACT   :  return _divert_fract;
+
+    case BP_Q_REFERENCE    : return _Q_ref;
+    case BP_MANNINGS_N     : return _mannings_n;
+    case BP_SLOPE          : return _slope;
+    case BP_DIFFUSIVITY    : return _diffusivity;
+    case BP_CELERITY       : return _c_ref;
+
+    case BP_RAIN_CORR      : return _rain_corr;
+    case BP_SNOW_CORR      : return _snow_corr;
+    case BP_RECHARGE_CORR  : return _recharge_corr;
+    case BP_TEMP_CORR      : return _temperature_corr;
+
+    case BP_REACH_HRU_ID   : return _reach_HRUindex;
+    case BP_HYPORHEIC_FLUX : return _hyporheic_flux;
+    case BP_CONVECT_COEFF  : return _convect_coeff;
+    case BP_SENS_EXCH_COEFF: return _sens_exch_coeff;
+    case BP_GW_EXCH_COEFF  : return _GW_exch_coeff;
+
+    case BP_RIVERBED_CONDUCTIVITY:  return _bed_conductivity;
+    case BP_RIVERBED_THICKNESS   :  return _bed_thickness;
+    case BP_RESERVOIR_DISABLED   :  return _res_disabled;
+    case BP_CORR_REACH_LENGTH    :  return _reach_length2;
+    case BP_LAKEBED_CONDUCTIVITY : if (_pReservoir != NULL) { return _pReservoir->GetLakebedConductivity(); } else {return 0.0;}
+    case BP_LAKEBED_THICKNESS    : if (_pReservoir != NULL) { return _pReservoir->GetLakebedThickness();    } else {return 1.0;}
+    case BP_LAKE_CONVECT_COEFF   : if (_pReservoir != NULL) { return _pReservoir->GetLakeConvectionCoeff(); } else {return 0.0;}
+    case BP_RESERVOIR_CREST_WIDTH: if (_pReservoir != NULL) { return _pReservoir->GetCrestWidth();          } else {return 1.0;}
+    default: return false; break;
+  }
+  return true;
+}*/
 //////////////////////////////////////////////////////////////////
 /// \brief Gets basin properties
 /// \param label [in] String property identifier
 /// \return value of basin property corresponding to label
+/// WARNING: SLOW - USE SPARINGLY
 //
 double CSubBasin::GetBasinProperties(const string label) const
 {
@@ -1184,6 +1270,7 @@ double CSubBasin::GetBasinProperties(const string label) const
   else if (!label_n.compare("NUM_RESERVOIRS"))  { return (double)(_num_reservoirs);}
   else if (!label_n.compare("GAMMA_SHAPE"   ))  { return _gamma_shape;}
   else if (!label_n.compare("GAMMA_SCALE"   ))  { return _gamma_scale;}
+  else if (!label_n.compare("DIVERT_FRACT"  ))  { return _divert_fract;}
 
   else if (!label_n.compare("Q_REFERENCE"   ))  { return _Q_ref;}
   else if (!label_n.compare("MANNINGS_N"    ))  { return _mannings_n;}

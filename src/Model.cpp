@@ -33,6 +33,7 @@ CModel::CModel(const int        nsoillayers,
   _nTransParams=0;    _pTransParams=NULL;
   _nClassChanges=0;   _pClassChanges=NULL;
   _nParamOverrides=0; _pParamOverrides=NULL;
+  _nStateVarOverrides=0;_pStateVarOverrides=NULL; 
   _nObservedTS=0;     _pObservedTS=NULL; _pModeledTS=NULL; _aObsIndex=NULL;
   _nObsWeightTS =0;   _pObsWeightTS=NULL;
   _nDiagnostics=0;    _pDiagnostics=NULL;
@@ -192,12 +193,12 @@ CModel::~CModel()
   if (_aShouldApplyProcess!=NULL){
     for (k=0;k<_nProcesses;   k++){delete [] _aShouldApplyProcess[k]; } delete [] _aShouldApplyProcess;  _aShouldApplyProcess=NULL;
   }
-  for (kk=0;kk<_nHRUGroups;kk++)  {delete _pHRUGroups[kk];    } delete [] _pHRUGroups;      _pHRUGroups  =NULL;
-  for (kk=0;kk<_nSBGroups;kk++ )  {delete _pSBGroups[kk];     } delete [] _pSBGroups;       _pSBGroups  =NULL;
-  for (j=0;j<_nTransParams;j++)   {delete _pTransParams[j];   } delete [] _pTransParams;    _pTransParams=NULL;
-  for (j=0;j<_nClassChanges;j++)  {delete _pClassChanges[j];  } delete [] _pClassChanges;   _pClassChanges=NULL;
-  for (j=0;j<_nParamOverrides;j++){delete _pParamOverrides[j];} delete [] _pParamOverrides; _pParamOverrides=NULL;
-
+  for (kk=0;kk<_nHRUGroups;kk++)     {delete _pHRUGroups[kk];       } delete [] _pHRUGroups;      _pHRUGroups  =NULL;
+  for (kk=0;kk<_nSBGroups;kk++ )     {delete _pSBGroups[kk];        } delete [] _pSBGroups;       _pSBGroups  =NULL;
+  for (j=0;j<_nTransParams;j++)      {delete _pTransParams[j];      } delete [] _pTransParams;    _pTransParams=NULL;
+  for (j=0;j<_nClassChanges;j++)     {delete _pClassChanges[j];     } delete [] _pClassChanges;   _pClassChanges=NULL;
+  for (j=0;j<_nParamOverrides;j++)   {delete _pParamOverrides[j];   } delete [] _pParamOverrides; _pParamOverrides=NULL;
+  for (j=0;j<_nStateVarOverrides;j++){delete _pStateVarOverrides[j];} delete [] _pStateVarOverrides; _pStateVarOverrides=NULL;
   for (i=0;i<_nPerturbations;   i++)
   {
     delete [] _pPerturbations[i]->eps;
@@ -1306,6 +1307,16 @@ void CModel::AddParameterOverride(param_override   *pPO)
 {
   if (!DynArrayAppend((void**&)(_pParamOverrides),(void*)(pPO),_nParamOverrides)){
     ExitGracefully("CModel::AddParameterOverride: adding NULL override",BAD_DATA);}
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Adds state override to model
+///
+/// \param *pSO [in] (valid) pointer to state override structure to be added to model
+//
+void CModel::AddStateVarOverride(sv_over   *pSO)
+{
+  if (!DynArrayAppend((void**&)(_pStateVarOverrides),(void*)(pSO),_nStateVarOverrides)){
+    ExitGracefully("CModel::AddStateVarOverride: adding NULL override",BAD_DATA);}
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Adds class change to model
@@ -2699,7 +2710,32 @@ void CModel::ApplyLocalParamOverrrides(const int k, const bool revert)
     }
   }
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief overrides state variables with time series values
+/// \notes called at start of timestep prior to mass energy balance
+///
+/// \param &Options [in] Global model options information
+/// \param &tt [in] Current time structure
+//
+void CModel::ApplyStateOverrrides(const optStruct   &Options,const time_struct &tt)
+{
+  if (tt.model_time>Options.sv_override_endtime-0.5*Options.timestep){return;}
+  int i,k;
+  double val;
+  int nn=(int)((tt.model_time+TIME_CORRECTION)/Options.timestep);
+  for (int j=0;j<_nStateVarOverrides;j++)
+  {
+    CHRUGroup *pGrp=GetHRUGroup(_pStateVarOverrides[j]->kk);
+    for (int k_loc=0;k_loc<pGrp->GetNumHRUs();k_loc++){
+        k=pGrp->GetHRU(k_loc)->GetGlobalIndex();
+        i= _pStateVarOverrides[j]->sv_ind;
+        val=_pStateVarOverrides[j]->pTS->GetSampledValue(nn);
+        if (val!=RAV_BLANK_DATA){
+          _pHydroUnits[k]->SetStateVarValue(i,val); //DOESNT CHECK FOR MAX OR MIN!
+        }
+    }
+  }
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Recalculates HRU derived parameters
 /// \details Recalculate HRU derived parameters that are based upon time-of-year/day and SVs (storage, temp)

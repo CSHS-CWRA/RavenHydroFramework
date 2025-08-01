@@ -48,6 +48,15 @@ struct class_change;
 class CTransientParam;
 class CDemandOptimizer;
 
+struct sv_over { // state variable override structure
+  CTimeSeries *pTS;    ///< time series of overridden state
+  int          kk;     ///< HRU Group
+  int          sv_ind; ///< state variable index i
+  sv_over(CTimeSeries* pT, const int kk_in, const int i) {
+    pTS=pT; kk=kk_in; sv_ind=i;
+  }
+  ~sv_over() {delete pTS;}
+};
 ////////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for water surface model
 /// \details Stores and organizes HRUs and basins, provides access to all
@@ -79,6 +88,9 @@ private:/*------------------------------------------------------*/
   sv_type       *_aStateVarType;  ///< type of state variable in unit i  [size:_nStateVars]
   int          *_aStateVarLayer;  ///< index of state variable for multilayer variables (e.g., SOIL); [size:_nStateVars] value=DOESNT_EXIST(-1) for unique variables (e.g. SURFACE_WATER)
   int         _aStateVarIndices[MAX_STATE_VAR_TYPES][MAX_SV_LAYERS]; ///< lookup table for state variable indices; the index of SOIL[1] in a state_var[] array may be returned by aStateVarIndices[(int)(SOIL)][1]
+  
+  sv_over **_pStateVarOverrides;  ///< array of pointers to state variable override time series
+  int       _nStateVarOverrides;  ///< number of state variable overrides
 
   int                _nSoilVars;  ///< number of soil layer storage units
 
@@ -460,11 +472,12 @@ public:/*-------------------------------------------------------*/
   void    AddStateVariables         (const sv_type             *aSV,
                                      const int                 *aLev,
                                      const int                  nSV             );
-  void    AddLandUseClass           (       CLandUseClass      *pLU             );
+  void    AddLandUseClass           (      CLandUseClass       *pLU             );
   void    AddCustomOutput           (      CCustomOutput       *pCO             );
   void    AddCustomTable            (      CCustomTable        *pTab            );
   void    AddTransientParameter     (      CTransientParam     *pTP             );
   void    AddParameterOverride      (      param_override      *pPO             );
+  void    AddStateVarOverride       (      sv_over             *pSO             );
   void    AddPropertyClassChange    (const string             HRUgroup,
                                      const class_type         tclass,
                                      const string             new_class,
@@ -514,6 +527,8 @@ public:/*-------------------------------------------------------*/
 
   //called during simulation:
   //critical simulation routines (called once during each timestep):
+  void        ApplyStateOverrrides       (const optStruct   &Options,
+                                          const time_struct &tt);
   void        UpdateTransientParams      (const optStruct   &Options,
                                           const time_struct &tt);
   void        UpdateHRUForcingFunctions  (const optStruct   &Options,

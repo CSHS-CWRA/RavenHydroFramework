@@ -1193,6 +1193,7 @@ struct optStruct
   int              nNetCDFattribs;            ///< size of array of NetCDF attributes
   int              NetCDF_chunk_mem;          ///< [MB] size of memory chunk for each forcing grid
   bool             in_bmi_mode;               ///< true if in BMI mode (no rvt files, no end time)
+  double           sv_override_endtime;       ///< model time [d] after which state variable overrides are disabled (default: 1e99) 
 };
 
 ///////////////////////////////////////////////////////////////////

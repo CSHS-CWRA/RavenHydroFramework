@@ -223,6 +223,7 @@ void CmvLatFlush::GetLateralExchange( const double * const     *state_vars, //ar
   double stor,Afrom,Ato;
   double to_stor,max_to_stor,max_rate;
   double mult=1.0; //default: flush 100%
+  int    p;
 
   for(int q=0; q<_nLatConnections; q++)
   {
@@ -235,6 +236,8 @@ void CmvLatFlush::GetLateralExchange( const double * const     *state_vars, //ar
 
     if (_divert) {
       mult=pHRUs[_kFrom[q]]->GetSurfaceProps()->divert_fract;
+      p=pHRUs[_kFrom[q]]->GetSubBasinIndex();
+      mult*=_pModel->GetSubBasin(p)->GetDivertFract();
       //cout<<" Lat Flush "<<q<<" kFrom: "<<_kFrom[q]<<" "<<_kTo[q] <<" iFrom: "<<_iFromLat[q]<<" "<< mult << " " << _aFrac[q] << " " << stor << endl;
     }
 

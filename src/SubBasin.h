@@ -96,6 +96,7 @@ private:/*------------------------------------------------------*/
   double            _snow_corr;        ///< correction factor for snowfall [-]
   double            _recharge_corr;    ///< correction factor for recharge [-]
   double            _temperature_corr; ///< correction factor (additive) for temperature [-]
+  double            _divert_fract;     ///< fraction of water flushed from source HRUs in basin [0..1] (:LateralDivert)
 
   int               _nSegments;        ///< Number of river segments used in routing( >=1)
 
@@ -222,6 +223,7 @@ public:/*-------------------------------------------------------*/
   bool                 UseInFlowAssimilation() const;
   int                  GetNumWaterDemands   () const;
   double               GetUnusableFlowPercentage() const;
+  double               GetDivertFract       () const;
 
   const double   *GetUnitHydrograph        () const;
   const double   *GetRoutingHydrograph     () const;

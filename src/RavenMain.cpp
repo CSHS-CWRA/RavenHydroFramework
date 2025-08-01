@@ -136,6 +136,7 @@ int main(int argc, char* argv[])
     for(t=t_start; t<Options.duration-TIME_CORRECTION; t+=Options.timestep)  // in [d]
     {
       pModel->UpdateTransientParams      (Options,tt);
+      pModel->ApplyStateOverrrides       (Options,tt);
       pModel->RecalculateHRUDerivedParams(Options,tt);
       pModel->GetEnsemble()->StartTimeStepOps(pModel,Options,tt,e);
       pModel->UpdateHRUForcingFunctions  (Options,tt);

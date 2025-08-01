@@ -215,6 +215,7 @@ void CRavenBMI::Initialize(std::string config_file)
 void CRavenBMI::Update()
 {
   pModel->UpdateTransientParams      (Options,tt);
+  pModel->ApplyStateOverrrides       (Options,tt);
   pModel->RecalculateHRUDerivedParams(Options,tt);
   pModel->UpdateHRUForcingFunctions  (Options,tt);
   pModel->UpdateDiagnostics          (Options,tt);

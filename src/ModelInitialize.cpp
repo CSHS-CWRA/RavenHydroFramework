@@ -125,6 +125,9 @@ void CModel::Initialize(const optStruct &Options)
   for (kk=0;kk<_nHRUGroups;kk++){_pHRUGroups  [kk]->Initialize(); } //disables HRUs
   for (pp=0;pp<_nSBGroups; pp++){_pSBGroups   [pp]->Initialize(); } //disables SBs and HRUs
 
+  for (j=0;j<_nStateVarOverrides; j++){
+    _pStateVarOverrides[j]->pTS->Initialize(Options.julian_start_day, Options.julian_start_year, Options.duration, Options.timestep,true,Options.calendar);
+  }
   InitializeParameterOverrides();
 
   // Forcing grids are not "Initialized" here because the derived data have to be populated everytime a new chunk is read

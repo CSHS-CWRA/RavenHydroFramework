@@ -506,7 +506,7 @@ void CHydroUnit::AdjustDailyHRUForcings(const forcing_type Ftyp, force_struct &F
     {
       double adjust=0;
       for (int n=0;n<nStepsPerDay;n++){
-        adjust+=1.0*epsilon[n]; //mean multiplicative perturbation over the day -exact for single time step
+        adjust+=epsilon[n]/nStepsPerDay; //mean multiplicative perturbation over the day -exact for single time step
       }
       F.temp_daily_min*=adjust; //approximate - uses mean perturbation to adjust extremes
       F.temp_daily_max*=adjust; //approximate - uses mean perturbation to adjust extremes
@@ -516,7 +516,7 @@ void CHydroUnit::AdjustDailyHRUForcings(const forcing_type Ftyp, force_struct &F
     {
       double adjust=0;
       for (int n=0;n<nStepsPerDay;n++){
-        adjust+=epsilon[n];
+        adjust+=epsilon[n]/nStepsPerDay;
       }
       F.temp_daily_ave+=adjust; //exact
       F.temp_daily_min+=adjust; //approximate - uses mean perturbation to adjust extremes

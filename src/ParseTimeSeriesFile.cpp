@@ -138,6 +138,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":AssimilateStreamflow"        )){code=101;}
     else if  (!strcmp(s[0],":SpecifyGaugeForHRU"          )){code=102;}
     else if  (!strcmp(s[0],":AssimilateReservoirStage"    )){code=103;}
+    else if  (!strcmp(s[0],":OverrideState"               )){code=104;}
     //-----------------TRANSPORT--------------------------------
     else if  (!strcmp(s[0],":FixedConcentrationTimeSeries")){code=300; const_name=s[1];}
     else if  (!strcmp(s[0],":FixedTemperatureTimeSeries"  )){code=300; const_name="TEMPERATURE";}
@@ -1289,6 +1290,32 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         warn="ParseTimeSeriesFile::AssimilateReservoirStage: no observation time series associated with subbasin "+to_string(SBID)+". Cannot assimilate flow in this subbasin.";
         WriteWarning(warn.c_str(),Options.noisy);
       }
+      break;
+    }
+    case(104)://----------------------------------------------
+    {/*:OverrideState  [state_var] [HRUGroup]
+       {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+       {double val} x nMeasurements [mm]
+       :EndOverrideState
+     */
+      if (Options.noisy) { cout <<"Override simulated state"<<endl; }
+
+      int kk=DOESNT_EXIST;
+      string grpname=to_string(s[2]);
+      CHRUGroup *pHRUgrp=pModel->GetHRUGroup(grpname);
+      if (pHRUgrp==NULL){
+        ExitGracefully("ParseTimeSeriesFile: bad HRU group name provided in :OverrideState command",BAD_DATA_WARN);
+        break;
+      }
+      kk=pHRUgrp->GetGlobalIndex();
+      pTimeSer=CTimeSeries::Parse(p,false,"OverrideState_"+to_string(s[0])+"_"+grpname, kk, "none", Options);
+      int layer_ind;
+      sv_type typ=pModel->GetStateVarInfo()->StringToSVType(s[1],layer_ind,false);
+
+      int i=pModel->GetStateVarIndex(typ,layer_ind);
+      sv_over *pSO=new sv_over(pTimeSer,kk,i);
+      pModel->AddStateVarOverride(pSO);
+      
       break;
     }
     case (300)://----------------------------------------------

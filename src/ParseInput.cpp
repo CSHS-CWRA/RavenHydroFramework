@@ -330,6 +330,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.assimilate_stage        =false;
   Options.assim_method            =DA_RAVEN_DEFAULT;
   Options.assimilation_start      =-1.0; //start before simulation
+  Options.sv_override_endtime     =ALMOST_INF;
   Options.time_zone               =0;
   Options.rvl_read_frequency      =0.0; //do not read at all
   Options.custom_interval         =1.0; //daily
@@ -455,9 +456,9 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":SnapshotHydrograph"        )){code=66; }
     else if  (!strcmp(s[0],":SuppressWarnings"          )){code=68; }
     else if  (!strcmp(s[0],":SuppressOutput"            )){code=69; }
-    else if  (!strcmp(s[0],":DontWriteWatershedStorage" )){code=70; }//*//avoid writing WatershedStorage.csv
+    else if  (!strcmp(s[0],":DontWriteWatershedStorage" )){code=70; }//avoid writing WatershedStorage.csv
     else if  (!strcmp(s[0],":EvaluationMetrics"         )){code=71; }
-    else if  (!strcmp(s[0],":EvaluationTime"            )){code=72; }//After StartDate or JulianStartDay and JulianStartYear commands
+    else if  (!strcmp(s[0],":EvaluationTime"            )){code=72; }//After StartDate commands
     else if  (!strcmp(s[0],":EvaluationPeriod"          )){code=73; }
     else if  (!strcmp(s[0],":SuppressOutputICs"         )){code=75; }
     else if  (!strcmp(s[0],":WaterYearStartMonth"       )){code=76; }
@@ -488,6 +489,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":FEWSParamInfoFile"         )){code=111;}
     else if  (!strcmp(s[0],":FEWSBasinStateInfoFile"    )){code=112;}
     else if  (!strcmp(s[0],":TimeOfConcentrationMethod" )){code=113;}
+    else if  (!strcmp(s[0],":StateOverrideEndTime"      )){code=114;}//AFTER :StartDate,:Calendar commands
 
     else if  (!strcmp(s[0],":WriteGroundwaterHeads"     )){code=510;}//GWMIGRATE -TO REMOVE
     else if  (!strcmp(s[0],":WriteGroundwaterFlows"     )){code=511;}//GWMIGRATE -TO REMOVE
@@ -1957,6 +1959,18 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"TOC_BRANSBY_WILLIAMS" )){Options.TOC_method=TOC_BRANSBY_WILLIAMS;}
       else if (!strcmp(s[1],"TOC_WILLIAMS_1922"    )){Options.TOC_method=TOC_WILLIAMS_1922;}
       else {ExitGracefully("ParseInput :TimeOfConcentrationMethod: Unrecognized method",BAD_DATA_WARN);}
+      break;
+    }
+   case(114):  //--------------------------------------------
+    {/*:StateOverrideEndTime [yyyy-mm-dd] [00:00:00]*///AFTER StartDate or JulianStartDay and JulianStartYear commands
+      if(Options.noisy) { cout << "State Override End Time" << endl; }
+      if(Len<3) { ImproperFormatWarning(":StateOverrideEndTime",p,Options.noisy); break; }
+
+      time_struct tt;
+      tt = DateStringToTimeStruct(s[1],s[2],Options.calendar);
+      Options.sv_override_endtime=TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day,tt.year,Options.calendar);
+      if(Options.forecast_shift!=0) { Options.sv_override_endtime+=Options.forecast_shift; }
+
       break;
     }
     case(160):  //--------------------------------------------
