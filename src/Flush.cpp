@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ------------------------------------------------------------------
   Flush (abstract move of all water from one compartment to another)
   Split (move water to two compartments)
@@ -24,9 +24,11 @@
 CmvFlush::CmvFlush(int In_index,                       //soil water storage
                    int Out_index,
                    const double &pct,
-                   CModelABC *pModel)
+                   CModelABC *pModel,
+                   CModel *pModel_full)
   :CHydroProcessABC(FLUSH, In_index, Out_index, pModel)
 {
+  _pModel_full=pModel_full;
   _percentage=pct;
   ExitGracefullyIf(In_index==DOESNT_EXIST,
                    "CmvFlush Constructor: invalid 'from' compartment specified",BAD_DATA);
@@ -75,8 +77,13 @@ void   CmvFlush::GetRatesOfChange( const double      *storage,
                                    const optStruct   &Options,
                                    const time_struct &tt,
                                          double     *rates) const
-{
-  rates[0]=_percentage*storage[iFrom[0]]/Options.timestep;
+{ 
+  double mult=_percentage;
+  if (_percentage==BY_SUBBASIN_FLAG){
+    int p=pHRU->GetSubBasinIndex();
+    mult=_pModel_full->GetSubBasin(p)->GetFlushFract();
+  }
+  rates[0]=mult*storage[iFrom[0]]/Options.timestep;
 }
 
 //////////////////////////////////////////////////////////////////

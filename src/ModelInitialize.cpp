@@ -775,7 +775,7 @@ void CModel::InitializeParameterOverrides()
     {
       double *address = this->_pGlobalParams->GetAddress(name);
       if (address==NULL){
-        ExitGracefully("CModel::InitializeParameterOverrides() : Invalid or unsupported global parameter name in :LocalParameterOverride command",BAD_DATA);
+        ExitGracefully("CModel::InitializeParameterOverrides() : Invalid or unsupported global parameter name in :GlobalParameterOverride command",BAD_DATA);
       }
       _pParamOverrides[i]->pxAddress=address;
 

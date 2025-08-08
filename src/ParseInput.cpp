@@ -2528,18 +2528,25 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(215):  //----------------------------------------------
     {/*Flush
-      :Flush RAVEN_DEFAULT [state_var from] [state_var to] {Optional percentage}*/
+      :Flush RAVEN_DEFAULT [state_var from] [state_var to] {Optional percentage or 'FRACT_BY_SUBBASIN'}*/
       if (Options.noisy){cout <<"Flushing Process"<<endl;}
       double pct=1.0;
       if (Len<4){ImproperFormatWarning(":Flush",p,Options.noisy); break;}
       tmpS[0] = pStateVar->StringToSVType(s[2],tmpLev[0],true);
       tmpS[1] = pStateVar->StringToSVType(s[3],tmpLev[1],true);
       pModel->AddStateVariables(tmpS,tmpLev,2);
-      if ((Len>=5) && (s[4][0]!='#')){pct=max(min(s_to_d(s[4]),1.0),0.0);}
+      if (Len>=5){
+        if (to_string(s[4])=="FRACT_BY_SUBBASIN"){
+          pct=BY_SUBBASIN_FLAG;
+        }
+        else{
+          pct=max(min(s_to_d(s[4]),1.0),0.0);
+        }
+      }
 
       pMover = new CmvFlush(ParseSVTypeIndex(s[2], pModel, pStateVar),
                             ParseSVTypeIndex(s[3], pModel, pStateVar),
-                            pct, pModel);
+                            pct, pModel,pModel);
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }

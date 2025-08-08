@@ -254,6 +254,7 @@ const double  NETCDF_BLANK_VALUE      =-9999.0;                                 
 const double  RAV_BLANK_DATA          =-1.2345;                                 ///< double corresponding to blank/void data item (also used in input files)
 const double  DIRICHLET_TEMP          =-9999.0;                                 ///< dirichlet concentration flag corresponding to air temperature
 const int     FROM_STATION_VAR        =-55;                                     ///< special flag indicating that NetCDF indices should be looked up from station attribute table
+const double  BY_SUBBASIN_FLAG        =64;                                      ///< special flag indicating flush percentage should be retrieved from subbasin parameter
 
 //Decision constants
 const double  HUGE_RESIST             =1e20;                                    ///< [d/mm]   essentially infinite resistance
@@ -865,7 +866,7 @@ enum assimtype
 //
 enum sv_type
 {
-  //Water Storage
+  // Water Storage Compartments 
   SURFACE_WATER,           ///< [mm] Streams & rivers: see surface_struct (REQUIRED)
   ATMOSPHERE,              ///< [mm] atmosphere : recieves water only!! (REQUIRED)
   ATMOS_PRECIP,            ///< [mm] atmosphere : provides water only!! (REQUIRED)
@@ -877,11 +878,11 @@ enum sv_type
   TRUNK,                   ///< [mm] water stored in trunks of trees
   ROOT,                    ///< [mm] water stored in roots
   GROUNDWATER,             ///< [mm] Deep groundwater
-  DEPRESSION,              ///< [mm] depression/surface storage
+  DEPRESSION,              ///< [mm] depression/surface/wetland storage
   SNOW,                    ///< [mm] frozen snow depth (mm SWE : snow water equivalent)
   NEW_SNOW,                ///< [mm] new snowfall waiting to be handled by snow balance (as SWE)
   SNOW_LIQ,                ///< [mm] liquid water content of snowpack
-  TOTAL_SWE,               ///< [mm] equivalent to SNOW[0]+SNOW[1]+...+SNOW_LIQ[0]..
+  TOTAL_SWE,               ///< [mm] equivalent to SNOW[0]+SNOW[1]+...+SNOW_LIQ[0].. (diagnostic variable)
   WETLAND,                 ///< [mm] deep wetland depression storage
   GLACIER,                 ///< [mm] Glacier melt/reservoir storage
   GLACIER_ICE,             ///< [mm] Glacier ice - typically assumed to be infinite reservoir.
@@ -893,14 +894,14 @@ enum sv_type
   // Distribution tracking variables
   MIN_DEP_DEFICIT,         ///< [mm or -1..0] Minimum depression deficit (describes deficit distribution), =-percent full if negative
 
-  // Memory variables
+  // Memory/diagnostic  variables
   CUM_INFIL,               ///< [mm] Cumulative infiltration to topsoil
   GA_MOISTURE_INIT,        ///< [mm] Initial topsoil moisture content for Green Ampt infiltration
   CUM_SNOWMELT,            ///< [mm] Cumulative snowmelt as SWE
   AET,                     ///< [mm] PET used up in given time step (diagnostic variable)
   RUNOFF,                  ///< [mm] net release of water to surface water in given times step (diagnostic variable)
 
-  //Temperature/Energy storage [C] or [MJ/m^2]
+  // Temperature/Energy storage [C] or [MJ/m^2]
   ENERGY_LOSSES,           ///< [MJ/m2] general energy losses
 
   SURFACE_WATER_TEMP,      ///< [C] Temperature of surface water
@@ -909,7 +910,7 @@ enum sv_type
   SOIL_TEMP,               ///< [C] Temperature of soil
   CANOPY_TEMP,             ///< [C] Temperature fo canopy
 
-  //Snow/Glacier variables
+  // Snow/Glacier variables
   SNOW_DEPTH,              ///< [mm] Snow depth - surrogate for density
   PERMAFROST_DEPTH,        ///< [mm] depth of permafrost
   THAW_DEPTH,              ///< [mm] depth of thaw
@@ -924,22 +925,22 @@ enum sv_type
 
   SNOW_ALBEDO,             ///< [-] Snow Surface albedo
 
-  //Crop variables
+  // Crop variables
   CROP_HEAT_UNITS,         ///< [-] cumulative crop heat units
 
-  //Transport variables
+  // Transport variables
   CONSTITUENT,             ///< chemical species [mg/m2], enthalpy [MJ/m2], or tracer [-]
   CONSTITUENT_SRC,         ///< chemical species [mg/m2], enthalpy [MJ/m2], or tracer [-] cumulative source
   CONSTITUENT_SW,          ///< chemical species [mg/m2], enthalpy [MJ/m2], or tracer [-] dumped to surface water
   CONSTITUENT_SINK,        ///< chemical species [mg/m2], enthalpy [MJ/m2], or tracer [-] cumulative sink (e.g., decay)
 
-  //Energy variables
+  // Energy variables
   LATENT_HEAT,             ///< [MJ/m2] cumulative energy lost to evaporative phase change
 
-  //Lateral exchange
+  // Lateral exchange
   LATERAL_EXCHANGE,        ///< [mm] water storage in transit from HRU awaiting lateral transfer to other HRUs
 
-  //Special - internal flags
+  // Special - internal flags
   STREAMFLOW,              ///< only used for referencing in data assimilation
   RESERVOIR_STAGE,         ///< only used for referencing in data assimilation
   UNRECOGNIZED_SVTYPE,     ///< Unrecognized type of state variable

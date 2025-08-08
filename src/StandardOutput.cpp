@@ -1343,6 +1343,9 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
   // Write major output, if necessary
   //--------------------------------------------------------------
+  if (tt.model_time == 0.0) {//for ensembles
+    _currOutputTimeInd=0;
+  }
   if ((_nOutputTimes>0) && (_currOutputTimeInd<_nOutputTimes) && (tt.model_time>_aOutputTimes[_currOutputTimeInd]-0.5*Options.timestep))
   {
     string thishour=DecDaysToHours(tt.julian_day);

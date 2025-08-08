@@ -72,6 +72,7 @@ CSubBasin::CSubBasin( const long long      Identifier,
   _temperature_corr = 0.0;
   _unusable_flow_pct =0.0;
   _divert_fract      =1.0;
+  _flush_fract       =1.0;
 
   _res_disabled      =false;
   _assimilate        =false;
@@ -1085,6 +1086,12 @@ double CSubBasin::GetUnusableFlowPercentage() const {
 double CSubBasin::GetDivertFract       () const{
   return _divert_fract;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief gets flush fraction (percentage of flush applied in basin)
+//
+double CSubBasin::GetFlushFract       () const{
+  return _flush_fract;
+}
 /*****************************************************************
    Manipulators
 *****************************************************************/
@@ -1137,6 +1144,7 @@ bool CSubBasin::SetBasinProperties(const string label,
   else if (!label_n.compare("GAMMA_SHAPE"   ))  {_gamma_shape=value;}
   else if (!label_n.compare("GAMMA_SCALE"   ))  {_gamma_scale=value;}
   else if (!label_n.compare("DIVERT_FRACT"  ))  {_divert_fract=value;}
+  else if (!label_n.compare("FLUSH_FRACT"   ))  {_flush_fract=value;}
 
   else if (!label_n.compare("Q_REFERENCE"   ))  {_Q_ref=value;}
   else if (!label_n.compare("MANNINGS_N"    ))  {_mannings_n=value;}
@@ -1224,6 +1232,7 @@ double CSubBasin::GetBasinProperties(const basin_props prop)
     case BP_GAMMA_SHAPE:      return _gamma_shape;
     case BP_GAMMA_SCALE:      return _gamma_scale;
     case BP_DIVERT_FRACT   :  return _divert_fract;
+    case BP_FLUSH_FRACT    :  return _flush_fract;
 
     case BP_Q_REFERENCE    : return _Q_ref;
     case BP_MANNINGS_N     : return _mannings_n;
@@ -1271,6 +1280,7 @@ double CSubBasin::GetBasinProperties(const string label) const
   else if (!label_n.compare("GAMMA_SHAPE"   ))  { return _gamma_shape;}
   else if (!label_n.compare("GAMMA_SCALE"   ))  { return _gamma_scale;}
   else if (!label_n.compare("DIVERT_FRACT"  ))  { return _divert_fract;}
+  else if (!label_n.compare("FLUSH_FRACT"   ))  { return _divert_fract;}
 
   else if (!label_n.compare("Q_REFERENCE"   ))  { return _Q_ref;}
   else if (!label_n.compare("MANNINGS_N"    ))  { return _mannings_n;}
@@ -1543,8 +1553,11 @@ double CSubBasin::AdjustAllFlows(const double &adjust, const bool overriding, co
 
   if(!overriding)
   {
+    
+    double distfact  = _pModel->GetGlobalParams()->GetParams()->assim_upstream_decay/M_PER_KM; //[1/km]->[1/m]
+    double corr=exp(-distfact*_reach_length);
     for(int n=0;n<_nQinHist; n++) {
-      _aQinHist[n]+=adjust*(_drainage_area-_basin_area)/_drainage_area;
+      _aQinHist[n]+=adjust*(_drainage_area-_basin_area)/_drainage_area*corr;
       upperswap(_aQinHist[n],0.0);
       va+=adjust*tstep*SEC_PER_DAY;
     }

@@ -97,6 +97,7 @@ private:/*------------------------------------------------------*/
   double            _recharge_corr;    ///< correction factor for recharge [-]
   double            _temperature_corr; ///< correction factor (additive) for temperature [-]
   double            _divert_fract;     ///< fraction of water flushed from source HRUs in basin [0..1] (:LateralDivert)
+  double            _flush_fract;      ///< fraction of water flushed from source compartment in basin [0..1] (:Flush with BY_SUBBASIN)
 
   int               _nSegments;        ///< Number of river segments used in routing( >=1)
 
@@ -224,6 +225,7 @@ public:/*-------------------------------------------------------*/
   int                  GetNumWaterDemands   () const;
   double               GetUnusableFlowPercentage() const;
   double               GetDivertFract       () const;
+  double               GetFlushFract        () const;
 
   const double   *GetUnitHydrograph        () const;
   const double   *GetRoutingHydrograph     () const;

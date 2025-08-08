@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 
 #ifndef HYDROPROCESS_H
@@ -117,14 +117,16 @@ public:/*-------------------------------------------------------*/
 class CmvFlush: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
-  double _percentage;
+  double  _percentage;
+  CModel *_pModel_full;
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvFlush(int          from_index,
            int          to_index,
            const double &pct,
-           CModelABC    *pM);
+           CModelABC    *pM,
+           CModel       *pM_full);
   ~CmvFlush();
 
   //inherited functions
