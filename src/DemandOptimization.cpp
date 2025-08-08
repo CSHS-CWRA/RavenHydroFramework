@@ -1569,7 +1569,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
     if (_pDemands[d]->HasReturnFlow())
     {
       col_ind[i]=GetDVColumnInd(DV_RETURN,r);
-      row_val[i]=-1.0;
+      row_val[i]=-_pDemands[d]->GetPenalty()*0.95;
       i++;
       r++;
     }
