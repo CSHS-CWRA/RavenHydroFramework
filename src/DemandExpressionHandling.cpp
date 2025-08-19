@@ -1585,6 +1585,7 @@ double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const
 
     if      (tmp=='Q'){return _aQhist[_aSBIndices[p]][nshift]; }
     else if (tmp=='h'){return _ahhist[_aSBIndices[p]][nshift]; }
+    else if (tmp=='A'){return _aAhist[_aSBIndices[p]][nshift]; }
     else if (tmp=='D'){return _aDhist[_aSBIndices[p]][nshift]; }
     else if (tmp=='I'){return _aIhist[_aSBIndices[p]][nshift]; }
     else if (tmp=='B'){return _pModel->GetSubBasin(p)->GetSpecifiedInflow(t+pT->timeshift*1.0); } //ASSUMES DAILY TIMESTEP! \todo[funct] should be Options.timestep

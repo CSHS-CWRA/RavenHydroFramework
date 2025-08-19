@@ -113,6 +113,8 @@ bool ParseInputFiles (CModel      *&pModel,
       ExitGracefully("Cannot find or read NetCDF runinfo file", BAD_DATA); return false;
     }
   }
+  ExitGracefullyIf(Options.julian_start_year==1666,
+                  "ParseMainInputFile:: no :StartDate supplied in .rvi or runinfo.nc file.",BAD_DATA_WARN);
 
   // Class Property file (.rvp)
   //--------------------------------------------------------------------------------
@@ -3640,8 +3642,6 @@ bool ParseMainInputFile (CModel     *&pModel,
                    "ParseMainInputFile::Must have a postitive time step",BAD_DATA);
   ExitGracefullyIf(Options.duration<0,
                    "ParseMainInputFile::Model duration less than zero. Make sure :EndDate is after :StartDate.",BAD_DATA_WARN);
-  ExitGracefullyIf(Options.julian_start_year==1666,
-                   "ParseMainInputFile:: no :StartDate supplied in .rvi or runinfo.nc file.",BAD_DATA_WARN);
 
   if((Options.nNetCDFattribs>0) && (Options.output_format!=OUTPUT_NETCDF)){
     WriteAdvisory("ParseMainInputFile: NetCDF attributes were specified but output format is not NetCDF.",Options.noisy);

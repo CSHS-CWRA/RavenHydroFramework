@@ -548,7 +548,7 @@ void MassEnergyBalance( CModel            *pModel,
     pBasin->UpdateSubBasin(tt,Options);
   }
 
-  // Management optimization - determines optimal demand delivery/reservoir outflows
+  // Management optimization - determines optimal demand delivery/reservoir outflows/return flows
   // ----------------------------------------------------------------------------------------
   if (Options.management_optimization)
   {

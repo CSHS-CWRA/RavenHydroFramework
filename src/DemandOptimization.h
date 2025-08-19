@@ -261,6 +261,7 @@ private: /*------------------------------------------------------*/
   double        **_aDhist;             //< history of actual delivery [size: _nEnabledSBs * _nHistoryItems]
   double        **_aIhist;             //< history of reservoir inflows [size: _nEnabledSBs * _nHistoryItems]
   double        **_ahhist;             //< history of actual reservoir stages  (or 0 for non-reservoir basins) [size: _nEnabledSBs * _nHistoryItems]
+  double        **_aAhist;             //< history of actual reservoir areas [size: _nEnabledSBs * _nHistoryItems] 
 
   int             _nSolverResiduals;   //< number of residuals of solution (equal to lp_lib::nRows)
   double         *_aSolverResiduals;   //< vector of residuals of solution [size: _nSolverResiduals]

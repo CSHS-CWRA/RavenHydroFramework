@@ -68,6 +68,7 @@ CDemandOptimizer::CDemandOptimizer(CModel *pMod)
   _aDhist=NULL;
   _aIhist=NULL;
   _ahhist=NULL;
+  _aAhist=NULL;
 
   _nGoals=0;
   _pGoals=NULL;
@@ -113,10 +114,12 @@ CDemandOptimizer::~CDemandOptimizer()
       delete [] _aDhist[p];
       delete [] _aIhist[p];
       delete [] _ahhist[p];
+      delete [] _aAhist[p];
     }
   }
   delete [] _aQhist;
   delete [] _ahhist;
+  delete [] _aAhist;
   delete [] _aDhist;
   delete [] _aIhist;
   delete [] _aUserConstants;
@@ -768,19 +771,22 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
   _ahhist = new double *[_nEnabledSubBasins];
   _aDhist = new double *[_nEnabledSubBasins];
   _aIhist = new double *[_nEnabledSubBasins];
-  ExitGracefullyIf(_aDhist==NULL,"CDemandOptimizer::InitializePostRVMRead",OUT_OF_MEMORY);
+  _aAhist = new double *[_nEnabledSubBasins];
+  ExitGracefullyIf(_aAhist==NULL,"CDemandOptimizer::InitializePostRVMRead",OUT_OF_MEMORY);
   for (int pp=0;pp<_nEnabledSubBasins;pp++){
     _aDhist[pp]=NULL;
     _aQhist[pp] = new double[_nHistoryItems];
     _ahhist[pp] = new double[_nHistoryItems];
     _aDhist[pp] = new double[_nHistoryItems];
     _aIhist[pp] = new double[_nHistoryItems];
-    ExitGracefullyIf(_aDhist[pp]==NULL,"CDemandOptimizer::InitializePostRVMRead (2)",OUT_OF_MEMORY);
+    _aAhist[pp] = new double[_nHistoryItems];
+    ExitGracefullyIf(_aAhist[pp]==NULL,"CDemandOptimizer::InitializePostRVMRead (2)",OUT_OF_MEMORY);
     for (int i = 0; i < _nHistoryItems; i++) {
       _aQhist[pp][i]=0.0;
       _ahhist[pp][i]=0.0;
       _aDhist[pp][i]=0.0;
       _aIhist[pp][i]=0.0;
+      _aAhist[pp][i]=0.0;
     }
   }
 
@@ -1290,17 +1296,20 @@ void CDemandOptimizer::UpdateHistoryArrays()
         _aDhist[pp][i]=_aDhist[pp][i-1];
         _aIhist[pp][i]=_aIhist[pp][i-1];
         _ahhist[pp][i]=_ahhist[pp][i-1];
+        _aAhist[pp][i]=_aAhist[pp][i-1];
       }
       _aQhist[pp][0]=pSB->GetOutflowRate();
       _aDhist[pp][0]=0.0;
       _aIhist[pp][0]=0.0;
       _ahhist[pp][0]=0.0;
+      _aAhist[pp][0]=0.0;
       for (int ii=0;ii<pSB->GetNumWaterDemands();ii++){
         _aDhist[pp][0]+=pSB->GetDemandDelivery(ii);
       }
       if (pSB->GetReservoir()!=NULL){
         _aIhist[pp][0]=pSB->GetChannelOutflowRate();
         _ahhist[pp][0]=pSB->GetReservoir()->GetResStage();
+        _aAhist[pp][0]=pSB->GetReservoir()->GetSurfaceArea();
       }
     }
   }
