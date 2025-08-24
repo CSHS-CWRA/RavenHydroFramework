@@ -1709,7 +1709,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
   int     p2,id;
   dv_type dvtype;
   bool    assimilating;
-  double  Qobs;
+  double  Qobs,Qobs2;
 
   for (int pp = 0; pp<pModel->GetNumSubBasins(); pp++)
   {
@@ -1729,7 +1729,8 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
       SBID=pSB->GetID();
 
       i=0;
-      Qobs=_pModel->GetObservedFlow(p,nn);
+      Qobs =_pModel->GetObservedFlow(p,nn  );
+      Qobs2=_pModel->GetObservedFlow(p,nn+1);
       assimilating = ((Options.assimilate_flow) && (pSB->UseInFlowAssimilation()) && (Qobs!=RAV_BLANK_DATA) && (pSB->GetReservoir()==NULL));
 
       // outflow term  =============================
@@ -1799,7 +1800,8 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
       }
       else //assimilating - skip mass balance
       {
-        RHS=Qobs;
+        if (Qobs2 != RAV_BLANK_DATA) {RHS=0.5*(Qobs+Qobs2);}
+        else                         {RHS=Qobs;            }
       }
 
       retval = lp_lib::add_constraintex(pLinProg,i,row_val,col_ind,ROWTYPE_EQ,RHS);
@@ -2392,6 +2394,10 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
         AddConstraintToLP( i, _pGoals[i]->active_regime, pLinProg, tt, col_ind, row_val,true,lpgoalrow[i]);
       }
     }
+    // adjust workflow variables to respond to non-linear DVs
+    // ----------------------------------------------------------------------------
+    UpdateWorkflowVariables(tt,Options);
+
     iter++;
   } while ((iter<_maxIterations));/*end iteration loop*/
 

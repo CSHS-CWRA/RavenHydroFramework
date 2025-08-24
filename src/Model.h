@@ -151,6 +151,8 @@ private:/*------------------------------------------------------*/
   double         *_aDAtimesince; ///< array of downstream time since most recent downstream DA observation [size: _nSubBasins] (NULL w/o DA)
   bool            *_aDAoverride; ///< array of booleans indicating if observation data is available for assimilation at basin p's outlet [size: _nSubBasins] (NULL w/o DA)
   double              *_aDAobsQ; ///< array of observed flow values in basins [size: _nSubBasins]  (NULL w/o DA)
+  double             *_aDAobsQ2; ///< array of observed flow values in next time step [size: _nSubBasins]   (NULL w/o DA)
+  double    *_aDASinceLastBlank; ///< array of time steps since last blank value occurred [size: _nSubBasins] (NULL w/o DA)
   double        *_aDAscale_last; ///< array of scale factors from previous time step  [size: _nSubBasins]  (NULL w/o DA)
 
   force_perturb**_pPerturbations; ///< array of pointers to perturbation data; defines which forcing functions to perturb and how [size: _nPerturbations]

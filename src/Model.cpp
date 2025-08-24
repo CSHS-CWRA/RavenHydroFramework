@@ -67,6 +67,8 @@ CModel::CModel(const int        nsoillayers,
   _aDAtimesince   =NULL;
   _aDAoverride    =NULL;
   _aDAobsQ        =NULL;
+  _aDAobsQ2       =NULL;
+  _aDASinceLastBlank=NULL;
 
   _pOptStruct = &Options;
   _pGlobalParams = new CGlobalParams();
@@ -223,6 +225,8 @@ CModel::~CModel()
   delete [] _aDAtimesince;   _aDAtimesince=NULL;
   delete [] _aDAoverride;    _aDAoverride=NULL;
   delete [] _aDAobsQ;        _aDAobsQ=NULL;
+  delete [] _aDAobsQ2;       _aDAobsQ2=NULL;
+  delete [] _aDASinceLastBlank; _aDASinceLastBlank=NULL;
 
   this->DestroyAllLanduseClasses();
   this->DestroyAllSoilClasses();

@@ -521,6 +521,11 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
   else if (s[0] == '?') {
     term->type=TERM_ITER;
     term->DV_ind=GetNLIndexFromGuessString(s);
+    if (term->DV_ind == DOESNT_EXIST) {
+      warn="ConvertToExpressionTerm: non-linear expression in expression " +warnstring +" was not defined: goal/constraint will be ignored";
+      WriteWarning(warn.c_str(),true);
+      return false;
+    }
   }
   //----------------------------------------------------------------------
   else if (s.substr(0, 4) == "@ts(")//time series (e.g., @ts(my_time_series,n)

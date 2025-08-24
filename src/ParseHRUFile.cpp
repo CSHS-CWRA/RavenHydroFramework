@@ -628,6 +628,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             if((pModel->GetHydroUnit(k)->GetHRUType()==HRU_GLACIER) && (!strcmp(s[4],"GLACIER"))){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
             if((pModel->GetHydroUnit(k)->GetHRUType()==HRU_LAKE) && (!strcmp(s[4],"LAKE"))){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
             if((pModel->GetHydroUnit(k)->GetHRUType()==HRU_WATER) && (!strcmp(s[4],"WATER"))){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
+            if((pModel->GetHydroUnit(k)->GetHRUType()==HRU_WETLAND) && (!strcmp(s[4],"WETLAND"))){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
           }
         }
         if(!strcmp(s[4],"DOESNTEQUAL")){
@@ -638,6 +639,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             if((pModel->GetHydroUnit(k)->GetHRUType()!=HRU_GLACIER) && (!strcmp(s[4],"GLACIER"))){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
             if((pModel->GetHydroUnit(k)->GetHRUType()!=HRU_LAKE) && (!strcmp(s[4],"LAKE"))){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
             if((pModel->GetHydroUnit(k)->GetHRUType()==HRU_WATER) && (!strcmp(s[4],"WATER"))){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
+            if((pModel->GetHydroUnit(k)->GetHRUType()==HRU_WETLAND) && (!strcmp(s[4],"WETLAND"))){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
           }
         }
       }

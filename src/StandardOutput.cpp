@@ -620,12 +620,6 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       }
     }
     ASSIM<<endl;
-    for (int p = 0; p < _nSubBasins; p++) {
-      if((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->IsEnabled())){
-        ASSIM<<", ";
-      }
-    }
-    ASSIM<<endl;
     ASSIM.close();
   }
 

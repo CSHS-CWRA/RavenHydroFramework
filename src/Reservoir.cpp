@@ -1235,10 +1235,9 @@ double CReservoir::AdjustFlow(const double& Qadjust, const bool overriding, cons
 
   _DAscale=1.0;
   _DAscale_last=1.0;
-  return 0.0; //scaling always stops at reservoir or only adjusts inflow
 
   double scale=(_Qout+Qadjust)/_Qout;
-  if (_Qout=0){scale=1.0;}
+  if (_Qout==0.0){scale=1.0;}
 
   double va=0.0; //volume added
   double sf=(scale-1.0)/scale;

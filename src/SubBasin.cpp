@@ -1543,20 +1543,26 @@ double CSubBasin::ScaleAllFlows(const double &scale, const bool overriding, cons
 /// \brief adjusts all internal flows by corresponding magnitude (for assimilation/nudging)
 /// \remark Messes with mass balance something fierce!
 /// \param &Qadjust [in] Qadjust
-/// \param &overriding [in] True if Qlast should be scaled (overriding); false for no-data scaling
+/// \param overriding [in] false if in backpropagation mode
+/// \param assimsitte [in] true if this is an assimilation site with data 
 /// \param &tstep [in] time step [d]
 /// \return volume added to system [m3]
 ///
-double CSubBasin::AdjustAllFlows(const double &adjust, const bool overriding, const double &tstep, const double &t)
+double CSubBasin::AdjustAllFlows(const double &adjust, const bool overriding,const bool assimsite,  const double &tstep, const double &t)
 {
   double va=0.0; //volume added [m3]
 
-  if(!overriding)
+  double distfact  = _pModel->GetGlobalParams()->GetParams()->assim_upstream_decay/M_PER_KM; //[1/km]->[1/m]
+  double corr=exp(-distfact*_reach_length);
+
+  if (_pReservoir!=NULL){
+    va+=_pReservoir->AdjustFlow(adjust,overriding,tstep,t);
+    return va;
+  }
+
+  if ((!overriding) && (!assimsite))
   {
-    
-    double distfact  = _pModel->GetGlobalParams()->GetParams()->assim_upstream_decay/M_PER_KM; //[1/km]->[1/m]
-    double corr=exp(-distfact*_reach_length);
-    for(int n=0;n<_nQinHist; n++) {
+    for(int n=1;n<_nQinHist; n++) {
       _aQinHist[n]+=adjust*(_drainage_area-_basin_area)/_drainage_area*corr;
       upperswap(_aQinHist[n],0.0);
       va+=adjust*tstep*SEC_PER_DAY;
@@ -1566,16 +1572,20 @@ double CSubBasin::AdjustAllFlows(const double &adjust, const bool overriding, co
       va+=adjust*tstep*SEC_PER_DAY;
     }
   }
-  else if((overriding) && (_pReservoir==NULL)) {
+  else if ((!overriding)  && (assimsite)){ //Just QinHist
+    for(int n=1;n<_nQinHist; n++) { 
+      _aQinHist[n]+=adjust*(_drainage_area-_basin_area)/_drainage_area*corr;
+      upperswap(_aQinHist[n],0.0);
+      va+=adjust*tstep*SEC_PER_DAY;
+    }
+  }
+  else if((overriding) && (assimsite)) //just update Qin
+  {
     for (int i=0;i<_nSegments;i++)
     {
       _aQout[i]+=adjust;  upperswap(_aQout[i],0.0);
       va+=adjust*tstep*SEC_PER_DAY;
     }
-  }
-
-  if(_pReservoir!=NULL) {
-    va+=_pReservoir->AdjustFlow(adjust,overriding,tstep,t);
   }
 
   //Estimate volume added through scaling
