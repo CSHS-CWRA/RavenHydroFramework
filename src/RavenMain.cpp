@@ -223,6 +223,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
   Options.forecast_shift=0.0;
   Options.warm_ensemble_run="";
   Options.in_bmi_mode = false;  // "regular mode": Raven called from command line
+  Options.benchmarking=false;
 
   //Parse argument list
   while (i<=argc)
@@ -232,7 +233,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
     }
     if ((word=="-p") || (word=="-h") || (word=="-t") || (word=="-e") || (word=="-c") || (word=="-o") ||
         (word=="-s") || (word=="-r") || (word=="-n") || (word=="-l") || (word=="-m") || (word=="-v") ||
-        (word=="-we")|| (word=="-tt")|| (word=="-template") || (i==argc))
+        (word=="-we")|| (word=="-tt")|| (word=="-template")  || (word=="-b") || (i==argc))
     {
       if      (mode==0){
         Options.rvi_filename=argument+".rvi";
@@ -260,6 +261,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
       else if (mode==12){Options.forecast_shift=s_to_d(argument.c_str()); argument=""; }
       else if (mode==13){Options.warm_ensemble_run=argument; argument=""; }
       else if (mode==14){Options.create_rvp_template=true;   argument="";}
+      else if (mode==15){Options.benchmarking=true;     argument="";}
 
       if      (word=="-p"){mode=1; }
       else if (word=="-h"){mode=2; }
@@ -276,6 +278,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
       else if (word=="-tt"){mode=12; }
       else if (word=="-we"){mode=13; }
       else if (word=="-template"){mode=14;}
+      else if (word=="-b"){mode=15;}
       else if (word=="-v"){Options.pause=false; version_announce=true; mode=10;} //For PAVICS
     }
     else{

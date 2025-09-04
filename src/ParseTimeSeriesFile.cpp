@@ -453,7 +453,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
       bool period_ending =ishyd;
       //Hydrographs are internally stored as period-ending!
-
+      //pTimeSer=CTimeSeries::Parse(p,(ishyd || isinflow || isnetinflow),to_string(s[1]),s_to_ll(s[2]),"none",Options,period_ending);
       pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),s_to_ll(s[2]),"none",Options,period_ending);
 
       if(isconc) {
@@ -2006,11 +2006,11 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         ExitGracefully(":FileNameNC command must precede :MapStationsTo command in :StationForcings block",BAD_DATA);
       }
       GetNetCDFStationArray(ncid, pGrid->GetFilename(),StatDimID,StatVecID, StatIDs,junk, nStations);
-      if ((sb_command) && (nStations!=pModel->GetNumSubBasins())){
-        ExitGracefully(":MapStationsTo command: Number of stations in NetCDF file not the same as the number of model subbasins",BAD_DATA);
+      if ((sb_command) && (nStations < pModel->GetNumSubBasins())) {
+        ExitGracefully(":MapStationsTo command: Number of stations in NetCDF file is smaller than the number of model subbasins",BAD_DATA);
       }
-      if ((!sb_command) && (nStations!=pModel->GetNumHRUs())){
-        ExitGracefully(":MapStationsTo command: Number of stations in NetCDF file not the same as the number of model HRUs",BAD_DATA);
+      if ((!sb_command) && (nStations< pModel->GetNumHRUs())){
+        ExitGracefully(":MapStationsTo command: Number of stations in NetCDF file is smaller than the number of model HRUs",BAD_DATA);
       }
       /*cout<<":MapTo command: "<<endl;
       for (int i=0;i<nStations;i++){

@@ -237,7 +237,7 @@ public:/*------------------------------------------------------*/
   double       GetMonthlyMaxTemp(const int month)                 const; ///< Representative maximum temperature for month
   double       GetMonthlyAvePET (const int month)                 const; ///< Average PET over month
   double       DailyTempCorrection(const double t)                const; ///< Daily temperature correction [C]
-  int          GetTimeIndex(const double &t, const double &tstep) const; ///< get time index corresponding to t+tstep/2
+  int          GetTimeIndex     (const double &t)                 const; ///< get netCDF time index corresponding to model time t
   string       GetFilename()                                      const; ///< return forcing filename
 
   double       GetCellLatitude       (const int l) const;        ///< returns Latitude of cell l (or 0, if not available)

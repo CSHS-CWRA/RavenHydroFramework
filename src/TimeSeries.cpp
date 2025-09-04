@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "TimeSeries.h"
 #include "ParseLib.h"
@@ -413,8 +413,31 @@ double CTimeSeries::GetAvgValue(const double &t, const double &tstep) const
     }
   }
   else{
+    if (n1 == n2){ 
+      if (n1==_nPulses-1){return _aVal[n1];}
+      return _aVal[n1]+(t_loc+0.5*tstep-(double)(n1)*_interval)/(_interval)*(_aVal[n1+1]-_aVal[n1]);
+    }
+    else
+    {
+      sum = 0;
+      inc = ((double)(n1 + 1)*_interval - t_loc);
+      if ((_aVal[n1] == RAV_BLANK_DATA) || (_aVal[n2] == RAV_BLANK_DATA)) { blank += inc; }
+      else                                                                {
+        sum += inc *(_aVal[n1]+(t_loc+0.5*inc-(double)(n1)*_interval)/(_interval)*(_aVal[n1+1]-_aVal[n1]));
+      }
 
-    ExitGracefully("CTimeSeries::GetAvgValue (non-pulse)", STUB);
+      for (int n = n1 + 1; n < n2; n++){
+        if ((_aVal[n] == RAV_BLANK_DATA) || (_aVal[n+1] == RAV_BLANK_DATA)) { blank += inc; }
+        else                            {
+          sum += _interval * 0.5 *(_aVal[n+1]+_aVal[n]);
+        }
+      }
+      inc = ((t_loc + tstep) - (double)(n2)*_interval);
+      if ((_aVal[n2] == RAV_BLANK_DATA) || (_aVal[n2+1] == RAV_BLANK_DATA)) { blank += inc; }
+      else                              {
+        sum += inc *(_aVal[n2]+(t_loc+0.5*inc-(double)(n2)*_interval)/(_interval)*(_aVal[n2+1]-_aVal[n2]));
+      }
+    }
   }
   if (blank / tstep > 0.001){return RAV_BLANK_DATA;}
 
@@ -790,6 +813,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long lon
                                            name,                 // ForcingType
                                            loc_ID,               // critical information about timeseries, e.g. subbasin ID or HRU ID
                                            gauge_name,
+                                           is_pulse,
                                            shift_to_per_ending,  // true if data are period ending rather than period ending
                                            shift_from_per_ending,
                                            FileNameNC,           // file name of NetCDF
@@ -802,6 +826,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long lon
                                            LinTrans_a,           // linear transformation: a in new = a*data+b
                                            LinTrans_b            // linear transformation: b in new = a*data+b
                                            );
+    
 
     p->Tokenize(s,Len);//read closing term (e.g., ":EndData")
     if(string(s[0]).substr(0,4)!=":End"){
@@ -1045,6 +1070,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long lon
     ExitGracefully("CTimeSeries: Parse: exceeded specified number of time series points in sequence or no :EndData command used. ",BAD_DATA);
   }
 
+  
   pTimeSeries=new CTimeSeries(name,loc_ID,p->GetFilename(),start_day,start_yr,tstep,aVal,n,is_pulse);
   delete [] aVal;  aVal =NULL;
   return pTimeSeries;
@@ -1378,7 +1404,7 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
 /// \return array (size nTS) of pointers to time series
 //
 CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, string name,
-                                                   long long loc_ID, string gauge_name,
+                                                   long long loc_ID, string gauge_name, bool is_pulse,
                                                    bool shift_to_per_ending, bool shift_from_per_ending,
                                                    string FileNameNC, string VarNameNC,
                                                    string DimNamesNC_stations, string DimNamesNC_time,
@@ -1421,7 +1447,6 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   double start_day=0.0;         // start day of time series
   int    start_yr=1900;         // start year of time series
   double tstep=1.0;             // time difference between two data points
-  bool   is_pulse;              // if data are pulses
 
   // -------------------------------
   // (1) open NetCDF read-only (get ncid)
@@ -1805,7 +1830,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   // -------------------------------
   // (15) convert to time series object
   // -------------------------------
-  is_pulse = true;
+  //is_pulse = true;
 
   pTimeSeries=new CTimeSeries(name,loc_ID,FileNameNC.c_str(),start_day,start_yr,tstep,aVal,nMeasurements,is_pulse);
 

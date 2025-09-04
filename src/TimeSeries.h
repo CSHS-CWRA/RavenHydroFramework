@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef TIMESERIES_H
 #define TIMESERIES_H
@@ -128,6 +128,7 @@ public:/*-------------------------------------------------------*/
                                                string name,                 // forcing type
                                                long long  loc_ID,           // critical information about timeseries, e.g. subbasin ID or HRU ID
                                                string gauge_name,           // gauge name if gauge-linked data ("none" otherwise)
+                                               bool   is_pulse,             // step format of data 
                                                bool   shift_to_per_ending,  // true if data are period starting and need to be shifted (HYDROGRAPH?)
                                                bool   shift_from_per_ending,// true if data are period-ending and need to be shifted
                                                string FileNameNC,           // file name of NetCDF

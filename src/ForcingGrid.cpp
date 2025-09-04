@@ -1843,12 +1843,13 @@ int  CForcingGrid::GetChunkSize() const{return _ChunkSize;}
 int CForcingGrid::GetnHydroUnits() const{return _nHydroUnits;}
 
 ///////////////////////////////////////////////////////////////////
-/// \brief returns time index idx corresponding to t+tstep/2
-/// \return time index idx corresponding to t+tstep/2
+/// \brief returns time index idx corresponding to t+interval/2
+/// \return time index idx corresponding to t+interval/2
+/// param t [in] model time [days]
 //
-int CForcingGrid::GetTimeIndex(const double &t, const double &tstep) const
+int CForcingGrid::GetTimeIndex(const double &t) const
 {
-  return int((t+0.5*tstep) *rvn_round(1.0/_interval))  % _ChunkSize;
+  return ((int) floor((t+TIME_CORRECTION) *rvn_round(1.0/_interval)))  % _ChunkSize;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -1860,7 +1861,7 @@ int CForcingGrid::GetTimeIndex(const double &t, const double &tstep) const
 //
 double CForcingGrid::GetWeightedValue(const int k,const double &t,const double &tstep) const
 {
-  int idx_new = GetTimeIndex(t,tstep);
+  int idx_new = GetTimeIndex(t);
   int nSteps = max(1,(int)(rvn_round(tstep/_interval)));//# of intervals in time step
   double wt,sum=0.0;
   for(int i = 0;i <_nWeights[k]; i++)
@@ -1880,7 +1881,7 @@ double CForcingGrid::GetWeightedValue(const int k,const double &t,const double &
 double CForcingGrid::GetDailyWeightedValue(const int k,const double &t,const double &tstep, const optStruct &Options) const
 {
   double time_shift=Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
-  int it_new_day = GetTimeIndex(t-time_shift,tstep);//index corresponding to start of day
+  int it_new_day = GetTimeIndex(t-time_shift);//index corresponding to start of day
   double wt,sum=0;
   for(int i = 0;i <_nWeights[k]; i++)
   {
@@ -1902,7 +1903,7 @@ double CForcingGrid::GetWeightedAverageSnowFrac(const int k,const double &t,cons
   if ((k<0) || (k>_nHydroUnits)){ExitGracefully("CForcingGrid::GetWeightedAverageSnowFrac: invalid HRU index",RUNTIME_ERR); }
 #endif
 
-  int idx_new = GetTimeIndex(t,tstep);
+  int idx_new = GetTimeIndex(t);
   int nSteps = max(1,(int)(rvn_round(tstep/_interval)));//# of intervals in time step
   double wt,sum=0.0;
   double snow; double rain;
@@ -1972,13 +1973,13 @@ double CForcingGrid::GetValue(const int ic, const int it) const
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns average over n timesteps of time series data point for which t is an index
 /// \param ic     [in] Index of grid cell with non-zero weighting (value between 0 and _nNonZeroWeightedGridCells)
-/// \param t      [in] local time (with respect to chunk start, in days)
+/// \param t_idx  [in] local time index (with respect to chunk start)
 /// \param n      [in] Number of time steps
 /// \return Magnitude of time series data point for which t is an index
 //
-double CForcingGrid::GetValue_avg(const int ic, const double &t, const int nsteps) const
+double CForcingGrid::GetValue_avg(const int ic, const double &t_idx, const int nsteps) const
 {
-  int it_start=max((int)(t),0);
+  int it_start=max((int)(t_idx),0);
   int lim=min(nsteps,_ChunkSize-it_start);
   double sum = 0.0;
   for (int it=it_start; it<it_start+lim;it++){

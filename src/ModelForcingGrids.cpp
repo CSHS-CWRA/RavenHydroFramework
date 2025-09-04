@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 
@@ -221,13 +221,14 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     double Tave;
     pTave_daily = ForcingCopyCreate(pTmin,F_TEMP_DAILY_AVE,1.0,nVals,Options);
 
-    double t=0.0;
+    double time_shift=Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
+    double t=0.0; 
     int chunk_size =pTave_daily->GetChunkSize();
     int nNonZero   =pTave_daily->GetNumberNonZeroGridCells();
     for(int it=0; it<chunk_size; it++) {            // loop over time points in buffer
       for(int ic=0; ic<nNonZero;ic++) {             // loop over non-zero grid cell indexes
-        Tave=0.5*(pTmin->GetValue_avg(ic,t * nValsPerDay,nValsPerDay) +
-                  pTmax->GetValue_avg(ic,t * nValsPerDay,nValsPerDay));
+        Tave=0.5*(pTmin->GetValue_avg(ic,floor(t -time_shift+TIME_CORRECTION)* nValsPerDay,nValsPerDay) +
+                  pTmax->GetValue_avg(ic,floor(t -time_shift+TIME_CORRECTION)* nValsPerDay,nValsPerDay));
         pTave_daily->SetValue(ic,it,Tave);
       }
       t+=1.0;

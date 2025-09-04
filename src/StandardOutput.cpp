@@ -1450,7 +1450,7 @@ void CModel::WriteMajorOutput(const time_struct &tt, string solfile, bool final)
       for (i = 0; i < _nObservedTS; i++){
         if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[pp]->GetID())) {has_obs=true;}
       }
-      if (has_obs){BAS<<", TRUE";}
+      if (has_obs){BAS<<",TRUE";}
       else        {BAS<<",FALSE";}
 
       BAS<<","<<_pSubBasins[pp]->GetLatHistorySize();
