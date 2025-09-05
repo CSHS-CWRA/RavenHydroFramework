@@ -52,10 +52,6 @@ CForcingGrid *CModel::ForcingCopyCreate(const CForcingGrid *pGrid,
     pTout=GetForcingGrid(typ);
   }
 
-  //int nGridHRUs=pGrid->GetnHydroUnits();
-  //int nCells   =pGrid->GetRows()*pGrid->GetCols(); //handles 3D or 2D
-  //cout<<"**ForcingGrid Copy Create : "<<ForcingToString(pGrid->GetForcingType())<<"-->"<<ForcingToString(pTout->GetForcingType())<< " is new?:"<<is_new<<"**"<<endl;
-
   return pTout;
 }
 
@@ -126,6 +122,7 @@ void CModel::GenerateGriddedPrecipVars(const optStruct &Options)
 /// \brief Creates all missing gridded temperature data based on gridded information available,
 ///        e.g when only sub-daily temperature is provided estimate daily average, minimum and maximum temperature.
 ///        data are assumed to have the same resolution and hence can be initialized together.
+///        called with each new chunk of data 
 ///
 /// \param Options [in]  major options of the model
 //
@@ -261,10 +258,10 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     for (int it=0; it<nVals; it++) {                   // loop over all time points (nVals)
       for (int ic=0; ic<nNonZero; ic++){               // loop over non-zero grid cell indexes
         time_idx_chunk = int(floor(t+TIME_CORRECTION));
-        Tmin   = pTmin->GetValue_avg(ic, floor(t +time_shift+TIME_CORRECTION)*nValsPerDay, nValsPerDay);
-        Tmax   = pTmax->GetValue_avg(ic, floor(t +time_shift+TIME_CORRECTION)*nValsPerDay, nValsPerDay);
-        T1corr = pTave->DailyTempCorrection(t+time_shift);
-        T2corr = pTave->DailyTempCorrection(t+time_shift+Options.timestep);
+        Tmin   = pTmin->GetValue_avg(ic, floor(t-time_shift+TIME_CORRECTION)*nValsPerDay, nValsPerDay);
+        Tmax   = pTmax->GetValue_avg(ic, floor(t-time_shift+TIME_CORRECTION)*nValsPerDay, nValsPerDay);
+        T1corr = pTave->DailyTempCorrection(t);
+        T2corr = pTave->DailyTempCorrection(t+Options.timestep);
         val=pTave_daily->GetValue(ic, time_idx_chunk)+0.25*(Tmax-Tmin)*(T1corr+T2corr);
         pTave->SetValue( ic, it, val);
       }
@@ -280,8 +277,8 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
       pTave = ForcingCopyCreate(pTave_daily,F_TEMP_AVE,1.0,nVals,Options);
 
       int nNonZero  =pTave->GetNumberNonZeroGridCells();
-      for(int it=0; it<nVals; it++) {                                 // loop over time points in buffer
-        for(int ic=0; ic<nNonZero; ic++) {                                  // loop over non-zero grid cell indexes
+      for(int it=0; it<nVals; it++) {                           // loop over time points in buffer
+        for(int ic=0; ic<nNonZero; ic++) {                      // loop over non-zero grid cell indexes
           pTave->SetValue(ic,it,pTave_daily->GetValue(ic,it));  // --> just copy daily average values
         }
       }
@@ -308,18 +305,20 @@ void CModel::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
   pTmax_daily = ForcingCopyCreate(pTave,F_TEMP_DAILY_MAX,1.0,nVals,Options);
   pTave_daily = ForcingCopyCreate(pTave,F_TEMP_DAILY_AVE,1.0,nVals,Options);
 
+  int t_idx;
   double time;
   double time_shift=Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
-  int    nsteps_in_day=int(1.0/interval);
+  int    nsteps_in_day=(int)(rvn_round(1.0/interval));
 
   for (int it=0; it<nVals; it++) {                    // loop over time points in buffer
-    time=(double)it*1.0/interval;
+    time=(double)it*nsteps_in_day;
     time=floor(time-time_shift+TIME_CORRECTION); //model time corresponding to 00:00 on day of it
+    t_idx=(int)(time);
 
     for (int ic=0; ic<pTave->GetNumberNonZeroGridCells(); ic++){         // loop over non-zero grid cell indexes
-      pTmin_daily->SetValue(ic, it, pTave->GetValue_min(ic, time, nsteps_in_day));
-      pTmax_daily->SetValue(ic, it, pTave->GetValue_max(ic, time, nsteps_in_day));
-      pTave_daily->SetValue(ic, it, pTave->GetValue_avg(ic, time, nsteps_in_day));
+      pTmin_daily->SetValue(ic, it, pTave->GetValue_min(ic, t_idx, nsteps_in_day));
+      pTmax_daily->SetValue(ic, it, pTave->GetValue_max(ic, t_idx, nsteps_in_day));
+      pTave_daily->SetValue(ic, it, pTave->GetValue_avg(ic, t_idx, nsteps_in_day));
     }
   }
 

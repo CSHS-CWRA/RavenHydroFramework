@@ -235,10 +235,10 @@ const double  WIND_EXTINCT            =2.5;                                     
 /// \note This is always 2 for broadleaves, and ranges from 2 for flat needles to pi for cylindrical needles.
 const double  LEAF_PROJ_RAT           =2.2;                                     ///< [m2/m2] ratio of total leaf area to projected area.
 
-const double HBV_REFERENCE_ELEV       =1000;                                    ///< [masl]  (zref in HBV)
-const double HBV_PET_ELEV_CORR        =0.0005;                                  ///< [mm/m-d] PET lapse rate (ECALT in HBV-EC)
-const double HBV_PET_TEMP_CORR        =0.5;                                     ///< [-]     (ETF in HBV-EC)
-const double GLOBAL_PET_CORR          =1.0;                                     ///< [-]     (ECORR in HBV-EC)
+const double  HBV_REFERENCE_ELEV      =1000;                                    ///< [masl]  (zref in HBV)
+const double  HBV_PET_ELEV_CORR       =0.0005;                                  ///< [mm/m-d] PET lapse rate (ECALT in HBV-EC)
+const double  HBV_PET_TEMP_CORR       =0.5;                                     ///< [-]     (ETF in HBV-EC)
+const double  GLOBAL_PET_CORR         =1.0;                                     ///< [-]     (ECORR in HBV-EC)
 
 //Flag variables
 const int     DOESNT_EXIST            =-1;                                      ///< return value for nonexistent index

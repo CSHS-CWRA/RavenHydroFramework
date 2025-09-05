@@ -1843,8 +1843,8 @@ int  CForcingGrid::GetChunkSize() const{return _ChunkSize;}
 int CForcingGrid::GetnHydroUnits() const{return _nHydroUnits;}
 
 ///////////////////////////////////////////////////////////////////
-/// \brief returns time index idx corresponding to t+interval/2
-/// \return time index idx corresponding to t+interval/2
+/// \brief returns time index idx corresponding to t
+/// \return time index idx corresponding to t
 /// param t [in] model time [days]
 //
 int CForcingGrid::GetTimeIndex(const double &t) const
@@ -1977,9 +1977,9 @@ double CForcingGrid::GetValue(const int ic, const int it) const
 /// \param n      [in] Number of time steps
 /// \return Magnitude of time series data point for which t is an index
 //
-double CForcingGrid::GetValue_avg(const int ic, const double &t_idx, const int nsteps) const
+double CForcingGrid::GetValue_avg(const int ic, const int t_idx, const int nsteps) const
 {
-  int it_start=max((int)(t_idx),0);
+  int it_start=max(t_idx,0);
   int lim=min(nsteps,_ChunkSize-it_start);
   double sum = 0.0;
   for (int it=it_start; it<it_start+lim;it++){
@@ -1993,14 +1993,14 @@ double CForcingGrid::GetValue_avg(const int ic, const double &t_idx, const int n
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns minimum of n timesteps of time series data point for which t is an index
 /// \param ic     [in] Index of grid cell with non-zero weighting (value between 0 and _nNonZeroWeightedGridCells)
-/// \param t      [in] Time index
-/// \param n      [in] Number of time steps
+/// \param t_idx  [in] Time index
+/// \param n      [in] Number of time intervals
 /// \return Magnitude of time series data point for which t is an index
 //
-double CForcingGrid::GetValue_min(const int ic, const double &t, const int nsteps) const
+double CForcingGrid::GetValue_min(const int ic, const int t_idx, const int nsteps) const
 {
   double min_val = ALMOST_INF ;
-  int it_start=max((int)(t),0);
+  int it_start=max(t_idx,0);
   int lim=min(nsteps,_ChunkSize-it_start);
   for (int it=it_start; it<it_start+lim;it++){
     if(_aVal[it][ic] < min_val){min_val=_aVal[it][ic];}
@@ -2011,14 +2011,14 @@ double CForcingGrid::GetValue_min(const int ic, const double &t, const int nstep
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns maximum of n timesteps of time series data point for which t is an index
 /// \param ic     [in] Index of grid cell with non-zero weighting (value between 0 and _nNonZeroWeightedGridCells)
-/// \param t      [in] Time index
+/// \param t_idx  [in] Time index
 /// \param n      [in] Number of time steps
 /// \return Magnitude of time series data point for which t is an index
 //
-double CForcingGrid::GetValue_max(const int ic, const double &t, const int nsteps) const
+double CForcingGrid::GetValue_max(const int ic, const int t_idx, const int nsteps) const
 {
   double max_val = -ALMOST_INF ;
-  int it_start=max((int)(t),0);
+  int it_start=max(t_idx,0);
   int lim=min(nsteps,_ChunkSize-it_start);
   for (int it=it_start; it<it_start+lim;it++){
     if(_aVal[it][ic] > max_val){max_val=_aVal[it][ic];}

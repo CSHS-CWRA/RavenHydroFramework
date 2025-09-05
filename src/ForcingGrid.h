@@ -149,9 +149,9 @@ public:/*------------------------------------------------------*/
 
   // accessors
   double GetValue                   (const int ic, const int it) const;
-  double GetValue_avg               (const int ic, const double &t, const int n) const;
-  double GetValue_min               (const int ic, const double &t, const int n) const;
-  double GetValue_max               (const int ic, const double &t, const int n) const;
+  double GetValue_avg               (const int ic, const int t_idx, const int n) const;
+  double GetValue_min               (const int ic, const int t_idx, const int n) const;
+  double GetValue_max               (const int ic, const int t_idx, const int n) const;
 
   // Weighting matrix associated routines
   void   AllocateWeightArray(              const int        nHydroUnits,

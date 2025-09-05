@@ -1390,7 +1390,12 @@ void CReservoir::UpdateReservoir(const time_struct &tt, const optStruct &Options
       double obs_stage=_pObsStage->GetSampledValue(nn);
       if(obs_stage!=RAV_BLANK_DATA) {
         _stage=obs_stage;
-        _Qout =GetWeirOutflow(_stage,weir_adj);//[m3/s]
+        if ((Options.management_optimization) && (_Qoptimized != RAV_BLANK_DATA)) {
+          _Qout=_Qoptimized; //overriding stage AND outflow
+        }
+        else{
+          _Qout =GetWeirOutflow(_stage,weir_adj);//[m3/s] //default - outflow function of assimilated stage
+        }
         _assim_blank=false;
       }
     }
@@ -1542,7 +1547,12 @@ double  CReservoir::RouteWater(const double &Qin_old,
 {
   if ((_assimilate_stage) && (!_assim_blank))
   {
-    res_outflow=_Qout;//stage from data, outflow calculated from SD curve in UpdateReservoir()
+    if ((Options.management_optimization) && (_Qoptimized != RAV_BLANK_DATA)) {
+      res_outflow=_Qoptimized;
+    }
+    else{
+      res_outflow=_Qout;//stage from data, outflow calculated from SD curve in UpdateReservoir()
+    }
     return _stage;
   }
 
