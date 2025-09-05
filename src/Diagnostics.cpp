@@ -674,7 +674,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
       }
       if (N > 0.0)
       {
-          return (100.0 * maxMod - maxObs)/maxObs;
+          return (100.0 * ((maxMod - maxObs)/maxObs));
       }
       else
       {
