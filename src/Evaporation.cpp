@@ -267,7 +267,7 @@ double Hamon1961Evap(const force_struct *F)
 
   abs_hum=216.7*(sat_vap*MB_PER_KPA)/(F->temp_daily_ave+ZERO_CELSIUS);//abs. humidity, g/m3 (may wish to make separate function of T)s
 
-  return 0.0055*4.0*abs_hum*F->day_length*F->day_length*MM_PER_INCH;
+  return max(0.0,0.0055*4.0*abs_hum*F->day_length*F->day_length*MM_PER_INCH);
 }
 
 //////////////////////////////////////////////////////////////////
