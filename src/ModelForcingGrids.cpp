@@ -224,8 +224,8 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     int nNonZero   =pTave_daily->GetNumberNonZeroGridCells();
     for(int it=0; it<chunk_size; it++) {            // loop over time points in buffer
       for(int ic=0; ic<nNonZero;ic++) {             // loop over non-zero grid cell indexes
-        Tave=0.5*(pTmin->GetValue_avg(ic,floor(t -time_shift+TIME_CORRECTION)* nValsPerDay,nValsPerDay) +
-                  pTmax->GetValue_avg(ic,floor(t -time_shift+TIME_CORRECTION)* nValsPerDay,nValsPerDay));
+        Tave=0.5*(pTmin->GetValue_avg(ic,(int)floor(t -time_shift+TIME_CORRECTION)* nValsPerDay,nValsPerDay) +
+                  pTmax->GetValue_avg(ic,(int)floor(t -time_shift+TIME_CORRECTION)* nValsPerDay,nValsPerDay));
         pTave_daily->SetValue(ic,it,Tave);
       }
       t+=1.0;
@@ -258,8 +258,8 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     for (int it=0; it<nVals; it++) {                   // loop over all time points (nVals)
       for (int ic=0; ic<nNonZero; ic++){               // loop over non-zero grid cell indexes
         time_idx_chunk = int(floor(t+TIME_CORRECTION));
-        Tmin   = pTmin->GetValue_avg(ic, floor(t-time_shift+TIME_CORRECTION)*nValsPerDay, nValsPerDay);
-        Tmax   = pTmax->GetValue_avg(ic, floor(t-time_shift+TIME_CORRECTION)*nValsPerDay, nValsPerDay);
+        Tmin   = pTmin->GetValue_avg(ic, (int)floor(t-time_shift+TIME_CORRECTION)*nValsPerDay, nValsPerDay);
+        Tmax   = pTmax->GetValue_avg(ic, (int)floor(t-time_shift+TIME_CORRECTION)*nValsPerDay, nValsPerDay);
         T1corr = pTave->DailyTempCorrection(t);
         T2corr = pTave->DailyTempCorrection(t+Options.timestep);
         val=pTave_daily->GetValue(ic, time_idx_chunk)+0.25*(Tmax-Tmin)*(T1corr+T2corr);
