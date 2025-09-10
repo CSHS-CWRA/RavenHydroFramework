@@ -11,7 +11,7 @@ void GetNetCDFTimeInfo(const int ncid, int &time_dimid,int &ntime, int &start_ti
 void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid,int &stat_varid, long *&aStations,  string *&aStat_string,int &nStations);
 
 //////////////////////////////////////////////////////////////////
-/// \brief Parses Deltares FEWS RunInfo file
+/// \brief Parses Deltares FEWS RunInfo file; called after .rvi file parse
 ///
 /// \param *&pModel [out] Reference to model object
 /// \param &Options [out] Global model options information

@@ -1375,7 +1375,7 @@ void CReservoir::UpdateReservoir(const time_struct &tt, const optStruct &Options
   }
 
   // Assimilate lake stage-------------------------------
-  if(_assimilate_stage)
+  if ((Options.assimilate_stage) && (_assimilate_stage))
   {
     _assim_blank=true;
     if(tt.model_time>Options.assimilation_start-Options.timestep/2.0)
@@ -1545,7 +1545,7 @@ double  CReservoir::RouteWater(const double &Qin_old,
                                res_constraint &constraint,
                                double *aQstruct) const
 {
-  if ((_assimilate_stage) && (!_assim_blank))
+  if ((Options.assimilate_stage) && (_assimilate_stage) && (!_assim_blank))
   {
     if ((Options.management_optimization) && (_Qoptimized != RAV_BLANK_DATA)) {
       res_outflow=_Qoptimized;

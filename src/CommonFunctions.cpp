@@ -1429,7 +1429,7 @@ void HandleNetCDFErrors(int error_code){
   if(error_code==0){ return; }
   else{
     string warn;
-    warn="NetCDF error ["+ to_string(nc_strerror(error_code))+"] occured.";
+    warn="NetCDF library error ["+ to_string(nc_strerror(error_code))+"] occured.";
     ExitGracefully(warn.c_str(),BAD_DATA);
   }
 #endif

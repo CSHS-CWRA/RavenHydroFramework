@@ -112,10 +112,10 @@ bool ParseInputFiles (CModel      *&pModel,
     if (!ParseNetCDFRunInfoFile(pModel, Options, runname_overridden,runmode_overridden)){
       ExitGracefully("Cannot find or read NetCDF runinfo file", BAD_DATA); return false;
     }
-  }
-  ExitGracefullyIf(Options.julian_start_year==1666,
+    ExitGracefullyIf(Options.julian_start_year==1666,
                   "ParseMainInputFile:: no :StartDate supplied in .rvi or runinfo.nc file.",BAD_DATA_WARN);
-
+  }
+  
   // Class Property file (.rvp)
   //--------------------------------------------------------------------------------
   if (!ParseClassPropertiesFile  (pModel,Options,terr_reqd)){

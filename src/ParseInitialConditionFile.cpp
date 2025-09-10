@@ -230,19 +230,19 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         typ = pModel->GetStateVarInfo()->StringToSVType(s[1],layer_ind,false);
 
         if (typ==UNRECOGNIZED_SVTYPE){
-          WriteWarning(":UniformInitialConditions: unrecognized state variable type "+to_string(s[1]),Options.noisy);
-          break;
-        }
+          WriteWarning(":UniformInitialConditions: unrecognized state variable type "+to_string(s[1]),Options.noisy);break;
+        } 
+        else {
+          SVind=pModel->GetStateVarIndex(typ,layer_ind);
 
-        SVind=pModel->GetStateVarIndex(typ,layer_ind);
-
-        if (SVind!=DOESNT_EXIST){
-          for (k=0;k<pModel->GetNumHRUs();k++){
-            SetInitialStateVar(pModel,SVind,typ,layer_ind,k,s_to_d(s[2]));
+          if (SVind!=DOESNT_EXIST){
+            for (k=0;k<pModel->GetNumHRUs();k++){
+              SetInitialStateVar(pModel,SVind,typ,layer_ind,k,s_to_d(s[2]));
+            }
           }
-        }
-        else{
-          WriteWarning("Initial conditions specified for state variable not in model ("+to_string(s[1])+")",Options.noisy);
+          else{
+            WriteWarning("Initial conditions specified for state variable not in model ("+to_string(s[1])+")",Options.noisy);
+          }
         }
       }
       else{
@@ -942,7 +942,9 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
   // check quality of initial state variables
   //======================================================================
   CHydroUnit *pHRU;
-  double *v=new double [pModel->GetNumStateVars()];
+  double *v=NULL;
+  v=new double [pModel->GetNumStateVars()];
+  ExitGracefullyIf(v == NULL, "ParseInitialConditionsFile: out of memory ",OUT_OF_MEMORY);
   for (int k=0;k<pModel->GetNumHRUs();k++)
   {
     pHRU=pModel->GetHydroUnit(k);
