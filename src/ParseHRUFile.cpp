@@ -643,6 +643,8 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
           }
         }
       }
+      string advice = "HRUGroup " + pHRUGrp->GetName() + " was populated with " + to_string(pHRUGrp->GetNumHRUs()) + " HRUs(s).";
+      WriteAdvisory(advice, Options.noisy);
       break;
     }
     case(10):  //----------------------------------------------
@@ -1008,40 +1010,41 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     }
     case(18):  //----------------------------------------------
     { /*
-        :MergeHRUGroups {NewGroup} From {HRUGroup1} {HRUGroup2} ... {HRUGroupN}
-        e.g.,
-        :MergeHRUGroups MainSubbasins From subGroup1 subGroup2 subGroup3
-        */
-        if (Options.noisy) { cout << "   Merge HRU Groups..." << endl; }
+      :MergeHRUGroups {NewGroup} From {HRUGroup1} {HRUGroup2} ... {HRUGroupN}
+      e.g.,
+      :MergeHRUGroups MainSubbasins From subGroup1 subGroup2 subGroup3
+      */
+      if (Options.noisy) { cout << "   Merge HRU Groups..." << endl; }
 
-        CHRUGroup* pHRUGrp = NULL;
-        pHRUGrp = pModel->GetHRUGroup(s[1]);
+      CHRUGroup* pHRUGrp = NULL;
+      pHRUGrp = pModel->GetHRUGroup(s[1]);
 
-        if (pHRUGrp == NULL) {//group not yet defined
-            WriteWarning(":MergeHRUGroups: HRU groups should ideally be defined in .rvi file (using :DefineHRUGroup(s) commands) before being populated in .rvh file (2)", Options.noisy);
-            pHRUGrp = new CHRUGroup(s[1], pModel->GetNumHRUGroups());
-            pModel->AddHRUGroup(pHRUGrp);
+      if (pHRUGrp == NULL) {//group not yet defined
+          WriteWarning(":MergeHRUGroups: HRU groups should ideally be defined in .rvi file (using :DefineHRUGroup(s) commands) before being populated in .rvh file (2)", Options.noisy);
+          pHRUGrp = new CHRUGroup(s[1], pModel->GetNumHRUGroups());
+          pModel->AddHRUGroup(pHRUGrp);
+      }
+
+      CHRUGroup* pHRUGrp1 = NULL;
+
+      // iterate string and add HRUs to new group
+      for (int striter = 3; striter < Len; striter++)
+      {
+        pHRUGrp1 = pModel->GetHRUGroup(s[striter]);
+        if (pHRUGrp1 == NULL) {
+           ExitGracefully(":MergeHRUGroups: invalid HRU group reference used in command", BAD_DATA_WARN);
         }
-
-        CHRUGroup* pHRUGrp1 = NULL;
-
-        // iterate string and add HRUs to new group
-        for (int striter = 3; striter < Len; striter++)
-        {
-            pHRUGrp1 = pModel->GetHRUGroup(s[striter]);
-            if (pHRUGrp1 == NULL) {
-                ExitGracefully(":MergeHRUGroups: invalid HRU group reference used in command", BAD_DATA_WARN);
+        else {
+          for (int kk = 0; kk < pHRUGrp1->GetNumHRUs(); kk++) {
+            if (!pHRUGrp->IsInGroup(pHRUGrp1->GetHRU(kk)->GetGlobalIndex())){
+              pHRUGrp->AddHRU(pHRUGrp1->GetHRU(kk));
             }
-            else {
-                for (int k = 0; k < pHRUGrp1->GetNumHRUs(); k++) {
-                    pHRUGrp->AddHRU(pHRUGrp1->GetHRU(k));
-                    // do we need to account for duplicate additions of the same HRU here?
-                }
-            }
+          }
         }
-        // string advice = "SubBasinGroup " + to_string(s[1]) + " was populated with " + to_string(pSBGroup->GetNumSubbasins()) + " basin(s).";
-        // WriteAdvisory(advice, Options.noisy);
-        break;
+      }
+      string advice = "HRUGroup " + pHRUGrp->GetName() + " was populated with " + to_string(pHRUGrp->GetNumHRUs()) + " HRUs(s).";
+      WriteAdvisory(advice, Options.noisy);
+      break;
     }
     case(19):  //----------------------------------------------
     { /*

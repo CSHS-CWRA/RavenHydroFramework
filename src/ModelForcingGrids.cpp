@@ -33,17 +33,22 @@ CForcingGrid *CModel::ForcingCopyCreate(const CForcingGrid *pGrid,
 
     pTout = new CForcingGrid(*pGrid);  // copy everything from pGrid; matrices are deep copies
 
-    //following values are overwritten:
+    //type, chunk size, and time dimension are overwritten:
     int    GridDims[3];
-    GridDims[0] = pGrid->GetCols();
-    GridDims[1] = pGrid->GetRows();
-    GridDims[2] = nVals;
+    if (pGrid->GetIs3D()) {
+      GridDims[0] = pGrid->GetCols();
+      GridDims[1] = pGrid->GetRows();
+      GridDims[2] = nVals;
+    } 
+    else {
+      GridDims[0] = pGrid->GetCols();
+      GridDims[1] = nVals;
+    }
     pTout->SetForcingType(typ);
     pTout->SetInterval(interval);
     pTout->SetGridDims(GridDims);
 
-    pTout->SetChunkSize(nVals);
-    //pTout->CalculateChunkSize(Options);
+    pTout->CalculateChunkSize(Options);
     pTout->ReallocateArraysInForcingGrid();
   }
   else
@@ -101,6 +106,7 @@ void CModel::GenerateGriddedPrecipVars(const optStruct &Options)
     //pGrid_pre->SetChunkSize(pGrid_pre->GetChunkSize()-1);
   }*/
   if(snow_gridded && rain_gridded && !pre_gridded) {
+    if(Options.noisy) { cout<<"Generating precip grid from snow and rain"<<endl; }
     GeneratePrecipFromSnowRain(Options);
   }
   if(!rain_gridded && !snow_gridded && pre_gridded) {
@@ -194,6 +200,7 @@ void CModel::GenerateGriddedTempVars(const optStruct &Options)
 
   if(Options.noisy) { cout<<"...done generating gridded temperature variables."<<endl; }
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief Generates Tave and subhourly time series from daily Tmin & Tmax time series
 /// \note presumes existence of valid F_TEMP_DAILY_MIN and F_TEMP_DAILY_MAX time series

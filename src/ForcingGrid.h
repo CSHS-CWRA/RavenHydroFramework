@@ -78,8 +78,7 @@ private:/*------------------------------------------------------*/
   int          _WinStart [3];                ///< data grid window starting point (x,y,t - defaults to 0, 0, chunksize)
 
   int          _nPulses;                     ///< number of pulses (total duration=(nPulses-1)*_interval)
-  bool         _pulse;                       ///< flag determining whether this is a pulse-based or
-  ///                                        ///< piecewise-linear time series
+
   double       _t_corr;                      ///< correction time _t_corr, i.e. distance between
   ///                                        ///< current chunk start day and model start day (in days)
   bool         _deaccumulate;                ///< true if input precipitation needs to be deaccumulated from cum. mm to mm/d

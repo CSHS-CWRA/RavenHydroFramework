@@ -54,8 +54,8 @@ CForcingGrid::CForcingGrid(string       ForcingType,
   // -------------------------------
   // Additional variables initialized and eventually overwritten by ParseTimeSeries
   // -------------------------------
-  _rainfall_corr  = 1.0;
-  _snowfall_corr  = 1.0;
+  _rainfall_corr     = 1.0;
+  _snowfall_corr     = 1.0;
   _temperature_corr  = 0.0;
 
   _cloud_min_temp =-20.0; //ensures cloud-free status always unless overriden
@@ -102,6 +102,8 @@ CForcingGrid::CForcingGrid(string       ForcingType,
 /// \param ForcingType   [in] an existing grid
 CForcingGrid::CForcingGrid( const CForcingGrid &grid )
 {
+  ExitGracefullyIf(grid._nNonZeroWeightedGridCells  == 0, " CForcingGrid copy constructor",RUNTIME_ERR);
+
   _ForcingType                 = grid._ForcingType                     ;
   _filename                    = grid._filename                        ;
   _varname                     = grid._varname                         ;
@@ -111,10 +113,6 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
   _LinTrans_a                  = grid._LinTrans_a                      ;
   _LinTrans_b                  = grid._LinTrans_b                      ;
   _period_ending               = grid._period_ending                   ;
-  for (int ii=0; ii<3;  ii++) {_DimNames [ii]= grid._DimNames [ii]; }
-  for (int ii=0; ii<3;  ii++) {_GridDims [ii]= grid._GridDims [ii]; }
-  for (int ii=0; ii<3;  ii++) {_WinLength[ii]= grid._WinLength[ii]; }
-  for (int ii=0; ii<3;  ii++) {_WinStart [ii]= grid._WinStart [ii]; }
   _nCells                      = grid._nCells                          ;
   _nNonZeroWeightedGridCells   = grid._nNonZeroWeightedGridCells       ;
   _nHydroUnits                 = grid._nHydroUnits                     ;
@@ -128,17 +126,20 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
   _dim_order                   = grid._dim_order                       ;
   _is_derived                  = true                                  ;
   _nPulses                     = grid._nPulses                         ;
-  _pulse                       = grid._pulse                           ;
   _t_corr                      = grid._t_corr                          ;
   _rainfall_corr               = grid._rainfall_corr                   ;
   _snowfall_corr               = grid._snowfall_corr                   ;
   _temperature_corr            = grid._temperature_corr                ;
   _cloud_min_temp              = grid._cloud_min_temp                  ;
   _cloud_max_temp              = grid._cloud_max_temp                  ;
-  for (int ii=0; ii<12; ii++) {_aAveTemp[ii] = grid._aAveTemp[ii];}
-  for (int ii=0; ii<12; ii++) {_aMinTemp[ii] = grid._aMinTemp[ii];}
-  for (int ii=0; ii<12; ii++) {_aMaxTemp[ii] = grid._aMaxTemp[ii];}
-  for (int ii=0; ii<12; ii++) {_aAvePET [ii] = grid._aAvePET [ii];}
+  for (int ii=0; ii<3;  ii++) {_DimNames [ii] = grid._DimNames [ii]; }
+  for (int ii=0; ii<3;  ii++) {_GridDims [ii] = grid._GridDims [ii]; }
+  for (int ii=0; ii<3;  ii++) {_WinLength[ii] = grid._WinLength[ii]; }
+  for (int ii=0; ii<3;  ii++) {_WinStart [ii] = grid._WinStart [ii]; }
+  for (int ii=0; ii<12; ii++) {_aAveTemp [ii] = grid._aAveTemp [ii]; }
+  for (int ii=0; ii<12; ii++) {_aMinTemp [ii] = grid._aMinTemp [ii]; }
+  for (int ii=0; ii<12; ii++) {_aMaxTemp [ii] = grid._aMaxTemp [ii]; }
+  for (int ii=0; ii<12; ii++) {_aAvePET  [ii] = grid._aAvePET  [ii]; }
 
   _aVal=NULL;
   _aVal = new double *[_ChunkSize];
@@ -230,8 +231,7 @@ CForcingGrid::~CForcingGrid()
 ///        dimensions and buffersize (data are only initalized but not read from file)
 ///
 /// \note  Needs _ForcingType, _filename, _varname, _DimNames to be set already.
-///        Use for that either "SetForcingType", "SetFilename", "SetVarname", and "SetDimNames" \n
-///        or "CForcingGrid()".
+///        Use for that either "SetForcingType", "SetFilename", "SetVarname", and "SetDimNames" or "CForcingGrid()".
 void CForcingGrid::ForcingGridInit(const optStruct   &Options)
 {
 #ifdef _RVNETCDF_
@@ -317,7 +317,8 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
 
     _nCells=_GridDims[0]*_GridDims[1];
   }
-  else {
+  else //2D
+  {
     // dimension x = number of stations in NetCDF file
     retval = nc_inq_dimid(ncid,_DimNames[0].c_str(),&dimid_x);   HandleNetCDFErrors(retval);
     retval = nc_inq_dimlen(ncid,dimid_x,&GridDim_t);             HandleNetCDFErrors(retval);
@@ -335,18 +336,18 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   string varname_e=_varname;
   SubstringReplace(varname_e,"*",to_string(g_current_e+1));//replaces wildcard for ensemble runs
 
-  retval = nc_inq_varid(ncid,varname_e.c_str(),&varid_f);         HandleNetCDFErrors(retval);
+  retval = nc_inq_varid(ncid,varname_e.c_str(),&varid_f);        HandleNetCDFErrors(retval);
 
   // determine in which order the dimensions are in variable
   retval = nc_inq_vardimid(ncid,varid_f,dimids_var);             HandleNetCDFErrors(retval);
 
   int ndim;
-  retval = nc_inq_varndims(ncid,varid_f,&ndim); HandleNetCDFErrors(retval);
+  retval = nc_inq_varndims(ncid,varid_f,&ndim);                  HandleNetCDFErrors(retval);
   if ((!_is_3D) && (ndim > 2)) {
     ExitGracefully("ForcingGridInit: NetCDF dataset has more than 2 dimensions, but only two supplied.",BAD_DATA);
   }
   else if ((_is_3D) && (ndim > 3)){
-    ExitGracefully("ForcingGridInit: NetCDF dataset has more than 3 dimensions. Gridded data must be read from a 2D (time x cell) or 3D (time x row x column) NetCDF variable",BAD_DATA);
+    ExitGracefully("ForcingGridInit: NetCDF dataset has more than 3 dimensions. Gridded data must be read from a 2D (time x cell/station) or 3D (time x row x column) NetCDF variable",BAD_DATA);
   }
 
 
@@ -430,8 +431,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   double time_zone=0;
   GetTimeInfoFromNetCDF(unit_t,calendar,my_time,ntime,_filename,_interval,_start_day,_start_year,time_zone);
   _steps_per_day=(int)(rvn_round(1.0/_interval)); //pre-calculate for speed.
-  delete[] unit_t;
-
+  
   /*
   printf("ForcingGrid: unit_t:          %s\n",unit_t_str.c_str());
   printf("ForcingGrid: tt.julian_day:   %f\n",tt.julian_day);
@@ -449,7 +449,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   JulianConvert(0.0,_start_day-_interval,_start_year,calendar,tp);
   printf("ForcingGrid: start string:    %s %s\n",tp.date_string.c_str(),DecDaysToHours(tp.julian_day).c_str());
   */
-
+  delete[] unit_t;
   delete[] my_time;
 
   //QA/QC:
@@ -521,7 +521,6 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   // Set number of pulses and pulse type to be consistent with class CTimeSeries
   // -------------------------------
   _nPulses      = ntime;
-  _pulse        = true;
   ExitGracefullyIf(_nPulses<=0,
                    "CForcingGrid: ForcingGridInit: no time point entries in forcing grid",BAD_DATA);
 
@@ -562,21 +561,16 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
 //
 void CForcingGrid::ReallocateArraysInForcingGrid( )
 {
-  int ntime ;  // number of time steps
-
-  ntime  = _GridDims[2]; //assumes _Is_3D
-  //if (_is_3D) {ntime = _GridDims[2];}
-  //else        {ntime = _GridDims[1];}
-  //
   // -------------------------------
   // Initialize data array and set all entries to NODATA value
   // -------------------------------
   _aVal = NULL;
-  _aVal =  new double *[ntime];
-  for (int it=0; it<ntime; it++) {                       // loop over time points in buffer
+  _aVal =  new double *[_ChunkSize];
+  ExitGracefullyIf(_aVal==NULL,"CForcingGrid::ReallocateArraysInForcingGrid (1)",OUT_OF_MEMORY);
+  for (int it=0; it<_ChunkSize; it++) {                       // loop over time points in buffer
     _aVal[it]=NULL;
     _aVal[it] = new double [_nNonZeroWeightedGridCells];
-    ExitGracefullyIf(_aVal[it]==NULL,"CForcingGrid::ReallocateArraysInForcingGrid",OUT_OF_MEMORY);
+    ExitGracefullyIf(_aVal[it]==NULL,"CForcingGrid::ReallocateArraysInForcingGrid (2)",OUT_OF_MEMORY);
     for (int ic=0; ic<_nNonZeroWeightedGridCells;ic++){       // loop over non-zero weighted cells
       _aVal[it][ic]=NETCDF_BLANK_VALUE;                       // initialize
     }
@@ -1337,7 +1331,7 @@ void CForcingGrid::SetIdxNonZeroGridCells(const int nHydroUnits, const int nGrid
 }
 
 ///////////////////////////////////////////////////////////////////
-/// \brief calculates _ChunkSize and total number of chunks to read _nChunks, sets the id of the current chunk
+/// \brief calculates _ChunkSize and total number of chunks to read (_nChunks)
 /// depending upon size of grid (_nNonZeroWeightedGridCells*buffersize*8byte <=  10 MB=10*1024*1024 byte)
 /// needs to be called after SetIdxNonZeroGridCells()
 ///
@@ -1355,22 +1349,22 @@ void CForcingGrid::CalculateChunkSize(const optStruct& Options)
   else       { ntime = _GridDims[1]; }
 
   int    BytesPerTimestep;      // Memory requirement for one timestep of gridded forcing file [Bytes]
-  if(_is_3D) { BytesPerTimestep = 8 * _WinLength[0] * _WinLength[1]; }
-  else       { BytesPerTimestep = 8 * _WinLength[0]; }
+  //if(_is_3D) { BytesPerTimestep = 8 * _WinLength[0] * _WinLength[1]; }
+  //else       { BytesPerTimestep = 8 * _WinLength[0]; }
 
-  //BytesPerTimestep = 8 * _nNonZeroWeightedGridCells; //?? amount actually stored in memory?
+  BytesPerTimestep = 8 * _nNonZeroWeightedGridCells; //?? amount actually stored in memory?
 
   int CHUNK_MEMORY=Options.NetCDF_chunk_mem*1024 * 1024;
 
   int tmpChunkSize;
 
-  tmpChunkSize = (int)(max(min(CHUNK_MEMORY  / BytesPerTimestep,ntime),1));  // number of timesteps per chunk - 10MB chunks
+  tmpChunkSize = (int)(max(min(CHUNK_MEMORY  / BytesPerTimestep,ntime),1));      // number of timesteps per chunk - 10MB chunks
 
   if(!Options.deltaresFEWS) {
     tmpChunkSize = (int)((int)(tmpChunkSize*_interval)/_interval);               // make sure chunks are complete days (have to relax for FEWS)
   }
 
-  tmpChunkSize = max(int(rvn_round(1.0/_interval)),tmpChunkSize);            // make sure  at least one day is read
+  tmpChunkSize = max(int(rvn_round(1.0/_interval)),tmpChunkSize);                // make sure  at least one day is read
                                                                                  // support larger chunk if model duration is small
   double partday=Options.julian_start_day-floor(Options.julian_start_day);
   tmpChunkSize = min(tmpChunkSize,(int) ceil(ceil(Options.duration+partday)/_interval));//ensures goes to midnight of last day
@@ -1383,7 +1377,6 @@ void CForcingGrid::CalculateChunkSize(const optStruct& Options)
     cout<<"Finished CalculateChunkSize routine,     # of time steps per chunk:    "<<_ChunkSize<<endl;
     cout<<"                                         # of time chunks:             "<<_nChunk   <<endl;
   }
-  /*cout<<"ntime: "<<ntime<<endl;*/
 }
 ///////////////////////////////////////////////////////////////////
 /// \brief sets the _nHydroUnits in class CForcingGrid
@@ -1523,9 +1516,9 @@ void CForcingGrid::SetaAvePET(const double aAvePET [12]){
 void CForcingGrid::SetValue( const int ic, const int it, const double aVal) {
 #ifdef _STRICTCHECK_
   if(it>=_ChunkSize) {
-    ExitGracefully("CForcingGrid::SetValue:invalid index",RUNTIME_ERR);}
+    ExitGracefully("CForcingGrid::SetValue:invalid time index",RUNTIME_ERR);}
   if(ic>=_nNonZeroWeightedGridCells) {
-    ExitGracefully("CForcingGrid::SetValue:invalid index",RUNTIME_ERR);}
+    ExitGracefully("CForcingGrid::SetValue:invalid cell index",RUNTIME_ERR);}
 #endif
   _aVal[it][ic] = aVal;
 }
