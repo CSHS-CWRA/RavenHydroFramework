@@ -41,7 +41,7 @@ bool ParseTimeSeriesFile       (CModel *&pModel, const optStruct &Options);
 bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options);
 bool ParseEnsembleFile         (CModel *&pModel, const optStruct &Options);
 bool ParseGWFile               (CModel *&pModel, const optStruct &Options);
-bool ParseNetCDFRunInfoFile    (CModel *&pModel, optStruct &Options,bool runname_overridden,bool mode_overridden);
+bool ParseNetCDFRunInfoFile    (CModel *&pModel, optStruct &Options,bool runname_overridden,bool mode_overridden, bool optionsonly);
 bool ParseNetCDFStateFile      (CModel *&pModel, const optStruct &Options);
 bool ParseNetCDFParamFile      (CModel *&pModel, const optStruct &Options);
 bool ParseNetCDFFlowStateFile  (CModel *&pModel, const optStruct &Options);
@@ -109,7 +109,7 @@ bool ParseInputFiles (CModel      *&pModel,
     ExitGracefully("Cannot find or read .rvi file",BAD_DATA);return false;
   }
   if (!Options.create_rvp_template) {//otherwise, jump right to parse rvp, where template is created
-    if (!ParseNetCDFRunInfoFile(pModel, Options, runname_overridden,runmode_overridden)){
+    if (!ParseNetCDFRunInfoFile(pModel, Options, runname_overridden,runmode_overridden,false)){
       ExitGracefully("Cannot find or read NetCDF runinfo file", BAD_DATA); return false;
     }
     ExitGracefullyIf(Options.julian_start_year==1666,
@@ -1538,6 +1538,9 @@ bool ParseMainInputFile (CModel     *&pModel,
     case(64):  //--------------------------------------------
     {/*:OutputDump [YYYY-MM-DD] [hh:mm:ss] */
       if (Options.noisy) {cout <<"Output dump @ "<<s[1]<<endl;}
+      if(pModel==NULL) {
+        ExitGracefully(":OutputDump command must be after :SoilModel command in .rvi file",BAD_DATA_WARN); break;
+      }
       if (IsValidDateString(s[1]))
       {
         time_struct tt_out=DateStringToTimeStruct(string(s[1]),string(s[2]),Options.calendar);
@@ -1551,6 +1554,9 @@ bool ParseMainInputFile (CModel     *&pModel,
     case(65):  //--------------------------------------------
     {/*:MajorOutputInterval [step in days] */
       if (Options.noisy) {cout <<"Major model output interval of "<<s[1]<<" days"<<endl;}
+      if(pModel==NULL) {
+        ExitGracefully(":MajorOutputInterval command must be after :SoilModel command in .rvi file",BAD_DATA_WARN); break;
+      }
       time_struct tt_out;
       double tstep=s_to_d(s[1]);
       for (double t=tstep;t<Options.duration;t+=tstep)
@@ -1926,6 +1932,9 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:FEWSRunInfoFile [filename.nc]*/
       if(Options.noisy) { cout << "FEWS Runinfo file" << endl; }
       Options.runinfo_filename=CorrectForRelativePath(s[1],Options.rvi_filename);//with .nc extension!
+      if (!ParseNetCDFRunInfoFile(pModel, Options, runname_overridden,runmode_overridden,true)){
+        ExitGracefully("Cannot find or read NetCDF runinfo file", BAD_DATA); return false;
+      }
       break;
     }
     case(109):  //--------------------------------------------

@@ -13,11 +13,14 @@ void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid
 //////////////////////////////////////////////////////////////////
 /// \brief Parses Deltares FEWS RunInfo file; called after .rvi file parse
 ///
-/// \param *&pModel [out] Reference to model object
-/// \param &Options [out] Global model options information
+/// \param *&pModel [in/out] Reference to model object
+/// \param &Options [in/out] Global model options information
+/// \param runname_overridden [in] true if runname specified from command line 
+/// \param mode_overridden [in] true if mode specified from command line
+/// \param optionsonly [in] true if model is not yet created and only options content should be read
 /// \return True if operation is successful
 //
-bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_overridden, bool mode_overridden)
+bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_overridden, bool mode_overridden, bool optionsonly)
 {
   if (Options.runinfo_filename==""){return true;}
 
@@ -36,30 +39,32 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
   HandleNetCDFErrors(retval);
 
   // Ingest start time=============================================================================
-  int varid_startt;
-  double start_time;
-  retval = nc_inq_varid   (ncid,"start_time",&varid_startt);
-  if(retval != NC_ENOTVAR)
-  {
-    HandleNetCDFErrors(retval);
-    retval = nc_inq_attlen (ncid,varid_startt,"units",&att_len);                  HandleNetCDFErrors(retval);
-    char *unit_t=new char[att_len+1];
-    retval = nc_get_att_text(ncid,varid_startt,"units",unit_t);                   HandleNetCDFErrors(retval);// read attribute text
-    unit_t[att_len] = '\0';// add string determining character
-
-    if(!IsValidNetCDFTimeString(unit_t))
+  if (optionsonly){
+    int varid_startt;
+    double start_time;
+    retval = nc_inq_varid   (ncid,"start_time",&varid_startt);
+    if(retval != NC_ENOTVAR)
     {
-      cout<<"time unit string: "<<unit_t<<endl;
-      ExitGracefully("ParseRunInfoFile: start_time time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS +0000' !",BAD_DATA);
+      HandleNetCDFErrors(retval);
+      retval = nc_inq_attlen (ncid,varid_startt,"units",&att_len);                  HandleNetCDFErrors(retval);
+      char *unit_t=new char[att_len+1];
+      retval = nc_get_att_text(ncid,varid_startt,"units",unit_t);                   HandleNetCDFErrors(retval);// read attribute text
+      unit_t[att_len] = '\0';// add string determining character
+
+      if(!IsValidNetCDFTimeString(unit_t))
+      {
+        cout<<"time unit string: "<<unit_t<<endl;
+        ExitGracefully("ParseRunInfoFile: start_time time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS +0000' !",BAD_DATA);
+      }
+
+      retval=nc_get_var_double(ncid,varid_startt,&start_time);
+      GetJulianDateFromNetCDFTime(unit_t,Options.calendar,start_time,Options.julian_start_day,Options.julian_start_year);
+      //if (time_zone!=0.0){ExitGracefully("ParseRunInfoFile: does not yet support time zone shifts",BAD_DATA_WARN); }
+
+      if(Options.noisy) { cout<<"ParseRunInfoFile: read variable start_time from NetCDF: start day: "<<Options.julian_start_day<<" yr: "<< Options.julian_start_year<<endl; }
+
+      delete [] unit_t;
     }
-
-    retval=nc_get_var_double(ncid,varid_startt,&start_time);
-    GetJulianDateFromNetCDFTime(unit_t,Options.calendar,start_time,Options.julian_start_day,Options.julian_start_year);
-    //if (time_zone!=0.0){ExitGracefully("ParseRunInfoFile: does not yet support time zone shifts",BAD_DATA_WARN); }
-
-    if(Options.noisy) { cout<<"ParseRunInfoFile: read variable start_time from NetCDF: start day: "<<Options.julian_start_day<<" yr: "<< Options.julian_start_year<<endl; }
-
-    delete [] unit_t;
   }
 
   // Ingest end time=============================================================================
@@ -67,30 +72,32 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
   double end_time;
   double end_day;
   int end_year;
-  retval = nc_inq_varid(ncid,"end_time",&varid_endt);
-  if(retval != NC_ENOTVAR)
-  {
-    HandleNetCDFErrors(retval);
-    retval = nc_inq_attlen(ncid,varid_endt,"units",&att_len);                 HandleNetCDFErrors(retval);
-    char *unit_t=new char[att_len+1];
-    retval = nc_get_att_text(ncid,varid_endt,"units",unit_t);                 HandleNetCDFErrors(retval);// read attribute text
-    unit_t[att_len] = '\0';// add string determining character
-
-    if(!IsValidNetCDFTimeString(unit_t))
+  if (optionsonly) {
+    retval = nc_inq_varid(ncid,"end_time",&varid_endt);
+    if(retval != NC_ENOTVAR)
     {
-      cout<<"time unit string: "<<unit_t<<endl;
-      ExitGracefully("ParseRunInfoFile: end_time time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS +0000' !",BAD_DATA);
+      HandleNetCDFErrors(retval);
+      retval = nc_inq_attlen(ncid,varid_endt,"units",&att_len);                 HandleNetCDFErrors(retval);
+      char *unit_t=new char[att_len+1];
+      retval = nc_get_att_text(ncid,varid_endt,"units",unit_t);                 HandleNetCDFErrors(retval);// read attribute text
+      unit_t[att_len] = '\0';// add string determining character
+
+      if(!IsValidNetCDFTimeString(unit_t))
+      {
+        cout<<"time unit string: "<<unit_t<<endl;
+        ExitGracefully("ParseRunInfoFile: end_time time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS +0000' !",BAD_DATA);
+      }
+
+      retval=nc_get_var_double(ncid,varid_endt,&end_time);
+      GetJulianDateFromNetCDFTime(unit_t,Options.calendar,end_time,end_day,end_year);
+      //if(time_zone!=0.0) { ExitGracefully("ParseRunInfoFile: does not yet support time zone shifts",BAD_DATA_WARN); }
+
+      Options.duration=TimeDifference(Options.julian_start_day,Options.julian_start_year,end_day,end_year,Options.calendar);
+
+      if(Options.noisy) { cout<<"ParseRunInfoFile: read variable end_time from NetCDF: duration: "<<Options.duration<< " days.  end day: "<<end_day<<" yr: "<< end_year<<endl; }
+
+      delete[] unit_t;
     }
-
-    retval=nc_get_var_double(ncid,varid_endt,&end_time);
-    GetJulianDateFromNetCDFTime(unit_t,Options.calendar,end_time,end_day,end_year);
-    //if(time_zone!=0.0) { ExitGracefully("ParseRunInfoFile: does not yet support time zone shifts",BAD_DATA_WARN); }
-
-    Options.duration=TimeDifference(Options.julian_start_day,Options.julian_start_year,end_day,end_year,Options.calendar);
-
-    if(Options.noisy) { cout<<"ParseRunInfoFile: read variable end_time from NetCDF: duration: "<<Options.duration<< " days.  end day: "<<end_day<<" yr: "<< end_year<<endl; }
-
-    delete[] unit_t;
   }
 
   // Ingest assimilation start time=============================================================================
@@ -98,31 +105,32 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
   double assim_time;
   double assim_day;
   int    assim_year;
-  retval = nc_inq_varid(ncid,"assimilation_time",&varid_asst);
-  if(retval != NC_ENOTVAR)
-  {
-    HandleNetCDFErrors(retval);
-    retval = nc_inq_attlen(ncid,varid_asst,"units",&att_len);                 HandleNetCDFErrors(retval);
-    char *unit_t=new char[att_len+1];
-    retval = nc_get_att_text(ncid,varid_asst,"units",unit_t);                 HandleNetCDFErrors(retval);// read attribute text
-    unit_t[att_len] = '\0';// add string determining character
-
-    if(!IsValidNetCDFTimeString(unit_t))
+  if (optionsonly) {
+    retval = nc_inq_varid(ncid,"assimilation_time",&varid_asst);
+    if(retval != NC_ENOTVAR)
     {
-      cout<<"time unit string: "<<unit_t<<endl;
-      ExitGracefully("ParseRunInfoFile: end_time time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS +0000' !",BAD_DATA);
+      HandleNetCDFErrors(retval);
+      retval = nc_inq_attlen(ncid,varid_asst,"units",&att_len);                 HandleNetCDFErrors(retval);
+      char *unit_t=new char[att_len+1];
+      retval = nc_get_att_text(ncid,varid_asst,"units",unit_t);                 HandleNetCDFErrors(retval);// read attribute text
+      unit_t[att_len] = '\0';// add string determining character
+
+      if(!IsValidNetCDFTimeString(unit_t))
+      {
+        cout<<"time unit string: "<<unit_t<<endl;
+        ExitGracefully("ParseRunInfoFile: end_time time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS +0000' !",BAD_DATA);
+      }
+
+      retval=nc_get_var_double(ncid,varid_asst,&assim_time);
+      GetJulianDateFromNetCDFTime(unit_t,Options.calendar,assim_time,assim_day,assim_year);
+
+      Options.assimilation_start=TimeDifference(Options.julian_start_day,Options.julian_start_year,assim_day,assim_year,Options.calendar); //model time
+
+      if(Options.noisy) { cout<<"ParseRunInfoFile: read variable assimilation_time from NetCDF: day: "<<assim_day<<" yr: "<< assim_year<<endl; }
+
+      delete[] unit_t;
     }
-
-    retval=nc_get_var_double(ncid,varid_asst,&assim_time);
-    GetJulianDateFromNetCDFTime(unit_t,Options.calendar,assim_time,assim_day,assim_year);
-
-    Options.assimilation_start=TimeDifference(Options.julian_start_day,Options.julian_start_year,assim_day,assim_year,Options.calendar); //model time
-
-    if(Options.noisy) { cout<<"ParseRunInfoFile: read variable assimilation_time from NetCDF: day: "<<assim_day<<" yr: "<< assim_year<<endl; }
-
-    delete[] unit_t;
   }
-
   // Ingest working directory=====================================================================
   /*int varid_workdir;
   retval = nc_inq_varid(ncid,"work_dir",&varid_workdir);
@@ -141,160 +149,177 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
   // Ingest properties      =====================================================================
   int varid_props;
   retval = nc_inq_varid(ncid,"properties",&varid_props);
-  if(retval != NC_ENOTVAR)
+  
+  if (retval != NC_ENOTVAR) 
   {
     HandleNetCDFErrors(retval);
 
     // RunName
-    retval = nc_inq_attlen(ncid,varid_props,"RunName",&att_len);
-    if(retval !=NC_ENOTATT)
-    {
-      HandleNetCDFErrors(retval);
-      char *runname=new char[att_len+1];
-      retval = nc_get_att_text(ncid,varid_props,"RunName",runname);                   HandleNetCDFErrors(retval);// read attribute text
-      runname[att_len] = '\0';// add string determining character
-      if(!runname_overridden) {
-        Options.run_name=runname;
+    if (optionsonly) {
+      retval = nc_inq_attlen(ncid,varid_props,"RunName",&att_len);
+      if(retval !=NC_ENOTATT)
+      {
+        HandleNetCDFErrors(retval);
+        char *runname=new char[att_len+1];
+        retval = nc_get_att_text(ncid,varid_props,"RunName",runname);                   HandleNetCDFErrors(retval);// read attribute text
+        runname[att_len] = '\0';// add string determining character
+        if(!runname_overridden) {
+          Options.run_name=runname;
+        }
+        else {
+          WriteWarning("ParseRunInfoFile: when run_name is specified from command line, it cannot be overridden in the runinfo file. RunName attribute ignored.",Options.noisy);
+        }
+        if(Options.noisy) { cout<<"ParseRunInfoFile: read properties:RunName from NetCDF: "<<Options.run_name<<endl; }
+        delete[] runname;
       }
-      else {
-        WriteWarning("ParseRunInfoFile: when run_name is specified from command line, it cannot be overridden in the runinfo file. RunName attribute ignored.",Options.noisy);
-      }
-      if(Options.noisy) { cout<<"ParseRunInfoFile: read properties:RunName from NetCDF: "<<Options.run_name<<endl; }
-      delete[] runname;
     }
-
     // SuppressWarnings
-    retval = nc_inq_attlen(ncid,varid_props,"BlockRavenWarnings",&att_len);
-    if(retval !=NC_ENOTATT)
-    {
-      HandleNetCDFErrors(retval);
-      char* boolean=new char[att_len+1];
-      retval = nc_get_att_text(ncid,varid_props,"BlockRavenWarnings",boolean);       HandleNetCDFErrors(retval);// read attribute text
-      boolean[att_len] = '\0';// add string determining character
+    if (optionsonly) { 
+      retval = nc_inq_attlen(ncid,varid_props,"BlockRavenWarnings",&att_len);
+      if (retval != NC_ENOTATT) 
+      {
+        HandleNetCDFErrors(retval);
+        char* boolean=new char[att_len+1];
+        retval = nc_get_att_text(ncid,varid_props,"BlockRavenWarnings",boolean);       HandleNetCDFErrors(retval);// read attribute text
+        boolean[att_len] = '\0';// add string determining character
 
-      g_suppress_warnings=(!strcmp(boolean,"true"));
-      if(Options.noisy) { cout<<"ParseRunInfoFile: read properties:BlockRavenWarnings from NetCDF: "<<g_suppress_warnings<<endl; }
-      delete[] boolean;
+        g_suppress_warnings=(!strcmp(boolean,"true"));
+        if(Options.noisy) { cout<<"ParseRunInfoFile: read properties:BlockRavenWarnings from NetCDF: "<<g_suppress_warnings<<endl; }
+        delete[] boolean;
+      }
     }
 
     //Block custom output
-    retval = nc_inq_attlen(ncid,varid_props,"BlockRavenCustomOutput",&att_len);
-    if(retval !=NC_ENOTATT)
-    {
-      HandleNetCDFErrors(retval);
-      char* boolean=new char[att_len+1];
-      retval = nc_get_att_text(ncid,varid_props,"BlockRavenCustomOutput",boolean);       HandleNetCDFErrors(retval);// read attribute text
-      boolean[att_len] = '\0';// add string determining character
+    if (!optionsonly) {
+      retval = nc_inq_attlen(ncid,varid_props,"BlockRavenCustomOutput",&att_len);
+      if (retval != NC_ENOTATT) 
+      {
+        HandleNetCDFErrors(retval);
+        char* boolean=new char[att_len+1];
+        retval = nc_get_att_text(ncid,varid_props,"BlockRavenCustomOutput",boolean);       HandleNetCDFErrors(retval);// read attribute text
+        boolean[att_len] = '\0';// add string determining character
 
-      if (!strcmp(boolean,"true")) {
-        pModel->DeleteCustomOutputs();
+        if (!strcmp(boolean,"true")) {
+          pModel->DeleteCustomOutputs();
+        }
+        if(Options.noisy) { cout<<"ParseRunInfoFile: read properties:BlockRavenCustomOutput from NetCDF: "<<(!strcmp(boolean,"true")) <<endl; }
+        delete[] boolean;
       }
-      if(Options.noisy) { cout<<"ParseRunInfoFile: read properties:BlockRavenCustomOutput from NetCDF: "<<(!strcmp(boolean,"true")) <<endl; }
-      delete[] boolean;
     }
 
     //NoisyMode
-    retval = nc_inq_attlen(ncid, varid_props, "NoisyMode", &att_len);
-    if (retval != NC_ENOTATT)
-    {
-      HandleNetCDFErrors(retval);
-      char* boolean = new char[att_len + 1];
-      retval = nc_get_att_text(ncid, varid_props, "NoisyMode", boolean);       HandleNetCDFErrors(retval);// read attribute text
-      boolean[att_len] = '\0';// add string determining character
+    if (optionsonly) {
+      retval = nc_inq_attlen(ncid, varid_props, "NoisyMode", &att_len);
+      if (retval != NC_ENOTATT) 
+      {
+        HandleNetCDFErrors(retval);
+        char* boolean = new char[att_len + 1];
+        retval = nc_get_att_text(ncid, varid_props, "NoisyMode", boolean);       HandleNetCDFErrors(retval);// read attribute text
+        boolean[att_len] = '\0';// add string determining character
 
-      Options.noisy = (!strcmp(boolean,"true"));
+        Options.noisy = (!strcmp(boolean,"true"));
 
-      if (Options.noisy) { cout << "ParseRunInfoFile: read properties:NoisyMode from NetCDF: " << (!strcmp(boolean,"true"))  << endl; }
-      delete[] boolean;
+        if (Options.noisy) { cout << "ParseRunInfoFile: read properties:NoisyMode from NetCDF: " << (!strcmp(boolean,"true"))  << endl; }
+        delete[] boolean;
+      }
     }
 
     //SilentMode
-    retval = nc_inq_attlen(ncid, varid_props, "SilentMode", &att_len);
-    if (retval != NC_ENOTATT)
-    {
-      HandleNetCDFErrors(retval);
-      char* boolean = new char[att_len + 1];
-      retval = nc_get_att_text(ncid, varid_props, "SilentMode", boolean);       HandleNetCDFErrors(retval);// read attribute text
-      boolean[att_len] = '\0';// add string determining character
+    if (optionsonly) {
+      retval = nc_inq_attlen(ncid, varid_props, "SilentMode", &att_len);
+      if (retval != NC_ENOTATT) 
+      {
+        HandleNetCDFErrors(retval);
+        char* boolean = new char[att_len + 1];
+        retval = nc_get_att_text(ncid, varid_props, "SilentMode", boolean);       HandleNetCDFErrors(retval);// read attribute text
+        boolean[att_len] = '\0';// add string determining character
 
-      Options.silent = (!strcmp(boolean,"true"));
-      if (Options.silent) { Options.noisy = false; }
+        Options.silent = (!strcmp(boolean,"true"));
+        if (Options.silent) { Options.noisy = false; }
 
-      if (Options.noisy) { cout << "ParseRunInfoFile: read properties:SilentMode from NetCDF: " << (!strcmp(boolean,"true"))  << endl; }
-      delete[] boolean;
+        if (Options.noisy) { cout << "ParseRunInfoFile: read properties:SilentMode from NetCDF: " << (!strcmp(boolean,"true"))  << endl; }
+        delete[] boolean;
+      }
     }
 
     // Mode
-    retval = nc_inq_attlen(ncid, varid_props, "Mode", &att_len);
-    if(retval != NC_ENOTATT)
-    {
-      HandleNetCDFErrors(retval);
-      char* mode = new char[att_len];
-      retval = nc_get_att_text(ncid,varid_props,"Mode",mode);       HandleNetCDFErrors(retval);// read attribute text
+    if ((optionsonly) && (!mode_overridden)) {
+      retval = nc_inq_attlen(ncid, varid_props, "Mode", &att_len);
+      if (retval != NC_ENOTATT)
+      {
+        HandleNetCDFErrors(retval);
+        char* mode = new char[att_len];
+        retval = nc_get_att_text(ncid,varid_props,"Mode",mode);       HandleNetCDFErrors(retval);// read attribute text
 
-      Options.run_mode=mode[0];//only uses first character
+        Options.run_mode=mode[0];//only uses first character
 
-      if(Options.noisy) { cout << "ParseRunInfoFile: read properties:Mode from NetCDF: " << Options.run_mode<< endl; }
-      delete[] mode;
+        if(Options.noisy) { cout << "ParseRunInfoFile: read properties:Mode from NetCDF: " << Options.run_mode<< endl; }
+        delete[] mode;
+      }
     }
 
     // EnKFMode
-    retval = nc_inq_attlen(ncid, varid_props, "EnKFMode", &att_len);
-    if(retval != NC_ENOTATT)
-    {
-      HandleNetCDFErrors(retval);
-      char* modestr = new char[att_len];
-      retval = nc_get_att_text(ncid,varid_props,"EnKFMode",modestr);       HandleNetCDFErrors(retval);// read attribute text
-      CEnsemble *pEnsemble=pModel->GetEnsemble();
-      EnKF_mode mode=ENKF_SPINUP;
-      if(pEnsemble->GetType()==ENSEMBLE_ENKF) {
-        CEnKFEnsemble* pEnKF=((CEnKFEnsemble*)(pEnsemble));
+    if (!optionsonly) {
+      retval = nc_inq_attlen(ncid, varid_props, "EnKFMode", &att_len);
+      if(retval != NC_ENOTATT) 
+      {
+        HandleNetCDFErrors(retval);
+        char* modestr = new char[att_len];
+        retval = nc_get_att_text(ncid,varid_props,"EnKFMode",modestr);       HandleNetCDFErrors(retval);// read attribute text
+        CEnsemble *pEnsemble=pModel->GetEnsemble();
+        EnKF_mode mode=ENKF_SPINUP;
+        if(pEnsemble->GetType()==ENSEMBLE_ENKF) {
+          CEnKFEnsemble* pEnKF=((CEnKFEnsemble*)(pEnsemble));
 
-        if      (!strcmp(modestr,"ENKF_SPINUP"       )){mode=ENKF_SPINUP;}
-        else if (!strcmp(modestr,"ENKF_CLOSED_LOOP"  )){mode=ENKF_CLOSED_LOOP;}
-        else if (!strcmp(modestr,"ENKF_OPEN_LOOP"    )){mode=ENKF_OPEN_LOOP;}
-        else if (!strcmp(modestr,"ENKF_FORECAST"     )){mode=ENKF_FORECAST;}
-        else if (!strcmp(modestr,"ENKF_OPEN_FORECAST")){mode=ENKF_OPEN_FORECAST;}
-        else {
-          ExitGracefully("ParseEnsembleFile: EnKFMode-  invalid mode specified",BAD_DATA_WARN);
+          if      (!strcmp(modestr,"ENKF_SPINUP"       )){mode=ENKF_SPINUP;}
+          else if (!strcmp(modestr,"ENKF_CLOSED_LOOP"  )){mode=ENKF_CLOSED_LOOP;}
+          else if (!strcmp(modestr,"ENKF_OPEN_LOOP"    )){mode=ENKF_OPEN_LOOP;}
+          else if (!strcmp(modestr,"ENKF_FORECAST"     )){mode=ENKF_FORECAST;}
+          else if (!strcmp(modestr,"ENKF_OPEN_FORECAST")){mode=ENKF_OPEN_FORECAST;}
+          else {
+            ExitGracefully("ParseEnsembleFile: EnKFMode-  invalid mode specified",BAD_DATA_WARN);
+          }
+          pEnKF->SetEnKFMode(mode);
         }
-        pEnKF->SetEnKFMode(mode);
-      }
 
-      if(Options.noisy) { cout << "ParseRunInfoFile: read properties:EnKFMode from NetCDF: " << mode<< endl; }
-      delete[] modestr;
+        if(Options.noisy) { cout << "ParseRunInfoFile: read properties:EnKFMode from NetCDF: " << mode<< endl; }
+        delete[] modestr;
+      }
     }
 
     // AssimilateStreamflow
-    retval = nc_inq_attlen(ncid,varid_props,"AssimilateStreamflow",&att_len);
-    if(retval != NC_ENOTATT)
-    {
-      HandleNetCDFErrors(retval);
-      char* boolean = new char[att_len + 1];
-      retval = nc_get_att_text(ncid,varid_props,"AssimilateStreamflow",boolean);       HandleNetCDFErrors(retval);// read attribute text
-      boolean[att_len] = '\0';// add string determining character
+    if (optionsonly) {
+      retval = nc_inq_attlen(ncid,varid_props,"AssimilateStreamflow",&att_len);
+      if (retval != NC_ENOTATT) 
+      {
+        HandleNetCDFErrors(retval);
+        char* boolean = new char[att_len + 1];
+        retval = nc_get_att_text(ncid,varid_props,"AssimilateStreamflow",boolean);       HandleNetCDFErrors(retval);// read attribute text
+        boolean[att_len] = '\0';// add string determining character
 
-      Options.assimilate_flow = (!strcmp(boolean,"true"));
+        Options.assimilate_flow = (!strcmp(boolean,"true"));
 
-      if(Options.noisy) { cout << "ParseRunInfoFile: read properties:AssimilateStreamflow from NetCDF: " << (!strcmp(boolean,"true"))  << endl; }
-      delete[] boolean;
+        if(Options.noisy) { cout << "ParseRunInfoFile: read properties:AssimilateStreamflow from NetCDF: " << (!strcmp(boolean,"true"))  << endl; }
+        delete[] boolean;
+      }
     }
 
     // AssimilateReservoirStage
-    retval = nc_inq_attlen(ncid,varid_props,"AssimilateReservoirStage",&att_len);
-    if(retval != NC_ENOTATT)
-    {
-      HandleNetCDFErrors(retval);
-      char* boolean = new char[att_len + 1];
-      retval = nc_get_att_text(ncid,varid_props,"AssimilateReservoirStage",boolean);       HandleNetCDFErrors(retval);// read attribute text
-      boolean[att_len] = '\0';// add string determining character
+    if (optionsonly) {
+      retval = nc_inq_attlen(ncid,varid_props,"AssimilateReservoirStage",&att_len);
+      if (retval != NC_ENOTATT)
+      {
+        HandleNetCDFErrors(retval);
+        char* boolean = new char[att_len + 1];
+        retval = nc_get_att_text(ncid,varid_props,"AssimilateReservoirStage",boolean);       HandleNetCDFErrors(retval);// read attribute text
+        boolean[att_len] = '\0';// add string determining character
 
-      Options.assimilate_stage = (!strcmp(boolean,"true"));
+        Options.assimilate_stage = (!strcmp(boolean,"true"));
 
-      if(Options.noisy) { cout << "ParseRunInfoFile: read properties:AssimilateReservoirStage from NetCDF: " << (!strcmp(boolean,"true"))  << endl; }
-      delete[] boolean;
+        if(Options.noisy) { cout << "ParseRunInfoFile: read properties:AssimilateReservoirStage from NetCDF: " << (!strcmp(boolean,"true"))  << endl; }
+        delete[] boolean;
+      }
     }
-
 
     // Other attributes with info embedded in attribute name
     int nAttributes;
@@ -308,7 +333,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
           string att_name_s=to_string(att_name);
 
           // NamedConstant(s) ----------------------------------------------------
-          if (att_name_s.substr(0, 14) == "NamedConstant_")
+          if ((att_name_s.substr(0, 14) == "NamedConstant_") && (!optionsonly))
           {
             string name=att_name_s.substr(14,att_name_s.length());
 

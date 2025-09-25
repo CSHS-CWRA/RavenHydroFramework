@@ -1484,7 +1484,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
         }
       }
       else {
-        //write warning
+        WriteWarning("VolumeStageRelation : Must specify whether LOOKUP_TABLE or POWER_LAW",Options.noisy);
       }
     }
     //----------------------------------------------------------------------------------------------
@@ -1531,7 +1531,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
         }
       }
       else {
-        //write warning
+        WriteWarning("AreaStageRelation : Must specify whether LOOKUP_TABLE or POWER_LAW",Options.noisy);
       }
     }
     //----------------------------------------------------------------------------------------------
@@ -1572,7 +1572,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
         }
       }
       else {
-        //write warning
+        WriteWarning("OutflowStageRelation : Must specify whether LOOKUP_TABLE or POWER_LAW",Options.noisy);
       }
     }
     //----------------------------------------------------------------------------------------------
