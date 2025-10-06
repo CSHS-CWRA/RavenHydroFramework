@@ -188,10 +188,10 @@ EnKF_mode CEnKFEnsemble::GetEnKFMode() const
 
 //////////////////////////////////////////////////////////////////
 /// \brief initializes EnKF assimilation run
-/// - performs QA/QC on inputs 
+/// - performs QA/QC on inputs
 /// - gets #s and names of state variables adjusted during assimilation
 /// - allocate & populate _output_matrix, _obs_matrix, _noise_matrix
-/// - open blank EnKFOutput.csv file 
+/// - open blank EnKFOutput.csv file
 /// \param &Options [out] Global model options information
 //
 void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)

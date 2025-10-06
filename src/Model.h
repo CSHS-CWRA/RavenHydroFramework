@@ -88,7 +88,7 @@ private:/*------------------------------------------------------*/
   sv_type       *_aStateVarType;  ///< type of state variable in unit i  [size:_nStateVars]
   int          *_aStateVarLayer;  ///< index of state variable for multilayer variables (e.g., SOIL); [size:_nStateVars] value=DOESNT_EXIST(-1) for unique variables (e.g. SURFACE_WATER)
   int         _aStateVarIndices[MAX_STATE_VAR_TYPES][MAX_SV_LAYERS]; ///< lookup table for state variable indices; the index of SOIL[1] in a state_var[] array may be returned by aStateVarIndices[(int)(SOIL)][1]
-  
+
   sv_over **_pStateVarOverrides;  ///< array of pointers to state variable override time series
   int       _nStateVarOverrides;  ///< number of state variable overrides
 

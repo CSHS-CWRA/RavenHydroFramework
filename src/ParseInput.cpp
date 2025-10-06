@@ -115,7 +115,7 @@ bool ParseInputFiles (CModel      *&pModel,
     ExitGracefullyIf(Options.julian_start_year==1666,
                   "ParseMainInputFile:: no :StartDate supplied in .rvi or runinfo.nc file.",BAD_DATA_WARN);
   }
-  
+
   // Class Property file (.rvp)
   //--------------------------------------------------------------------------------
   if (!ParseClassPropertiesFile  (pModel,Options,terr_reqd)){

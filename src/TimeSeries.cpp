@@ -413,7 +413,7 @@ double CTimeSeries::GetAvgValue(const double &t, const double &tstep) const
     }
   }
   else{
-    if (n1 == n2){ 
+    if (n1 == n2){
       if (n1==_nPulses-1){return _aVal[n1];}
       return _aVal[n1]+(t_loc+0.5*tstep-(double)(n1)*_interval)/(_interval)*(_aVal[n1+1]-_aVal[n1]);
     }
@@ -826,7 +826,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long lon
                                            LinTrans_a,           // linear transformation: a in new = a*data+b
                                            LinTrans_b            // linear transformation: b in new = a*data+b
                                            );
-    
+
 
     p->Tokenize(s,Len);//read closing term (e.g., ":EndData")
     if(string(s[0]).substr(0,4)!=":End"){
@@ -1070,7 +1070,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long lon
     ExitGracefully("CTimeSeries: Parse: exceeded specified number of time series points in sequence or no :EndData command used. ",BAD_DATA);
   }
 
-  
+
   pTimeSeries=new CTimeSeries(name,loc_ID,p->GetFilename(),start_day,start_yr,tstep,aVal,n,is_pulse);
   delete [] aVal;  aVal =NULL;
   return pTimeSeries;

@@ -231,7 +231,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
 
         if (typ==UNRECOGNIZED_SVTYPE){
           WriteWarning(":UniformInitialConditions: unrecognized state variable type "+to_string(s[1]),Options.noisy);break;
-        } 
+        }
         else {
           SVind=pModel->GetStateVarIndex(typ,layer_ind);
 

@@ -431,7 +431,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   double time_zone=0;
   GetTimeInfoFromNetCDF(unit_t,calendar,my_time,ntime,_filename,_interval,_start_day,_start_year,time_zone);
   _steps_per_day=(int)(rvn_round(1.0/_interval)); //pre-calculate for speed.
-  
+
   /*
   printf("ForcingGrid: unit_t:          %s\n",unit_t_str.c_str());
   printf("ForcingGrid: tt.julian_day:   %f\n",tt.julian_day);

@@ -89,7 +89,7 @@ void CModel::AssimilationOverride(const int p,const optStruct& Options,const tim
     Qmodlast= _pSubBasins[p]->GetLastOutflowRate();
     if(Qmod>PRETTY_SMALL) {
       _aDAscale  [p]=1.0+alpha*((Qobs-Qmod)/Qmod); //if alpha = 1, Q=Qobs in observation basin
-      //_aDAQadjust[p]=alpha*(Qobs-Qmod); //Option A: end of time step flow 
+      //_aDAQadjust[p]=alpha*(Qobs-Qmod); //Option A: end of time step flow
       //_aDAQadjust[p]=0.5*alpha*(2.0*Qobs-Qmodlast-Qmod);//Option B: mean flow - rapidly oscillatory Q - Qmean is perfect
       if (Qobs2 == RAV_BLANK_DATA) { //Option C: aim for midpoint of two observation flows (this is the way)
         _aDAQadjust[p]=alpha*(Qobs-Qmod);
@@ -155,7 +155,7 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
 
     pdown=GetDownstreamBasin(p);
 
-    ObsExists=false; 
+    ObsExists=false;
 
     if(_pSubBasins[p]->UseInFlowAssimilation())
     {
@@ -202,9 +202,9 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
     else if(!ObsExists)  //observations may be downstream, propagate scaling upstream
     {
       //if ((pdown!=DOESNT_EXIST) && (!_aDAoverride[pdown])){ //alternate - allow information to pass through reservoirs
-      if( (pdown!=DOESNT_EXIST) && 
-          (_pSubBasins[p]->GetReservoir()==NULL) && 
-          (!_aDAoverride[p]) && 
+      if( (pdown!=DOESNT_EXIST) &&
+          (_pSubBasins[p]->GetReservoir()==NULL) &&
+          (!_aDAoverride[p]) &&
           (_pSubBasins[p]->IsEnabled()) && (_pSubBasins[pdown]->IsEnabled())) {
         _aDAscale      [p]= _aDAscale    [pdown];
         _aDAlength     [p]+=_pSubBasins  [pdown]->GetReachLength();
@@ -291,10 +291,10 @@ void CModel::AssimilationBackPropagate(const optStruct &Options,const time_struc
     pdown=GetDownstreamBasin(p);
 
     if(!_aDAoverride[p]) { //observations may be downstream, get scaling from downstream
-      if( (pdown!=DOESNT_EXIST                 ) && 
-          (!_aDAoverride[p]                    ) && 
-          (_pSubBasins[p]->GetReservoir()==NULL) && 
-          (_pSubBasins[p]->IsEnabled()) && (_pSubBasins[pdown]->IsEnabled())) 
+      if( (pdown!=DOESNT_EXIST                 ) &&
+          (!_aDAoverride[p]                    ) &&
+          (_pSubBasins[p]->GetReservoir()==NULL) &&
+          (_pSubBasins[p]->IsEnabled()) && (_pSubBasins[pdown]->IsEnabled()))
       {
         _aDAQadjust[p]= _aDAQadjust  [pdown] * (_pSubBasins[p]->GetDrainageArea() / _pSubBasins[pdown]->GetDrainageArea());
       }
@@ -310,7 +310,7 @@ void CModel::AssimilationBackPropagate(const optStruct &Options,const time_struc
   double ECCCwt;
   for(p=0; p<_nSubBasins; p++)
   {
-    if(!_aDAoverride[p]) 
+    if(!_aDAoverride[p])
     {
       pdown=GetDownstreamBasin(p);
       if (pdown!=DOESNT_EXIST){

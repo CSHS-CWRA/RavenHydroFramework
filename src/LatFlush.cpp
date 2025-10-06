@@ -106,19 +106,19 @@ void CmvLatFlush::Initialize()
     for(int p=0;p<_pModel->GetNumSubBasins();p++)
     {
       if (_pModel->GetSubBasin(p)->IsEnabled()) {
-      
+
         for(int ks=0; ks<_pModel->GetSubBasin(p)->GetNumHRUs(); ks++) //sources
         {
           k1=_pModel->GetSubBasin(p)->GetHRU(ks)->GetGlobalIndex();
           Asum=0.0;
           nRecipients=0;
           if (fromHRUGrp->IsInGroup(k1)) {
-          
+
             for(int ks2=0; ks2<_pModel->GetSubBasin(p)->GetNumHRUs(); ks2++) //recipients
             {
               k2=_pModel->GetSubBasin(p)->GetHRU(ks2)->GetGlobalIndex();
 
-              if (toHRUGrp->IsInGroup(k2)) 
+              if (toHRUGrp->IsInGroup(k2))
               {
                 if (k1!=k2){
                   kFrom[q]=k1;
@@ -127,7 +127,7 @@ void CmvLatFlush::Initialize()
                   _aFrac[q]=area;
                   Asum+=area;//sum of recipient areas
                   nRecipients++;
-                
+
                   //cout << "ADDING CONNECTION " << q << " in subbasin "<< _pModel->GetSubBasin(p)->GetName() << ": "
                   //     << _pModel->GetHydroUnit(kFrom[q])->GetHRUID()  << " To " <<_pModel->GetHydroUnit(kTo[q])->GetHRUID() <<" "<<_aFrac[q]<<endl;
                   q++;
