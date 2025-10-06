@@ -99,7 +99,7 @@ extern double g_min_storage;      ///< minimum soil storage
 extern int    g_current_e;        ///< current ensemble member index
 
 // Model version
-const std::string __RAVEN_VERSION__   ="4.0";
+const std::string __RAVEN_VERSION__   ="4.05";
 //*****************************************************************
 // Global Constants
 //*****************************************************************
