@@ -461,9 +461,9 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           ExitGracefullyIf(Len!=(nhoriz*2+2),
                            "ParseClassPropertiesFile:  :SoilProfiles invalid command length",BAD_DATA);
           bool is_special= (!string(s[0]).substr(0,4).compare("LAKE"    )) ||
-                           (!string(s[0]).substr(0,5).compare("WATER"   )) || 
+                           (!string(s[0]).substr(0,5).compare("WATER"   )) ||
                            (!string(s[0]).substr(0,7).compare("GLACIER" )) ||
-                           (!string(s[0]).substr(0,4).compare("ROCK"    )) || 
+                           (!string(s[0]).substr(0,4).compare("ROCK"    )) ||
                            (!string(s[0]).substr(0,8).compare("PAVEMENT")) ||
                            (!string(s[0]).substr(0,7).compare("WETLAND" ));
 

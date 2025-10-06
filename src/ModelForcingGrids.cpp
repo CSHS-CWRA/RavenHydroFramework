@@ -39,7 +39,7 @@ CForcingGrid *CModel::ForcingCopyCreate(const CForcingGrid *pGrid,
       GridDims[0] = pGrid->GetCols();
       GridDims[1] = pGrid->GetRows();
       GridDims[2] = nVals;
-    } 
+    }
     else {
       GridDims[0] = pGrid->GetCols();
       GridDims[1] = nVals;
@@ -128,7 +128,7 @@ void CModel::GenerateGriddedPrecipVars(const optStruct &Options)
 /// \brief Creates all missing gridded temperature data based on gridded information available,
 ///        e.g when only sub-daily temperature is provided estimate daily average, minimum and maximum temperature.
 ///        data are assumed to have the same resolution and hence can be initialized together.
-///        called with each new chunk of data 
+///        called with each new chunk of data
 ///
 /// \param Options [in]  major options of the model
 //
@@ -226,7 +226,7 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     pTave_daily = ForcingCopyCreate(pTmin,F_TEMP_DAILY_AVE,1.0,nVals,Options);
 
     double time_shift=Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
-    double t=0.0; 
+    double t=0.0;
     int chunk_size =pTave_daily->GetChunkSize();
     int nNonZero   =pTave_daily->GetNumberNonZeroGridCells();
     for(int it=0; it<chunk_size; it++) {            // loop over time points in buffer

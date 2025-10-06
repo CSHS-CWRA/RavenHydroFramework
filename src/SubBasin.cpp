@@ -1222,7 +1222,7 @@ bool CSubBasin::SetBasinProperties(const string label,
 };
 double CSubBasin::GetBasinProperties(const basin_props prop)
 {
-  switch (prop) 
+  switch (prop)
   {
     case BP_TIME_CONC:        return _t_conc;
     case BP_TIME_TO_PEAK:     return _t_peak;
@@ -1544,7 +1544,7 @@ double CSubBasin::ScaleAllFlows(const double &scale, const bool overriding, cons
 /// \remark Messes with mass balance something fierce!
 /// \param &Qadjust [in] Qadjust
 /// \param overriding [in] false if in backpropagation mode
-/// \param assimsitte [in] true if this is an assimilation site with data 
+/// \param assimsitte [in] true if this is an assimilation site with data
 /// \param &tstep [in] time step [d]
 /// \return volume added to system [m3]
 ///
@@ -1573,7 +1573,7 @@ double CSubBasin::AdjustAllFlows(const double &adjust, const bool overriding,con
     }
   }
   else if ((!overriding)  && (assimsite)){ //Just QinHist
-    for(int n=1;n<_nQinHist; n++) { 
+    for(int n=1;n<_nQinHist; n++) {
       _aQinHist[n]+=adjust*(_drainage_area-_basin_area)/_drainage_area*corr;
       upperswap(_aQinHist[n],0.0);
       va+=adjust*tstep*SEC_PER_DAY;

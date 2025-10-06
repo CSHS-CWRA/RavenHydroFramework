@@ -15,7 +15,7 @@ void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid
 ///
 /// \param *&pModel [in/out] Reference to model object
 /// \param &Options [in/out] Global model options information
-/// \param runname_overridden [in] true if runname specified from command line 
+/// \param runname_overridden [in] true if runname specified from command line
 /// \param mode_overridden [in] true if mode specified from command line
 /// \param optionsonly [in] true if model is not yet created and only options content should be read
 /// \return True if operation is successful
@@ -149,8 +149,8 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
   // Ingest properties      =====================================================================
   int varid_props;
   retval = nc_inq_varid(ncid,"properties",&varid_props);
-  
-  if (retval != NC_ENOTVAR) 
+
+  if (retval != NC_ENOTVAR)
   {
     HandleNetCDFErrors(retval);
 
@@ -174,9 +174,9 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
       }
     }
     // SuppressWarnings
-    if (optionsonly) { 
+    if (optionsonly) {
       retval = nc_inq_attlen(ncid,varid_props,"BlockRavenWarnings",&att_len);
-      if (retval != NC_ENOTATT) 
+      if (retval != NC_ENOTATT)
       {
         HandleNetCDFErrors(retval);
         char* boolean=new char[att_len+1];
@@ -192,7 +192,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
     //Block custom output
     if (!optionsonly) {
       retval = nc_inq_attlen(ncid,varid_props,"BlockRavenCustomOutput",&att_len);
-      if (retval != NC_ENOTATT) 
+      if (retval != NC_ENOTATT)
       {
         HandleNetCDFErrors(retval);
         char* boolean=new char[att_len+1];
@@ -210,7 +210,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
     //NoisyMode
     if (optionsonly) {
       retval = nc_inq_attlen(ncid, varid_props, "NoisyMode", &att_len);
-      if (retval != NC_ENOTATT) 
+      if (retval != NC_ENOTATT)
       {
         HandleNetCDFErrors(retval);
         char* boolean = new char[att_len + 1];
@@ -227,7 +227,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
     //SilentMode
     if (optionsonly) {
       retval = nc_inq_attlen(ncid, varid_props, "SilentMode", &att_len);
-      if (retval != NC_ENOTATT) 
+      if (retval != NC_ENOTATT)
       {
         HandleNetCDFErrors(retval);
         char* boolean = new char[att_len + 1];
@@ -261,7 +261,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
     // EnKFMode
     if (!optionsonly) {
       retval = nc_inq_attlen(ncid, varid_props, "EnKFMode", &att_len);
-      if(retval != NC_ENOTATT) 
+      if(retval != NC_ENOTATT)
       {
         HandleNetCDFErrors(retval);
         char* modestr = new char[att_len];
@@ -290,7 +290,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
     // AssimilateStreamflow
     if (optionsonly) {
       retval = nc_inq_attlen(ncid,varid_props,"AssimilateStreamflow",&att_len);
-      if (retval != NC_ENOTATT) 
+      if (retval != NC_ENOTATT)
       {
         HandleNetCDFErrors(retval);
         char* boolean = new char[att_len + 1];
