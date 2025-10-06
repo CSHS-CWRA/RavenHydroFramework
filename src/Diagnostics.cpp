@@ -138,7 +138,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
       baseweight[nn]=pTSWeights->GetSampledValue(nn);
     }
     obsval=pTSObs->GetSampledValue(nn);
-    modval=pTSObs->GetSampledValue(nn);
+    modval=pTSMod->GetSampledValue(nn);
     if(obsval==RAV_BLANK_DATA) {
       baseweight[nn]=0.0;
     }
