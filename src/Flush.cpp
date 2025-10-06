@@ -77,7 +77,7 @@ void   CmvFlush::GetRatesOfChange( const double      *storage,
                                    const optStruct   &Options,
                                    const time_struct &tt,
                                          double     *rates) const
-{ 
+{
   double mult=_percentage;
   if (_percentage==BY_SUBBASIN_FLAG){
     int p=pHRU->GetSubBasinIndex();

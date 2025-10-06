@@ -33,7 +33,7 @@ CModel::CModel(const int        nsoillayers,
   _nTransParams=0;    _pTransParams=NULL;
   _nClassChanges=0;   _pClassChanges=NULL;
   _nParamOverrides=0; _pParamOverrides=NULL;
-  _nStateVarOverrides=0;_pStateVarOverrides=NULL; 
+  _nStateVarOverrides=0;_pStateVarOverrides=NULL;
   _nObservedTS=0;     _pObservedTS=NULL; _pModeledTS=NULL; _aObsIndex=NULL;
   _nObsWeightTS =0;   _pObsWeightTS=NULL;
   _nDiagnostics=0;    _pDiagnostics=NULL;
@@ -2767,7 +2767,7 @@ void CModel::RecalculateHRUDerivedParams(const optStruct    &Options,
 void CModel::PrepareForcingPerturbation(const optStruct &Options, const time_struct &tt)
 {
   if (_nPerturbations==0){return;}
-  
+
   double partday      = Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
   int    nn           = (int)(rvn_round((tt.model_time+partday-floor(tt.model_time+partday+TIME_CORRECTION))/Options.timestep));
   bool   start_of_day = ((nn==0) || tt.day_changed); //nn==0 corresponds to midnight
