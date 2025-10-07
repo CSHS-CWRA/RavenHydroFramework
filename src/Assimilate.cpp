@@ -87,7 +87,7 @@ void CModel::AssimilationOverride(const int p,const optStruct& Options,const tim
     Qobs2   = _aDAobsQ2[p];
     Qmod    = _pSubBasins[p]->GetOutflowRate();
     Qmodlast= _pSubBasins[p]->GetLastOutflowRate();
-    if(Qmod>PRETTY_SMALL) {
+    if((Qmod>PRETTY_SMALL) && (Qobs!=RAV_BLANK_DATA)){
       _aDAscale  [p]=1.0+alpha*((Qobs-Qmod)/Qmod); //if alpha = 1, Q=Qobs in observation basin
       //_aDAQadjust[p]=alpha*(Qobs-Qmod); //Option A: end of time step flow
       //_aDAQadjust[p]=0.5*alpha*(2.0*Qobs-Qmodlast-Qmod);//Option B: mean flow - rapidly oscillatory Q - Qmean is perfect
@@ -189,7 +189,9 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
       else
       { //found a blank or zero flow value
         _aDAscale    [p]=_aDAscale[p];//same adjustment as before - scaling persists
-        _aDAlength   [p]=0.0;
+        if(pdown!=DOESNT_EXIST) {
+          _aDAlength   [p]+=_pSubBasins  [pdown]->GetReachLength(); //length propagates from below
+        }
         _aDAtimesince[p]+=Options.timestep;
         _aDAoverride [p]=false;
         _aDAobsQ     [p]=0.0;
@@ -292,7 +294,6 @@ void CModel::AssimilationBackPropagate(const optStruct &Options,const time_struc
 
     if(!_aDAoverride[p]) { //observations may be downstream, get scaling from downstream
       if( (pdown!=DOESNT_EXIST                 ) &&
-          (!_aDAoverride[p]                    ) &&
           (_pSubBasins[p]->GetReservoir()==NULL) &&
           (_pSubBasins[p]->IsEnabled()) && (_pSubBasins[pdown]->IsEnabled()))
       {
@@ -314,7 +315,7 @@ void CModel::AssimilationBackPropagate(const optStruct &Options,const time_struc
     {
       pdown=GetDownstreamBasin(p);
       if (pdown!=DOESNT_EXIST){
-        _aDAQadjust[p] *=exp(-distfact*_aDAlength[pdown]);
+        _aDAQadjust[p] *=exp(-distfact*_aDAlength[p]);
       }
 
       ECCCwt=1.0;

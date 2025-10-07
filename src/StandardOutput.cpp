@@ -3103,7 +3103,7 @@ void WriteNetCDFBasinList(const int ncid,const int varid,const int varid_name,co
   current_basin_name[0]=new char[200];
   for(int p=0;p<pModel->GetNumSubBasins();p++) {
     if(pModel->GetSubBasin(p)->IsGauged()  && (pModel->GetSubBasin(p)->IsEnabled())) {
-      if (!( (is_res) && (pModel->GetSubBasin(p)->GetReservoir()==NULL))){
+      if (!( (is_res) && (pModel->GetSubBasin(p)->GetReservoir()==NULL))){//only write IDs of reservoir basins if is_res
         string bID,bname;
         bID   = to_string(pModel->GetSubBasin(p)->GetID());
         bname = pModel->GetSubBasin(p)->GetName();
