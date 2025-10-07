@@ -1582,7 +1582,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (402)://----------------------------------------------
-    {/*:FileNameNC  [filename] */
+    {/*:FileNameNC  [filename (possibly with spaces, but no commas)] */
       if (Options.noisy){cout <<"   :FileNameNC"<<endl;}
 #ifndef _RVNETCDF_
       ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks are only allowed when NetCDF library is available!",BAD_DATA);
@@ -1590,7 +1590,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       ExitGracefullyIf(pGrid==NULL,     "ParseTimeSeriesFile: :FileNameNC command must be within a :GriddedForcings or :StationForcing block",BAD_DATA);
       ExitGracefullyIf(grid_initialized,"ParseTimeSeriesFile: :FileNameNC command must be before :GridWeights command",BAD_DATA);
 
-      string filename=s[1];
+      string filename="";
+      for(int i=1;i<Len;i++) { filename+=s[i]; if(i<Len-1) { filename+=' '; } }
       filename =CorrectForRelativePath(filename ,Options.rvt_filename);
 
       // check for existence
