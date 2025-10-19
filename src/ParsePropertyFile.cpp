@@ -1306,6 +1306,10 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       if (Len >= 4) {
         // currently the N is the same for all subbasins. This may change in the future (?)
         int N = pModel->GetBlendedForcingsNumWeights(s[1]);
+        if (N==0){
+          WriteWarning("ParsePropertyFile: cannot use :SBGroupOverrideWeights if blending is not already in use. Command will be ignored.",Options.noisy);
+          break;
+        }
         double* uniform_nums = new double[N-1];
         double* wts          = new double[N];
         double  sum          = 0.0;

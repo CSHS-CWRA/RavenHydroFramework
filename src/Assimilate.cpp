@@ -142,7 +142,8 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
 
   for(p=0; p<_nSubBasins; p++) {
     _aDAscale_last[p]=_aDAscale[p];
-    _aDADrainSum[p]=0.0;
+    _aDADrainSum  [p]=0.0;
+    _aDAlength    [p]=0.0;//reboot every timestep
   }
 
   // check for observations in each basin
@@ -191,6 +192,9 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
         _aDAscale    [p]=_aDAscale[p];//same adjustment as before - scaling persists
         if(pdown!=DOESNT_EXIST) {
           _aDAlength   [p]+=_pSubBasins  [pdown]->GetReachLength(); //length propagates from below
+        }
+        else{
+          _aDAlength[p]=0;
         }
         _aDAtimesince[p]+=Options.timestep;
         _aDAoverride [p]=false;
