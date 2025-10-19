@@ -2735,7 +2735,9 @@ void CModel::ApplyStateOverrrides(const optStruct   &Options,const time_struct &
         i= _pStateVarOverrides[j]->sv_ind;
         val=_pStateVarOverrides[j]->pTS->GetSampledValue(nn);
         if (val!=RAV_BLANK_DATA){
-          _pHydroUnits[k]->SetStateVarValue(i,val); //DOESNT CHECK FOR MAX OR MIN!
+          double maxv=max(_pHydroUnits[k]->GetStateVarMax(i,_pHydroUnits[k]->GetStateVarArray(),Options,true),0.0);
+          val=min(val,maxv);
+          _pHydroUnits[k]->SetStateVarValue(i,val); 
         }
     }
   }

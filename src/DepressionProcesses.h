@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------
   class definitions:
   CmvDepressionOverflow
@@ -108,7 +108,8 @@ enum abstraction_type{
   ABST_FILL,       ///< Fill abstraction
   ABST_SCS,        ///< Abstraction using SCS method
   ABST_PDMROF,     ///< Abstraction using PDMROF Method (Mekkonen et al., 2014)
-  ABST_UWFS        ///< Abstraction using upscaled wetland fill and spill model (Taheri et al.)
+  ABST_UWFS,       ///< Abstraction using upscaled wetland fill and spill model (Taheri et al. 2024)
+  ABST_HGDM        ///< Abstraction to runoff using HGDM (Shook and Pomeroy 2025)
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -156,11 +157,11 @@ enum lakerel_type{
 class CmvLakeRelease: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
-  lakerel_type _type; ///< Model of abstaction selected
+  lakerel_type _type; ///< Model of release selected
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvLakeRelease(const lakerel_type absttype,
+  CmvLakeRelease(const lakerel_type reltype,
                  CModelABC          *pModel);
   ~CmvLakeRelease();
 

@@ -588,6 +588,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":EndProcessGroup"           )){code=296;}
     else if  (!strcmp(s[0],":-->Conditional"            )){code=297;}
     else if  (!strcmp(s[0],":EndHydrologicProcesses"    )){code=298;}
+    else if  (!strcmp(s[0],":EndHydrologicalProcesses"  )){code=298;}
     //...
     //--------------------TRANSPORT PROCESSES ---------------
     if       (in_ifmode_statement)                        {code=-6; }

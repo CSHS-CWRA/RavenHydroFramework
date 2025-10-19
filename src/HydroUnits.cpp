@@ -555,22 +555,28 @@ double        CHydroUnit::GetStateVarMax(const int      i,
   double max_var=ALMOST_INF;
   switch (_pModel->GetStateVarType(i))
   {
-    case(SOIL):         {
+    case(SOIL):         
+    {
       max_var=GetSoilCapacity(_pModel->GetStateVarLayer(i));  break;
     }
-    case(CANOPY):       {
+    case(CANOPY):       
+    {
       if(!ignorevar) { max_var=_VegVar.capacity; }            break;
     }
-    case(CANOPY_SNOW):  {
-      if(!ignorevar) {max_var=_VegVar.snow_capacity;}         break;
+    case(CANOPY_SNOW):  
+    {
+      if(!ignorevar) { max_var=_VegVar.snow_capacity;}        break;
     }
-    case(GROUNDWATER):  {
+    case(GROUNDWATER):  
+    {
       if(Options.modeltype != MODELTYPE_SURFACE){}            break; //GetAquiferHeadCapacity(0,HRUid);} //GWMIGRATE - HRUid k not accesible from here yet
     }
-    case(DEPRESSION):   {
+    case(DEPRESSION):   
+    {
       if (_pSurface->dep_max>=0){max_var=_pSurface->dep_max;} break;
     }
-    case(SNOW_COVER):   {
+    case(SNOW_COVER):   
+    {
       max_var=1.0;                                            break;
     }
     case(SNOW_LIQ):
@@ -582,7 +588,8 @@ double        CHydroUnit::GetStateVarMax(const int      i,
       }
       break;
     }
-    default:{
+    default:
+    {
       max_var=ALMOST_INF;break;
     }
   }/* end switch*/

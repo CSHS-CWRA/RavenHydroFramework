@@ -1750,9 +1750,5 @@ double GetRainHeatInput           (const double &surf_temp, const double &air_te
 double GetSnowDensity             (const double &snowSWE,const double &snow_depth);
 double CalculateSnowLiquidCapacity(const double &SWE, const double &snow_depth, const CModelABC* pModel);
 
-//Crop Functions---------------------------------------------------
-bool   IsGrowingSeason            (const time_struct &tt, const double &CHU);
-
-
 
 #endif
