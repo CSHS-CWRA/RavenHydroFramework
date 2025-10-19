@@ -588,6 +588,7 @@ bool  CStateVariable::IsWaterStorage (sv_type      typ, bool conv_coverup)
   case(CANOPY):          {return true;}
   case(CANOPY_SNOW):     {return true;}
   case(ROOT):            {return true;}
+  case(TRUNK):           {return true;}
   case(DEPRESSION):      {return true;}
   case(SNOW_LIQ):        {return true;}
   case(WETLAND):         {return true;}

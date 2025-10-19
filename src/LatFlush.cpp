@@ -61,7 +61,7 @@ void CmvLatFlush::Initialize()
   ExitGracefullyIf(kTo == NULL, "LatFLush::Initialize (1)",OUT_OF_MEMORY);
 
   CHRUGroup *fromHRUGrp=_pModel->GetHRUGroup(_kk_from);
-  CHRUGroup *toHRUGrp  =_pModel->GetHRUGroup(_kk_from);
+  CHRUGroup *toHRUGrp  =_pModel->GetHRUGroup(_kk_to);
   _aFrac=NULL;
   _aFrac=new double [MAX_LAT_CONNECTIONS];
   ExitGracefullyIf(_aFrac == NULL, "LatFLush::Initialize",OUT_OF_MEMORY);
