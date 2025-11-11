@@ -1767,12 +1767,12 @@ void CModel::RunDiagnostics(const optStruct &Options)
         ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
       }
       
-      DIAG<<"time,date,hour,observed"+svname+",simulated"+svname<<endl;
+      DIAG2<<"time,date,hour,observed"+svname+",simulated"+svname<<endl;
       for (int nn=0; nn<_pObservedTS[i]->GetNumSampledValues();nn++)
       {
         obsval=_pObservedTS[i]->GetSampledValue(nn);
         modval=_pModeledTS [i]->GetSampledValue(nn);
-        //DIAG<<nn<<" "<<thistime<<","<<thishr<<","<<obsval<<","<<modval<<endl;
+        //DIAG2<<nn<<" "<<thistime<<","<<thishr<<","<<obsval<<","<<modval<<endl;
       }
       DIAG2.close();
     }
