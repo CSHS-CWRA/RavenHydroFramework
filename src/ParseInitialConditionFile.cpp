@@ -617,14 +617,20 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         }
         else if (!strcmp(s[0],":ResStage"))
         {
-          if (Len>=3){
+          if ((Len>=3) && (pBasin->GetReservoir()!=NULL)) {
             pBasin->GetReservoir()->SetReservoirStage(s_to_d(s[1]),s_to_d(s[2]));
+          }
+          else{
+            WriteWarning("ParseInitialConditionsFile: :ResStage initial conditions for basin without reservoir will be ignored.",Options.noisy);
           }
         }
         else if(!strcmp(s[0],":ResFlow"))
         {
-          if(Len>=3) {
+          if ((Len>=3) && (pBasin->GetReservoir()!=NULL)) {
             pBasin->GetReservoir()->SetInitialFlow(s_to_d(s[1]),s_to_d(s[2]),true,tt,Options);
+          }
+          else{
+            WriteWarning("ParseInitialConditionsFile: :ResFlow initial conditions for basin without reservoir will be ignored.",Options.noisy);
           }
         }
         else if (!strcmp(s[0], ":ControlFlow"))

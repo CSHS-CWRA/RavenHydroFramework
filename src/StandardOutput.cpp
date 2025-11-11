@@ -1747,6 +1747,38 @@ void CModel::RunDiagnostics(const optStruct &Options)
     _aObsIndex[i]=0;
   }
 
+  // reporting of sim-obs values for observations not otherwise reported
+  //----------------------------------------------------------------------------
+  int layer_ind;
+  double obsval,modval;
+  for(int i=0;i<_nObservedTS;i++)
+  {
+    string  datatype=_pObservedTS[i]->GetName();
+    sv_type svtyp   = _pStateVar->StringToSVType(datatype, layer_ind, false);
+
+    if ((svtyp != UNRECOGNIZED_SVTYPE) && (datatype!="RESERVOIR_STAGE")) //stage is also treated as state var
+    {
+      ofstream DIAG2;
+      string tmpFilename;
+      string svname=CStateVariable::GetStateVarLongName(svtyp,layer_ind,GetTransportModel());
+      tmpFilename = FilenamePrepare("HRU" + to_string(_pObservedTS[i]->GetLocID()) +"_"+ svname + "_ObsVsSim.csv",Options);
+      DIAG2.open(tmpFilename.c_str());
+      if(DIAG2.fail()) {
+        ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
+      }
+      
+      DIAG<<"time,date,hour,observed"+svname+",simulated"+svname<<endl;
+      for (int nn=0; nn<_pObservedTS[i]->GetNumSampledValues();nn++)
+      {
+        obsval=_pObservedTS[i]->GetSampledValue(nn);
+        modval=_pModeledTS [i]->GetSampledValue(nn);
+        //DIAG<<nn<<" "<<thistime<<","<<thishr<<","<<obsval<<","<<modval<<endl;
+      }
+      DIAG2.close();
+    }
+  }
+
+
   // Post-simulation QA/QC reporting
   //----------------------------------------------------------------------------
   if (_pDO!=NULL){_pDO->Closure(Options); }
