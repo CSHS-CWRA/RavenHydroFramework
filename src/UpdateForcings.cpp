@@ -71,6 +71,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   CForcingGrid *pGrid_recharge   = NULL;
   CForcingGrid *pGrid_precip_temp= NULL;
   CForcingGrid *pGrid_precip_conc= NULL;
+  CForcingGrid *pGrid_irrig      = NULL;
 
   // see if gridded forcing is read from a NetCDF
   bool pre_gridded            = ForcingGridIsInput(F_PRECIP)         ;
@@ -91,6 +92,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   bool LWinc_gridded          = ForcingGridIsInput(F_LW_INCOMING)    && (Options.LW_incoming   ==LW_INC_DATA);
   bool SW_gridded             = ForcingGridIsInput(F_SW_RADIA)       && (Options.SW_radiation  ==SW_RAD_DATA);
   bool recharge_gridded       = ForcingGridIsInput(F_RECHARGE)       && (Options.recharge      ==RECHARGE_DATA);
+  bool irrig_gridded          = ForcingGridIsInput(F_IRRIGATION);
 
   //Extract data from gauge time series
   for (g=0;g<_nGauges;g++)
@@ -149,6 +151,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
     Fg[g].recharge        =_pGauges[g]->GetForcingValue    (F_RECHARGE,nn);
     Fg[g].precip_temp     =_pGauges[g]->GetForcingValue    (F_TEMP_AVE,nn);
     Fg[g].precip_conc     =_pGauges[g]->GetForcingValue    (F_PRECIP_CONC,nn);
+    Fg[g].irrigation      =_pGauges[g]->GetForcingValue    (F_IRRIGATION,nn);
   }
   if (_nGauges > 0) {g_debug_vars[4]=_pGauges[0]->GetElevation(); }//UBCWM RFS Emulation cheat
 
@@ -226,6 +229,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
           F.recharge       += wt * Fg[g].recharge;
           F.precip_temp    += wt * Fg[g].precip_temp;
           F.precip_conc    += wt * Fg[g].precip_conc;
+          F.irrigation     += wt * Fg[g].irrigation;
           ref_measurement_ht+=wt*_pGauges[g]->GetMeasurementHt();
         }
       }
@@ -265,7 +269,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       recharge_gridded       = ForcingGridIsInput(F_RECHARGE);
       precip_temp_gridded    = ForcingGridIsInput(F_PRECIP_TEMP);
       precip_conc_gridded    = ForcingGridIsInput(F_PRECIP_CONC);
-
+      irrig_gridded          = ForcingGridIsInput(F_IRRIGATION);
       // find the correct grid
       if(pre_gridded)             { pGrid_pre         = GetForcingGrid(F_PRECIP); }
       if(rain_gridded)            { pGrid_rain        = GetForcingGrid(F_RAINFALL); }
@@ -284,6 +288,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       if(recharge_gridded)        { pGrid_recharge    = GetForcingGrid(F_RECHARGE); }
       if(precip_temp_gridded)     { pGrid_precip_temp = GetForcingGrid(F_PRECIP_TEMP); }
       if(precip_conc_gridded)     { pGrid_precip_conc = GetForcingGrid(F_PRECIP_CONC); }
+      if(irrig_gridded)           { pGrid_irrig       = GetForcingGrid(F_IRRIGATION); }
 
       // ---------------------
       // (1A) read gridded precip/snowfall/rainfall and populate additional time series
@@ -414,6 +419,11 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         pGrid_SW = GetForcingGrid(F_SW_RADIA);
         pGrid_SW->ReadData(Options, tt.model_time);
         F.SW_radia = pGrid_SW->GetWeightedValue(k, tt.model_time, Options.timestep);
+      }
+      if (irrig_gridded){
+        pGrid_irrig = GetForcingGrid(F_IRRIGATION);
+        pGrid_irrig->ReadData(Options, tt.model_time);
+        F.irrigation = pGrid_irrig->GetWeightedValue(k, tt.model_time, Options.timestep);
       }
 
       //-------------------------------------------------------------------
@@ -605,8 +615,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //-------------------------------------------------------------------
       // Irrigation
       //-------------------------------------------------------------------
-      F.irrigation=0.0; //FOR NOW
-      //F.irrigation=GetManagementOptimizer()->EstimateIrrigation(F,_pHydroUnits[k],Options,tt);
+      //F.irrigation+=GetManagementOptimizer()->EstimateIrrigation(F,_pHydroUnits[k],Options,tt);
 
       //-------------------------------------------------------------------
       // Direct evaporation of rainfall / irrigation

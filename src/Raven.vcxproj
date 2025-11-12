@@ -712,6 +712,7 @@
     <ClCompile Include="GWRiverConnection.cpp" />
     <ClCompile Include="GWSWProcessABC.cpp" />
     <ClCompile Include="IsotopeTransport.cpp" />
+    <ClCompile Include="LatConnect.cpp" />
     <ClCompile Include="LatEquilibrate.cpp" />
     <ClCompile Include="LookupTable.cpp" />
     <ClCompile Include="MassLoading.cpp" />
@@ -724,6 +725,7 @@
     <ClCompile Include="ParseManagementFile.cpp" />
     <ClCompile Include="Raven_BMI.cpp" />
     <ClCompile Include="RiverReach.cpp" />
+    <ClCompile Include="SnowRedistribute.cpp" />
     <ClCompile Include="SoilBalance.cpp" />
     <ClCompile Include="StageDischargeRelations.cpp" />
     <ClCompile Include="Transport.cpp" />
@@ -979,6 +981,7 @@
     <ClInclude Include="GWRiverConnection.h" />
     <ClInclude Include="GWSWProcesses.h" />
     <ClInclude Include="IsotopeTransport.h" />
+    <ClInclude Include="LatConnect.h" />
     <ClInclude Include="LookupTable.h" />
     <ClInclude Include="MassLoading.h" />
     <ClInclude Include="Matrix.h" />

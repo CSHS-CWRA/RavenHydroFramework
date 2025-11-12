@@ -247,7 +247,7 @@ void CTimeSeries::Initialize( const double model_start_day,   //julian day
     double local_simulation_end   = (_t_corr+model_duration);
     if (duration < local_simulation_start)  //out of data before simulation starts!
     {
-      cout << " Time series " << GetName() << endl;
+      cout << " ERROR Details:  Time series " << GetName() << endl;
       cout << "  time series start day, year, duration :" << _start_day << "," << _start_year << " " << duration << endl;
       cout << "  model start day, year, duration :" << model_start_day << "," << model_start_year << " " << model_duration << endl;
       ExitGracefully(
@@ -255,7 +255,7 @@ void CTimeSeries::Initialize( const double model_start_day,   //julian day
     }
     if (duration + 0.0*timestep + TIME_CORRECTION < local_simulation_end)    //run out of data before simulation finishes
     {                                                                       //+timesteps is for coincdent duration & data (and wrong? JRC: 2024-04-18)
-      cout << " Time series " << GetName() << endl;
+      cout << " ERROR Details:  Time series " << GetName() << endl;
       cout << "  time series start day, year, duration :" << _start_day << "," << _start_year << " " << duration << endl;
       cout << "  model start day, year, duration :" << model_start_day << "," << model_start_year << " " << model_duration << endl;
       ExitGracefully(
@@ -263,7 +263,7 @@ void CTimeSeries::Initialize( const double model_start_day,   //julian day
     }
     if ((local_simulation_start<0) || (_start_year>model_start_year))     //data does not begin until after simulation
     {
-      cout << " Time series " << GetName() << endl;
+      cout << " ERROR Details: Time series " << GetName() << endl;
       cout << "  time series start day, year, duration :" << _start_day << "," << _start_year << " " << duration << endl;
       cout << "  model start day, year, duration :" << model_start_day << "," << model_start_year << " " << model_duration << endl;
       ExitGracefully(

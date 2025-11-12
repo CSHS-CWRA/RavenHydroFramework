@@ -483,6 +483,12 @@
     <ClCompile Include="WaterDemands.cpp">
       <Filter>Source Files\Water Management</Filter>
     </ClCompile>
+    <ClCompile Include="LatConnect.cpp">
+      <Filter>Source Files\Hydrological Processes</Filter>
+    </ClCompile>
+    <ClCompile Include="SnowRedistribute.cpp">
+      <Filter>Source Files\Hydrological Processes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Properties.h">
@@ -697,6 +703,9 @@
     </ClInclude>
     <ClInclude Include="Expression.h">
       <Filter>Header Files\Water Management</Filter>
+    </ClInclude>
+    <ClInclude Include="LatConnect.h">
+      <Filter>Header Files\Hydrological Processes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

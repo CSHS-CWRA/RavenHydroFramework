@@ -582,6 +582,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":LateralEquilibrate"        )){code=238;}
     else if  (!strcmp(s[0],":LakeFreeze"                )){code=239;}
     else if  (!strcmp(s[0],":LateralDivert"             )){code=240;}
+    else if  (!strcmp(s[0],":SnowRedistribute"          )){code=241;}
     //...
     else if  (!strcmp(s[0],":-->RedirectFlow"           )){code=294;}
     else if  (!strcmp(s[0],":ProcessGroup"              )){code=295;}
@@ -3128,6 +3129,33 @@ bool ParseMainInputFile (CModel     *&pModel,
                                 true, true, pModel);
         AddProcess(pModel,pMover,pProcGroup);
       }
+      break;
+    }
+    case(241):  //----------------------------------------------
+    {
+      /*Snow Redistribution
+        :SnowRedistribute [string method] [SV] [Max_snow_height] */
+      if (Options.noisy) { cout << "Snow Redistribution Process" << endl; }
+      if (Len < 4) { ImproperFormatWarning(":SnowRedistribute", p, Options.noisy); break; }
+
+      redist_method r_type = CONTINUOUS_REDIST; // default method
+
+      if      (!strcmp(s[1], "CONTINUOUS")) { r_type = CONTINUOUS_REDIST; }
+      else if (!strcmp(s[1], "THRESHOLD"))  { r_type = THRESHOLD_REDIST; }
+      else {
+        ExitGracefully("ParseMainInputFile: Unrecognized snow redistribution method", BAD_DATA_WARN); break;
+      }
+
+      tmpS[0] = pModel->GetStateVarInfo()->StringToSVType(s[2], tmpLev[0], true);
+      pModel->AddStateVariables(tmpS, tmpLev, 2);
+
+      double max_snow_height = s_to_d(s[3]);
+
+      pMover = new CmvLatRedistribute(pModel->GetStateVarIndex(tmpS[0], tmpLev[0]), // SV index
+                                      max_snow_height,
+                                      r_type,
+                                      pModel);
+      AddProcess(pModel, pMover, pProcGroup);
       break;
     }
     case(294):  //----------------------------------------------

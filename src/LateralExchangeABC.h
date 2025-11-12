@@ -11,6 +11,7 @@
 #include "HydroUnits.h"
 #include "HydroProcessABC.h"
 class CModel;
+class CLatConnect;
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for lateral exchange process.
@@ -153,4 +154,51 @@ public:/*-------------------------------------------------------*/
                           double* exchange_rates) const;//purely virtual
 
 };
-#endif
+
+///////////////////////////////////////////////////////////////////
+/// \brief Data abstraction for the redistribution of snow based on slope and snow SWE
+
+typedef enum {
+  CONTINUOUS_REDIST,
+  THRESHOLD_REDIST
+} redist_method;
+
+class CmvLatRedistribute: public CLateralExchangeProcessABC
+{
+private:/*------------------------------------------------------*/
+  int    _iRedistributeFrom;  //< global state variable index of source state var
+  int    _iRedistributeTo;    //< global state variable index of target state var
+  double _max_snow_height;    //< maximum snow height for redistribution
+
+  redist_method _method;      //< method used for redistribution
+
+  CLatConnect **_pLatConnect; //< array of pointers to HRU source/recipient pairs [size:_nLatConnect]
+  int           _nLatConnect; //< number of HRU source/recipient pairs
+  
+
+public:/*-------------------------------------------------------*/
+  //Constructors/destructors:
+  CmvLatRedistribute(int sv_ind,
+                     double max_snow_height,
+                     redist_method method,
+                     CModel *pModel);
+  ~CmvLatRedistribute();
+
+  void AddConnectionArray(CLatConnect **pConnections, const int nConnections);
+
+  //inherited functions
+  void Initialize();
+  
+  static void GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV);
+
+  void GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const;
+
+  void GetLateralExchange(const double * const *state_vars, //array of all SVs for all HRUs, [k][i]
+                          const CHydroUnit * const *pHRUs,
+                          const optStruct   &Options,
+                          const time_struct &tt,
+                                double      *exchange_rates) const;//purely virtual
+
+};
+
+#endif // LATERALEXCHANGE_H

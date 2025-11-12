@@ -2694,7 +2694,7 @@ void CDemandOptimizer::WriteLPSubMatrix(lp_lib::lprec* pLinProg,string file, con
   REAL *val=new REAL [ncols+1];
   double sumprod;
   double RHS;
-  bool bo;
+  bool bo=false;
   for (int j=0; j<=nrows; j++)
   {
     sumprod=0.0;

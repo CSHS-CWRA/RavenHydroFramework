@@ -8,6 +8,7 @@
 #include "HydroUnits.h"
 #include "ParseLib.h"
 #include "ControlStructures.h"
+#include "LatConnect.h"
 
 CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long int &HRUID,const optStruct &Options);
 
@@ -29,6 +30,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
   long long   SBID;             //subbasin ID
   CHydroUnit *pHRU;             //temp pointers
   CSubBasin  *pSB;
+  CLatConnect *pLat; 
   bool        ended=false;
   bool        in_ifmode_statement=false;
   bool        is_conduit=false;
@@ -98,6 +100,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     else if  (!strcmp(s[0],":MergeHRUGroups"           )){code=18; }
     else if  (!strcmp(s[0],":MergeSubBasinGroups"      )){code=19; }
     else if  (!strcmp(s[0],":GaugedSubBasinGroup"      )){code=20; }
+    else if  (!strcmp(s[0],":LateralConnections"       )){code=21; }
 
     switch(code)
     {
@@ -1117,6 +1120,64 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
 
       string advice = "Number of gauged subbasins to to " + to_string(pSBGroup->GetNumSubbasins());
       WriteAdvisory(advice, Options.noisy);
+      break;
+    }
+    case(21):  //----------------------------------------------
+    {/*
+        :LateralConnections [SNOW_REDISTRIBUTE or other lateral process name]
+          {HRU1} {HRU2} {value} x nConnections
+        :EndLateralConnections
+      */
+      if (Options.noisy) { cout << "   LateralConnections..." << endl; }
+      int nLat=0;
+      CLatConnect **pLat=NULL;
+      bool snow_redist=false;
+
+      if(Len < 2) { pp->ImproperFormat(s); break;}
+      if (s[1]=="SNOW_REDISTRIBUTE"){snow_redist=true;}
+
+      while (((Len==0) || (strcmp(s[0],":EndLateralConnections"))) && (!end_of_file))
+      {
+        end_of_file = pp->Tokenize(s, Len);
+        if      (IsComment(s[0], Len)) {} // comment line
+        else if (!strcmp(s[0], ":EndLateralConnections")) {} // done
+        else
+        {
+          if (Len < 3) { pp->ImproperFormat(s); }
+
+          if (StringIsLong(s[0]))
+          {
+            CLatConnect *pLatInstance = new CLatConnect(s_to_ll(s[0]),s_to_ll(s[1]), s_to_d(s[2]));  
+            if (!DynArrayAppend((void**&)(pLat),(void*)(pLatInstance),nLat)){
+                ExitGracefully("CModel:::LateralConnections: adding NULL connection",BAD_DATA);}
+          }
+          else          {
+            ExitGracefully("ParseLateralConnections: Bad HRU index in :LateralConnections command",BAD_DATA);
+          }
+        }
+      }
+
+      // After all connections are added, check if weights sum to 1.0
+      if (nLat > 0) 
+      {
+
+        // Check if weights sum to 1.0
+        if (!CLatConnect::CheckConnectionWeights(pLat, nLat, pModel)) {
+          WriteWarning("Some HRUs have lateral connection weights that do not sum to 1.0. This may lead to mass balance errors.", Options.noisy);
+        }
+
+        //copy array of connections to appropriate process
+        for (int j=0;j<pModel->GetNumProcesses();j++){
+          if ( (snow_redist) && (pModel->GetProcessType(j)==LAT_REDISTRIBUTE) )
+          {
+            CmvLatRedistribute *pProc=(CmvLatRedistribute*)(pModel->GetProcess(j));
+            pProc->AddConnectionArray(pLat,nLat);
+          }
+        }
+
+        // Clean up the temporary array
+        for(int n=0; n<nLat;n++) { delete pLat[n]; }  delete[] pLat;
+      }
       break;
     }
     default://------------------------------------------------
