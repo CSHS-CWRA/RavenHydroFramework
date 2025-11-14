@@ -25,8 +25,8 @@ void MassEnergyBalance( CModel            *pModel,
   int iSW, iAtm, iAET, iGW, iRO;               //Surface water, atmospheric precip, used PET, runoff indices
   int iTotalSWE;                               //total SWE index
 
-  int                iFrom          [MAX_CONNECTIONS]; //arrays used to pass values through GetRatesOfChange routines
-  int                iTo            [MAX_CONNECTIONS];
+  int                iFrom          [MAX_LAT_CONNECTIONS]; //arrays used to pass values through GetRatesOfChange routines
+  int                iTo            [MAX_LAT_CONNECTIONS]; //Assumes MAX_LAT_CONNECTIONS>MAX_CONNECTIONS
   double             rates_of_change[MAX_CONNECTIONS];
 
   double             tstep;       //[d] timestep
@@ -405,7 +405,9 @@ void MassEnergyBalance( CModel            *pModel,
   {
     kFrom[q]=DOESNT_EXIST;
     kTo  [q]=DOESNT_EXIST;
-    exchange_rates[i]=0.0;
+    iFrom[q]=DOESNT_EXIST;
+    iTo  [q]=DOESNT_EXIST;
+    exchange_rates[q]=0.0;
   }
   for (j=0;j<nProcesses;j++)
   {
