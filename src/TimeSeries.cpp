@@ -691,6 +691,13 @@ CTimeSeries  *CTimeSeries::Sum(CTimeSeries *pTS1, CTimeSeries *pTS2, string name
 //   ...
 // :EndAnnualPattern
 // OR
+// :IrregularPattern [STEP or INTERPOLATE] [#events]
+//   yyyy-mm-dd v1 //should be <= start date of model, ideally
+//   yyyy-mm-dd v2
+//   ...
+//   yyyy-mm-dd vN //should be >= end date of model, ideally
+// :EndIrregularPattern
+// OR
 // :ReadFromNetCDF
 //    :FileNameNC ./input/input.nc
 //    :VarNameNC Qobs
@@ -988,6 +995,108 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long lon
     p->Tokenize(s,Len);//read closing term (e.g., ":EndData")
     if(string(s[0]).substr(0,4)!=":End") {
       ExitGracefully("CTimeSeries: Parse: no :EndData command (or similar :End* command) used with :AnnualPattern command ",BAD_DATA);
+    }
+    return pTimeSeries;
+  }
+  // IRREGULAR PATTERN FORMAT ====================================================
+  if(!strcmp(s[0],":IrregularPattern"))
+  {
+    int nEvents=0;
+    bool step=false;
+    if (Len >= 3) {
+      if(!strcmp(s[1],"INTERPOLATE")){step=false;}
+      if(!strcmp(s[1],"STEP"       )){step=true;}
+      nEvents=s_to_i(s[2]);
+    }
+    else{
+      ExitGracefully("TimeSeries: Parse: incorrect number of arguments in :IrregularPattern command",BAD_DATA_WARN);
+      return NULL;
+    }
+
+    double *days=new double [nEvents]; //sized for max # of events
+    double *vals=new double [nEvents];
+
+    p->Tokenize(s,Len);
+    bool done=false;
+    time_struct tt;
+    double tmod;
+    int j=0;
+    while(!done)
+    {
+      if   (IsComment(s[0],Len)) {}//comment line
+      else if(Len==2) {
+        ExitGracefullyIf(j>nEvents,"CTimeSeries::Parse: exceeded maximum number of items in :IrregularPattern command",BAD_DATA);
+        string date_str=s[0];
+        tt=DateStringToTimeStruct(s[0],"00:00:00",Options.calendar);
+        tmod = TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day,tt.year,Options.calendar);
+        days[j]=tmod;
+        vals[j]=s_to_d(s[1]);
+        j++;
+        //cout<<"READING IRREGULAR "<<s[0]<<" "<<days[j-1]<<" "<<vals[j-1]<<endl;
+      }
+      else            { 
+        p->ImproperFormat(s); break;
+      }
+      bool eof=p->Tokenize(s,Len);
+      if (eof){done=true;}
+      if (!strcmp(s[0],":EndIrregularPattern")) { done=true; }
+    }
+
+    if (j!=nEvents){
+      ExitGracefully("CTimeSeries::Parse: fewer items provided than indicated in :IrregularPattern command",BAD_DATA_WARN);
+      return NULL;
+    }
+    for (int j=0;j<nEvents-1;j++){
+      if (days[j]>days[j+1]){
+        ExitGracefully("CTimeSeries::Parse: dates in :IrregularPattern command must be ordered in time.",BAD_DATA_WARN);
+        return NULL;
+      }
+    }
+
+    double* aVal;
+    int nVals=int(Options.duration)+1;
+    aVal =new double[nVals];
+
+    for(int n=0;n<nVals;n++) 
+    {
+      JulianConvert(double(n),Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
+      aVal[n]=0;
+      if (step){ //step
+        aVal[n]=vals[nEvents-1]; //works if time < days[0] or > days[nEvents-1]
+        for(int i=0;i<nEvents-1;i++) {
+          if ((tt.model_time>=days[i]) && (tt.model_time<days[i+1])){aVal[n]=vals[i];break;}
+        }
+      }
+      else { //interpolate 
+        double lastday=days[0]; //assumes that first day also covers any initial days 
+        double nextday=days[0];
+        double lastval=vals[0];
+        double nextval=vals[0];
+        for(int i=0;i<nEvents-1;i++) {
+          if ((tt.model_time>=days[i]) && (tt.model_time<days[i+1])){
+            lastval=vals[i];  lastday=days[i];
+            nextval=vals[i+1];nextday=days[i+1];
+          }
+        }
+        if (tt.model_time >= days[nEvents - 1]) {
+          lastval=vals[nEvents - 1];  lastday=days[nEvents - 1];
+          nextval=vals[nEvents - 1];  nextday=days[nEvents - 1];;
+        }
+        if ((nextday-lastday)==0){aVal[n]=lastval; }
+        else{
+          aVal[n]=(tt.model_time-lastday)/(nextday-lastday)*(nextval-lastval)+lastval;
+        }
+      }
+    }
+
+    pTimeSeries=new CTimeSeries(name,loc_ID,p->GetFilename(),Options.julian_start_day,Options.julian_start_year,1.0,aVal,nVals,is_pulse);
+    delete[] aVal; aVal=NULL;
+    delete[] days; days=NULL;
+    delete[] vals; vals=NULL;
+
+    p->Tokenize(s,Len);//read closing term (e.g., ":EndData")
+    if(string(s[0]).substr(0,4)!=":End") {
+      ExitGracefully("CTimeSeries: Parse: no :EndData command (or similar :End* command) used with :IrregularPattern command ",BAD_DATA);
     }
     return pTimeSeries;
   }
