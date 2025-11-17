@@ -837,6 +837,30 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     }
   }
   //----------------------------------------------------------------------
+  else if (s.substr(0, 10) == "@assim_on(") //boolean: 1 if assim on, 0 otherwise
+  {
+    string name;
+    string x_in,y_in;
+    size_t is = s.find("@assim_on(");
+    size_t ip = s.find_last_of(")");
+    if (ip == NPOS) {
+      warn="ConvertToExpressionTerm: missing end parentheses in @assim_on expression"+warnstring;
+      ExitGracefully(warn.c_str(), BAD_DATA_WARN);
+      return false;
+    }
+    if (is != NPOS)
+    {
+      x_in = s.substr(is+10,ip-(is+10));
+      long long int ID=s_to_ll(x_in.c_str());
+      if (_pModel->GetSubBasinByID(ID)==NULL){
+        ExitGracefully("ConvertToExpressionTerm: invalid subbasin ID in @assim_on() command",BAD_DATA_WARN);
+        return false;
+      }
+      term->value    =(int)(_pModel->GetSubBasinByID(ID)->UseInFlowAssimilation());
+      term->type     =TERM_CONST;
+    }
+  }
+  //----------------------------------------------------------------------
   else if (GetUnitConversion(s)!=RAV_BLANK_DATA) // named unit conversion
   {
     term->type=TERM_CONST;
