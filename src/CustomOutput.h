@@ -22,7 +22,8 @@ class CModel; //required for compilation
 enum spatial_agg
 {
   BY_HRU,        ///< Aggregate by HRU
-  BY_BASIN,      ///< Aggregate by drainage basin
+  BY_BASIN,      ///< Aggregate by subbasin
+  BY_DRAINAGE,   ///< Aggregate by full drainage basin upstream of subbasin outlet
   BY_WSHED,      ///< Aggregate by watershed
   BY_HRU_GROUP,  ///< Aggregate by HRU group
   BY_SB_GROUP,   ///< Aggregate by SubBasin group

@@ -14,6 +14,7 @@
 class CReservoir;
 class CDemand;
 class CChannelXSect;  // defined in ChannelXSect.h
+class CSubbasinGroup;
 enum res_constraint;
 
 ///////////////////////////////////////////////////////////////////
@@ -100,6 +101,8 @@ private:/*------------------------------------------------------*/
   double            _flush_fract;      ///< fraction of water flushed from source compartment in basin [0..1] (:Flush with BY_SUBBASIN)
 
   int               _nSegments;        ///< Number of river segments used in routing( >=1)
+
+  CSubbasinGroup   *_pUpstreamGroup;   ///< pointer to subbasin group upstream of this subbasin (including this basin)
 
   //Reservoir
   CReservoir      *_pReservoir;   ///< Reservoir object (or NULL, if no reservoir)
@@ -236,6 +239,8 @@ public:/*-------------------------------------------------------*/
   int             GetInflowHistorySize     () const;
   int             GetOutflowArraySize      () const;
   int             GetNumDiversions         () const;
+
+  CSubbasinGroup *GetUpstreamGroup         () const;
 
   double          GetOutflowRate           () const;                   //[m3/s] from final reach segment OR reservoir, point in time
   double          GetChannelOutflowRate    () const;                   //[m3/s] from final reach segment (NOT reservoir), point in time, BEFORE diversions included

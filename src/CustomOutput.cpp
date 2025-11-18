@@ -173,6 +173,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   {
   case BY_HRU:                    _spaceAggStr="ByHRU"; break;
   case BY_BASIN:                  _spaceAggStr="BySubbasin"; break;
+  case BY_DRAINAGE:               _spaceAggStr="ByDrainageArea"; break;
   case BY_WSHED:                  _spaceAggStr="ByWatershed"; break;
   case BY_HRU_GROUP:              _spaceAggStr="ByHRUGroup"; break;
   case BY_SB_GROUP:               _spaceAggStr="BySubbasinGroup"; break;
@@ -214,6 +215,7 @@ void CCustomOutput::InitializeCustomOutput(const optStruct &Options)
 // figure out how much space we need
   if      (_spaceAgg==BY_HRU        ){_nData=pModel->GetNumHRUs();}
   else if (_spaceAgg==BY_BASIN      ){_nData=pModel->GetNumSubBasins();}
+  else if (_spaceAgg==BY_DRAINAGE   ){_nData=pModel->GetNumSubBasins();}
   else if (_spaceAgg==BY_WSHED      ){_nData=1;}
   else if (_spaceAgg==BY_HRU_GROUP  ){_nData=pModel->GetNumHRUGroups();}
   else if (_spaceAgg==BY_SB_GROUP   ){_nData=pModel->GetNumSubBasinGroups(); }
@@ -335,6 +337,7 @@ void CCustomOutput::WriteCSVFileHeader(void)
 
   if      (_spaceAgg==BY_HRU        ){_CUSTOM<<"HRU:,";}
   else if (_spaceAgg==BY_BASIN      ){_CUSTOM<<"SubBasin:,";}
+  else if (_spaceAgg==BY_DRAINAGE   ){_CUSTOM<<"SubBasin:,";}
   else if (_spaceAgg==BY_WSHED      ){_CUSTOM<<"Watershed:,";}
   else if (_spaceAgg==BY_HRU_GROUP  ){_CUSTOM<<"HRUGroup:,";}
   else if (_spaceAgg==BY_SB_GROUP   ){_CUSTOM<<"SubbasinGroup:,";}
@@ -349,6 +352,7 @@ void CCustomOutput::WriteCSVFileHeader(void)
     else if (_spaceAgg==BY_SB_GROUP   ){TMP<<pModel->GetSubBasinGroup(k)->GetName()<<ends;}
     else if (_spaceAgg==BY_WSHED      ){TMP<<"Watershed"                      <<ends;}
     else if (_spaceAgg==BY_BASIN      ){TMP<<pModel->GetSubBasin(k)->GetID()  <<ends;}
+    else if (_spaceAgg==BY_DRAINAGE   ){TMP<<pModel->GetSubBasin(k)->GetID()  <<ends;}
     else if (_spaceAgg==BY_SELECT_HRUS){TMP<<pModel->GetHRUGroup(_kk_only)->GetHRU(k)->GetHRUID()<<ends;}
 
     title=TMP.str();
@@ -458,6 +462,7 @@ void CCustomOutput::WriteEnSimFileHeader(const optStruct &Options)
     case BY_SB_GROUP:               curSpaceIdentifier<<"SubbasinGroup_" <<pModel->GetSubBasinGroup(k)->GetName()<<ends; break;
     case BY_WSHED:                  curSpaceIdentifier<<"Watershed_"     <<"Watershed"                      <<ends; break;
     case BY_BASIN:                  curSpaceIdentifier<<"SubBasin_"      <<pModel->GetSubBasin(k)->GetID()  <<ends; break;
+    case BY_DRAINAGE:               curSpaceIdentifier<<"SubBasin_"      <<pModel->GetSubBasin(k)->GetID()  <<ends; break;
     case BY_SELECT_HRUS:            curSpaceIdentifier<<"HRU_"           <<pModel->GetHRUGroup(_kk_only)->GetHRU(k)->GetHRUID()  <<ends; break;
     }
     string title=curSpaceIdentifier.str();
@@ -583,6 +588,7 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
     string long_name="ID of HRU";
     if      (_spaceAgg==BY_HRU        ){group_name="HRU_ID";        long_name="ID of HRU";}
     else if (_spaceAgg==BY_BASIN      ){group_name="SBID";          long_name="ID of subbasin";}
+    else if (_spaceAgg==BY_DRAINAGE   ){group_name="SBID";          long_name="ID of subbasin"; }
     else if (_spaceAgg==BY_WSHED      ){group_name="Watershed";     long_name="entire watershed";}
     else if (_spaceAgg==BY_HRU_GROUP  ){group_name="HRUGroup";      long_name="HRU group name";}
     else if (_spaceAgg==BY_SB_GROUP   ){group_name="SubbasinGroup"; long_name="Subbasin group name";}
@@ -637,6 +643,7 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
     else if (_spaceAgg==BY_SB_GROUP   ){TMP<<pModel->GetSubBasinGroup(k)->GetName()<<ends;}
     else if (_spaceAgg==BY_WSHED      ){TMP<<"Watershed"                           <<ends;}
     else if (_spaceAgg==BY_BASIN      ){TMP<<pModel->GetSubBasin(k)->GetID()       <<ends;}
+    else if (_spaceAgg==BY_DRAINAGE   ){TMP<<pModel->GetSubBasin(k)->GetID()       <<ends;}
     else if (_spaceAgg==BY_SELECT_HRUS){TMP<<pModel->GetHRUGroup(_kk_only)->GetHRU(k)->GetHRUID()<<ends;}
     temp=TMP.str();
     strcpy(group_name[0],temp.c_str());
@@ -826,6 +833,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
     if (is_concentration){
       if      (_spaceAgg==BY_HRU        ) { val=pModel->GetTransportModel()->GetConcentration(k,_svind);}
       else if (_spaceAgg==BY_BASIN      ) { val=pModel->GetSubBasin     (k)->GetAvgConcentration(_svind); }
+      else if (_spaceAgg==BY_DRAINAGE   ) { val=pModel->GetSubBasin     (k)->GetUpstreamGroup()->GetAvgConcentration(_svind);}
       else if (_spaceAgg==BY_WSHED      ) { val=pModel->                     GetAvgConcentration(_svind); }
       else if (_spaceAgg==BY_HRU_GROUP  ) { val=pModel->GetHRUGroup     (k)->GetAvgConcentration(_svind); }
       else if (_spaceAgg==BY_SB_GROUP   ) { val=pModel->GetSubBasinGroup(k)->GetAvgConcentration(_svind); }
@@ -834,6 +842,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
     else if (_var==VAR_STATE_VAR){
       if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit     (k)->GetStateVarValue(_svind);}
       else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin      (k)->GetAvgStateVar  (_svind);}
+      else if (_spaceAgg==BY_DRAINAGE   ){val=pModel->GetSubBasin      (k)->GetUpstreamGroup()->GetAvgStateVar(_svind);}
       else if (_spaceAgg==BY_WSHED      ){val=pModel->                      GetAvgStateVar  (_svind);}
       else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup      (k)->GetAvgStateVar  (_svind);}
       else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetAvgStateVar  (_svind);}
@@ -842,6 +851,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
     else if (_var==VAR_FORCING_FUNCTION){
       if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit     (k)->GetForcing   (_ftype);}
       else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin      (k)->GetAvgForcing(_ftype);}
+      else if (_spaceAgg==BY_DRAINAGE   ){val=pModel->GetSubBasin      (k)->GetUpstreamGroup()->GetAvgForcing(_ftype);}
       else if (_spaceAgg==BY_WSHED      ){val=pModel->                      GetAvgForcing(_ftype);}
       else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup      (k)->GetAvgForcing(_ftype);}
       else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetAvgForcing(_ftype);}
@@ -850,6 +860,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
     else if (_var == VAR_TO_FLUX){
       if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit     (k)->GetCumulFlux   (_svind,true);}
       else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin      (k)->GetAvgCumulFlux(_svind,true);}
+      else if (_spaceAgg==BY_DRAINAGE   ){val=pModel->GetSubBasin      (k)->GetUpstreamGroup()->GetAvgCumulFlux(_svind,true);}
       else if (_spaceAgg==BY_WSHED      ){val=pModel->                      GetAvgCumulFlux(_svind,true);}
       else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup      (k)->GetAvgCumulFlux(_svind,true);}
       else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetAvgCumulFlux(_svind,true);}
@@ -858,6 +869,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
     else if (_var == VAR_FROM_FLUX){
       if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit     (k)->GetCumulFlux   (_svind,false);}
       else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin      (k)->GetAvgCumulFlux(_svind,false);}
+      else if (_spaceAgg==BY_DRAINAGE   ){val=pModel->GetSubBasin      (k)->GetUpstreamGroup()->GetAvgCumulFlux(_svind,false); }
       else if (_spaceAgg==BY_WSHED      ){val=pModel->                      GetAvgCumulFlux(_svind,false);}
       else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup      (k)->GetAvgCumulFlux(_svind,false);}
       else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetAvgCumulFlux(_svind,false);}
@@ -866,6 +878,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
     else if (_var == VAR_BETWEEN_FLUX){
       if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit     (k)->GetCumulFluxBet   (_svind,_svind2);}
       else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin      (k)->GetAvgCumulFluxBet(_svind,_svind2);}
+      else if (_spaceAgg==BY_DRAINAGE   ){val=pModel->GetSubBasin      (k)->GetUpstreamGroup()->GetAvgCumulFluxBet(_svind,_svind2); }
       else if (_spaceAgg==BY_WSHED      ){val=pModel->                      GetAvgCumulFluxBet(_svind,_svind2);}
       else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup      (k)->GetAvgCumulFluxBet(_svind,_svind2);}
       else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetAvgCumulFluxBet(_svind,_svind2);}
@@ -1180,6 +1193,7 @@ CCustomOutput *CCustomOutput::ParseCustomOutputCommand(char *s[MAXINPUTITEMS], c
   if      (!strcmp(s[4],"BY_HRU"          )){sa=BY_HRU;      }
   else if (!strcmp(s[4],"BY_BASIN"        )){sa=BY_BASIN;    }
   else if (!strcmp(s[4],"BY_SUBBASIN"     )){sa=BY_BASIN;    }
+  else if (!strcmp(s[4],"BY_DRAINAGE_AREA")){sa=BY_DRAINAGE; }
   else if (!strcmp(s[4],"ENTIRE_WATERSHED")){sa=BY_WSHED;    }
   else if (!strcmp(s[4],"BY_WATERSHED"    )){sa=BY_WSHED;    }
   else if (!strcmp(s[4],"BY_HRU_GROUP"    )){sa=BY_HRU_GROUP;}
