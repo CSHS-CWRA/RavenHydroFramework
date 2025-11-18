@@ -880,6 +880,10 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
         ExitGracefully("ConvertToExpressionTerm: invalid subbasin ID in @stage_assim_on() command",BAD_DATA_WARN);
         return false;
       }
+      if(_pModel->GetSubBasinByID(ID)->GetReservoir()==NULL) {
+        ExitGracefully("ConvertToExpressionTerm: invalid subbasin ID in @stage_assim_on() command - subbasin must have reservoir",BAD_DATA_WARN);
+        return false;
+      }
       term->type     =TERM_CONST;
       term->value    =(int)((_pModel->GetSubBasinByID(ID)->GetReservoir()->UseInStageAssimilation()) && (Options.assimilate_stage));
     }
