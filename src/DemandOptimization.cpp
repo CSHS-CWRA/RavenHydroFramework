@@ -903,7 +903,7 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
   //------------------------------------------------------------------
   for (int i = 0; i < _nNonLinVars; i++) {
     expressionTerm* term=new expressionTerm();
-    if (ConvertToExpressionTerm(_pNonLinVars[i]->target, term, 0, "internal")) {
+    if (ConvertToExpressionTerm(_pNonLinVars[i]->target, term, 0, "internal", Options)) {
       _pNonLinVars[i]->DV_index=term->DV_ind-1; //using 0 indexing for dv rather than lp 1 indexing
     }
     else {
@@ -1064,7 +1064,7 @@ void CDemandOptimizer::AddReservoirConstraints(const optStruct &Options)
       {
         expString=":Expression !h" + SBIDs+ " < @ts(" + TSname + ",0)";
         TokenizeString(expString, s, Len);
-        exp = ParseExpression((const char**)(s), Len, 0, "internal");
+        exp = ParseExpression((const char**)(s), Len, 0, "internal",Options);
         pGoal=new managementGoal();
         pGoal->name=TSname;
         pGoal->is_goal=true;
@@ -1093,7 +1093,7 @@ void CDemandOptimizer::AddReservoirConstraints(const optStruct &Options)
         }
 
         TokenizeString(expString, s, Len);
-        exp = ParseExpression((const char**)(s), Len, 0, "internal");
+        exp = ParseExpression((const char**)(s), Len, 0, "internal",Options);
 
         pGoal=new managementGoal();
         pGoal->name=TSname;
@@ -1108,7 +1108,7 @@ void CDemandOptimizer::AddReservoirConstraints(const optStruct &Options)
 
         expString = ":Condition !h" + SBIDs + "[-1] < @ts(" + TSname + ",0)";
         TokenizeString(expString, s, Len);
-        pCond->pExp=ParseExpression((const char**)(s), Len, 0, "internal");
+        pCond->pExp=ParseExpression((const char**)(s), Len, 0, "internal",Options);
         pGoal->AddOpCondition(pCond);
 
         if (GetDebugLevel()>=1){
@@ -1127,7 +1127,7 @@ void CDemandOptimizer::AddReservoirConstraints(const optStruct &Options)
       {
         expString=":Expression !Q" + SBIDs+ " > @ts(" + TSname + ",0)";
         TokenizeString(expString, s, Len);
-        exp = ParseExpression((const char**)(s), Len, 0, "internal");
+        exp = ParseExpression((const char**)(s), Len, 0, "internal",Options);
 
         pGoal=new managementGoal();
         pGoal->name=TSname;
@@ -1148,7 +1148,7 @@ void CDemandOptimizer::AddReservoirConstraints(const optStruct &Options)
       {
         expString = ":Expression !Q" + SBIDs + " < @ts(" + TSname + ",0)";
         TokenizeString(expString, s, Len);
-        exp = ParseExpression((const char**)(s), Len, 0, "internal");
+        exp = ParseExpression((const char**)(s), Len, 0, "internal",Options);
 
         pGoal=new managementGoal();
         pGoal->name=TSname;
@@ -1169,7 +1169,7 @@ void CDemandOptimizer::AddReservoirConstraints(const optStruct &Options)
       {
         expString=":Expression !Q" + SBIDs+ " = @ts(" + TSname + ",0)";
         TokenizeString(expString, s, Len);
-        exp = ParseExpression((const char**)(s), Len, 0, "internal");
+        exp = ParseExpression((const char**)(s), Len, 0, "internal",Options);
 
         pGoal=new managementGoal();
         pGoal->name=TSname;
@@ -1191,7 +1191,7 @@ void CDemandOptimizer::AddReservoirConstraints(const optStruct &Options)
         expString = ":Expression !Q" + SBIDs + " < @ts(" + TSname + ",0) * 86400 +!Q"+SBIDs+"[-1]"; //TBD - check if this is !Q[0] or !Q[-1]
         //expString = "!q" + SBIDs + " < @ts(" + TSname + ",0)";
         TokenizeString(expString, s, Len);
-        exp = ParseExpression((const char**)(s), Len, 0, "internal");
+        exp = ParseExpression((const char**)(s), Len, 0, "internal",Options);
 
         pGoal=new managementGoal();
         pGoal->name=TSname;
@@ -1213,7 +1213,7 @@ void CDemandOptimizer::AddReservoirConstraints(const optStruct &Options)
         expString = ":Expression !Q" + SBIDs + " > @ts(" + TSname + ",0) * -86400 +!Q"+SBIDs+"[-1]"; //TBD - check if this is !Q[0] or !Q[-1]
         //expString = "!q" + SBIDs + " < @ts(" + TSname + ",0)";
         TokenizeString(expString, s, Len);
-        exp = ParseExpression((const char**)(s), Len, 0, "internal");
+        exp = ParseExpression((const char**)(s), Len, 0, "internal",Options);
 
         pGoal=new managementGoal();
         pGoal->name=TSname;
@@ -1234,7 +1234,7 @@ void CDemandOptimizer::AddReservoirConstraints(const optStruct &Options)
       {
         expString=":Expression !h" + SBIDs+ " = @ts(" + TSname + ",0)";
         TokenizeString(expString, s, Len);
-        exp = ParseExpression((const char**)(s), Len, 0, "internal");
+        exp = ParseExpression((const char**)(s), Len, 0, "internal",Options);
 
         pGoal=new managementGoal();
         pGoal->name=TSname;

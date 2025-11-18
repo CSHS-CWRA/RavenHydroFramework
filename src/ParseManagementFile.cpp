@@ -393,7 +393,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       decision_var     *pDV = new decision_var(s[1],DOESNT_EXIST,DV_USER,pDO->GetNumUserDVs());
 
       pDO->AddUserDecisionVar(pDV);
-      pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
+      pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename(),Options);
 
       if (pDO->GetDebugLevel()>=1){
         SummarizeExpression((const char**)(s),Len,pExp);
@@ -494,7 +494,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
             ExitGracefully("ParseManagementFile: only one :Expression allowed in each :OperatingRegime command block (or only one if no :OperatingRegime blocks used).",BAD_DATA_WARN);
             break;
           }
-          pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
+          pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename(),Options);
           if (pExp!=NULL){
             pGoal->AddExpression(pExp);
           }
@@ -536,7 +536,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
             ExitGracefully("ParseManagementFile: :Condition statement must appear after valid :Expression in :ManagementConstraint command",BAD_DATA_WARN);
           }
           exp_condition *pCond;
-          pCond=pDO->ParseCondition((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
+          pCond=pDO->ParseCondition((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename(),Options);
           pGoal->AddOpCondition(pCond);
         }
         //----------------------------------------------
@@ -650,7 +650,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         pDO->AddWorkflowVariable(pWV);
       }
 
-      pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
+      pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename(),Options);
 
       if (pExp!=NULL){
         pWV->AddExpression(pExp);
@@ -736,7 +736,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
             ExitGracefully("ParseManagementFile: only one :Expression allowed in each :OperatingRegime command block (or only one if no :OperatingRegime blocks used).",BAD_DATA_WARN);
             break;
           }
-          pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
+          pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename(),Options);
           if (pExp!=NULL){
             pWV->AddExpression(pExp);
           }
@@ -755,7 +755,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
 
           exp_condition *pCond;
           if (pWV!=NULL){
-            pCond=pDO->ParseCondition((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
+            pCond=pDO->ParseCondition((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename(),Options);
             if (pCond != NULL) {
               pWV->AddOpCondition(pCond);
             }
@@ -1199,7 +1199,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       else {
         expressionStruct *pExp;
 
-        pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
+        pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename(),Options);
 
         if (pDO->GetDebugLevel()>=1){
           SummarizeExpression((const char**)(s),Len,pExp);
@@ -1245,7 +1245,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       else {
         expressionStruct *pExp;
 
-        pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
+        pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename(),Options);
 
         if (pDO->GetDebugLevel()>=1){
           SummarizeExpression((const char**)(s),Len,pExp);

@@ -276,7 +276,7 @@ private: /*------------------------------------------------------*/
   //Called during simualtion
   void         UpdateHistoryArrays();
   void     UpdateWorkflowVariables(const time_struct &tt,const optStruct &Options);
-  bool     ConvertToExpressionTerm(const string s, expressionTerm* term, const int lineno, const string filename)  const;
+  bool     ConvertToExpressionTerm(const string s, expressionTerm* term, const int lineno, const string filename, const optStruct &Options)  const;
   int               GetDVColumnInd(const dv_type typ, const int counter) const;
   double              EvaluateTerm(expressionTerm **pTerms,const int k, const double &t) const;
   bool        EvaluateConditionExp(const expressionStruct* pE,const double &t) const;
@@ -348,8 +348,8 @@ public: /*------------------------------------------------------*/
 
   double     EvaluateExpression(const expressionStruct* pE,const double &t,bool RHS_only) const;
 
-  expressionStruct *ParseExpression(const char **s, const int Len, const int lineno, const string filename) const;
-  exp_condition    *ParseCondition (const char **s, const int Len, const int lineno, const string filename) const;
+  expressionStruct *ParseExpression(const char **s, const int Len, const int lineno, const string filename, const optStruct &Options) const;
+  exp_condition    *ParseCondition (const char **s, const int Len, const int lineno, const string filename, const optStruct &Options) const;
 
   void   Initialize            (CModel *pModel, const optStruct &Options);
   void   InitializePostRVMRead (CModel *pModel, const optStruct &Options);

@@ -331,7 +331,7 @@ string expTypeToString(termtype &typ){
 /// \returns expression term, false if entire expression should be ignored
 /// only called during parse of expression term by ParseExpression() - no need to optimize
 //
-bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* term, const int lineno, const string filename)  const
+bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* term, const int lineno, const string filename, const optStruct &Options)  const
 {
   size_t NPOS=std::string::npos;
   bool   has_brackets=false;
@@ -837,27 +837,51 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     }
   }
   //----------------------------------------------------------------------
-  else if (s.substr(0, 10) == "@assim_on(") //boolean: 1 if assim on, 0 otherwise
+  else if (s.substr(0, 15) == "@flow_assim_on(") //boolean: 1 if assim on, 0 otherwise
   {
     string name;
     string x_in,y_in;
-    size_t is = s.find("@assim_on(");
+    size_t is = s.find("@flow_assim_on(");
     size_t ip = s.find_last_of(")");
     if (ip == NPOS) {
-      warn="ConvertToExpressionTerm: missing end parentheses in @assim_on expression"+warnstring;
+      warn="ConvertToExpressionTerm: missing end parentheses in @flow_assim_on expression"+warnstring;
       ExitGracefully(warn.c_str(), BAD_DATA_WARN);
       return false;
     }
     if (is != NPOS)
     {
-      x_in = s.substr(is+10,ip-(is+10));
+      x_in = s.substr(is+15,ip-(is+15));
       long long int ID=s_to_ll(x_in.c_str());
       if (_pModel->GetSubBasinByID(ID)==NULL){
-        ExitGracefully("ConvertToExpressionTerm: invalid subbasin ID in @assim_on() command",BAD_DATA_WARN);
+        ExitGracefully("ConvertToExpressionTerm: invalid subbasin ID in @flow_assim_on() command",BAD_DATA_WARN);
         return false;
       }
-      term->value    =(int)(_pModel->GetSubBasinByID(ID)->UseInFlowAssimilation());
       term->type     =TERM_CONST;
+      term->value    =(int)((_pModel->GetSubBasinByID(ID)->UseInFlowAssimilation()) && (Options.assimilate_flow));
+    }
+  }
+  //----------------------------------------------------------------------
+  else if (s.substr(0, 16) == "@stage_assim_on(") //boolean: 1 if assim on, 0 otherwise
+  {
+    string name;
+    string x_in,y_in;
+    size_t is = s.find("@stage_assim_on(");
+    size_t ip = s.find_last_of(")");
+    if (ip == NPOS) {
+      warn="ConvertToExpressionTerm: missing end parentheses in @stage_assim_on expression"+warnstring;
+      ExitGracefully(warn.c_str(), BAD_DATA_WARN);
+      return false;
+    }
+    if (is != NPOS)
+    {
+      x_in = s.substr(is+16,ip-(is+16));
+      long long int ID=s_to_ll(x_in.c_str());
+      if (_pModel->GetSubBasinByID(ID)==NULL){
+        ExitGracefully("ConvertToExpressionTerm: invalid subbasin ID in @stage_assim_on() command",BAD_DATA_WARN);
+        return false;
+      }
+      term->type     =TERM_CONST;
+      term->value    =(int)((_pModel->GetSubBasinByID(ID)->GetReservoir()->UseInStageAssimilation()) && (Options.assimilate_stage));
     }
   }
   //----------------------------------------------------------------------
@@ -911,7 +935,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
 expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
                                                     const int    Len,
                                                     const int    lineno,
-                                                    const string filename) const
+                                                    const string filename, const optStruct &Options) const
 {
   int rhs_ind=-1;
   exptype          type       [MAX_EXP_GROUPS];
@@ -973,7 +997,7 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
     {
       terms[j][k] = new expressionTerm();
       terms[j][k]->mult=1.0;
-      valid=ConvertToExpressionTerm(to_string(s[i]),terms[j][k],lineno,filename);
+      valid=ConvertToExpressionTerm(to_string(s[i]),terms[j][k],lineno,filename,Options);
       if (!valid){return NULL; }
 
       //TMP DEBUG
@@ -999,7 +1023,7 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
         terms[j][k+1] = new expressionTerm();
         terms[j][k+1]->mult=1.0;
         terms[j][k+1]->is_nested=true;
-        valid=ConvertToExpressionTerm(terms[j][k]->nested_exp1,terms[j][k+1],lineno, filename);
+        valid=ConvertToExpressionTerm(terms[j][k]->nested_exp1,terms[j][k+1],lineno, filename,Options);
         if (!valid){return NULL;}
 
         if (terms[j][k + 1]->type == TERM_DV) {
@@ -1014,7 +1038,7 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
           terms[j][k+2] = new expressionTerm();
           terms[j][k+2]->mult=1.0;
           terms[j][k+2]->is_nested=true;
-          valid=ConvertToExpressionTerm(terms[j][k]->nested_exp2, terms[j][k + 2],lineno, filename);
+          valid=ConvertToExpressionTerm(terms[j][k]->nested_exp2, terms[j][k + 2],lineno, filename,Options);
           if (!valid){return NULL;}
 
           if (terms[j][k + 2]->type == TERM_DV) {
@@ -1084,12 +1108,11 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
 /// :Condition DAY_OF_YEAR IS_BETWEEN Apr-1 Aug-1 //\todo [NOT YET SUPPORTED]
 /// :Condition @is_between(DAY_OF_YEAR,300,20) = 1  // \todo [NOT YET SUPPORTED]
 //
-exp_condition* CDemandOptimizer::ParseCondition(const char** s, const int Len, const int lineno, const string filename) const
+exp_condition* CDemandOptimizer::ParseCondition(const char** s, const int Len, const int lineno, const string filename, const optStruct &Options) const
 {
   bool badcond=false;
   exp_condition *pCond = new exp_condition();
   pCond->dv_name=s[1];
-  const optStruct *Options=_pModel->GetOptStruct();
 
   bool is_exp=false;
   for (int i = 2; i < Len; i++) {
@@ -1098,7 +1121,7 @@ exp_condition* CDemandOptimizer::ParseCondition(const char** s, const int Len, c
     }
   }
   if (is_exp) {
-    pCond->pExp=this->ParseExpression((const char**)(s),Len,lineno,filename);
+    pCond->pExp=this->ParseExpression((const char**)(s),Len,lineno,filename,Options);
     return pCond;
   }
   else
@@ -1134,7 +1157,7 @@ exp_condition* CDemandOptimizer::ParseCondition(const char** s, const int Len, c
           ExitGracefully("ParseManagementFile: Subbasin ID in :Condition statement is invalid.",BAD_DATA_WARN);
         }
         else if (!_pModel->GetSubBasinByID(SBID)->IsEnabled()) {
-          WriteWarning("ParseManagementFile: Subbasin in :Condition statement is disabled in this model configuration. Conditional will be assumed true.",Options->noisy);
+          WriteWarning("ParseManagementFile: Subbasin in :Condition statement is disabled in this model configuration. Conditional will be assumed true.",Options.noisy);
           badcond=true;
         }
         else if ((code == 'h') || (code == 'I')) {
@@ -1147,7 +1170,7 @@ exp_condition* CDemandOptimizer::ParseCondition(const char** s, const int Len, c
       else { //demand variable
         int d=this->GetDemandIndexFromName(tmp2);
         if (d == DOESNT_EXIST) {
-          WriteWarning("ParseManagementFile: !D or !C used in :Condition statement has invalid or disabled demand ID. Conditional will be assumed true.",Options->noisy);
+          WriteWarning("ParseManagementFile: !D or !C used in :Condition statement has invalid or disabled demand ID. Conditional will be assumed true.",Options.noisy);
           badcond=true;
         }
       }
