@@ -1356,6 +1356,7 @@ HRU_type StringToHRUType(const string s)
   else if (!s.compare("ROCK"    )){return HRU_ROCK;}
   else if (!s.compare("PAVEMENT")){return HRU_ROCK; }
   else if (!s.compare("WETLAND" )){return HRU_WETLAND;}
+  else if (!s.compare("MASKED_GLACIER" )){return HRU_MASKED_GLACIER;}
   else if (!s.compare("STANDARD")){return HRU_STANDARD;}
 
 #ifdef _STRICTCHECK_

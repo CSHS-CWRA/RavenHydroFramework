@@ -733,7 +733,7 @@ double  CHydroUnit::GetTotalAlbedo(const bool subcanopy) const
       double soil_sat=max(min(_aStateVar[iTopSoil]/GetSoilCapacity(0),1.0),0.0);
       land_albedo =(soil_sat    )*_pSoil[0]->albedo_wet    +(1.0-soil_sat    )*_pSoil[0]->albedo_dry;
     }
-    else if (_HRUType==HRU_GLACIER){
+    else if ((_HRUType==HRU_GLACIER) || (_HRUType==HRU_MASKED_GLACIER)){
       land_albedo=0.4;//GLACIER_ALBEDO;
     }
     else if (_HRUType==HRU_LAKE){

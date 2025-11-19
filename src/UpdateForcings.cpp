@@ -612,6 +612,11 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       }
       CorrectPET(Options,F,_pHydroUnits[k],elev,ref_elev_temp,k);
 
+      if(_pHydroUnits[k]->GetHRUType() == HRU_MASKED_GLACIER) { // disable all ET from masked portion
+        F.PET    = 0.0;
+        F.OW_PET = 0.0;
+      }
+
       //-------------------------------------------------------------------
       // Irrigation
       //-------------------------------------------------------------------

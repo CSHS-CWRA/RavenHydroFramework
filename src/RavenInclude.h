@@ -598,6 +598,7 @@ enum HRU_type
   HRU_WATER,                ///< Non-lake Waterbody HRU (streams)
   HRU_GLACIER,              ///< Glacier HRU
   HRU_WETLAND,              ///< Wetland HRU
+  HRU_MASKED_GLACIER,       ///< masked glacier in coupled model 
   HRU_ROCK,                 ///< Open Rock or Pavement (impermeable) HRUs
   HRU_INVALID_TYPE          ///< returned if type is invalid
 };
