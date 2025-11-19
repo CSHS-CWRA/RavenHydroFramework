@@ -89,24 +89,27 @@ managementGoal::~managementGoal()
 void managementGoal::AddOperatingRegime(op_regime* pOR, bool first)
 {
   if ((nOperRegimes==1) && (first)){
+    if (pOR==NULL){
+      ExitGracefully("managementGoal::AddOperatingRegime: adding NULL operating regime",BAD_DATA);
+    }
     pOperRegimes[0]->reg_name=pOR->reg_name;
   }
   else{
     if(!DynArrayAppend((void**&)(pOperRegimes),(void*)(pOR),nOperRegimes)) {
-      ExitGracefully("managementGoal::AddOperatingRegime: adding NULL operating regime",BAD_DATA_WARN);
+      ExitGracefully("managementGoal::AddOperatingRegime: adding NULL operating regime (2)",BAD_DATA);
     }
   }
 }
 void managementGoal::AddOpCondition(exp_condition* pCond)
 {
   if(!DynArrayAppend((void**&)(pOperRegimes[nOperRegimes-1]->pConditions),(void*)(pCond),pOperRegimes[nOperRegimes-1]->nConditions)) {
-    ExitGracefully("managementGoal::AddOpCondition: adding NULL condition",BAD_DATA_WARN);
+    ExitGracefully("managementGoal::AddOpCondition: adding NULL condition",BAD_DATA);
   }
 }
 void managementGoal::AddExpression(expressionStruct* pExp)
 {
   pOperRegimes[nOperRegimes-1]->pExpression=pExp;
-  ExitGracefullyIf(pExp==NULL,"managementGoal::AddExpression: NULL Expression",RUNTIME_ERR);
+  ExitGracefullyIf(pExp==NULL,"managementGoal::AddExpression: NULL Expression",BAD_DATA);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1126,6 +1129,7 @@ exp_condition* CDemandOptimizer::ParseCondition(const char** s, const int Len, c
   }
   if (is_exp) {
     pCond->pExp=this->ParseExpression((const char**)(s),Len,lineno,filename,Options);
+    if (pCond->pExp==NULL){return NULL;}//bad expression 
     return pCond;
   }
   else

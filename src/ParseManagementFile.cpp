@@ -64,6 +64,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
   CParser    *pMainParser=NULL;      //for storage of main parser while reading secondary files
   ifstream    INPUT3;                //For tertiary input
   CParser    *pSecondaryParser=NULL; //for storage of secondary parser while reading tertiary files
+  int bad_expression=0;
 
   ifstream    RVM;
   RVM.open(Options.rvm_filename.c_str(),ios::binary);
@@ -409,6 +410,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       else {
         string warn ="Invalid expression in :DefineDecisionVariable command at line " + pp->GetLineNumber();
         WriteWarning(warn.c_str(),Options.noisy);
+        bad_expression++;
       }
       break;
     }
@@ -501,6 +503,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           else {
             string warn ="Invalid expression in :Expression command at line " + to_string(pp->GetLineNumber());
             WriteWarning(warn.c_str(),Options.noisy);
+            bad_expression++;
           }
           if (pDO->GetDebugLevel()>=1){
             SummarizeExpression((const char**)(s),Len,pExp);
@@ -523,6 +526,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           else {
             string warn ="Invalid expression in :Expression command at line " + to_string(pp->GetLineNumber());
             WriteWarning(warn.c_str(),Options.noisy);
+            bad_expression++;
           }
           if (pDO->GetDebugLevel()>=1){
             SummarizeExpression((const char**)(s),Len,pExp);
@@ -657,6 +661,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       }
       else{
         string warn ="Invalid expression in :DefineWorkflowVariable command at line " + pp->GetLineNumber();
+        bad_expression++;
         WriteWarning(warn.c_str(),Options.noisy);
         break;
       }
@@ -743,6 +748,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
           else {
             string warn ="Invalid expression in :Expression command at line " + to_string(pp->GetLineNumber());
             WriteWarning(warn.c_str(),Options.noisy);
+            bad_expression++;
           }
           if (pDO->GetDebugLevel()>=1){
             SummarizeExpression((const char**)(s),Len,pExp);
@@ -1211,6 +1217,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         else {
           string warn ="Invalid expression in :ReturnExpression command at line " + pp->GetLineNumber();
           WriteWarning(warn.c_str(),Options.noisy);
+          bad_expression++;
         }
       }
       break;
@@ -1257,6 +1264,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
         else {
           string warn ="Invalid expression in :DemandExpression command at line " + pp->GetLineNumber();
           WriteWarning(warn.c_str(),Options.noisy);
+          bad_expression++;
         }
       }
       break;
@@ -1424,6 +1432,9 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
   } //end while !end_of_file
   RVM.close();
 
+  if (bad_expression>0){
+    ExitGracefully("One or more faulty expressions in the .rvm file must be repaired.",BAD_DATA);
+  }
   pDO->InitializeDemands    (pModel,Options);
   pDO->InitializePostRVMRead(pModel,Options);
 
