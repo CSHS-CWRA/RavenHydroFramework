@@ -1137,7 +1137,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
       bool snow_redist=false;
 
       if(Len < 2) { pp->ImproperFormat(s); break;}
-      if (s[1]=="SNOW_REDISTRIBUTE"){snow_redist=true;}
+      if (!strcmp(s[1],"SNOW_REDISTRIBUTE")){snow_redist=true;}
 
       while (((Len==0) || (strcmp(s[0],":EndLateralConnections"))) && (!end_of_file))
       {
