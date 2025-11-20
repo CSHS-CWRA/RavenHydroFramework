@@ -549,6 +549,13 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //--Orographic corrections-------------------------------------------
       CorrectPrecip(Options,F,elev,ref_elev_precip,k,tt);
 
+#ifdef _STRICTCHECK_
+      if (rvn_isnan(F.precip)){
+        string warn="NaN precip in model HRU "+to_string(_pHydroUnits[k]->GetHRUID())+". Bad forcings? ";
+        ExitGracefully(warn.c_str(),RUNTIME_ERR);
+      }
+#endif
+
       ApplyForcingPerturbation(F_PRECIP  , F, k, Options, tt);
       ApplyForcingPerturbation(F_RAINFALL, F, k, Options, tt);
       ApplyForcingPerturbation(F_SNOWFALL, F, k, Options, tt);

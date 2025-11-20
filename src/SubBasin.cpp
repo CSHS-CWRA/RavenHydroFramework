@@ -2294,6 +2294,12 @@ void CSubBasin::UpdateOutflows   (const double         *aQo,    //[m3/s]
   //------------------------------------------------------
   _QoutLast=_aQout[_nSegments-1];
   for (int seg=0;seg<_nSegments;seg++){
+#ifdef _STRICTCHECK_
+    if (rvn_isnan(aQo[seg])){
+      string warn="NaN results sent to CSubBasin::UpdateOutflows in basin "+to_string(_ID)+". Bad forcings? ";
+      ExitGracefully(warn.c_str(),RUNTIME_ERR);
+    }
+#endif
     _aQout[seg]=aQo[seg];
   }
   double irrQ_act = min(irr_Q, _aQout[_nSegments-1]);

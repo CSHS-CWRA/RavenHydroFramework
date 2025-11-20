@@ -1905,9 +1905,9 @@ double CForcingGrid::GetWeightedAverageSnowFrac(const int k,const double &t,cons
   {
     ic=_CellIDToIdx[_GridWtCellIDs[k][i]];
     wt   = _GridWeight[k][i];
-    snow = GetValue_avg(ic, idx_new, nSteps);
+    snow = max(GetValue_avg(ic, idx_new, nSteps),0.0);
     if(snow>0.0){
-      rain=pRain->GetValue_avg(ic, idx_new, nSteps);
+      rain=max(pRain->GetValue_avg(ic, idx_new, nSteps),0.0);
       sum+= wt * snow/(snow+rain);
     }
   }
