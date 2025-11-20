@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Gauge.h"
 
@@ -260,6 +260,8 @@ CTimeSeries *CGauge::GetTimeSeries(const forcing_type ftype) const
 //
 bool     CGauge::TimeSeriesExists(const forcing_type ftype) const
 {
+  if ((ftype==F_TEMP_MONTH_AVE) && (_aAveTemp[0]!=NOT_SPECIFIED)){return true;}
+  if ((ftype==F_PET_MONTH_AVE ) && (_aAveTemp[0]!=NOT_SPECIFIED)){return true;}
   return (_aTSindex[(int)(ftype)]!=DOESNT_EXIST);
 }
 //////////////////////////////////////////////////////////////////

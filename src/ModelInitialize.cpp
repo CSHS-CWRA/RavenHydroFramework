@@ -175,19 +175,20 @@ void CModel::Initialize(const optStruct &Options)
 
   // Generate Gauge Weights from Interpolation (except if in BMI mode and no RVT file is specified)
   //--------------------------------------------------------------
-  if ((!Options.in_bmi_mode) || (strcmp(Options.rvt_filename.c_str(), "") != 0)) {
-
+  if ((!Options.in_bmi_mode) || (strcmp(Options.rvt_filename.c_str(), "") != 0)) 
+  {
     if (!Options.silent){cout <<"  Generating Gauge Interpolation Weights..."<<endl;}
     forcing_type f_gauge=F_PRECIP;
-    //search for the 'other' forcing
-    if      (Options.air_pressure  ==AIRPRESS_DATA){f_gauge=F_AIR_PRES;}
-    else if (Options.SW_radiation  ==SW_RAD_DATA  ){f_gauge=F_SW_RADIA;}
-    else if (Options.evaporation   ==PET_DATA     ){f_gauge=F_PET; }
-    else if (Options.rel_humidity  ==RELHUM_DATA  ){f_gauge=F_REL_HUMIDITY;}
-    else if (Options.SW_radia_net  ==NETSWRAD_DATA){f_gauge=F_SW_RADIA_NET;}
-    else if (Options.LW_radiation  ==LW_RAD_DATA  ){f_gauge=F_LW_RADIA_NET;}
-    else if (Options.ow_evaporation==PET_DATA     ){f_gauge=F_OW_PET;}
-    else if (Options.wind_velocity ==WINDVEL_DATA ){f_gauge=F_WIND_VEL;}
+    //search for the 'other' forcing- assume all gauges have same data 
+    if      (Options.air_pressure  ==AIRPRESS_DATA  ){f_gauge=F_AIR_PRES;}
+    else if (Options.SW_radiation  ==SW_RAD_DATA    ){f_gauge=F_SW_RADIA;}
+    else if (Options.evaporation   ==PET_DATA       ){f_gauge=F_PET; }
+    else if (Options.rel_humidity  ==RELHUM_DATA    ){f_gauge=F_REL_HUMIDITY;}
+    else if (Options.SW_radia_net  ==NETSWRAD_DATA  ){f_gauge=F_SW_RADIA_NET;}
+    else if (Options.LW_radiation  ==LW_RAD_DATA    ){f_gauge=F_LW_RADIA_NET;}
+    else if (Options.ow_evaporation==PET_DATA       ){f_gauge=F_OW_PET;}
+    else if (Options.wind_velocity ==WINDVEL_DATA   ){f_gauge=F_WIND_VEL;}
+    else if (Options.evaporation   ==PET_FROMMONTHLY){f_gauge=F_TEMP_MONTH_AVE;}
     if (Options.noisy){cout<<"     Gauge weights determined from "<<ForcingToString(f_gauge)<<" gauges"<<endl; }
 
     if(Options.write_interp_wts)
@@ -262,7 +263,6 @@ void CModel::Initialize(const optStruct &Options)
 
   // Initialize NetCDF Output File IDs
   //--------------------------------------------------------------
-  /* initialize all potential NetCDF file IDs with -9 == "not existing and hence not opened" */
   _HYDRO_ncid    = -9;   // output file ID for Hydrographs.nc         (-9 --> not opened)
   _STORAGE_ncid  = -9;   // output file ID for WatershedStorage.nc    (-9 --> not opened)
   _FORCINGS_ncid = -9;   // output file ID for ForcingFunctions.nc    (-9 --> not opened)
@@ -849,7 +849,7 @@ void CModel::GenerateGaugeWeights(double **&aWts, const forcing_type forcing, co
   if (ForcingGridIsAvailable(forcing)){ return; }
   if ((forcing==F_TEMP_AVE) && (ForcingGridIsAvailable(F_TEMP_DAILY_MIN))){return;} //this is also acceptable
   if ((forcing==F_TEMP_AVE) && (ForcingGridIsAvailable(F_TEMP_DAILY_AVE))){return;} //this is also acceptable
-  if ((forcing==F_PRECIP  ) && (ForcingGridIsAvailable(F_RAINFALL))){return;} //this is also acceptable
+  if ((forcing==F_PRECIP  ) && (ForcingGridIsAvailable(F_RAINFALL      ))){return;} //this is also acceptable
 
   string warn="GenerateGaugeWeights: no gauges present with the following data: "+ForcingToString(forcing);
   ExitGracefullyIf(nGaugesWithData==0,warn.c_str(),BAD_DATA_WARN);
@@ -876,7 +876,6 @@ void CModel::GenerateGaugeWeights(double **&aWts, const forcing_type forcing, co
         aWts[k][g]=0.0;
       }
       aWts[k][g_min]=1.0;
-
     }
     break;
   }
