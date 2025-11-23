@@ -54,51 +54,17 @@ CmvLatFlush::~CmvLatFlush(){
 //
 void CmvLatFlush::Initialize()
 {
+  int k,q;
   int nConn;
   int *kFrom(NULL), *kTo(NULL);
-  kFrom=new int[MAX_LAT_CONNECTIONS];
-  kTo = new int[MAX_LAT_CONNECTIONS];
-  ExitGracefullyIf(kTo == NULL, "LatFLush::Initialize (1)",OUT_OF_MEMORY);
 
   CHRUGroup *fromHRUGrp=_pModel->GetHRUGroup(_kk_from);
   CHRUGroup *toHRUGrp  =_pModel->GetHRUGroup(_kk_to);
   _aFrac=NULL;
-  _aFrac=new double [MAX_LAT_CONNECTIONS];
-  ExitGracefullyIf(_aFrac == NULL, "LatFLush::Initialize",OUT_OF_MEMORY);
-  int q=0;
-  int k;
 
+  q=0;
   if(_constrain_to_SBs)
   {
-    //sift through all HRUs
-    /*for (int p = 0; p<_pModel->GetNumSubBasins(); p++)
-    {
-      //find 'to' HRU (only one allowed per SB)
-      int kToSB=DOESNT_EXIST;
-      for(int ks=0; ks<_pModel->GetSubBasin(p)->GetNumHRUs(); ks++)
-      {
-        k=_pModel->GetSubBasin(p)->GetHRU(ks)->GetGlobalIndex();
-
-        if(_pModel->IsInHRUGroup(k,toHRUGrp)) {
-          ExitGracefullyIf(kToSB!=DOESNT_EXIST,
-            "LatFlush::Initialize - only one HRU per subbasin can recieve flush output. More than one recipient HRU found in subbasin ",BAD_DATA_WARN);
-          kToSB=k;
-        }
-      }
-
-      //find 'from' HRUs to make connections
-      for(int ks=0; ks<_pModel->GetSubBasin(p)->GetNumHRUs(); ks++)
-      {
-        k=_pModel->GetSubBasin(p)->GetHRU(ks)->GetGlobalIndex();
-
-        if(_pModel->IsInHRUGroup(k,fromHRUGrp) && (kToSB!=DOESNT_EXIST)) {
-          kFrom[q]=k;
-          kTo[q]=kToSB;
-          q++;
-        }
-      }
-    }*/
-    //Alternate approach: multiple recipient stores
     bool source_sink_issue=false;
     int k1,k2;
     int nRecipients;
@@ -120,10 +86,15 @@ void CmvLatFlush::Initialize()
 
               if (toHRUGrp->IsInGroup(k2))
               {
-                if (k1!=k2){
-                  kFrom[q]=k1;
-                  kTo  [q]=k2;
+                if (k1!=k2)
+                {  
+                  //dynamically allocate memory
+                  int    *tmpT=new int    [q+1]; for (int i=0;i<q;i++){tmpT[i]= kTo  [i];}delete [] kTo;    kTo  =tmpT; ExitGracefullyIf(kTo   == NULL, "LatFLush::Initialize (1a)",OUT_OF_MEMORY);
+                  int    *tmpF=new int    [q+1]; for (int i=0;i<q;i++){tmpF[i]= kFrom[i];}delete [] kFrom;  kFrom=tmpF; ExitGracefullyIf(kFrom == NULL, "LatFLush::Initialize (1b)",OUT_OF_MEMORY);
+                  double *tmpA=new double [q+1]; for (int i=0;i<q;i++){tmpA[i]=_aFrac[i];}delete [] _aFrac;_aFrac=tmpA; ExitGracefullyIf(_aFrac== NULL, "LatFLush::Initialize (1c)",OUT_OF_MEMORY);
                   area=_pModel->GetSubBasin(p)->GetHRU(ks2)->GetArea();
+                  kFrom [q]=k1;
+                  kTo   [q]=k2;                  
                   _aFrac[q]=area;
                   Asum+=area;//sum of recipient areas
                   nRecipients++;
@@ -131,7 +102,6 @@ void CmvLatFlush::Initialize()
                   //cout << "ADDING CONNECTION " << q << " in subbasin "<< _pModel->GetSubBasin(p)->GetName() << ": "
                   //     << _pModel->GetHydroUnit(kFrom[q])->GetHRUID()  << " To " <<_pModel->GetHydroUnit(kTo[q])->GetHRUID() <<" "<<_aFrac[q]<<endl;
                   q++;
-                  ExitGracefullyIf(q>=MAX_LAT_CONNECTIONS,"Number of HRU connections in LateralFlush or LateralDivert exceeds MAX_LAT_CONNECTIONS limit.",BAD_DATA);
                 }
                 else {
                   source_sink_issue=true;//throw warning if source is also sink
@@ -172,8 +142,13 @@ void CmvLatFlush::Initialize()
     for(k=0;k<_pModel->GetNumHRUs();k++)
     {
       if (fromHRUGrp->IsInGroup(k) && (kToSB!=DOESNT_EXIST) && _pModel->GetHydroUnit(k)->IsEnabled()) {
-        kFrom[q]=k;
-        kTo  [q]=kToSB;
+        //dynamically allocate memory
+        int    *tmpT=new int    [q+1]; for (int i=0;i<q;i++){tmpT[i]= kTo  [i];}delete [] kTo;    kTo  =tmpT; ExitGracefullyIf(kTo   == NULL, "LatFLush::Initialize (1a)",OUT_OF_MEMORY);
+        int    *tmpF=new int    [q+1]; for (int i=0;i<q;i++){tmpF[i]= kFrom[i];}delete [] kFrom;  kFrom=tmpF; ExitGracefullyIf(kFrom == NULL, "LatFLush::Initialize (1b)",OUT_OF_MEMORY);
+        double *tmpA=new double [q+1]; for (int i=0;i<q;i++){tmpA[i]=_aFrac[i];}delete [] _aFrac;_aFrac=tmpA; ExitGracefullyIf(_aFrac== NULL, "LatFLush::Initialize (1c)",OUT_OF_MEMORY);
+                  
+        kFrom [q]=k;
+        kTo   [q]=kToSB;
         _aFrac[q]=1.0; //only a single recipient
         q++;
       }

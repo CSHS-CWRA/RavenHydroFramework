@@ -30,7 +30,6 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
   long long   SBID;             //subbasin ID
   CHydroUnit *pHRU;             //temp pointers
   CSubBasin  *pSB;
-  CLatConnect *pLat; 
   bool        ended=false;
   bool        in_ifmode_statement=false;
   bool        is_conduit=false;

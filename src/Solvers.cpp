@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2025 the Raven Development Team
   ----------------------------------------------------------------*/
 
 #include "RavenInclude.h"
@@ -24,10 +24,10 @@ void MassEnergyBalance( CModel            *pModel,
   int nConstituents;                           //
   int iSW, iAtm, iAET, iGW, iRO;               //Surface water, atmospheric precip, used PET, runoff indices
   int iTotalSWE;                               //total SWE index
-
-  int                iFrom          [MAX_LAT_CONNECTIONS]; //arrays used to pass values through GetRatesOfChange routines
-  int                iTo            [MAX_LAT_CONNECTIONS]; //Assumes MAX_LAT_CONNECTIONS>MAX_CONNECTIONS
-  double             rates_of_change[MAX_CONNECTIONS];
+  
+  int maxLatConns=0;
+  int maxConns=0;
+  int maxTotConns=0;
 
   double             tstep;       //[d] timestep
   double             t;           //[d] model time
@@ -52,9 +52,13 @@ void MassEnergyBalance( CModel            *pModel,
 
   static double    **rate_guess;  //need to set first array to nProcesses
 
-  static int        *kFrom;
-  static int        *kTo;
-  static double     *exchange_rates=NULL;
+  static int        *iFrom=NULL;          //arrays used to pass values through GetRatesOfChange routines [size maxTotConns]
+  static int        *iTo=NULL;           
+  static double     *rates_of_change=NULL;
+
+  static int        *kFrom=NULL;
+  static int        *kTo=NULL;
+  static double     *lat_exchange_rates=NULL;
 
   //local shorthand for often-used variables
   NS           =pModel->GetNumStateVars();
@@ -107,30 +111,44 @@ void MassEnergyBalance( CModel            *pModel,
       }
     }
 
+    int nLatConn,nConn;
+    for (int j=0;j<nProcesses;j++){
+      nConn      =pModel->GetProcess(j)->GetNumConnections();
+      maxConns   =max(nConn,maxConns);
+      nLatConn   =pModel->GetProcess(j)->GetNumLatConnections();
+      maxLatConns=max(nLatConn,maxLatConns);
+    }
+    maxTotConns=max(maxLatConns,maxConns);
+    
     if(Options.sol_method==ITERATED_HEUN)
     {
       rate_guess = new double *[nProcesses];    //need to set first array to numProcesses
       for (j=0;j<nProcesses;j++){
-        rate_guess[j]=new double [NS*NS];       //maximum number of connections possible
+        rate_guess[j]=new double [maxConns];       //maximum number of connections possible
       }
     }
-    //For lateral flow processes
-    kFrom         =new int   [MAX_LAT_CONNECTIONS];
-    kTo           =new int   [MAX_LAT_CONNECTIONS];
-    exchange_rates=new double[MAX_LAT_CONNECTIONS];
+
+    iFrom              =new int   [maxTotConns];
+    iTo                =new int   [maxTotConns];
+    kFrom              =new int   [maxLatConns];
+    kTo                =new int   [maxLatConns];
+    lat_exchange_rates =new double[maxLatConns];  
+    rates_of_change    =new double[maxConns   ];
   }//end static memory if
 
   if(Options.modeltype == MODELTYPE_COUPLED)
   {
     // Get pointer to GW model
-    pGWModel = pModel->GetGroundwaterModel();
+    pGWModel  = pModel->GetGroundwaterModel();
     pGW2River = pGWModel->GetRiverConnection();
   }
   // Initialize variables============================================
-  for (i=0;i<MAX_CONNECTIONS;i++)
+  for (i=0;i<maxTotConns;i++)
   {
     iFrom          [i]=DOESNT_EXIST;
     iTo            [i]=DOESNT_EXIST;
+  }
+  for (i=0;i<maxConns;i++){
     rates_of_change[i]=0.0;
   }
   for (k=0;k<nHRUs;k++)
@@ -197,11 +215,6 @@ void MassEnergyBalance( CModel            *pModel,
           nConnections=0;
           if(pModel->ApplyProcess(j,aPhinew[k],pHRU,Options,tt,iFrom,iTo,nConnections,rates_of_change)) //note aPhinew is newest state variable vector
           {
-#ifdef _STRICTCHECK_
-            if(nConnections>MAX_CONNECTIONS) {
-              cout<<nConnections<<endl;
-              ExitGracefully("MassEnergyBalance:: Maximum number of connections exceeded. Please contact author.",RUNTIME_ERR); }
-#endif
             for(q=0;q<nConnections;q++)//each process may have multiple connections
             {
               sv_type typ=pModel->GetStateVarType(iFrom[q]);
@@ -253,11 +266,6 @@ void MassEnergyBalance( CModel            *pModel,
 
         if (pModel->ApplyProcess(j,aPhi   [k],pHRU,Options,tt,iFrom,iTo,nConnections,rates_of_change))//note aPhi is info from start of timestep
         {
-#ifdef _STRICTCHECK_
-          if(nConnections>MAX_CONNECTIONS) {
-            cout<<nConnections<<endl;
-            ExitGracefully("MassEnergyBalance:: Maximum number of connections exceeded. Please contact author.",RUNTIME_ERR);}
-#endif
           for (q=0;q<nConnections;q++)//each process may have multiple connections
           {
             sv_type typ=pModel->GetStateVarType(iFrom[q]);
@@ -297,8 +305,8 @@ void MassEnergyBalance( CModel            *pModel,
     int    iter = 0;              //iteration counter
     bool   converg = false;
     double converg_check = 0.0;
-    double rate1[MAX_CONNECTIONS];
-    double rate2[MAX_CONNECTIONS];
+    double *rate1=new double [maxConns]; //\todo[optimize] -inefficient allocation
+    double *rate2=new double [maxConns];
 
     //Go through all HRUs
     for (k=0;k<nHRUs;k++)
@@ -324,11 +332,6 @@ void MassEnergyBalance( CModel            *pModel,
           if (pModel->ApplyProcess(j,aPhi[k]        ,pHRU,Options,tt     ,iFrom,iTo,nConnections,rate1))
           {
             pModel->ApplyProcess(j,aPhiPrevIter[k],pHRU,Options,tt_end ,iFrom,iTo,nConnections,rate2);
-
-            if(nConnections>MAX_CONNECTIONS) {
-              cout<<nConnections<<endl;
-              ExitGracefully("MassEnergyBalance:: Maximum number of connections exceeded. Please contact author.",RUNTIME_ERR);
-            }
 
             for (q=0;q<nConnections;q++)//each process may have multiple connections
             {
@@ -386,6 +389,9 @@ void MassEnergyBalance( CModel            *pModel,
 
       } while(converg != true);  //end do loop
     }//end of for k=0 to nHRUs
+
+    delete [] rate1;
+    delete [] rate2;
   }//end iterated Heun
 
   //==Other Methods Below ============================================
@@ -401,32 +407,26 @@ void MassEnergyBalance( CModel            *pModel,
   int    nLatConnections;
   double Afrom,Ato;
 
-  for (q=0;q<MAX_LAT_CONNECTIONS;q++)
+  for (q=0;q<maxLatConns;q++)
   {
     kFrom[q]=DOESNT_EXIST;
     kTo  [q]=DOESNT_EXIST;
     iFrom[q]=DOESNT_EXIST;
     iTo  [q]=DOESNT_EXIST;
-    exchange_rates[q]=0.0;
+    lat_exchange_rates[q]=0.0;
   }
   for (j=0;j<nProcesses;j++)
   {
-    if (pModel->ApplyLateralProcess(j,aPhinew,Options,tt,kFrom,kTo,iFrom,iTo,nLatConnections,exchange_rates))
+    if (pModel->ApplyLateralProcess(j,aPhinew,Options,tt,kFrom,kTo,iFrom,iTo,nLatConnections,lat_exchange_rates))
     {
-#ifdef _STRICTCHECK_
-      if(nLatConnections>MAX_LAT_CONNECTIONS) {
-        cout<<nLatConnections<<endl;
-        ExitGracefully("MassEnergyBalance:: Maximum number of lateral connections exceeded. Please contact author.",RUNTIME_ERR);
-      }
-#endif
       for (q=0;q<nLatConnections;q++)
       {
         Afrom=pModel->GetHydroUnit(kFrom[q])->GetArea();
         Ato  =pModel->GetHydroUnit(kTo[q]  )->GetArea();
-        aPhinew[kFrom[q]][iFrom[q]]-=exchange_rates[q]/Afrom*tstep;
-        aPhinew[  kTo[q]][  iTo[q]]+=exchange_rates[q]/Ato  *tstep;
+        aPhinew[kFrom[q]][iFrom[q]]-=lat_exchange_rates[q]/Afrom*tstep;
+        aPhinew[  kTo[q]][  iTo[q]]+=lat_exchange_rates[q]/Ato  *tstep;
 
-        pModel->IncrementLatBalance(qss,exchange_rates[q]*tstep);
+        pModel->IncrementLatBalance(qss,lat_exchange_rates[q]*tstep);
 
         qss++;
       }
@@ -724,6 +724,13 @@ void MassEnergyBalance( CModel            *pModel,
     delete[] aQinnew;      aQinnew     = NULL;
     delete[] aQoutnew;     aQoutnew    = NULL;
     delete[] aRouted;      aRouted     = NULL;
+
+    delete[] iFrom;
+    delete[] iTo;
+    delete[] rates_of_change;
+    delete[] kFrom;
+    delete[] kTo;
+    delete[] lat_exchange_rates;
     //delete transport static arrays.
     if(nConstituents>0)
     {
