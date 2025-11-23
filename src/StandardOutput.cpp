@@ -1234,11 +1234,12 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       else{
         force_struct *pFave;
         force_struct faveStruct = GetAverageForcings();
+        double snowfall      =GetAverageSnowfall();
         pFave = &faveStruct;
         _FORCINGS<<usetime<<","<<usedate<<","<<usehour<<",";
         _FORCINGS<<pFave->day_angle<<",";
-        _FORCINGS<<pFave->precip*(1.0-pFave->snow_frac) <<",";
-        _FORCINGS<<pFave->precip*(    pFave->snow_frac) <<",";
+        _FORCINGS<<pFave->precip-snowfall <<",";
+        _FORCINGS<<snowfall <<",";
         _FORCINGS<<pFave->temp_ave<<",";
         _FORCINGS<<pFave->temp_daily_min<<",";
         _FORCINGS<<pFave->temp_daily_max<<",";
@@ -2769,6 +2770,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
   {
     force_struct *pFave;
     force_struct faveStruct = GetAverageForcings();
+    double snowfall      =GetAverageSnowfall();
     pFave = &faveStruct;
 
     // write new time step
@@ -2776,8 +2778,8 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
     retval = nc_put_vara_double(_FORCINGS_ncid, time_id, time_index, count1, &current_time[0]); HandleNetCDFErrors(retval);
 
     // write data
-    AddSingleValueToNetCDF(_FORCINGS_ncid,"rainfall"         ,time_ind2,pFave->precip*(1.0-pFave->snow_frac));
-    AddSingleValueToNetCDF(_FORCINGS_ncid,"snowfall"         ,time_ind2,pFave->precip*(    pFave->snow_frac));
+    AddSingleValueToNetCDF(_FORCINGS_ncid,"rainfall"         ,time_ind2,pFave->precip-snowfall);
+    AddSingleValueToNetCDF(_FORCINGS_ncid,"snowfall"         ,time_ind2,snowfall);
     AddSingleValueToNetCDF(_FORCINGS_ncid,"temp"             ,time_ind2,pFave->temp_ave);
     AddSingleValueToNetCDF(_FORCINGS_ncid,"temp_daily_min"   ,time_ind2,pFave->temp_daily_min);
     AddSingleValueToNetCDF(_FORCINGS_ncid,"temp_daily_max"   ,time_ind2,pFave->temp_daily_max);
