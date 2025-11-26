@@ -121,6 +121,9 @@
     <Filter Include="Header Files\Water Management">
       <UniqueIdentifier>{4f71f44c-6101-46a8-8941-28dad1a073eb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Hydrological Processes\Lateral Processes">
+      <UniqueIdentifier>{04102f78-8f69-47ff-95ac-2546f005d123}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HydroProcessABC.cpp">
@@ -309,17 +312,11 @@
     <ClCompile Include="ModelInitialize.cpp">
       <Filter>Source Files\_Driver</Filter>
     </ClCompile>
-    <ClCompile Include="LatFlush.cpp">
-      <Filter>Source Files\Hydrological Processes</Filter>
-    </ClCompile>
     <ClCompile Include="LatAdvection.cpp">
       <Filter>Source Files\Transport Processes</Filter>
     </ClCompile>
     <ClCompile Include="Recharge.cpp">
       <Filter>Source Files\Hydrological Processes\Soil Water Processes</Filter>
-    </ClCompile>
-    <ClCompile Include="LateralExchangeABC.cpp">
-      <Filter>Source Files\Hydrological Processes</Filter>
     </ClCompile>
     <ClCompile Include="Transformation.cpp">
       <Filter>Source Files\Transport Processes</Filter>
@@ -389,9 +386,6 @@
     </ClCompile>
     <ClCompile Include="IsotopeTransport.cpp">
       <Filter>Source Files\Transport Processes</Filter>
-    </ClCompile>
-    <ClCompile Include="LatEquilibrate.cpp">
-      <Filter>Source Files\Hydrological Processes</Filter>
     </ClCompile>
     <ClCompile Include="EnergyTransport.cpp">
       <Filter>Source Files</Filter>
@@ -484,10 +478,19 @@
       <Filter>Source Files\Water Management</Filter>
     </ClCompile>
     <ClCompile Include="LatConnect.cpp">
-      <Filter>Source Files\Hydrological Processes</Filter>
+      <Filter>Source Files\Hydrological Processes\Lateral Processes</Filter>
+    </ClCompile>
+    <ClCompile Include="LatEquilibrate.cpp">
+      <Filter>Source Files\Hydrological Processes\Lateral Processes</Filter>
+    </ClCompile>
+    <ClCompile Include="LateralExchangeABC.cpp">
+      <Filter>Source Files\Hydrological Processes\Lateral Processes</Filter>
+    </ClCompile>
+    <ClCompile Include="LatFlush.cpp">
+      <Filter>Source Files\Hydrological Processes\Lateral Processes</Filter>
     </ClCompile>
     <ClCompile Include="SnowRedistribute.cpp">
-      <Filter>Source Files\Hydrological Processes</Filter>
+      <Filter>Source Files\Hydrological Processes\Lateral Processes</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

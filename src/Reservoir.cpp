@@ -789,6 +789,16 @@ void CReservoir::Initialize(const optStruct &Options)
     _aQstruct[i]=_aQstruct_last[i]=0.0;
   }
   _dry_timesteps=0;
+  double Qoverride=0.0;
+  double Qmin=0.0;
+  if (_pOverrideQ!=NULL){  
+    Qoverride=_pOverrideQ->GetSampledValue(0);
+    if (_pQminTS!=NULL){
+      Qmin=_pQminTS->GetSampledValue(0);
+    }
+    _Qout=max(Qoverride,Qmin);
+  }
+
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes SB demand members AFTER RVM FILE READ

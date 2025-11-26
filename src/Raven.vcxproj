@@ -211,6 +211,7 @@
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files\netCDF 4.9.3\include; ../lib/lp_solve/; </IncludePath>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);C:\Program Files\netCDF 4.9.3\bin\; ../lib/lp_solve/; </LibraryPath>
     <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</ExternalIncludePath>
+    <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug netCDF|x64'">
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);c:/Program Files/netCDF 4.7.0/include/;</IncludePath>

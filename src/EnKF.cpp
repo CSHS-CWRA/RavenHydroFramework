@@ -784,6 +784,15 @@ void CEnKFEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
   ParseInitialConditions(pModel,Options);
   pModel->CalculateInitialWaterStorage(Options);
 
+  //re-initialize reservoirs (esp. for overriding flows)
+  CReservoir *pRes;
+  for (int p = 0; p < pModel->GetNumSubBasins(); p++) {
+    pRes = pModel->GetSubBasin(p)->GetReservoir();
+    if (pRes != NULL) {
+      pRes->Initialize(Options);
+    }
+  }
+
   // read ensemble-member specific time series (e.g., upstream flows in model cascade), if present
   if (_extra_rvt != "") {
     string rvt_name=_extra_rvt;
