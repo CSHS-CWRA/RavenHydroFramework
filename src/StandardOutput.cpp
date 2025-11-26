@@ -1767,7 +1767,7 @@ void CModel::RunDiagnostics(const optStruct &Options)
       if(DIAG2.fail()) {
         ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
       }
-      
+
       DIAG2<<"time,date,hour,observed"+svname+",simulated"+svname<<endl;
       for (int nn=0; nn<_pObservedTS[i]->GetNumSampledValues();nn++)
       {

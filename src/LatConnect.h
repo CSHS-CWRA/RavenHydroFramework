@@ -38,7 +38,7 @@ public:
   // Static methods to interact with the collection
   static int          GetNumLatConnections(const CModel *pModel);
   static CLatConnect* GetLatConnection(const CModel *pModel, int index);
-  static bool CheckConnectionWeights (const CLatConnect* const connections[], 
+  static bool CheckConnectionWeights (const CLatConnect* const connections[],
                                       const int nConnections,
                                       const CModel* pModel,
                                       const double tolerance = 0.05);
