@@ -138,7 +138,7 @@ void   CmvTransformation::GetRatesOfChange( const double      *state_vars,
 
     if((_iWaterStore!=DOESNT_EXIST) && (ii!=ii_active)) { continue; } //only apply to one water compartment
 
-    if(_pTransModel->GetConstituentModel2(_constit_ind1)->IsDirichlet(iStor,k,tt,junk)) { continue; } //don't modify dirichlet source zones
+    if(_pTransModel->GetConstituentModel(_constit_ind1)->IsDirichlet(iStor,k,tt,junk)) { continue; } //don't modify dirichlet source zones
 
     mass1=state_vars[iFrom[q]]; //mg/m2
     vol1 =state_vars[iStor   ]; //mm

@@ -1252,6 +1252,18 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     ExitGracefully("ParseHRUPropsFile:: AVG_ANNUAL_RUNOFF should be supplied (using :AvgAnnualRunoff command in .rvp file) if more than one basin is included in model",BAD_DATA_WARN);
   }
 
+  //Check if Wetland HRUs exist but no depression storage present
+  //  
+  //--------------------------------------------------------------------------
+  int nWetlands=0;
+  for (int k=0;k<pModel->GetNumHRUs();k++) {
+    if (pModel->GetHydroUnit(k)->GetHRUType()==HRU_WETLAND){nWetlands++;}
+  }
+  if ((pModel->GetStateVarIndex(DEPRESSION)==DOESNT_EXIST) && (nWetlands>0)){
+    WriteWarning("Wetland HRUs exist but no hydrologic processes are found which invoke the DEPRESSION state variable.",Options.noisy);
+  }
+
+
   // Check if terrain class is needed but not specified
   //--------------------------------------------------------------------------
   bool bad=false;

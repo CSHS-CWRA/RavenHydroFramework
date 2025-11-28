@@ -3305,7 +3305,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:FixedConcentration or :FixedTemperature
        :FixedConcentration [string constit_name] [string state_var (storage compartment)] [double concentration (mg/l) or .rvt file name] {optional HRU Group name}
        :FixedTemperature [string state_var (storage compartment)] [double temperature (C) or .rvt file name] {optional HRU Group name}
-       :FixedConcentration O18 [string state_var (storage compartment)] [double concentration (mg/l) or .rvt file name] [double concentration2 (mg/l) or .rvt filename] {optional HRU Group name}
+       :FixedConcentration [constit_name] ATMOS_PRECIP [rainconc or .rvt] [snowconc or .rvt] {optional HRU Group name}
        */
       if (Options.noisy){cout <<"Fixed concentration or temperature transport constituent"<<endl;}
 
@@ -3316,29 +3316,32 @@ bool ParseMainInputFile (CModel     *&pModel,
       int layer_ind;
       int i_stor;
       int add=0;int add2=0;
-      bool is_isotope(false);
+      bool isPrecip(false);
       if (is_temp){add=-1;}
       sv_type typ = pStateVar->StringToSVType(s[2+add],layer_ind,false);
       if (typ==UNRECOGNIZED_SVTYPE){
         WriteWarning(":FixedConcentration/:FixedTemperature command: unrecognized storage variable name: "+to_string(s[2]),Options.noisy);
         break;
       }
+      if (typ==ATMOS_PRECIP){
+        isPrecip=true;
+      }
       i_stor=pModel->GetStateVarIndex(typ,layer_ind);
-      if (i_stor != DOESNT_EXIST){
+      if (i_stor != DOESNT_EXIST)
+      {
         int c;
-
         if (is_temp) {
           c=pModel->GetTransportModel()->GetConstituentIndex("TEMPERATURE");
         }
         else {
           c=pModel->GetTransportModel()->GetConstituentIndex(s[1]);
         }
-        if (pModel->GetTransportModel()->GetConstituentModel(c)->GetType()==ISOTOPE){
+        if (isPrecip){
           add2=1;
         }
         if(c!=DOESNT_EXIST) {
           int kk = DOESNT_EXIST;
-          if (Len > 4+add+add2){
+          if (Len > 4+add+add2){ //read HRU Group, if present
             CHRUGroup *pSourceGrp;
             pSourceGrp = pModel->GetHRUGroup(s[4+add+add2]);
             if (pSourceGrp == NULL){
@@ -3352,7 +3355,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 
           double C1=s_to_d(s[3+add]);
           double C2=s_to_d(s[3+add]);
-          if ((add2==1) && (Len>=5)){C2=s_to_d(s[4]);} // for isotope
+          if ((isPrecip) && (Len>=5)){C2=s_to_d(s[4+add]);} // for snow/rain concentrations/temperatures, if ATMOS_PRECIP
           pModel->GetTransportModel()->GetConstituentModel(c)->AddDirichletCompartment(i_stor,kk,C1,C2);
           //if time series is specified, s_to_d(time series file) returns zero
         }

@@ -248,17 +248,6 @@ CConstituentModel *CTransportModel::GetConstituentModel(const int c) const
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief returns constituent model c in model (const version)
-//
-CConstituentModel *CTransportModel::GetConstituentModel2(const int c) const
-{
-#ifdef _STRICTCHECK_
-  ExitGracefullyIf((c<0) || (c >= _nConstituents),"CTransportModel::GetConstituentModel2: invalid index",BAD_DATA);
-#endif
-  return _pConstitModels[c];
-}
-
-//////////////////////////////////////////////////////////////////
 /// \brief returns index c of constituents transported in model
 //
 int    CTransportModel::GetConstituentIndex(const string name) const

@@ -81,7 +81,7 @@ void   CmvMassLoading::GetRatesOfChange(const double      *state_vars,
   for (int ii = 0; ii < pTransModel->GetNumWaterCompartments(); ii++)
   {
     iToIndex=pTransModel->GetStorWaterIndex(ii);
-    rates[ii] = pTransModel->GetConstituentModel2(_constit_ind)->GetSpecifiedMassFlux(iToIndex, k, tt); //[mg/m2/d] or [MJ/m2/d]
+    rates[ii] = pTransModel->GetConstituentModel(_constit_ind)->GetSpecifiedMassFlux(iToIndex, k, tt); //[mg/m2/d] or [MJ/m2/d]
   }
 
 }

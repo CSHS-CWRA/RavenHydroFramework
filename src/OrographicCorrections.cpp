@@ -48,6 +48,27 @@ void   CModel::CorrectTemp(const optStruct   &Options,
       }
     }
   }
+//---------------------------------------------------------------------------
+  else if (Options.orocorr_temp==OROCORR_WETDRY)
+  {
+    double dry_lapse=this->_pGlobalParams->GetParams()->adiabatic_lapse;//[C/km]
+    double wet_lapse=this->_pGlobalParams->GetParams()->wet_adiabatic_lapse;//[C/km]
+    double P_range  =this->_pGlobalParams->GetParams()->UBC_lapse_params.A0PPTP; //[mm/d]
+    double w=min(max(F.precip/P_range,1.0),0.0);
+    double lapse=(w)*wet_lapse+(1-w)*dry_lapse;
+    lapse/=1000.0;//convert to C/m
+
+    F.temp_ave-=lapse*(elev-ref_elev);
+    if(tt.day_changed)
+    {
+      F.temp_daily_ave-=lapse*(elev-ref_elev);
+      F.temp_daily_min-=lapse*(elev-ref_elev);
+      F.temp_daily_max-=lapse*(elev-ref_elev);
+      F.temp_month_max-=lapse*(elev-ref_elev);
+      F.temp_month_min-=lapse*(elev-ref_elev);
+      F.temp_month_ave-=lapse*(elev-ref_elev);
+    }
+  }
   //---------------------------------------------------------------------------
   else if (Options.orocorr_temp==OROCORR_UBCWM)
   {

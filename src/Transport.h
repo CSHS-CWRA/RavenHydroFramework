@@ -124,7 +124,6 @@ public:/*-------------------------------------------------------*/
   int    GetConstituentIndex(const string name) const;
 
   CConstituentModel *GetConstituentModel(const int c)  const;
-  CConstituentModel *GetConstituentModel2(const int c) const;
 
   int    GetNumWaterCompartments() const;
   int    GetNumAdvConnections() const;

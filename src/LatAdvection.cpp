@@ -184,7 +184,7 @@ void   CmvLatAdvection::GetLateralExchange(const double * const *state_vars, //a
 
     //Correct for Dirichlet conditions
     //----------------------------------------------------------------------
-    if(pTransModel->GetConstituentModel2(_constit_ind)->IsDirichlet(iFromWater,kFrom,tt,Cs))
+    if(pTransModel->GetConstituentModel(_constit_ind)->IsDirichlet(iFromWater,kFrom,tt,Cs))
     {
       Cs*=LITER_PER_M3/MM_PER_METER; //[mg/L]->[mg/mm-m2]
       mass=sv[kFrom][_iFromLat[q]];
@@ -192,7 +192,7 @@ void   CmvLatAdvection::GetLateralExchange(const double * const *state_vars, //a
       exchange_rates[nLatConnections+q]+=(Cs*vol-mass)/Options.timestep*Afrom; //[mg/d]
       sv[kFrom][_iFromLat[q]]=Cs*vol;
     }
-    if(pTransModel->GetConstituentModel2(_constit_ind)->IsDirichlet(iToWater,kTo,tt,Cs))
+    if(pTransModel->GetConstituentModel(_constit_ind)->IsDirichlet(iToWater,kTo,tt,Cs))
     {
       Cs*=LITER_PER_M3/MM_PER_METER; //[mg/L]->[mg/mm-m2]
       mass=sv[kTo][_iToLat[q]];

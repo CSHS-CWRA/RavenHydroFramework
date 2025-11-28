@@ -103,7 +103,7 @@ void   CmvDecay::GetRatesOfChange(const double      *state_vars,
     iStor   =_pTransModel->GetStorWaterIndex(ii);
 
     if((_iWaterStore!=DOESNT_EXIST) && (ii!=ii_active)) { continue; } //only apply to one water compartment
-    if(_pTransModel->GetConstituentModel2(_constit_ind)->IsDirichlet(iStor,k,tt,junk)) { continue; } //don't modify dirichlet source zones
+    if(_pTransModel->GetConstituentModel(_constit_ind)->IsDirichlet(iStor,k,tt,junk)) { continue; } //don't modify dirichlet source zones
 
     mass=state_vars[iFrom[q]];
 

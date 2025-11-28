@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2023 the Raven Development Team
+Copyright (c) 2008-2025 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "Model.h"
 #include "Properties.h"
@@ -484,8 +484,14 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
     aP[nP]="UBC_MAX_RANGE_TEMP"; aPC[nP]=CLASS_GLOBAL; nP++;
     aP[nP]="ADIABATIC_LAPSE";     aPC[nP]=CLASS_GLOBAL; nP++;
     aP[nP]="WET_ADIABATIC_LAPSE"; aPC[nP]=CLASS_GLOBAL; nP++;
-    aP[nP]="MAX_INTERCEPT_RATE"; aPC[nP]=CLASS_VEGETATION; nP++;
-    aP[nP]="RAIN_ICEPT_PCT";     aPC[nP]=CLASS_VEGETATION; nP++;
+    aP[nP]="MAX_INTERCEPT_RATE";  aPC[nP]=CLASS_VEGETATION; nP++;
+    aP[nP]="RAIN_ICEPT_PCT";      aPC[nP]=CLASS_VEGETATION; nP++;
+  }
+  else if (Options.orocorr_temp==OROCORR_WETDRY)
+  {
+    aP[nP]="ADIABATIC_LAPSE";     aPC[nP]=CLASS_GLOBAL; nP++;
+    aP[nP]="WET_ADIABATIC_LAPSE"; aPC[nP]=CLASS_GLOBAL; nP++;
+    aP[nP]="UBC_A0PPTP";          aPC[nP]=CLASS_GLOBAL; nP++;
   }
   else if((Options.orocorr_temp==OROCORR_HBV) || (Options.orocorr_temp==OROCORR_SIMPLELAPSE))
   {

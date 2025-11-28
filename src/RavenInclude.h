@@ -468,6 +468,7 @@ enum orographic_corr
 {
   OROCORR_NONE,          ///< no orographic corrections
   OROCORR_SIMPLELAPSE,   ///< simple linear adiabatic lapse
+  OROCORR_WETDRY,        ///< transition between dry and wet adiabatic lapse based on precip rate
   OROCORR_HBV,           ///< HBV-EC style orographic corrections
   OROCORR_UBCWM,         ///< UBCWM-style orographic corrections
   OROCORR_UBCWM2,        ///< UBCWM-style orographic corrections (simpler)

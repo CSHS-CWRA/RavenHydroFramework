@@ -134,7 +134,7 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
 
   double tstep=Options.timestep;
   int    nAdvConnections     =pTransModel->GetNumAdvConnections();
-  CConstituentModel *pConstit=pTransModel->GetConstituentModel2(_constit_ind);
+  CConstituentModel *pConstit=pTransModel->GetConstituentModel(_constit_ind);
 
   bool   isEnthalpy=(pConstit->GetType()==ENTHALPY);
   bool   isIsotope =(pConstit->GetType()==ISOTOPE);
@@ -227,7 +227,7 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
     // two cases: contributor (iFromWater) or recipient (iToWater) water compartment is Dirichlet condition
     //----------------------------------------------------------------------
     double dirichlet_mass;
-    if(pConstit->IsDirichlet(iFromWater,k,tt,Cs))
+    if(pConstit->IsDirichlet(iFromWater,k,tt,Cs,1.0-pHRU->GetForcingFunctions()->snow_frac))
     {
       if(!isEnthalpy) {
         Cs=pConstit->ConvertConcentration(Cs);//[mg/L]->[mg/mm-m2] or [o/oo]->[mg/mm-m2]

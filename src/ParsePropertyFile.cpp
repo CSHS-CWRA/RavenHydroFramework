@@ -460,12 +460,13 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           //zero is a valid entry for lakes & glaciers (zero horizons)
           ExitGracefullyIf(Len!=(nhoriz*2+2),
                            "ParseClassPropertiesFile:  :SoilProfiles invalid command length",BAD_DATA);
-          bool is_special= (!string(s[0]).substr(0,4).compare("LAKE"    )) ||
-                           (!string(s[0]).substr(0,5).compare("WATER"   )) ||
-                           (!string(s[0]).substr(0,7).compare("GLACIER" )) ||
-                           (!string(s[0]).substr(0,4).compare("ROCK"    )) ||
-                           (!string(s[0]).substr(0,8).compare("PAVEMENT")) ||
-                           (!string(s[0]).substr(0,7).compare("WETLAND" ));
+          bool is_special= (!string(s[0]).substr(0, 4).compare("LAKE"    )) ||
+                           (!string(s[0]).substr(0, 5).compare("WATER"   )) ||
+                           (!string(s[0]).substr(0, 7).compare("GLACIER" )) ||
+                           (!string(s[0]).substr(0, 4).compare("ROCK"    )) ||
+                           (!string(s[0]).substr(0, 8).compare("PAVEMENT")) ||
+                           (!string(s[0]).substr(0,15).compare("MASKED_GLACIER")) ||
+                           (!string(s[0]).substr(0, 7).compare("WETLAND" ));
 
           ExitGracefullyIf((nhoriz==0) && (!is_special),
                            "ParseClassPropertiesFile:  only special soil profiles (LAKE,WATER,GLACIER,PAVEMENT,WETLAND, or ROCK) can have zero horizons",BAD_DATA);
