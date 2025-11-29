@@ -174,7 +174,7 @@ private:/*------------------------------------------------------*/
 
   CLatConnect **_pLatConnect; //< array of pointers to HRU source/recipient pairs [size:_nLatConnect]
   int           _nLatConnect; //< number of HRU source/recipient pairs
-  
+
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
@@ -188,7 +188,7 @@ public:/*-------------------------------------------------------*/
 
   //inherited functions
   void Initialize();
-  
+
   static void GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV);
 
   void GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const;

@@ -77,7 +77,7 @@ double CLatConnect::GetWeight() const
 /// \param tolerance [in] Acceptable deviation from 1.0 (default 0.05)
 /// \return true if all HRU connection weights sum to approximately 1.0
 //
-bool CLatConnect::CheckConnectionWeights(const CLatConnect* const connections[], 
+bool CLatConnect::CheckConnectionWeights(const CLatConnect* const connections[],
                                          const int nConnections,
                                          const CModel* pModel,
                                          const double tolerance)
@@ -100,7 +100,7 @@ bool CLatConnect::CheckConnectionWeights(const CLatConnect* const connections[],
   }
 
   // Calculate the sum of weights for each source HRU
-  for (int i = 0; i < nConnections; i++) 
+  for (int i = 0; i < nConnections; i++)
 {
     int sourceHRU = pModel->GetHRUByID(connections[i]->GetSourceHRUID())->GetGlobalIndex();
     double weight = connections[i]->GetWeight();

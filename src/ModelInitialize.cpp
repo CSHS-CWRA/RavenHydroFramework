@@ -175,11 +175,11 @@ void CModel::Initialize(const optStruct &Options)
 
   // Generate Gauge Weights from Interpolation (except if in BMI mode and no RVT file is specified)
   //--------------------------------------------------------------
-  if ((!Options.in_bmi_mode) || (strcmp(Options.rvt_filename.c_str(), "") != 0)) 
+  if ((!Options.in_bmi_mode) || (strcmp(Options.rvt_filename.c_str(), "") != 0))
   {
     if (!Options.silent){cout <<"  Generating Gauge Interpolation Weights..."<<endl;}
     forcing_type f_gauge=F_PRECIP;
-    //search for the 'other' forcing- assume all gauges have same data 
+    //search for the 'other' forcing- assume all gauges have same data
     if      (Options.air_pressure  ==AIRPRESS_DATA  ){f_gauge=F_AIR_PRES;}
     else if (Options.SW_radiation  ==SW_RAD_DATA    ){f_gauge=F_SW_RADIA;}
     else if (Options.evaporation   ==PET_DATA       ){f_gauge=F_PET; }

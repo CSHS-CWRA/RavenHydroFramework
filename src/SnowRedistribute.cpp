@@ -36,13 +36,13 @@ CmvLatRedistribute::CmvLatRedistribute(int sv_ind,
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the default destructor
 //
-CmvLatRedistribute::~CmvLatRedistribute() 
+CmvLatRedistribute::~CmvLatRedistribute()
 {
   for(int n=0; n<_nLatConnect;n++) { delete _pLatConnect[n]; }  delete[] _pLatConnect;
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Copies connnection array - called during RVH file read  
+/// \brief Copies connnection array - called during RVH file read
 //
 void CmvLatRedistribute::AddConnectionArray(CLatConnect **pConnections, const int nConnections)
 {
@@ -73,15 +73,15 @@ void CmvLatRedistribute::Initialize()
   _iToLat   = new int[_nLatConnections];
 
   // Initialize the arrays using the methods from CLatConnect
-  for (int q = 0; q < _nLatConnections; q++) 
+  for (int q = 0; q < _nLatConnections; q++)
   {
     CLatConnect* connection = _pLatConnect[q];
 
     _kFrom   [q] = _pModel->GetHRUByID(_pLatConnect[q]->GetSourceHRUID()   )->GetGlobalIndex();
     _kTo     [q] = _pModel->GetHRUByID(_pLatConnect[q]->GetRecipientHRUID())->GetGlobalIndex();
 
-    _iFromLat[q] = _iRedistributeFrom; 
-    _iToLat  [q] = _iRedistributeTo;   
+    _iFromLat[q] = _iRedistributeFrom;
+    _iToLat  [q] = _iRedistributeTo;
   }
 }
 
@@ -206,7 +206,7 @@ void CmvLatRedistribute::GetLateralExchange(const double *const *state_vars,
     // Debug info - uncomment when needed
 
     // Debug info with comprehensive output
-    //std::cout << "Connection " << q << ": fromHRU=" << fromHRU << " toHRU=" << toHRU 
+    //std::cout << "Connection " << q << ": fromHRU=" << fromHRU << " toHRU=" << toHRU
     //<< " method=" << (_method == CONTINUOUS_REDIST ? "CONTINUOUS" : "THRESHOLD");
 
     //std::cout << " snowMoved=" << snowMoved << " mm"
