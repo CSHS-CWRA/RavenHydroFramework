@@ -1149,7 +1149,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
 
           if (StringIsLong(s[0]))
           {
-            CLatConnect *pLatInstance = new CLatConnect(s_to_ll(s[0]),s_to_ll(s[1]), s_to_d(s[2]));  
+            CLatConnect *pLatInstance = new CLatConnect(s_to_ll(s[0]),s_to_ll(s[1]), s_to_d(s[2]));
             if (!DynArrayAppend((void**&)(pLat),(void*)(pLatInstance),nLat)){
                 ExitGracefully("CModel:::LateralConnections: adding NULL connection",BAD_DATA);}
           }
@@ -1160,7 +1160,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
       }
 
       // After all connections are added, check if weights sum to 1.0
-      if (nLat > 0) 
+      if (nLat > 0)
       {
 
         // Check if weights sum to 1.0
@@ -1253,7 +1253,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
   }
 
   //Check if Wetland HRUs exist but no depression storage present
-  //  
+  //
   //--------------------------------------------------------------------------
   int nWetlands=0;
   for (int k=0;k<pModel->GetNumHRUs();k++) {

@@ -87,14 +87,14 @@ void CmvLatFlush::Initialize()
               if (toHRUGrp->IsInGroup(k2))
               {
                 if (k1!=k2)
-                {  
+                {
                   //dynamically allocate memory
                   int    *tmpT=new int    [q+1]; for (int i=0;i<q;i++){tmpT[i]= kTo  [i];}delete [] kTo;    kTo  =tmpT; ExitGracefullyIf(kTo   == NULL, "LatFLush::Initialize (1a)",OUT_OF_MEMORY);
                   int    *tmpF=new int    [q+1]; for (int i=0;i<q;i++){tmpF[i]= kFrom[i];}delete [] kFrom;  kFrom=tmpF; ExitGracefullyIf(kFrom == NULL, "LatFLush::Initialize (1b)",OUT_OF_MEMORY);
                   double *tmpA=new double [q+1]; for (int i=0;i<q;i++){tmpA[i]=_aFrac[i];}delete [] _aFrac;_aFrac=tmpA; ExitGracefullyIf(_aFrac== NULL, "LatFLush::Initialize (1c)",OUT_OF_MEMORY);
                   area=_pModel->GetSubBasin(p)->GetHRU(ks2)->GetArea();
                   kFrom [q]=k1;
-                  kTo   [q]=k2;                  
+                  kTo   [q]=k2;
                   _aFrac[q]=area;
                   Asum+=area;//sum of recipient areas
                   nRecipients++;
@@ -146,7 +146,7 @@ void CmvLatFlush::Initialize()
         int    *tmpT=new int    [q+1]; for (int i=0;i<q;i++){tmpT[i]= kTo  [i];}delete [] kTo;    kTo  =tmpT; ExitGracefullyIf(kTo   == NULL, "LatFLush::Initialize (1a)",OUT_OF_MEMORY);
         int    *tmpF=new int    [q+1]; for (int i=0;i<q;i++){tmpF[i]= kFrom[i];}delete [] kFrom;  kFrom=tmpF; ExitGracefullyIf(kFrom == NULL, "LatFLush::Initialize (1b)",OUT_OF_MEMORY);
         double *tmpA=new double [q+1]; for (int i=0;i<q;i++){tmpA[i]=_aFrac[i];}delete [] _aFrac;_aFrac=tmpA; ExitGracefullyIf(_aFrac== NULL, "LatFLush::Initialize (1c)",OUT_OF_MEMORY);
-                  
+
         kFrom [q]=k;
         kTo   [q]=kToSB;
         _aFrac[q]=1.0; //only a single recipient

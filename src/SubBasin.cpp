@@ -1893,7 +1893,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
   //determine upstream subbasin group
   //------------------------------------------------------------------------
   //int nUpstream;
-  //CModel::GetUpstreamSubbasins(_ID,nUpstream); 
+  //CModel::GetUpstreamSubbasins(_ID,nUpstream);
 
   //QA/QC check of Muskingum parameters, if necessary
   //------------------------------------------------------------------------

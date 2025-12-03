@@ -308,8 +308,8 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
                                         double      *rates) const
 {
 
-  if ((pHRU->GetHRUType()!=HRU_STANDARD) && 
-      (pHRU->GetHRUType()!=HRU_ROCK) && 
+  if ((pHRU->GetHRUType()!=HRU_STANDARD) &&
+      (pHRU->GetHRUType()!=HRU_ROCK) &&
       (pHRU->GetHRUType()!=HRU_MASKED_GLACIER)){return;}//disabled on Lakes & glaciers
 
   double runoff;
