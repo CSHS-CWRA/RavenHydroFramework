@@ -24,7 +24,7 @@ void MassEnergyBalance( CModel            *pModel,
   int nConstituents;                           //
   int iSW, iAtm, iAET, iGW, iRO;               //Surface water, atmospheric precip, used PET, runoff indices
   int iTotalSWE;                               //total SWE index
-  
+
   int maxLatConns=0;
   int maxConns=0;
   int maxTotConns=0;
@@ -53,7 +53,7 @@ void MassEnergyBalance( CModel            *pModel,
   static double    **rate_guess;  //need to set first array to nProcesses
 
   static int        *iFrom=NULL;          //arrays used to pass values through GetRatesOfChange routines [size maxTotConns]
-  static int        *iTo=NULL;           
+  static int        *iTo=NULL;
   static double     *rates_of_change=NULL;
 
   static int        *kFrom=NULL;
@@ -119,7 +119,7 @@ void MassEnergyBalance( CModel            *pModel,
       maxLatConns=max(nLatConn,maxLatConns);
     }
     maxTotConns=max(maxLatConns,maxConns);
-    
+
     if(Options.sol_method==ITERATED_HEUN)
     {
       rate_guess = new double *[nProcesses];    //need to set first array to numProcesses
@@ -132,7 +132,7 @@ void MassEnergyBalance( CModel            *pModel,
     iTo                =new int   [maxTotConns];
     kFrom              =new int   [maxLatConns];
     kTo                =new int   [maxLatConns];
-    lat_exchange_rates =new double[maxLatConns];  
+    lat_exchange_rates =new double[maxLatConns];
     rates_of_change    =new double[maxConns   ];
   }//end static memory if
 

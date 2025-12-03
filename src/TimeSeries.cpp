@@ -1034,7 +1034,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long lon
         j++;
         //cout<<"READING IRREGULAR "<<s[0]<<" "<<days[j-1]<<" "<<vals[j-1]<<endl;
       }
-      else            { 
+      else            {
         p->ImproperFormat(s); break;
       }
       bool eof=p->Tokenize(s,Len);
@@ -1057,7 +1057,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long lon
     int nVals=int(Options.duration)+1;
     aVal =new double[nVals];
 
-    for(int n=0;n<nVals;n++) 
+    for(int n=0;n<nVals;n++)
     {
       JulianConvert(double(n),Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
       aVal[n]=0;
@@ -1067,8 +1067,8 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long lon
           if ((tt.model_time>=days[i]) && (tt.model_time<days[i+1])){aVal[n]=vals[i];break;}
         }
       }
-      else { //interpolate 
-        double lastday=days[0]; //assumes that first day also covers any initial days 
+      else { //interpolate
+        double lastday=days[0]; //assumes that first day also covers any initial days
         double nextday=days[0];
         double lastval=vals[0];
         double nextval=vals[0];

@@ -50,7 +50,7 @@ CmvAbstraction::CmvAbstraction(abstraction_type absttype, CModelABC *pModel)
     //adjust minimum deficit
     iFrom[2]=pModel->GetStateVarIndex(MIN_DEP_DEFICIT);
     iTo  [2]=pModel->GetStateVarIndex(MIN_DEP_DEFICIT);
-  } 
+  }
   else if (_type == ABST_HGDM) {
     CHydroProcessABC::DynamicSpecifyConnections(4);
     //abstraction (ponded-->large or small depressions or outflow)
@@ -170,34 +170,34 @@ void CmvAbstraction::GetParticipatingStateVarList(abstraction_type absttype, sv_
 /// \param current_contrib_frac [in] current contributing fraction [0..1]
 /// \param threshold [in] delta threshold for triggering zero contributing area [mm]
 //
-double HGDMcontrib_fraction(const double &current_storage, 
-                            const double &delta_storage,   
-                            const double &max_storage,     
-                            const double &current_contrib_frac, 
-                            const double &threshold = -0.01) 
-{  
+double HGDMcontrib_fraction(const double &current_storage,
+                            const double &delta_storage,
+                            const double &max_storage,
+                            const double &current_contrib_frac,
+                            const double &threshold = -0.01)
+{
   double vf1 = current_storage / max_storage; //[0..1]
-  double cf1 = current_contrib_frac;          //[0..1] 
+  double cf1 = current_contrib_frac;          //[0..1]
   double vf2,cf2;
 
-  if (delta_storage == 0.0) 
+  if (delta_storage == 0.0)
   {
     return current_contrib_frac;
-  } 
-  else 
+  }
+  else
   {
-    if (delta_storage < threshold) 
+    if (delta_storage < threshold)
     {
       //vf2 = (current_storage + delta_storage) / max_storage; //never used
       return 0.0;
-    } 
-    else 
+    }
+    else
     {
       vf2 = vf1 + (1.0 - cf1 ) *  (delta_storage / max_storage);
       if (vf1 < 0.999) {
         cf2 = (((1.0 - cf1) * (vf2 - vf1)) / (1.0 - vf1)) + cf1;
         cf2 = min(max(min(cf2, vf2), 0.0), 1.0);
-      } 
+      }
       else {
         cf2 = 1.0;
       }
@@ -373,14 +373,14 @@ void   CmvAbstraction::GetRatesOfChange( const double        *state_vars,
     double Vs_max  =pHRU->GetSurfaceProps()->dep_max;
     double Vl_max  =pHRU->GetSurfaceProps()->dep_max_large;
     double f_s_to_l=pHRU->GetSurfaceProps()->small_to_large;    //[0..1] fraction of depression landscape draining to large gatekeeper
-    double f_s_to_o=(1-f_s_to_l);                               //[0..1] fraction of depression landscape draining to outlet 
+    double f_s_to_o=(1-f_s_to_l);                               //[0..1] fraction of depression landscape draining to outlet
     double fsu     =pHRU->GetSurfaceProps()->HGDM_frac_sm_dep;  //[0..1] fraction of HRU covered in small depressions + contrib areas of depressions
     double flu     =pHRU->GetSurfaceProps()->HGDM_frac_lr_dep;  //[0..1] fraction of HRU covered in large depression + contrib areas of depression
     double fl      =pHRU->GetSurfaceProps()->HGDM_frac_lr_are;  //[0..1] fraction of HRU covered by maximum area of large depression
     double p       =pHRU->GetSurfaceProps()->HGDM_P;
     double p_large =pHRU->GetSurfaceProps()->HGDM_P_LARGE;
-    
-    //rules: 
+
+    //rules:
     // flu+fsu+fo=1.0
     // fl < flu
 
@@ -388,7 +388,7 @@ void   CmvAbstraction::GetRatesOfChange( const double        *state_vars,
     double Al_max=fl *Atot; //[km2] - maximum area of gatekeeper
     double Asu   =fsu*Atot; //[km2] - total contributing area + surface area of small depressions
     double Alu   =flu*Atot; //[km2] - total contributing area to large depression + surface area of large
-    double As;              //[km2] - total water surface area of small and large depressions (As=A_w in Shook paper) 
+    double As;              //[km2] - total water surface area of small and large depressions (As=A_w in Shook paper)
     double Al;              //[km2] - surface area of large gatekeeper depression (<Al_max)
 
     double ponded  =state_vars[iPond];//[mm]
@@ -397,7 +397,7 @@ void   CmvAbstraction::GetRatesOfChange( const double        *state_vars,
     double fsc_last=state_vars[iCFac];//[0..1] contributing fraction from previous time step
 
     double overflow, to_large(0.0), to_outlet(0.0), to_dep_s(0.0), to_dep_l,excess;
-    
+
     //Small depressions ----------------------------------------------
     //As=pow(Vsmall/Vs_max,2/(p+2));
     //double dVs = runoff * (Asu - As) / Atot + ponded * (As/Atot);
@@ -408,7 +408,7 @@ void   CmvAbstraction::GetRatesOfChange( const double        *state_vars,
     //AET=min(AET,Vsmall);
     //Vsmall-=AET;
     //double fsc=HGDMcontrib_fraction(Vsmall,dVs,Vs_max,fsc_last); //fsc is only used in next timestep
-    
+
     double fsc=HGDMcontrib_fraction(Vsmall,dVs,Vs_max,fsc_last); //fsc is only used in next timestep
     if (dVs>0)
     {
@@ -419,21 +419,21 @@ void   CmvAbstraction::GetRatesOfChange( const double        *state_vars,
       to_large  =(overflow+dVs*(fsc_last))*f_s_to_l; //total ponded->large
       to_outlet =(overflow+dVs*(fsc_last))*f_s_to_o; //total ponded->outflow
     }
-    
+
     //Large depression-----------------------------------------------
     if      (Vlarge <= 0.0   ){Al=0.0;}
     else if (Vlarge >= Vl_max){Al=Al_max;}
     else                      {Al=Al_max*pow((Vlarge / Vl_max),2.0/(p_large + 2.0));}
-    
+
     //double dVl=ponded*Al/Atot+to_large+runoff*(Alu-Al)/Atot+to_large;
     double dVl=ponded*(Alu/Atot)+to_large; //any water in local contributing area, which includes Al_max (i.e., Alu>=Al_max, always)
     Vlarge+=dVl;
     excess=0.0;
-    if (Vlarge>Vl_max){ 
+    if (Vlarge>Vl_max){
       excess= (Vlarge-Vl_max);
-      to_outlet+=excess;    
+      to_outlet+=excess;
       Vlarge=Vl_max;
-    } 
+    }
     to_dep_l=dVl-excess;
 
     //No depression--------------------------------------------------
