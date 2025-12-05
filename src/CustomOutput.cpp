@@ -191,7 +191,13 @@ CCustomOutput::~CCustomOutput()
   delete [] _aData; _aData=NULL;
   CloseFiles(*pModel->GetOptStruct());
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief access spatial aggregation type
+//
+spatial_agg CCustomOutput::GetSpatialAgg() const
+{
+  return _spaceAgg;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Set histogram-related parameters
 /// \param minv [in] Histogram minimum
@@ -337,7 +343,7 @@ void CCustomOutput::WriteCSVFileHeader(void)
 
   if      (_spaceAgg==BY_HRU        ){_CUSTOM<<"HRU:,";}
   else if (_spaceAgg==BY_BASIN      ){_CUSTOM<<"SubBasin:,";}
-  else if (_spaceAgg==BY_DRAINAGE   ){_CUSTOM<<"SubBasin:,";}
+  else if (_spaceAgg==BY_DRAINAGE   ){_CUSTOM<<"DrainageOutlet:,";}
   else if (_spaceAgg==BY_WSHED      ){_CUSTOM<<"Watershed:,";}
   else if (_spaceAgg==BY_HRU_GROUP  ){_CUSTOM<<"HRUGroup:,";}
   else if (_spaceAgg==BY_SB_GROUP   ){_CUSTOM<<"SubbasinGroup:,";}

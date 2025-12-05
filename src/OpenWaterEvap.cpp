@@ -116,6 +116,8 @@ void CmvOWEvaporation::GetRatesOfChange(const double* state_vars,
                                         const time_struct& tt,
                                         double* rates) const
 {
+    if (pHRU->GetHRUType()==HRU_MASKED_GLACIER){return;}
+
     double OWPET;
     OWPET = pHRU->GetForcingFunctions()->OW_PET;            //open water PET rate [mm/d]
 
@@ -176,6 +178,9 @@ void  CmvOWEvaporation::ApplyConstraints( const double            *state_vars,
                                           const time_struct &t,
                                           double      *rates) const
 {
+
+  if (pHRU->GetHRUType()==HRU_MASKED_GLACIER){return;}
+
   if (rates[0]<0)             {rates[0]=0.0;}//positivity constraint
 
   //can't remove more than is there (with exception of surface water in reach or lake HRU)

@@ -491,8 +491,16 @@ void CHydroUnit::AdjustHRUForcing(const forcing_type Ftyp,force_struct &F, const
     else if (adj==ADJ_ADDITIVE      ){F.temp_ave+=epsilon; }
     else if (adj==ADJ_REPLACE       ){F.temp_ave =epsilon;}
   }
+  else if(Ftyp==F_TEMP_DAILY_MIN) 
+  {
+    //handled in AdjustDailyHRUForcings
+  }
+  else if(Ftyp==F_TEMP_DAILY_MAX) 
+  {
+    //handled in AdjustDailyHRUForcings
+  }
   else {
-    ExitGracefully("CHydroUnit::AdjustHRUForcing: Only PRECIP, SNOWFALL, RAINFALL, and TEMP_AVE are supported for forcing perturbation. ",BAD_DATA);
+    ExitGracefully("CHydroUnit::AdjustHRUForcing: Only PRECIP, SNOWFALL, RAINFALL, TEMP_DAILY_MIN, and TEMP_AVE are supported for forcing perturbation. ",BAD_DATA);
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -500,7 +508,7 @@ void CHydroUnit::AdjustHRUForcing(const forcing_type Ftyp,force_struct &F, const
 //
 void CHydroUnit::AdjustDailyHRUForcings(const forcing_type Ftyp, force_struct &F,  const double* epsilon, const adjustment adj, const int nStepsPerDay)
 {
-  if (Ftyp == F_TEMP_AVE)
+  if ((Ftyp == F_TEMP_AVE) || (Ftyp==F_TEMP_DAILY_MIN) || (Ftyp==F_TEMP_DAILY_MAX))
   {
     if      (adj==ADJ_MULTIPLICATIVE)
     {

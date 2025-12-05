@@ -80,6 +80,8 @@ elseif(netCDF_FOUND)
   add_definitions(-Dnetcdf)
   include_directories(${NetCDF_INCLUDE_DIRS})
   target_link_libraries(Raven netcdf)
+else()
+  message(STATUS "NetCDF not found")
 endif()
 
 source_group("Header Files" FILES ${HEADER})

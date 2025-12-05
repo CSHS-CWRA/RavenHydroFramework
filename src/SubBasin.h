@@ -313,6 +313,7 @@ public:/*-------------------------------------------------------*/
   void            SetQinHist               (const int N, const double *aQi);
   void            SetDownstreamID          (const long long down_SBID);
   void            SetDownstreamBasin       (const CSubBasin *pSB);
+  void            SetUpstreamSBGroup       (CSubbasinGroup *pSBGroup);
   void            SetGauged                (const bool isgauged);
   void            Disable                  ();
   void            Enable                   ();
@@ -368,7 +369,7 @@ public:/*-------------------------------------------------------*/
   CSubbasinGroup(string tag,int global_ind);
   ~CSubbasinGroup();
 
-  void AddSubbasin(CSubBasin *pSubBasin);
+  void AddSubbasin(const CSubBasin *pSubBasin);
   void DisableGroup();
   void Initialize();
 

@@ -101,7 +101,8 @@ void   CmvInterflow::GetRatesOfChange(const double                      *state_v
                                       const time_struct &tt,
                                       double                      *rates) const
 {
-  if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lakes & glaciers
+  if ((pHRU->GetHRUType()==HRU_LAKE) || (pHRU->GetHRUType()==HRU_WATER) || 
+      (pHRU->GetHRUType()==HRU_ROCK)){return;}//Lake/Water/Rock
 
   double stor = state_vars[iFrom[0]];
   int    m    = pModel->GetStateVarLayer(iFrom[0]);
@@ -138,7 +139,8 @@ void   CmvInterflow::ApplyConstraints( const double              *state_vars,
                                        const time_struct &tt,
                                        double     *rates) const
 {
-  if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lakes & glaciers
+  if ((pHRU->GetHRUType()==HRU_LAKE) || (pHRU->GetHRUType()==HRU_WATER) || 
+      (pHRU->GetHRUType()==HRU_ROCK)){return;}//Lake/Water/Rock
 
   //cant remove more than is there
   //shouldn't be able to remove below wilt_cap, either...

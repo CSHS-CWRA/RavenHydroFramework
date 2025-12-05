@@ -560,6 +560,10 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       ApplyForcingPerturbation(F_RAINFALL, F, k, Options, tt);
       ApplyForcingPerturbation(F_SNOWFALL, F, k, Options, tt);
 
+      if (_pHydroUnits[k]->GetHRUType()==HRU_MASKED_GLACIER){ // disable all precip from masked portion
+        F.precip=F.precip_daily_ave=F.precip_5day=0; 
+      }
+
       //-------------------------------------------------------------------
       //  Recharge Corrections
       //-------------------------------------------------------------------
@@ -620,8 +624,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       CorrectPET(Options,F,_pHydroUnits[k],elev,ref_elev_temp,k);
 
       if(_pHydroUnits[k]->GetHRUType() == HRU_MASKED_GLACIER) { // disable all ET from masked portion
-        F.PET    = 0.0;
-        F.OW_PET = 0.0;
+        F.PET=F.OW_PET=0.0;
       }
 
       //-------------------------------------------------------------------

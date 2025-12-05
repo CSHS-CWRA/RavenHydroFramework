@@ -156,7 +156,8 @@ void   CmvRecharge::GetRatesOfChange( const double      *storage,
                                       const time_struct &tt,
                                       double            *rates) const
 {
-  if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lakes & glaciers
+  if ((pHRU->GetHRUType()==HRU_LAKE) || (pHRU->GetHRUType()==HRU_WATER) || 
+      (pHRU->GetHRUType()==HRU_ROCK) || (pHRU->GetHRUType()==HRU_MASKED_GLACIER)){return;}//Lake/Water/Rock
 
   if( _type==RECHARGE_FROMFILE){
     rates[0]=pHRU->GetForcingFunctions()->recharge;
@@ -194,7 +195,8 @@ void   CmvRecharge::ApplyConstraints( const double     *state_vars,
                                            const time_struct &tt,
                                            double     *rates) const
 {
-  if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lakes & glaciers
+  if ((pHRU->GetHRUType()==HRU_LAKE) || (pHRU->GetHRUType()==HRU_WATER) || 
+      (pHRU->GetHRUType()==HRU_ROCK) || (pHRU->GetHRUType()==HRU_MASKED_GLACIER)){return;}//Lake/Water/Rock
 
   if (_type==RECHARGE_FROMFILE)
   {

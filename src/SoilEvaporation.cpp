@@ -329,7 +329,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
                                     double            *rates) const
 {
 
-  if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lake/Glacier case
+  if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lake/Glacier/wetland case
 
   double PET,PETused(0.0);
   const soil_struct *pSoil;

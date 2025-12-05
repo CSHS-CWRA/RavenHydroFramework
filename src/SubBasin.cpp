@@ -1620,6 +1620,15 @@ void CSubBasin::SetDownstreamBasin(const CSubBasin* pSB)
   if (_pReservoir!=NULL){_pReservoir->SetDownstreamBasin(pSB); }
 }
 /////////////////////////////////////////////////////////////////
+/// \brief Sets upstream subbasin group (performed by model during routing initialization)
+/// \param pSBGroup [in] pointer to upstream subbasin group
+//
+void CSubBasin::SetUpstreamSBGroup       (CSubbasinGroup *pSBGroup)
+{
+  _pUpstreamGroup=pSBGroup;
+}
+
+/////////////////////////////////////////////////////////////////
 /// \brief increment quantity of total delivered demand from management
 /// *called by DemandOptimization routines only*
 /// this is zeroed out in UpdateSubBasin() every time step prior to management optimization call
@@ -1889,11 +1898,6 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     _pEnviroMinFlow->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,false,Options.calendar);
   }
   //must be initialized AFTER RVM FILE READ
-
-  //determine upstream subbasin group
-  //------------------------------------------------------------------------
-  //int nUpstream;
-  //CModel::GetUpstreamSubbasins(_ID,nUpstream); 
 
   //QA/QC check of Muskingum parameters, if necessary
   //------------------------------------------------------------------------

@@ -323,12 +323,15 @@ void CGlobalParams::AutoCalculateGlobalParams(const global_struct &Gtmp, const g
   {
     G.HBVEC_lapse_elev=5000.0;//Default [m]
   }
-
+  autocalc=SetCalculableValue(G.UBC_lapse_params.A0PPTP,Gtmp.UBC_lapse_params.A0PPTP,Gtemplate.UBC_lapse_params.A0PPTP);
+  if (autocalc)
+  {
+    G.UBC_lapse_params.A0PPTP=0.01;//Default [mm/d]
+  }
 
   //Model-specific global parameters - cannot be autocomputed, must be specified by user
   //----------------------------------------------------------------------------
   SetSpecifiedValue(G.UBC_lapse_params.max_range_temp,Gtmp.UBC_lapse_params.max_range_temp,Gtemplate.UBC_lapse_params.max_range_temp,false,"UBC_MAX_RANGE_TEMP");
-  SetSpecifiedValue(G.UBC_lapse_params.A0PPTP,Gtmp.UBC_lapse_params.A0PPTP,Gtemplate.UBC_lapse_params.A0PPTP,false,"UBC_A0PPTP");
   SetSpecifiedValue(G.UBC_lapse_params.A0STAB,Gtmp.UBC_lapse_params.A0STAB,Gtemplate.UBC_lapse_params.A0STAB,false,"UBC_A0STAB");
   SetSpecifiedValue(G.UBC_lapse_params.A0PELA,Gtmp.UBC_lapse_params.A0PELA,Gtemplate.UBC_lapse_params.A0PELA,false,"UBC_A0PELA");
   SetSpecifiedValue(G.UBC_lapse_params.A0TLXM,Gtmp.UBC_lapse_params.A0TLXM,Gtemplate.UBC_lapse_params.A0TLXM,false,"UBC_A0TLXM");
@@ -417,6 +420,7 @@ void CGlobalParams::InitializeGlobalParameters(global_struct &g, bool is_templat
   g.TIME_TO_PEAK_multiplier =DefaultParameterValue(is_template,true);
   g.GAMMA_SHAPE_multiplier  =DefaultParameterValue(is_template,true);
   g.GAMMA_SCALE_multiplier  =DefaultParameterValue(is_template,true);
+  g.UBC_lapse_params.A0PPTP =DefaultParameterValue(is_template,true);
 
   //model-specific parameters
   g.avg_annual_snow     =DefaultParameterValue(is_template,false);
@@ -424,6 +428,7 @@ void CGlobalParams::InitializeGlobalParameters(global_struct &g, bool is_templat
   g.init_stream_temp    =DefaultParameterValue(is_template,false);
   g.windvel_icept       =DefaultParameterValue(is_template,false);
   g.windvel_scale       =DefaultParameterValue(is_template,false);
+
 
   for (int i=0;i<12;i++){
     g.UBC_s_corr[i]=DefaultParameterValue(is_template,true);
@@ -437,7 +442,6 @@ void CGlobalParams::InitializeGlobalParameters(global_struct &g, bool is_templat
 
   g.UBC_GW_split           =DefaultParameterValue(is_template,false);
   g.UBC_lapse_params.A0PELA=DefaultParameterValue(is_template,false);
-  g.UBC_lapse_params.A0PPTP=DefaultParameterValue(is_template,false);
   g.UBC_lapse_params.A0STAB=DefaultParameterValue(is_template,false);
   g.UBC_lapse_params.A0TLXM =DefaultParameterValue(is_template,false);
   g.UBC_lapse_params.A0TLNH =DefaultParameterValue(is_template,false);

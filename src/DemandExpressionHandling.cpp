@@ -364,7 +364,7 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     ExitGracefullyIf(n>=0,              "ConvertToExpressionTerm:: term in square brackets must be <0 for historical variables.",BAD_DATA_WARN);
     ExitGracefullyIf(n<-_nHistoryItems, "ConvertToExpressionTerm:: term in square brackets exceeds the magnitude of the :LookbackDuration", BAD_DATA_WARN);
 
-    if ((s[1] == 'Q')  || (s[1]=='I') || (s[1] == 'h') || (s[1] == 'B') || (s[1] == 'E'))//|| (s[1] == 'D') doesnt yet support 'D' because history is basin indexed, while GetDVIndexFromString !D is SB indexed
+    if ((s[1] == 'Q')  || (s[1]=='I') || (s[1] == 'h') || (s[1] == 'A') || (s[1] == 'B') || (s[1] == 'E'))//|| (s[1] == 'D') doesnt yet support 'D' because history is basin indexed, while GetDVIndexFromString !D is SB indexed
     {
       if (n<0)
       {

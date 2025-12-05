@@ -78,7 +78,7 @@ bool CSubbasinGroup::IsDisabled() const
 //////////////////////////////////////////////////////////////////
 /// \brief Add an Subbasin to group by dynamically appending to array
 //
-void CSubbasinGroup::AddSubbasin(CSubBasin *pSB)
+void CSubbasinGroup::AddSubbasin(const CSubBasin *pSB)
 {
   if (!DynArrayAppend((void**&)(_pSubbasins),(void*)(pSB),_nSubbasins)){
    ExitGracefully("CSubbasinGroup::AddSubbasin: adding NULL subbasin",BAD_DATA);}

@@ -605,6 +605,30 @@ void CModel::InitializeRoutingNetwork()
     }
   }
   delete [] aInflowCount;
+
+  //if needed, create upstream groups for each subbasin
+  //----------------------------------------------------------------------
+  bool need_upstream=false;
+  for (int i=0;i<_nCustomOutputs;i++){
+    if (_pCustomOutputs[i]->GetSpatialAgg()==BY_DRAINAGE){need_upstream=true;break;}
+  }
+  if (need_upstream){
+    long long SBID;
+    int nUp;
+    
+    for (int p=0;p<_nSubBasins;p++)
+    {
+      SBID=_pSubBasins[p]->GetID();
+      const CSubBasin **pUpstr =GetUpstreamSubbasins(SBID,nUp);
+      CSubbasinGroup *pSBGrp=new CSubbasinGroup("upstream",p);
+      for (int pp=0;pp<nUp;pp++){
+        pSBGrp->AddSubbasin(pUpstr[pp]);
+      }
+      _pSubBasins[p]->SetUpstreamSBGroup(pSBGrp);
+    }
+    WriteAdvisory("Model::InitializeRoutingNetwork - the use of CustomOutput BY_DRAINAGE_AREA may lead to excessive memory requirements for large models as upstream subbasin groups are generated for each subbasin outlet.",_pOptStruct->noisy);
+  }
+
 }
 
 //////////////////////////////////////////////////////////////////

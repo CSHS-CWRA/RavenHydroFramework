@@ -121,21 +121,22 @@ public:/*------------------------------------------------------*/
                 const optStruct                 &Options);
   ~CCustomOutput();
 
-  void             CloseFiles(const optStruct &Options);
+  void        CloseFiles(const optStruct &Options);
 
-  void     SetHistogramParams(const double min,const double max, const int numBins);
+  void        SetHistogramParams(const double min,const double max, const int numBins);
 
-  void InitializeCustomOutput(const optStruct &Options);
+  spatial_agg GetSpatialAgg() const;
+  void        InitializeCustomOutput(const optStruct &Options);
 
-  void      WriteFileHeader  (const optStruct &Options);
-  void      WriteCustomOutput(const time_struct &tt, const optStruct &Options);
+  void        WriteFileHeader  (const optStruct &Options);
+  void        WriteCustomOutput(const time_struct &tt, const optStruct &Options);
 
   static CCustomOutput *ParseCustomOutputCommand(char *s[MAXINPUTITEMS],const int Len,CModel *&pModel,const optStruct &Options);
 
 private:
-  void     WriteCSVFileHeader();
-  void   WriteEnSimFileHeader(const optStruct &Options);
-  void  WriteNetCDFFileHeader(const optStruct &Options);
+  void      WriteCSVFileHeader();
+  void      WriteEnSimFileHeader(const optStruct &Options);
+  void      WriteNetCDFFileHeader(const optStruct &Options);
 };
 
 ///////////////////////////////////////////////////////////////////
