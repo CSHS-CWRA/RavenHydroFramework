@@ -130,6 +130,12 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
     _varUnits = CStateVariable::GetStateVarUnits(typ)+"/d";
     break;
   }
+  case (VAR_STREAMFLOW):
+  {
+    _varName  = "STREAMFLOW";
+    _varUnits = "m3/s";
+    break;
+  }
   default:
   {
     _varName = "UNKNOWN";
@@ -147,6 +153,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   case WATER_YEARLY:              _timeAggStr="WYearly";    break;
   case EVERY_NDAYS:               _timeAggStr="Every"+to_string(int(Options.custom_interval))+"days";break;
   case EVERY_TSTEP:               _timeAggStr="Continuous"; break;
+  case ENTIRE_SIM:                _timeAggStr="Simulation"; break;
   }
 
 
@@ -243,6 +250,9 @@ void CCustomOutput::InitializeCustomOutput(const optStruct &Options)
     else if (_timeAgg==MONTHLY     ){_nDataItems=(int)ceil( 31/Options.timestep)+1;}
     else if (_timeAgg==DAILY       ){_nDataItems=(int)ceil(  1/Options.timestep)+1;}
     else if (_timeAgg==EVERY_TSTEP ){_nDataItems=1;}
+    else if (_timeAgg==ENTIRE_SIM){
+      ExitGracefully("HISTOGRAM Custom output is not supported over ENTIRE_SIM due to memory issues.",BAD_DATA);
+    }
   }
   else{
     ExitGracefully("CCustomOutput::InitializeCustomOutput(): bad aggregator",BAD_DATA);
@@ -340,6 +350,7 @@ void CCustomOutput::WriteCSVFileHeader(void)
   else if (_timeAgg==EVERY_TSTEP ){_CUSTOM<<",,";}
   else if (_timeAgg==WATER_YEARLY){_CUSTOM<<",";}
   else if (_timeAgg==EVERY_NDAYS ){_CUSTOM<<",";}
+  else if (_timeAgg==ENTIRE_SIM  ){_CUSTOM<<""; }
 
   if      (_spaceAgg==BY_HRU        ){_CUSTOM<<"HRU:,";}
   else if (_spaceAgg==BY_BASIN      ){_CUSTOM<<"SubBasin:,";}
@@ -383,6 +394,7 @@ void CCustomOutput::WriteCSVFileHeader(void)
   else if (_timeAgg==MONTHLY     ){_CUSTOM<<"time,month,";}
   else if (_timeAgg==DAILY       ){_CUSTOM<<"time,day,";}
   else if (_timeAgg==EVERY_TSTEP ){_CUSTOM<<"time,day,hour,";}
+  else if (_timeAgg==ENTIRE_SIM  ){_CUSTOM<<"time,"; }
   for (int k=0;k<_nData;k++)
   {
     if      (_aggstat==AGG_AVERAGE  ){_CUSTOM<<"mean,";}
@@ -423,12 +435,13 @@ void CCustomOutput::WriteEnSimFileHeader(const optStruct &Options)
 // some meta data information describing the contents of this file
   _CUSTOM<<":RunName              "<<Options.run_name <<endl;
   _CUSTOM<<"#"<<endl;
-  if      ((_var == VAR_FORCING_FUNCTION) && (_timeAgg==EVERY_TSTEP)){ _CUSTOM<<":Format PeriodEnding "<<endl; }//period ending
+  if      ((_var == VAR_FORCING_FUNCTION) && (_timeAgg==EVERY_TSTEP)){ _CUSTOM<<":Format PeriodEnding "<<endl;  }//period ending
   else if ((_var == VAR_FROM_FLUX       ) && (_timeAgg==EVERY_TSTEP)){ _CUSTOM<<":Format Instantaneous"<<endl;  }//snapshot
   else if ((_var == VAR_TO_FLUX         ) && (_timeAgg==EVERY_TSTEP)){ _CUSTOM<<":Format Instantaneous"<<endl;  }//snapshot
-  else if ((_var == VAR_BETWEEN_FLUX    ) && (_timeAgg==EVERY_TSTEP)){ _CUSTOM<<":Format PeriodEnding"<<endl;  }//period ending
+  else if ((_var == VAR_BETWEEN_FLUX    ) && (_timeAgg==EVERY_TSTEP)){ _CUSTOM<<":Format PeriodEnding"<<endl;   }//period ending
   else if ((_var == VAR_STATE_VAR       ) && (_timeAgg==EVERY_TSTEP)){ _CUSTOM<<":Format Instantaneous"<<endl;  }//snapshot
-  else                                                               { _CUSTOM<<":Format PeriodStarting"<<endl;  }//period starting
+  else if ((_var == VAR_STREAMFLOW      ) && (_timeAgg==EVERY_TSTEP)){ _CUSTOM<<":Format PeriodEnding" <<endl;  }//period ending
+  else                                                               { _CUSTOM<<":Format PeriodStarting"<<endl; }//period starting
   _CUSTOM<<"#"<<endl;
   _CUSTOM<<"# Custom output meta-data"<<endl;
   _CUSTOM<<"#"<<endl;
@@ -502,6 +515,7 @@ void CCustomOutput::WriteEnSimFileHeader(const optStruct &Options)
   else if ((_var == VAR_FROM_FLUX       ) && (_timeAgg==EVERY_TSTEP)){ colFormat = 0;  }//snapshot (cumulative)
   else if ((_var == VAR_TO_FLUX         ) && (_timeAgg==EVERY_TSTEP)){ colFormat = 0;  }//snapshot (cumulative)
   else if ((_var == VAR_BETWEEN_FLUX    ) && (_timeAgg==EVERY_TSTEP)){ colFormat = -1; }//period ending
+  else if ((_var == VAR_STREAMFLOW      ) && (_timeAgg==EVERY_TSTEP)){ colFormat = -1; }//period ending
   else if ((_var == VAR_STATE_VAR       ) && (_timeAgg==EVERY_TSTEP)){ colFormat = 0;  }//snapshot
   else                                                               { colFormat = 1;  }//period starting
 
@@ -765,6 +779,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
                                                              {reset=true;}
   else if ((_timeAgg==WATER_YEARLY) && (dday==1) && (dmon==Options.wateryr_mo))
                                                              {reset=true;}//Oct 1 - print preceding year
+  else if ((_timeAgg==ENTIRE_SIM) && (tt.model_time>=Options.duration-0.5*Options.timestep)){reset=true;}
 
   bool skip=false;
   if ((pModel->GetEnsemble() != NULL) && (pModel->GetEnsemble()->DontWriteOutput())) { skip=true;}
@@ -778,7 +793,8 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       else if (_timeAgg==DAILY       ){_CUSTOM<<t<<","<<yesterday<<",";}
       else if (_timeAgg==EVERY_TSTEP ){_CUSTOM<<t<<","<<thisdate<<","<<thishour<<","; }//period ending for forcing data
       else if (_timeAgg==WATER_YEARLY){_CUSTOM<<t<<","<<yest.year<<"-"<<yest.year+1<<",";}
-      else if (_timeAgg==EVERY_NDAYS ){ _CUSTOM<<t<<","<<yesterday<<","; }
+      else if (_timeAgg==EVERY_NDAYS ){_CUSTOM<<t<<","<<yesterday<<","; }
+      else if (_timeAgg==ENTIRE_SIM  ){_CUSTOM<<t<<","; }
     }
     else if(Options.output_format==OUTPUT_ENSIM)//===============================================================
     {
@@ -815,6 +831,8 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
         if (IsLeapYear(yest.year,Options.calendar) && (Options.wateryr_mo>2)){days_to_first_of_month+=1;}
         current_time[0]=yest.model_time-yest.julian_day+days_to_first_of_month;
       }
+      else if(_timeAgg==ENTIRE_SIM){current_time[0]=tt.model_time-Options.timestep;}
+
       current_time[0]=RoundToNearestMinute(current_time[0]*HR_PER_DAY); //convert to hours
 
       //start1[0] = int(rvn_round(current_time[0]/Options.timestep));   // element of NetCDF array that will be written
@@ -890,7 +908,15 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetAvgCumulFluxBet(_svind,_svind2);}
       else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup (_kk_only)->GetHRU(k)->GetCumulFluxBet(_svind,_svind2);}
     }
-
+    else if(_var==VAR_STREAMFLOW) {
+      if      (_spaceAgg==BY_HRU        ){val=RAV_BLANK_DATA;                                        }
+      else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin      (k)->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);}
+      else if (_spaceAgg==BY_DRAINAGE   ){val=pModel->GetSubBasin      (k)->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);}
+      else if (_spaceAgg==BY_WSHED      ){val=RAV_BLANK_DATA;} //todo [funct] - may wish to support later
+      else if (_spaceAgg==BY_HRU_GROUP  ){val=RAV_BLANK_DATA;}
+      else if (_spaceAgg==BY_SB_GROUP   ){val=RAV_BLANK_DATA;} //todo [funct] - may wish to support later
+      else if (_spaceAgg==BY_SELECT_HRUS){val=RAV_BLANK_DATA;}
+    }
     if (k==0){_count++;}//increment number of data items stored
 
     //---Update diagnostics--------------------------------------------------
@@ -1097,6 +1123,7 @@ CCustomOutput *CCustomOutput::ParseCustomOutputCommand(char *s[MAXINPUTITEMS], c
   else if (!strcmp(s[1],"WATER_YEARLY"   )){ta=WATER_YEARLY;}
   else if (!strcmp(s[1],"EVERY_NDAYS"    )){ta=EVERY_NDAYS; }
   else if (!strcmp(s[1],"CONTINUOUS"     )){ta=EVERY_TSTEP; }
+  else if (!strcmp(s[1],"ENTIRE_SIM"     )){ta=ENTIRE_SIM;  }
   else{
     ta=DAILY;
     ExitGracefully(":CustomOutput command: Unrecognized custom output temporal aggregation method",BAD_DATA);
@@ -1182,7 +1209,7 @@ CCustomOutput *CCustomOutput::ParseCustomOutputCommand(char *s[MAXINPUTITEMS], c
     }
   }
   //not a state variable or a flux to/from state var - try forcing function
-  if (SV_ind==DOESNT_EXIST){
+  if ((SV_ind==DOESNT_EXIST) && (strcmp(s[3],"STREAMFLOW"))){
     diag=VAR_FORCING_FUNCTION;
     sv_typ=UNRECOGNIZED_SVTYPE;
     force_str=s[3];
@@ -1190,6 +1217,11 @@ CCustomOutput *CCustomOutput::ParseCustomOutputCommand(char *s[MAXINPUTITEMS], c
       WriteWarning("Custom output variable " + force_str + " is unrecognized. No output will be written.", Options.noisy);
       return NULL;
     }
+  }
+  else if (!strcmp(s[3],"STREAMFLOW"))//Special handling of STREAMFLOW
+  {
+    diag=VAR_STREAMFLOW;
+    sv_typ=UNRECOGNIZED_SVTYPE;
   }
   else{
     sv_typ=pModel->GetStateVarType(SV_ind);

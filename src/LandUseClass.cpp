@@ -177,7 +177,7 @@ void CLandUseClass::AutoCalculateLandUseProps(surface_struct &Stmp,
   autocalc=SetCalculableValue(S.priestleytaylor_coeff,Stmp.priestleytaylor_coeff,Sdefault.priestleytaylor_coeff);
   if(autocalc)
   {
-    S.priestleytaylor_coeff =1.28;  //Default - no correction
+    S.priestleytaylor_coeff =1.26;  //Default - no correction
   }
   autocalc=SetCalculableValue(S.SCS_Ia_fraction,Stmp.SCS_Ia_fraction,Sdefault.SCS_Ia_fraction);
   if (autocalc)
@@ -365,7 +365,7 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
   S.ow_PET_corr      =DefaultParameterValue(is_template,true);//1.0;      //[-]
   S.lake_PET_corr    =DefaultParameterValue(is_template,true);//1.0;      //[-]
   S.forest_PET_corr  =DefaultParameterValue(is_template,true);//1.0;      //[-]
-  S.priestleytaylor_coeff  =DefaultParameterValue(is_template,true);//1.28;      //[-]
+  S.priestleytaylor_coeff  =DefaultParameterValue(is_template,true);//1.26;      //[-]
   S.SCS_Ia_fraction  =DefaultParameterValue(is_template,true);//0.2
   S.snow_patch_limit = DefaultParameterValue(is_template,true);//0.0
   S.conv_melt_mult = DefaultParameterValue(is_template, true);

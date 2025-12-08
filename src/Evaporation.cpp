@@ -426,7 +426,7 @@ double CModel::EstimatePET(const force_struct &F,
   //-------------------------------------------------------------------------------------
   case(PET_PRIESTLEY_TAYLOR):
   {
-    double PT_coeff=pHRU->GetSurfaceProps()->priestleytaylor_coeff; //1.28 by default
+    double PT_coeff=pHRU->GetSurfaceProps()->priestleytaylor_coeff; //1.26 by default
     PET=PriestleyTaylorEvap(&F,PT_coeff); break;
   }
   //-------------------------------------------------------------------------------------

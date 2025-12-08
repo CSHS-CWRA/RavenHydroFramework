@@ -40,8 +40,8 @@ enum time_agg
   YEARLY,      ///< Aggregate by year
   WATER_YEARLY,///< Aggregate by water year
   EVERY_NDAYS, ///< Aggregate by N-day intervals
-  EVERY_TSTEP  ///< Aggregate by time-step
-  //ENTIRE_SIM   ///< Aggregate over entire simulation (not currently implemented)
+  EVERY_TSTEP, ///< Aggregate by time-step
+  ENTIRE_SIM   ///< Aggregate over entire simulation
 };
 
 ///////////////////////////////////////////////////////////////////////
@@ -51,6 +51,7 @@ enum diagnostic
 {
   VAR_STATE_VAR,        ///< track state variable
   VAR_FORCING_FUNCTION, ///< track forcing function
+  VAR_STREAMFLOW,       ///< track streamflow
   VAR_HYD_COND,         ///< track hydraulic conductivity
   VAR_FROM_FLUX,        ///< track gross flux from specific state variable
   VAR_TO_FLUX,          ///< track gross flux to specific state variable
