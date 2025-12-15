@@ -845,8 +845,11 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
         {
           p->Tokenize(s,Len);
           done=false;
+          int j = 0;
           while (!done)
           {
+            j += 1;
+            ExitGracefullyIf(j>=MAX_SURVEY_PTS,"ParseClassPropertiesFile: Maximum number of channel points exceeded (max 500).",BAD_DATA); // check against MAX_SURVEY_PTS
             if      (IsComment(s[0], Len)){}//comment line
             else if (Len==2)           {x[countSP]=s_to_d(s[0]); y[countSP]=s_to_d(s[1]);countSP++;}
             else                       {p->ImproperFormat(s); break;}
@@ -859,8 +862,11 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
         {
           p->Tokenize(s,Len);
           done=false;
+          int j = 0;
           while (!done)
           {
+            j += 1;
+            ExitGracefullyIf(j>=MAX_SURVEY_PTS,"ParseClassPropertiesFile: Maximum number of roughness points exceeded (max 500).",BAD_DATA); // check against MAX_SURVEY_PTS
             if      (IsComment(s[0], Len)){}//comment line
             else if (Len==2           ){xz[countRS]=s_to_d(s[0]);n [countRS]=s_to_d(s[1]);countRS++;}
             else                       {p->ImproperFormat(s); break;}
