@@ -106,7 +106,7 @@ void   CmvCapillaryRise::GetRatesOfChange( const double      *storage,
                                            const time_struct &tt,
                                            double     *rates) const
 {
-  if ((pHRU->GetHRUType()==HRU_LAKE) || (pHRU->GetHRUType()==HRU_WATER) || 
+  if ((pHRU->GetHRUType()==HRU_LAKE) || (pHRU->GetHRUType()==HRU_WATER) ||
       (pHRU->GetHRUType()==HRU_ROCK)){return;}//Lake/Water/Rock
 
   const soil_struct *pSoil=NULL;
@@ -163,7 +163,7 @@ void   CmvCapillaryRise::ApplyConstraints( const double     *storage,
                                            const time_struct &tt,
                                            double     *rates) const
 {
-  if ((pHRU->GetHRUType()==HRU_LAKE) || (pHRU->GetHRUType()==HRU_WATER) || 
+  if ((pHRU->GetHRUType()==HRU_LAKE) || (pHRU->GetHRUType()==HRU_WATER) ||
       (pHRU->GetHRUType()==HRU_ROCK)){return;}//Lake/Water/Rock
 
   double min_stor=g_min_storage;

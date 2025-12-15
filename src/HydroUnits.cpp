@@ -491,11 +491,11 @@ void CHydroUnit::AdjustHRUForcing(const forcing_type Ftyp,force_struct &F, const
     else if (adj==ADJ_ADDITIVE      ){F.temp_ave+=epsilon; }
     else if (adj==ADJ_REPLACE       ){F.temp_ave =epsilon;}
   }
-  else if(Ftyp==F_TEMP_DAILY_MIN) 
+  else if(Ftyp==F_TEMP_DAILY_MIN)
   {
     //handled in AdjustDailyHRUForcings
   }
-  else if(Ftyp==F_TEMP_DAILY_MAX) 
+  else if(Ftyp==F_TEMP_DAILY_MAX)
   {
     //handled in AdjustDailyHRUForcings
   }
