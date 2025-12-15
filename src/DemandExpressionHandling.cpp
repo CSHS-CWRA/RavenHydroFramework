@@ -1129,7 +1129,7 @@ exp_condition* CDemandOptimizer::ParseCondition(const char** s, const int Len, c
   }
   if (is_exp) {
     pCond->pExp=this->ParseExpression((const char**)(s),Len,lineno,filename,Options);
-    if (pCond->pExp==NULL){return NULL;}//bad expression 
+    if (pCond->pExp==NULL){return NULL;}//bad expression
     return pCond;
   }
   else

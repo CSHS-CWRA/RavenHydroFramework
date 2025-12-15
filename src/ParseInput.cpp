@@ -1118,6 +1118,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"OROCORR_UBCWM"      )){Options.orocorr_temp=OROCORR_UBCWM;}
       else if (!strcmp(s[1],"OROCORR_UBCWM2"     )){Options.orocorr_temp=OROCORR_UBCWM2;}
       else if (!strcmp(s[1],"OROCORR_SIMPLELAPSE")){Options.orocorr_temp=OROCORR_SIMPLELAPSE;}
+      else if (!strcmp(s[1],"OROCORR_WETDRY"     )){Options.orocorr_temp=OROCORR_WETDRY;}
       else if (!strcmp(s[1],"OROCORR_NONE"       )){Options.orocorr_temp=OROCORR_NONE;}
       else {ExitGracefully("ParseInput:OroTempCorrect: Unrecognized method",BAD_DATA_WARN);}
       break;

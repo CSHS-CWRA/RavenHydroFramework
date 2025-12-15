@@ -1899,6 +1899,11 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
   }
   //must be initialized AFTER RVM FILE READ
 
+  //determine upstream subbasin group
+  //------------------------------------------------------------------------
+  //int nUpstream;
+  //CModel::GetUpstreamSubbasins(_ID,nUpstream);
+
   //QA/QC check of Muskingum parameters, if necessary
   //------------------------------------------------------------------------
   if ((Options.routing==ROUTE_MUSKINGUM) || (Options.routing==ROUTE_MUSKINGUM_CUNGE))

@@ -791,7 +791,7 @@ void CReservoir::Initialize(const optStruct &Options)
   _dry_timesteps=0;
   double Qoverride=0.0;
   double Qmin=0.0;
-  if (_pOverrideQ!=NULL){  
+  if (_pOverrideQ!=NULL){
     Qoverride=_pOverrideQ->GetSampledValue(0);
     if (_pQminTS!=NULL){
       Qmin=_pQminTS->GetSampledValue(0);
