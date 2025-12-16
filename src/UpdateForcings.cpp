@@ -561,7 +561,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       ApplyForcingPerturbation(F_SNOWFALL, F, k, Options, tt);
 
       if (_pHydroUnits[k]->GetHRUType()==HRU_MASKED_GLACIER){ // disable all precip from masked portion
-        F.precip=F.precip_daily_ave=F.precip_5day=0; 
+        F.precip=F.precip_daily_ave=F.precip_5day=0;
       }
 
       //-------------------------------------------------------------------

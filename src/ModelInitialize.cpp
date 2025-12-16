@@ -615,7 +615,7 @@ void CModel::InitializeRoutingNetwork()
   if (need_upstream){
     long long SBID;
     int nUp;
-    
+
     for (int p=0;p<_nSubBasins;p++)
     {
       SBID=_pSubBasins[p]->GetID();
