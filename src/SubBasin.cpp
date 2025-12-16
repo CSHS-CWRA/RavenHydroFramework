@@ -350,7 +350,7 @@ int                CSubBasin::GetNumHRUs             () const{return _nHydroUnit
 const CHydroUnit*CSubBasin::GetHRU(const int ks) const
 {
 #ifdef _STRICTCHECK_
-  ExitGracefullyIf((ks<0) && (ks>=_nHydroUnits),"CSubBasin:GetHRU::improper index",BAD_DATA);
+  ExitGracefullyIf((ks<0) || (ks>=_nHydroUnits),"CSubBasin:GetHRU::improper index",BAD_DATA);
 #endif
   return _pHydroUnits[ks];
 }
@@ -370,7 +370,7 @@ CReservoir    *CSubBasin::GetReservoir () const
 double CSubBasin::GetAvgStateVar (const int i) const
 {
 #ifdef  _STRICTCHECK_
-  ExitGracefullyIf((i<0) && (i>=_pModel->GetNumStateVars()),"CSubBasin:GetAverageStateVar::improper index",BAD_DATA);
+  ExitGracefullyIf((i<0) || (i>=_pModel->GetNumStateVars()),"CSubBasin:GetAverageStateVar::improper index",BAD_DATA);
 #endif
   double sum=0.0;
   for (int k=0;k<_nHydroUnits;k++)
@@ -391,7 +391,7 @@ double CSubBasin::GetAvgStateVar (const int i) const
 double CSubBasin::GetAvgConcentration(const int i) const
 {
 #ifdef  _STRICTCHECK_
-  ExitGracefullyIf((i<0) && (i>=_pModel->GetNumStateVars()),"CSubBasin:GetAvgConcentration::improper index",BAD_DATA);
+  ExitGracefullyIf((i<0) || (i>=_pModel->GetNumStateVars()),"CSubBasin:GetAvgConcentration::improper index",BAD_DATA);
 #endif
   double sum=0.0;
   for(int k=0;k<_nHydroUnits;k++)
