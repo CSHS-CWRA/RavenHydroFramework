@@ -26,8 +26,8 @@ typedef const double * const * const Ironclad2DArray;     ///< unmodifiable 2d a
 
 //Strings/Parser
 //************************************************************************
-const int    MAXINPUTITEMS  =    500;  ///< maximum delimited input items per line
-const int    MAXCHARINLINE  =   6000;  ///< maximum characters in line
+const int    MAXINPUTITEMS  =   1000;  ///< maximum delimited input items per line
+const int    MAXCHARINLINE  =  10000;  ///< maximum characters in line
 const bool   parserdebug=false;   ///< turn to true for debugging of parser
 
 ///////////////////////////////////////////////////////

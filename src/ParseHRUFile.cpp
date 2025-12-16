@@ -1120,7 +1120,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
         }
       }
 
-      string advice = "Number of gauged subbasins to to " + to_string(pSBGroup->GetNumSubbasins());
+      string advice = "Number of gauged subbasins is " + to_string(pSBGroup->GetNumSubbasins());
       WriteAdvisory(advice, Options.noisy);
       break;
     }

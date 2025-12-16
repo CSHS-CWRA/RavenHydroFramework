@@ -370,9 +370,6 @@ double CModel::EstimatePET(const force_struct &F,
     if(Options.keepUBCWMbugs){refelev=g_debug_vars[4];}
     double XEVAP2=A0PELA * 0.001 * (refelev - pHRU->GetElevation());
     PET=forest_corr*(F.PET_month_ave*max_temp+XEVAP2); //PET_month_ave actually stores Monthly evap factors [mm/d/K]
-
-    PET=max(PET,0.0);
-
     break;
   }
   //-------------------------------------------------------------------------------------
@@ -464,7 +461,6 @@ double CModel::EstimatePET(const force_struct &F,
     double rel_hum=F.rel_humidity; //[0..1]
 
     PET = 0.047*Rs*sqrt(Tave + 9.5) - 2.4*pow(Rs / R_et, 2.0) + 0.09*(Tave + 20)*(1-rel_hum);
-    PET=max(PET,0.0);
     break;
   }
   //-------------------------------------------------------------------------------------
@@ -476,7 +472,6 @@ double CModel::EstimatePET(const force_struct &F,
     double rel_hum=F.rel_humidity; //[0..1]
 
     PET = 0.038*Rs*sqrt(Tave + 9.5) - 2.4*pow(Rs / R_et, 2.0) + 0.075*(Tave + 20)*(1-rel_hum);
-    PET=max(PET,0.0);
     break;
   }
   //-------------------------------------------------------------------------------------
@@ -487,7 +482,6 @@ double CModel::EstimatePET(const force_struct &F,
     double cpet = this->_pGlobalParams->GetParams()->MOHYSE_PET_coeff;
 
     PET = cpet/PI*acos(-tan(lat_rad)*tan(declin))*exp((17.3*F.temp_ave)/(238+F.temp_ave));
-    PET=max(PET,0.0);
     break;
   }
   //-------------------------------------------------------------------------------------
@@ -509,7 +503,6 @@ double CModel::EstimatePET(const force_struct &F,
     else {
       PET= (500* T/(100-latit)+15.0*(T-Tdewpoint))/(80.0-T);
     }
-    PET=max(PET,0.0);
     break;
   }
   //-------------------------------------------------------------------------------------
@@ -524,7 +517,6 @@ double CModel::EstimatePET(const force_struct &F,
 
     PET = C * (e_sat-ea);
 
-    PET=max(PET,0.0);
     break;
   }
   //-------------------------------------------------------------------------------------
@@ -539,11 +531,7 @@ double CModel::EstimatePET(const force_struct &F,
     ExitGracefully("CModel::UpdateHRUPET: Invalid Evaporation Type",BAD_DATA); break;
   }
   }
-
-  if (PET<(-REAL_SMALL)){
-    string warn="Negative PET ("+to_string(PET)+" mm/d) calculated in CModel::UpdateHRUPET";
-    ExitGracefully(warn.c_str(),RUNTIME_ERR);
-  }
+  PET=max(PET,0.0);
 
   double veg_corr=pHRU->GetVegetationProps()->PET_veg_corr;
   return PET*veg_corr;

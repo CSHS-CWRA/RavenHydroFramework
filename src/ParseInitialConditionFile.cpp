@@ -118,6 +118,13 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
 
     else if  (!strcmp(s[0],":InitialSurfaceWaterConcentration")){code=9;}
 
+    // management solution vars
+    else if  (!strcmp(s[0],":WorkflowVar"                 )){code=13;}
+    else if  (!strcmp(s[0],":BasinFlowHist"               )){code=14;}
+    else if  (!strcmp(s[0],":BasinInflowHist"             )){code=15;}
+    else if  (!strcmp(s[0],":BasinStageHist"              )){code=16;}
+    else if  (!strcmp(s[0],":BasinAreaHist"               )){code=17;}
+
     //else if  (!strcmp(s[0],":InitialReservoirConcentration"       )){code=9;  concname=s[1];  }
     //else if  (!strcmp(s[0],":InitialReservoirTemperature"         )){code=9;  concname="TEMPERATURE"; }
 
@@ -892,6 +899,71 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
           done=true;
         }
       } while(!done);
+      break;
+    }
+    case(13):  //----------------------------------------------
+    {
+      //:WorkflowVar [name] [value]
+      if (Len<3){break;}
+      if (Options.management_optimization){
+        pModel->GetManagementOptimizer()->SetWorkflowVariable(s[1],s_to_d(s[2]));
+      }
+      break;
+    }
+    case(14):  //----------------------------------------------
+    {
+      //:BasinFlowHist [SBID] [value1] ... [valueNB]
+      if (Len<3){break;}
+      if (Options.management_optimization){
+        CSubBasin *pSB=pModel->GetSubBasinByID(s_to_ll(s[1]));
+        if (pSB==NULL){break;}//likely disabled in previous run
+        int p=pSB->GetGlobalIndex();
+        for (int i=0;i<Len-2;i++){
+          pModel->GetManagementOptimizer()->SetHistoryVariable('Q',i,p,s_to_d(s[i+2]));
+        }
+      }
+      break;
+    }
+    case(15):  //----------------------------------------------
+    {
+      //:ReservoirInflowHist [SBID] [value1] ... [valueNB]
+      if (Len<3){break;}
+      if (Options.management_optimization){
+        CSubBasin *pSB=pModel->GetSubBasinByID(s_to_ll(s[1]));
+        if (pSB==NULL){break;}//likely disabled in previous run
+        int p=pSB->GetGlobalIndex();
+        for (int i=0;i<Len-2;i++){
+          pModel->GetManagementOptimizer()->SetHistoryVariable('I',i,p,s_to_d(s[i+2]));
+        }
+      }
+      break;
+    }
+    case(16):  //----------------------------------------------
+    {
+      //:ReservoirStageHist [SBID] [value1] ... [valueNB]
+      if (Len<3){break;}
+      if (Options.management_optimization){
+        CSubBasin *pSB=pModel->GetSubBasinByID(s_to_ll(s[1]));
+        if (pSB==NULL){break;}//likely disabled in previous run
+        int p=pSB->GetGlobalIndex();
+        for (int i=0;i<Len-2;i++){
+          pModel->GetManagementOptimizer()->SetHistoryVariable('h',i,p,s_to_d(s[i+2]));
+        }
+      }
+      break;
+    }
+    case(17):  //----------------------------------------------
+    {
+      //:ReservoirAreaHist [SBID] [value1] ... [valueNB]
+      if (Len<3){break;}
+      if (Options.management_optimization){
+        CSubBasin *pSB=pModel->GetSubBasinByID(s_to_ll(s[1]));
+        if (pSB==NULL){break;}//likely disabled in previous run
+        int p=pSB->GetGlobalIndex();
+        for (int i=0;i<Len-2;i++){
+          pModel->GetManagementOptimizer()->SetHistoryVariable('h',i,p,s_to_d(s[i+2]));
+        }
+      }
       break;
     }
     default://------------------------------------------------

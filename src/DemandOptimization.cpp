@@ -250,6 +250,37 @@ void   CDemandOptimizer::SetRelaxationCoeff    (const double relax)
 {
   _relaxCoeff=relax;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief sets workflow variable
+/// \params var_name [in] - workflow var name
+/// \params val [in] - workflow var value
+/// \notes - called while parsing .rvc file
+//
+void CDemandOptimizer::SetWorkflowVariable     (const string var_name, const double &val)
+{
+  for (int i=0; i<_nWorkflowVars; i++){
+    if (_pWorkflowVars[i]->name==var_name){_pWorkflowVars[i]->current_val=val; return;}
+  }
+  WriteWarning("CDemandOptimizer::SetWorkflowVariable: unknown workflow variable in .rvc file ",true);
+}
+//////////////////////////////////////////////////////////////////
+/// \brief sets workflow variable
+/// \params var_code [in] - history value code - Q, I, h, or A
+/// \params p [in] - global subbasin index 
+/// \params i [in] - history index 
+/// \params val [in] - history value
+/// \notes - called while parsing .rvc file; throws no warnings, only updates valid contents 
+//
+void CDemandOptimizer::SetHistoryVariable      (const char var_code, const int p, const int i, const double &val)
+{
+  if ((p<0) || (p>=_pModel->GetNumSubBasins())){return;}  
+  if ((i<0) || (i>=_nHistoryItems)){return;}
+  if (_aSBIndices[p]==DOESNT_EXIST){return;}
+  if      (var_code=='Q'){_aQhist[_aSBIndices[p]][i]=val;}
+  else if (var_code=='I'){_aIhist[_aSBIndices[p]][i]=val;}
+  else if (var_code=='h'){_ahhist[_aSBIndices[p]][i]=val;}
+  else if (var_code=='A'){_aAhist[_aSBIndices[p]][i]=val;}
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief assigns a demand 'unrestricted' status, meaning it wont be considered when applying environmental min flow constraints
@@ -2656,6 +2687,32 @@ void CDemandOptimizer::WriteMinorOutput(const optStruct &Options,const time_stru
     _RESID<<endl;
   }
 }
+//////////////////////////////////////////////////////////////////
+/// \brief writes necessary content to .rvc file
+//
+void   CDemandOptimizer::WriteMajorOutput      (ofstream &RVC)
+{
+  for (int i=0;i<_nWorkflowVars;i++){
+    RVC<<":WorkflowVar "<<_pWorkflowVars[i]->name<<" "<<_pWorkflowVars[i]->current_val<<endl;
+  }
+  for (int p=0;p<_pModel->GetNumSubBasins();p++){
+    if (_pModel->GetSubBasin(p)->IsEnabled()){
+      RVC<<":BasinFlowHist "<< p<<","; 
+      for(int i=0; i<_nHistoryItems;i++)   { RVC<<_aQhist[_aSBIndices[p]][i]<<","; }RVC<<endl;
+      if (_pModel->GetSubBasin(p)->GetReservoir()!=NULL)
+      {
+        RVC<<":ReservoirInflowHist "<< p<<",";
+        for(int i=0; i<_nHistoryItems;i++) { RVC<<_aIhist[_aSBIndices[p]][i]<<","; }RVC<<endl;
+        RVC<<":ReservoirStageHist "<< p<<",";
+        for(int i=0; i<_nHistoryItems;i++) { RVC<<_ahhist[_aSBIndices[p]][i]<<","; }RVC<<endl;
+        RVC<<":ReservoirAreaHist "<< p<<",";
+        for(int i=0; i<_nHistoryItems;i++) { RVC<<_aAhist[_aSBIndices[p]][i]<<","; }RVC<<endl;
+      }
+      RVC<<endl;
+    }
+  }
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief Closes output file streams
 /// \details after end of simulation from Main() or in ExitGracefully; All file streams are opened in WriteOutputFileHeaders() routine

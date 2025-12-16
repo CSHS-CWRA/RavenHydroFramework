@@ -24,7 +24,7 @@ int    g_current_e        =DOESNT_EXIST;
 
 static string RavenBuildDate(__DATE__);
 
-bool ParseManagementFile       (CModel *&pModel, const optStruct &Options);
+void ParseManagementFile       (CModel *&pModel, const optStruct &Options);
 
 //////////////////////////////////////////////////////////////////
 //
@@ -47,6 +47,9 @@ int main(int argc, char* argv[])
 #ifdef _NETCDF_
   Options.version+=" w/ netCDF";
 #endif
+#ifdef _LPSOLVE_
+  Options.version+=" w/ lp_solve";
+#endif
 
   ProcessExecutableArguments(argc,argv,Options);
   PrepareOutputdirectory(Options);
@@ -60,9 +63,9 @@ int main(int argc, char* argv[])
     cout <<"============================================================"<<endl;
     cout <<"                        RAVEN                               "<<endl;
     cout <<" a robust semi-distributed hydrological modelling framework "<<endl;
-    cout <<"    Copyright 2008-"<<year<<", the Raven Development Team "  <<endl;
-    cout <<"                    Version "<<Options.version               <<endl;
-    cout <<"                BuildDate "<<RavenBuildDate                  <<endl;
+    cout <<"    Copyright 2008-"<<year<<", the Raven Development Team   "<<endl;
+    cout <<"    Version:   "<<Options.version                            <<endl;
+    cout <<"    BuildDate: "<<RavenBuildDate                             <<endl;
     cout <<"============================================================"<<endl;
   }
 
@@ -90,17 +93,15 @@ int main(int argc, char* argv[])
     cout <<"Initializing Model..."<<endl;
   }
   pModel->Initialize                  (Options);
+
+  ParseManagementFile                 (pModel,Options);
+  pModel->InitializePostRVM           (Options);
+
   ParseInitialConditions              (pModel, Options);
   pModel->CalculateInitialWaterStorage(Options);
   pModel->SummarizeToScreen           (Options);
   pModel->GetEnsemble()->Initialize   (pModel,Options);
 
-  //Management file (.rvm)
-  //--------------------------------------------------------------------------------
-  if(Options.management_optimization) {
-    if(!ParseManagementFile(pModel,Options)) {
-      ExitGracefully("Cannot find or read .rvm file",BAD_DATA);}}
-  pModel->InitializePostRVM(Options);
 
   CheckForErrorWarnings(false, pModel);
 
@@ -113,9 +114,9 @@ int main(int argc, char* argv[])
     PrepareOutputdirectory(Options); //adds new output folders, if needed
     pModel->WriteOutputFileHeaders(Options);
 
-    if(!Options.silent) {
+    if (!Options.silent) {
       cout <<endl<<"======================================================"<<endl;
-      if(nEnsembleMembers>1) { cout<<"Ensemble Member "<<e+1<<" "; g_suppress_warnings=true;}
+      if (nEnsembleMembers>1) { cout<<"Ensemble Member "<<e+1<<" "; g_suppress_warnings=true;}
       cout <<"Simulation Start..."<<endl;
     }
 

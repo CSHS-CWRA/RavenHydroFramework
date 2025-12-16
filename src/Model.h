@@ -394,7 +394,7 @@ public:/*-------------------------------------------------------*/
   void                   DestroyAllChannelXSections();
   void                   CheckForChannelXSectsDuplicates(const optStruct &Options);
   void                   WriteRatingCurves(const optStruct& Options) const;
-  void                   WriteRatingCurves(const optStruct* Options) const;
+ 
   // Convolution variables
   int                    GetNumConvolutionVariables() const;
   void                   IncrementConvolutionCount();

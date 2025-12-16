@@ -346,6 +346,9 @@ public: /*------------------------------------------------------*/
   void SetDemandPenalty        (const string dname, const double &pen);
   //void SetDemandPriority     (const string dname, const int &prior);
 
+  void SetWorkflowVariable     (const string var_name, const double &val);
+  void SetHistoryVariable      (const char var_code, const int p, const int i, const double &val);
+
   double     EvaluateExpression(const expressionStruct* pE,const double &t,bool RHS_only) const;
 
   expressionStruct *ParseExpression(const char **s, const int Len, const int lineno, const string filename, const optStruct &Options) const;
@@ -359,6 +362,7 @@ public: /*------------------------------------------------------*/
 
   void   WriteOutputFileHeaders(const optStruct &Options);
   void   WriteMinorOutput      (const optStruct &Options,const time_struct &tt);
+  void   WriteMajorOutput      (ofstream &RVC);
   void   CloseOutputStreams    ();
 
   void   Closure               (const optStruct &Options);

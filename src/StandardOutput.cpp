@@ -1433,6 +1433,8 @@ void CModel::WriteMajorOutput(const time_struct &tt, string solfile, bool final)
 
   _pTransModel->WriteMajorOutput(RVC);
 
+  if (Options->management_optimization){_pDO->WriteMajorOutput(RVC);}
+
   RVC.close();
 
   // SubbasinProperties.csv

@@ -1680,7 +1680,7 @@ void CSubBasin::RecordReturnFlow(const int ii, const double& Qret)
 /// \param isgauged [in] boolean whether subbasin is gauged
 //
 void CSubBasin::SetGauged(const bool isgauged) {
-    _gauged = isgauged;
+  _gauged = isgauged;
 }
 /////////////////////////////////////////////////////////////////
 /// \brief Sets basin as disabled

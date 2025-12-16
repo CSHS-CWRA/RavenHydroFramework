@@ -46,10 +46,12 @@ void swapWildcards(const char **s,const int Len, string **aWildcards,const int &
 ///
 /// \param *&pModel [out] Reference to model object
 /// \param &Options [out] Global model options information
-/// \return True if operation is successful
 //
-bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
+void ParseManagementFile(CModel *&pModel,const optStruct &Options)
 {
+
+  if(!Options.management_optimization) {return;}
+
   int         i;              //counters
   bool        ended(false);
   bool        in_ifmode_statement=false;
@@ -69,7 +71,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
   ifstream    RVM;
   RVM.open(Options.rvm_filename.c_str(),ios::binary);
   if(RVM.fail()) {
-    cout << "ERROR opening model management file: "<<Options.rvm_filename<<endl; return false;
+    ExitGracefully("ParseManagementFile: Cannot find or read .rvm file",BAD_DATA);
   }
 
   string  firstword;
@@ -887,7 +889,11 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
 
       ifstream    LUCSV;
       LUCSV.open(filename.c_str());
-      if (LUCSV.fail()){cout << "ERROR opening file: "<<filename<<endl; return false;}
+      if (LUCSV.fail()){
+        string warn="ParseManagementFile: ERROR opening LookupTableFromCSV file: "+filename;
+        ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+        break;
+      }
 
       CParser *ppCSV=new CParser(LUCSV,filename,line2);
 
@@ -1450,6 +1456,4 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
 
   delete pp;
   pp=NULL;
-
-  return true;
 }
