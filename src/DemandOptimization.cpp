@@ -266,14 +266,14 @@ void CDemandOptimizer::SetWorkflowVariable     (const string var_name, const dou
 //////////////////////////////////////////////////////////////////
 /// \brief sets workflow variable
 /// \params var_code [in] - history value code - Q, I, h, or A
-/// \params p [in] - global subbasin index 
-/// \params i [in] - history index 
+/// \params p [in] - global subbasin index
+/// \params i [in] - history index
 /// \params val [in] - history value
-/// \notes - called while parsing .rvc file; throws no warnings, only updates valid contents 
+/// \notes - called while parsing .rvc file; throws no warnings, only updates valid contents
 //
 void CDemandOptimizer::SetHistoryVariable      (const char var_code, const int p, const int i, const double &val)
 {
-  if ((p<0) || (p>=_pModel->GetNumSubBasins())){return;}  
+  if ((p<0) || (p>=_pModel->GetNumSubBasins())){return;}
   if ((i<0) || (i>=_nHistoryItems)){return;}
   if (_aSBIndices[p]==DOESNT_EXIST){return;}
   if      (var_code=='Q'){_aQhist[_aSBIndices[p]][i]=val;}
@@ -2697,7 +2697,7 @@ void   CDemandOptimizer::WriteMajorOutput      (ofstream &RVC)
   }
   for (int p=0;p<_pModel->GetNumSubBasins();p++){
     if (_pModel->GetSubBasin(p)->IsEnabled()){
-      RVC<<":BasinFlowHist "<< p<<","; 
+      RVC<<":BasinFlowHist "<< p<<",";
       for(int i=0; i<_nHistoryItems;i++)   { RVC<<_aQhist[_aSBIndices[p]][i]<<","; }RVC<<endl;
       if (_pModel->GetSubBasin(p)->GetReservoir()!=NULL)
       {
