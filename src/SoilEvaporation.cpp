@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------
   Soil Evaporation
   ----------------------------------------------------------------*/
@@ -729,6 +729,20 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
 
     PETused=rates[0]+rates[1]+rates[2];
   }
+  //------------------------------------------------------------
+  /*else if(type==SOILEVAP_XINANXIANG)
+  {
+    double tstep=Options.timestep;
+    double soil0=state_vars[iFrom[0]];
+    double soil1=state_vars[iFrom[1]];
+    double soil2=state_vars[iFrom[2]];
+    double soil1max=pHRU->GetSoilCapacity(1);
+    double c=pHRU->GetSurfaceProps()->xinanxiang_c;
+
+    rates[0]=min(PET,soil0/tstep);
+    rates[1]=min((PET-rates[0]) * min(soil0 / soil1max,c),soil1/tstep);
+    rates[2]=max(PET-rates[0]-rates[1],0.0);
+  }*/
   else
   {
     ExitGracefully("CmvSoilEvaporation::GetRatesOfChange: undefined soil evaporation type",BAD_DATA);
