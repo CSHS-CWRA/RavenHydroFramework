@@ -189,7 +189,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   bool              runmode_overridden(false);
   bool              rundir_overridden(false);
   int               num_ensemble_members=1;
-  unsigned int      random_seed=0; //actually random
+  unsigned int      random_seed=0;    //actually random
   ifstream          INPUT;
   ifstream          INPUT2;           //For Secondary input
   CParser          *pMainParser=NULL; //for storage of main parser while reading secondary files
@@ -199,7 +199,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   sv_type          *tmpS;
   int              *tmpLev;
 
-  int               code;            //Parsing vars
+  int               code;             //Parsing vars
   bool              ended(false);
   bool              is_temp(false);
   int               Len,line(0);
@@ -286,6 +286,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.allow_soil_overfill     =false;
   Options.pavics                  =false;
   Options.deltaresFEWS            =false;
+  Options.use_fullname_cf_role    =false;
   Options.res_overflowmode        =OVERFLOW_ALL;
 
   //Groundwater model options
@@ -492,6 +493,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":FEWSBasinStateInfoFile"    )){code=112;}
     else if  (!strcmp(s[0],":TimeOfConcentrationMethod" )){code=113;}
     else if  (!strcmp(s[0],":StateOverrideEndTime"      )){code=114;}//AFTER :StartDate,:Calendar commands
+    else if  (!strcmp(s[0],":NetCDFUseBasinFullname"    )){code=115;}
 
     else if  (!strcmp(s[0],":WriteGroundwaterHeads"     )){code=510;}//GWMIGRATE -TO REMOVE
     else if  (!strcmp(s[0],":WriteGroundwaterFlows"     )){code=511;}//GWMIGRATE -TO REMOVE
@@ -1975,7 +1977,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else {ExitGracefully("ParseInput :TimeOfConcentrationMethod: Unrecognized method",BAD_DATA_WARN);}
       break;
     }
-   case(114):  //--------------------------------------------
+    case(114):  //--------------------------------------------
     {/*:StateOverrideEndTime [yyyy-mm-dd] [00:00:00]*///AFTER StartDate or JulianStartDay and JulianStartYear commands
       if(Options.noisy) { cout << "State Override End Time" << endl; }
       if(Len<3) { ImproperFormatWarning(":StateOverrideEndTime",p,Options.noisy); break; }
@@ -1985,6 +1987,12 @@ bool ParseMainInputFile (CModel     *&pModel,
       Options.sv_override_endtime=TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day,tt.year,Options.calendar);
       if(Options.forecast_shift!=0) { Options.sv_override_endtime+=Options.forecast_shift; }
 
+      break;
+    }
+    case(115):  //--------------------------------------------
+    {/*:NetCDFUseBasinFullname */
+      if(Options.noisy) { cout << "NetCDFUseBasinFullname" << endl; }
+      Options.use_fullname_cf_role=true;
       break;
     }
     case(160):  //--------------------------------------------

@@ -2,7 +2,7 @@
 Raven Library Source Code
 Copyright (c) 2008-2025 the Raven Development Team
 ------------------------------------------------------------------
-LatRedistribute (redistribute snow based on slope and snow SWE)
+CmvLatRedistribute (redistribute snow based on slope and snow SWE)
 ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "HydroProcessABC.h"

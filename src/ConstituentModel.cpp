@@ -1124,7 +1124,8 @@ void CConstituentModel::WriteNetCDFOutputFileHeaders(const optStruct& Options)
       tmp2="timeseries_id";
       tmp3="1";
       retval = nc_put_att_text(_POLLUT_ncid,varid_bsim,"long_name",tmp.length(),tmp.c_str());    HandleNetCDFErrors(retval);
-      retval = nc_put_att_text(_POLLUT_ncid,varid_bsim,"cf_role",tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
+      if (!Options.use_fullname_cf_role){
+      retval = nc_put_att_text(_POLLUT_ncid,varid_bsim,"cf_role",tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);}
       retval = nc_put_att_text(_POLLUT_ncid,varid_bsim,"units",tmp3.length(),tmp3.c_str());      HandleNetCDFErrors(retval);
 
       // (d) create variable  and set attributes for"basin_fullname"
@@ -1134,7 +1135,8 @@ void CConstituentModel::WriteNetCDFOutputFileHeaders(const optStruct& Options)
       tmp2="timeseries_id";
       tmp3="1";
       retval = nc_put_att_text(_POLLUT_ncid, varid_bsim2, "long_name",  tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
-      retval = nc_put_att_text(_POLLUT_ncid, varid_bsim2, "cf_role"  , tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
+      if(Options.use_fullname_cf_role) {
+      retval = nc_put_att_text(_POLLUT_ncid, varid_bsim2, "cf_role"  , tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);}
       retval = nc_put_att_text(_POLLUT_ncid, varid_bsim2, "units"    , tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
 
       // (e) create 2D pollutograph arrays [nbasins x ntime]
@@ -1210,7 +1212,8 @@ void CConstituentModel::WriteNetCDFOutputFileHeaders(const optStruct& Options)
       tmp2="timeseries_id";
       tmp3="1";
       retval = nc_put_att_text(_LOADING_ncid,varid_bsim,"long_name", tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
-      retval = nc_put_att_text(_LOADING_ncid,varid_bsim,"cf_role"  ,tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
+      if(!Options.use_fullname_cf_role) {
+      retval = nc_put_att_text(_LOADING_ncid,varid_bsim,"cf_role"  ,tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);}
       retval = nc_put_att_text(_LOADING_ncid,varid_bsim,"units"    ,tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
 
       // (d) create variable  and set attributes for"basin_fullname"
@@ -1220,7 +1223,8 @@ void CConstituentModel::WriteNetCDFOutputFileHeaders(const optStruct& Options)
       tmp2="timeseries_id";
       tmp3="1";
       retval = nc_put_att_text(_LOADING_ncid, varid_bsim2, "long_name",  tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
-      retval = nc_put_att_text(_LOADING_ncid, varid_bsim2, "cf_role"  , tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
+      if(Options.use_fullname_cf_role) {
+      retval = nc_put_att_text(_LOADING_ncid, varid_bsim2, "cf_role"  , tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);}
       retval = nc_put_att_text(_LOADING_ncid, varid_bsim2, "units"    , tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
 
       // (e) create 2D loading arrays [nbasins x ntime]
