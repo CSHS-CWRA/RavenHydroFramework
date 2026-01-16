@@ -708,6 +708,7 @@
     <ClCompile Include="Drain.cpp" />
     <ClCompile Include="EnergyTransport.cpp" />
     <ClCompile Include="EnKF.cpp" />
+    <ClCompile Include="FirnEvolution.cpp" />
     <ClCompile Include="FrozenLake.cpp" />
     <ClCompile Include="GWRecharge.cpp" />
     <ClCompile Include="GWRiverConnection.cpp" />
@@ -715,6 +716,7 @@
     <ClCompile Include="IsotopeTransport.cpp" />
     <ClCompile Include="LatConnect.cpp" />
     <ClCompile Include="LatEquilibrate.cpp" />
+    <ClCompile Include="LatIceFlow.cpp" />
     <ClCompile Include="LookupTable.cpp" />
     <ClCompile Include="MassLoading.cpp" />
     <ClCompile Include="Matrix.cpp" />
@@ -981,6 +983,7 @@
     <ClInclude Include="GroundwaterModel.h" />
     <ClInclude Include="GWRiverConnection.h" />
     <ClInclude Include="GWSWProcesses.h" />
+    <ClInclude Include="IceFlow.h" />
     <ClInclude Include="IsotopeTransport.h" />
     <ClInclude Include="LatConnect.h" />
     <ClInclude Include="LookupTable.h" />

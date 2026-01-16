@@ -171,6 +171,7 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
   case(GLACIER):            {name="Glacier Liquid Storage";     break;}
   case(GLACIER_ICE):        {name="Glacier Ice";                break;}
   case(GLACIER_CC):         {name="Glacier Cold Content";       break;}
+  case(FIRN):               {name="Firn";                       break;}
 
   case(SNOW_ALBEDO):        {name="Snow Albedo";                break;}
   case(CROP_HEAT_UNITS):    {name="Crop Heat Units";            break;}
@@ -281,6 +282,7 @@ string CStateVariable::GetStateVarUnits(const sv_type typ)
   case(GLACIER):          {units="mm";   break;}
   case(GLACIER_ICE):      {units="mm";   break;}
   case(GLACIER_CC):       {units="mm";   break;}
+  case(FIRN):             {units="mm";   break;}
 
   case(SNOW_ALBEDO):      {units="none"; break;}
 
@@ -369,6 +371,7 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
   else if (!tmp.compare("GLACIER_ICE"     )){typ=GLACIER_ICE;}
   else if (!tmp.compare("GLACIER_CC"      )){typ=GLACIER_CC;}
   else if (!tmp.compare("GLACIER_COLD_CONTENT")){typ=GLACIER_CC;}
+  else if (!tmp.compare("FIRN"            )){typ=FIRN;}
   else if (!tmp.compare("CUM_SNOWMELT"    )){typ=CUM_SNOWMELT;}
   else if (!tmp.compare("SNOW_TEMP"       )){typ=SNOW_TEMP;}
   else if (!tmp.compare("SNOW_ALBEDO"     )){typ=SNOW_ALBEDO;}
@@ -467,6 +470,7 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
     case(GLACIER):            {name="GLACIER";                  break;}
     case(GLACIER_ICE):        {name="GLACIER_ICE";              break;}
     case(GLACIER_CC):         {name="GLACIER_CC";               break;}
+    case(FIRN):               {name="FIRN";                     break;}
 
     case(SNOW_ALBEDO):        {name="SNOW_ALBEDO";              break;}
     case(CROP_HEAT_UNITS):    {name="CROP_HEAT_UNITS";          break;}
@@ -594,6 +598,7 @@ bool  CStateVariable::IsWaterStorage (sv_type      typ, bool conv_coverup)
   case(WETLAND):         {return true;}
   case(GLACIER):         {return true;}
   case(GLACIER_ICE):     {return true;}
+  case(FIRN):            {return true;}
   case(CONVOLUTION):     {return conv_coverup;}
   case(CONV_STOR):       {return !conv_coverup;}
   case(NEW_SNOW):        {return true;}

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2025 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 
 #include "RavenInclude.h"
@@ -13,6 +13,7 @@
 #include "SnowMovers.h"
 #include "VegetationMovers.h"
 #include "GlacierProcesses.h"
+#include "IceFlow.h"
 #include "Albedo.h"
 #include "CropGrowth.h"
 #include "DepressionProcesses.h"
@@ -342,6 +343,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.stateinfo_filename      ="";
   Options.paraminfo_filename      ="";
   Options.flowinfo_filename       ="";
+  Options.glacier_model_on        =false;
 
   Options.NetCDF_chunk_mem        =10; //MB
 
@@ -585,6 +587,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":LakeFreeze"                )){code=239;}
     else if  (!strcmp(s[0],":LateralDivert"             )){code=240;}
     else if  (!strcmp(s[0],":SnowRedistribute"          )){code=241;}
+    else if  (!strcmp(s[0],":GlacierIceFlow"            )){code=242;}
     //...
     else if  (!strcmp(s[0],":-->RedirectFlow"           )){code=294;}
     else if  (!strcmp(s[0],":ProcessGroup"              )){code=295;}
@@ -3141,8 +3144,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(241):  //----------------------------------------------
-    {
-      /*Snow Redistribution
+    { /*Snow Redistribution
         :SnowRedistribute [string method] [SV] [Max_snow_height] */
       if (Options.noisy) { cout << "Snow Redistribution Process" << endl; }
       if (Len < 4) { ImproperFormatWarning(":SnowRedistribute", p, Options.noisy); break; }
@@ -3164,6 +3166,35 @@ bool ParseMainInputFile (CModel     *&pModel,
                                       max_snow_height,
                                       r_type,
                                       pModel);
+      AddProcess(pModel, pMover, pProcGroup);
+      break;
+    }
+    case(242):  //----------------------------------------------
+    { /*Glacier Ice Flow
+        :GlacierIceFlow [string method] GLACIER_ICE GLACIER_ICE */
+      if (Options.noisy) { cout << "Lateral Glacier Ice Flow Process" << endl; }
+      if (Len < 4) { ImproperFormatWarning(":GlacierIceFlow", p, Options.noisy); break; }
+
+      pMover = new CmvLatIceFlow(pModel);
+      AddProcess(pModel, pMover, pProcGroup);
+      Options.glacier_model_on=true;
+      break;
+    }
+    case(243):  //----------------------------------------------
+    {/*Firn Evolution
+       :FirnEvolution [string method] MULTIPLE MULTIPLE*/
+      if (Options.noisy){cout <<"Firn Evolution Process"<<endl;}
+      if (Len<2){ImproperFormatWarning(":FirnEvolution",p,Options.noisy); break;}
+      firn_evolution_type fe_type=FIRNEVOL_SIMPLE;
+      if      (!strcmp(s[1],"FIRNEVOL_SIMPLE"    )){fe_type=FIRNEVOL_SIMPLE;}
+      else {
+        ExitGracefully("ParseMainInputFile: Unrecognized firn evolution process representation",BAD_DATA_WARN); break;
+      }
+
+      CmvFirnEvolution::GetParticipatingStateVarList(fe_type,tmpS,tmpLev,tmpN);
+      pModel->AddStateVariables(tmpS,tmpLev,tmpN);
+
+      pMover = new CmvFirnEvolution(fe_type, pModel);
       AddProcess(pModel, pMover, pProcGroup);
       break;
     }

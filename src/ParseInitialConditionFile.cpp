@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -377,7 +377,8 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
             WriteWarning("Initial conditions specified for state variable not in model ("+to_string(s[i+1])+")",Options.noisy);
           }
 
-          if ((typ==ATMOS_PRECIP) || (typ==ATMOSPHERE) || (typ==GLACIER_ICE)){//initial conditions of cumulative precip, evap, and glacier loss ignored, left at zero
+          if ((typ==ATMOS_PRECIP) || (typ==ATMOSPHERE) || 
+            ((typ==GLACIER_ICE) && (!Options.glacier_model_on))){//initial conditions of cumulative precip, evap, and glacier loss ignored, left at zero
             SVinds[i]=DOESNT_EXIST;
           }
 
@@ -386,7 +387,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
             int ii=pModel->GetTransportModel()->GetWaterStorIndexFromLayer(layer_ind);
             if (ii!=DOESNT_EXIST){
               sv_type wattyp=pModel->GetStateVarType(ii);
-              if((wattyp==ATMOS_PRECIP) || (wattyp==ATMOSPHERE) || (wattyp==GLACIER_ICE)) {//initial concentrations conditions of cumulative precip, evap, and glacier loss ignored, left at zero
+              if((wattyp==ATMOS_PRECIP) || (wattyp==ATMOSPHERE) ||  ((wattyp==GLACIER_ICE) && (!Options.glacier_model_on))) {//initial concentrations conditions of cumulative precip, evap, and glacier loss ignored, left at zero
                 SVinds[i]=DOESNT_EXIST;
               }
             }

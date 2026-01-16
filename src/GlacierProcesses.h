@@ -1,10 +1,11 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------
   class definitions:
   CmvGlacierMelt
   CmvGlacierRunoff
+  CmvFirnEvolution
   ----------------------------------------------------------------*/
 
 #ifndef GLACIER_PROCESSES_H
@@ -133,6 +134,46 @@ public:/*-------------------------------------------------------*/
 
   void        GetParticipatingParamList   (string  *aP, class_type *aPC, int &nP) const;
   static void GetParticipatingStateVarList(glacial_infil_type   mtype,
+                                           sv_type *aSV,
+                                           int     *aLev,
+                                           int     &nSV);
+};
+
+////////////////////////////////////////////////////////////////////
+/// \brief Methods of modeling firn evolution
+//
+enum firn_evolution_type{
+  FIRNEVOL_SIMPLE   
+};
+////////////////////////////////////////////////////////////////////
+/// \brief Data abstraction for transition from snow to firn to glacier
+//
+class CmvFirnEvolution: public CHydroProcessABC
+{
+private:/*------------------------------------------------------*/
+  firn_evolution_type type; ///< Specified algorithm for firn evolution
+
+public:/*-------------------------------------------------------*/
+  //Constructors/destructors:
+  CmvFirnEvolution(const firn_evolution_type fe_type,
+                  CModel                   *pModel);
+  ~CmvFirnEvolution();
+
+  //inherited functions
+  void Initialize();
+  void GetRatesOfChange(const double              *state_vars,
+                        const CHydroUnit  *pHRU,
+                        const optStruct   &Options,
+                        const time_struct &tt,
+                        double      *rates) const;
+  void ApplyConstraints(const double      *state_vars,
+                        const CHydroUnit  *pHRU,
+                        const optStruct   &Options,
+                        const time_struct &tt,
+                        double      *rates) const;
+
+  void        GetParticipatingParamList   (string  *aP, class_type *aPC, int &nP) const;
+  static void GetParticipatingStateVarList(firn_evolution_type   mtype,
                                            sv_type *aSV,
                                            int     *aLev,
                                            int     &nSV);

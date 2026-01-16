@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "HydroUnits.h"
 #include "Forcings.h"
@@ -92,6 +92,8 @@ CHydroUnit::CHydroUnit(const CModelABC        *pMod,
   _AvgElevation =elevation;
   _AvgAspect    =aspect; //counterclockwise from north
   _AvgSlope     =slope;
+
+  _flow_length  =AUTO_COMPUTE;
 
   _LatRad       = latit*DEGREES_TO_RADIANS;
   _LatEq        = CRadiation::CalculateEquivLatitude(_LatRad,slope,aspect);
@@ -368,6 +370,7 @@ void CHydroUnit::LinkToReservoir(const long long SBID){_res_linked=true;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes HRU - converts coordinates of HRU centroid into UTM
+/// estimates flow length if needed
 /// \remark Called prior to simulation or any interpolation;
 ///
 /// \param UTM_zone [out] Integer UTM zone
@@ -377,6 +380,22 @@ void    CHydroUnit::Initialize      (const int UTM_zone)
   LatLonToUTMXY(_Centroid.latitude,_Centroid.longitude,
                 UTM_zone,
                 _Centroid.UTM_x,   _Centroid.UTM_y);
+
+  if (_flow_length==AUTO_COMPUTE){ //not user-specified
+    _flow_length=sqrt(_Area*M2_PER_KM2);
+  }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Sets HRU flow length
+/// \param len [in] - flow length, in meters
+//
+void  CHydroUnit::SetFlowLength           (const double &len)
+{  
+  if (len<0){
+    string warn="Negative or zero flow length set for HRU "+to_string(_ID);
+    ExitGracefully(warn.c_str(),BAD_DATA_WARN); return;
+  }
+  _flow_length=len;
 }
 
 //////////////////////////////////////////////////////////////////

@@ -100,6 +100,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     else if  (!strcmp(s[0],":MergeSubBasinGroups"      )){code=19; }
     else if  (!strcmp(s[0],":GaugedSubBasinGroup"      )){code=20; }
     else if  (!strcmp(s[0],":LateralConnections"       )){code=21; }
+    else if  (!strcmp(s[0],":HRUFlowLengths"           )){code=22; }
 
     switch(code)
     {
@@ -1179,6 +1180,40 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
 
         // Clean up the temporary array
         for(int n=0; n<nLat;n++) { delete pLat[n]; }  delete[] pLat;
+      }
+      break;
+    }
+    case(22):  //----------------------------------------------
+    {/* :HRUFlowLengths 
+          {HRUID} {value} x nHRUs (or less)
+        :EndHRUFlowLengths
+      */
+      if (Options.noisy) { cout << "   HRU Flow Lengths..." << endl; }
+
+      while (((Len==0) || (strcmp(s[0],":EndHRUFlowLengths"))) && (!end_of_file))
+      {
+        end_of_file = pp->Tokenize(s, Len);
+        if      (IsComment(s[0], Len)) {} // comment line
+        else if (!strcmp(s[0], ":EndHRUFlowLengths")) {} // done
+        else
+        {
+          if (Len < 2) { pp->ImproperFormat(s); }
+
+          if (StringIsLong(s[0]))
+          {
+            long long HRUID=s_to_ll(s[0]);
+            CHydroUnit *pHRU=pModel->GetHRUByID(HRUID);
+            if (pHRU==NULL){
+              WriteWarning("Parsing RVH file: Bad HRU index in :HRUFlowLengths command. Will be ignored",Options.noisy);
+            } 
+            else{
+              pHRU->SetFlowLength(s_to_d(s[1]));
+            }
+          }
+          else          {
+            ExitGracefully("Parsing RVH file: Bad HRU index in :HRUFlowLengths command",BAD_DATA);
+          }
+        }
       }
       break;
     }

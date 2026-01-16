@@ -886,6 +886,7 @@ enum sv_type
   WETLAND,                 ///< [mm] deep wetland depression storage
   GLACIER,                 ///< [mm] Glacier melt/reservoir storage
   GLACIER_ICE,             ///< [mm] Glacier ice - typically assumed to be infinite reservoir.
+  FIRN,                    ///< [mm] Firn atop glacier 
   LAKE_STORAGE,            ///< [mm] Net lake storage - relative to equilibrium datum - can go negative
 
   CONVOLUTION,             ///< [mm] Convolution storage - for conceptual models with intermediate convolution steps
@@ -977,13 +978,16 @@ enum process_type
   SNOWMELT,REFREEZE,SUBLIMATION,SNOW_BALANCE,SNOWSQUEEZE,SNOWTEMP_EVOLVE,
 
   //in GlacerProcesses.h
-  GLACIER_MELT,GLACIER_RELEASE,GLACIER_INFIL,
+  GLACIER_MELT,GLACIER_RELEASE,GLACIER_INFIL,FIRN_EVOLUTION,
 
   //in HydroProcessABC.h
   FLUSH, SPLIT, OVERFLOW_PROC,CONVOLVE,EXCHANGE_FLOW,
 
   //in LateralExchangeABC.h
   LAT_FLUSH, LAT_EQUIL, LAT_REDISTRIBUTE,
+
+  //In IceFlow.h
+  LAT_ICE_FLOW,
 
   //in Albedo.h
   SNOW_ALBEDO_EVOLVE,
@@ -1196,6 +1200,7 @@ struct optStruct
   int              NetCDF_chunk_mem;          ///< [MB] size of memory chunk for each forcing grid
   bool             in_bmi_mode;               ///< true if in BMI mode (no rvt files, no end time)
   double           sv_override_endtime;       ///< model time [d] after which state variable overrides are disabled (default: 1e99)
+  bool             glacier_model_on;          ///< explicitly tracks GLACIER_ICE rather than treating as infinite reservoir (default: false)
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -1706,6 +1711,15 @@ void   quickSort        (double arr[], int left, int right) ;
 double InterpolateCurve (const double x,const double *xx,const double *y,int N,bool extrapbottom);
 void   getRanks         (const double *arr, const int N, int *ranks);
 void   pushIntoIntArray (int*&a, const int &v, int &n);
+
+#include <functional>
+template <typename T>
+void sortPointerArray(const T** arr, int n, std::function<bool(const T*, const T*)> cmp) {
+  if (!arr || n <= 1 || !cmp) return;
+  std::sort(arr, arr + n, [cmp](const T* a, const T* b) {
+      return cmp(a, b);
+  });
+}
 
 //Geographic Conversion Functions-----------------------------------
 //defined in UTM_to_LatLong.cpp

@@ -477,9 +477,6 @@
     <ClCompile Include="WaterDemands.cpp">
       <Filter>Source Files\Water Management</Filter>
     </ClCompile>
-    <ClCompile Include="LatConnect.cpp">
-      <Filter>Source Files\Hydrological Processes\Lateral Processes</Filter>
-    </ClCompile>
     <ClCompile Include="LatEquilibrate.cpp">
       <Filter>Source Files\Hydrological Processes\Lateral Processes</Filter>
     </ClCompile>
@@ -491,6 +488,15 @@
     </ClCompile>
     <ClCompile Include="SnowRedistribute.cpp">
       <Filter>Source Files\Hydrological Processes\Lateral Processes</Filter>
+    </ClCompile>
+    <ClCompile Include="LatConnect.cpp">
+      <Filter>Source Files\Hydrological Processes\Lateral Processes</Filter>
+    </ClCompile>
+    <ClCompile Include="LatIceFlow.cpp">
+      <Filter>Source Files\Hydrological Processes\Lateral Processes</Filter>
+    </ClCompile>
+    <ClCompile Include="FirnEvolution.cpp">
+      <Filter>Source Files\Hydrological Processes\Lake/Glacier/Wetland Processes</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -708,6 +714,9 @@
       <Filter>Header Files\Water Management</Filter>
     </ClInclude>
     <ClInclude Include="LatConnect.h">
+      <Filter>Header Files\Hydrological Processes</Filter>
+    </ClInclude>
+    <ClInclude Include="IceFlow.h">
       <Filter>Header Files\Hydrological Processes</Filter>
     </ClInclude>
   </ItemGroup>
