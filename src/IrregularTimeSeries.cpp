@@ -51,9 +51,8 @@ CIrregularTimeSeries::CIrregularTimeSeries(     string    Name,
     _aYears[n]= aYears[n];
   }
 
-  _aTimes=NULL; //generated in initialize
-  _indexCorr=-1;
-  _nSampVal=0;
+  _aTimes=NULL;             //generated in initialize
+  _firstIndex=DOESNT_EXIST; //generated in initialize
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -85,9 +84,7 @@ CIrregularTimeSeries::CIrregularTimeSeries(string Name,
   }
 
   _aTimes=NULL; //generated in initialize
-  _indexCorr=-1;
-  _nSampVal=-1;
-
+  _firstIndex=DOESNT_EXIST;
 }
 ///////////////////////////////////////////////////////////////////
 /// \brief Implementation of the destructor
@@ -104,7 +101,7 @@ CIrregularTimeSeries::~CIrregularTimeSeries()
 ///////////////////////////////////////////////////////////////////
 /// \brief Enables queries of time series values using global time
 /// \details Calculates _aTimes, global time for each time series value
-/// \details Calculates _indexCorr, correction to global index to get only values within model time.
+/// \details Calculates _firstIndex, first observation within model duration
 /// \remark t=0 corresponds to first day with recorded values at that gauge
 ///
 /// \param model_start_day  [in] Julian start day of model
@@ -126,16 +123,36 @@ void CIrregularTimeSeries::Initialize(const double model_start_day,
   {
     _aTimes[n] = TimeDifference(model_start_day,model_start_year,_aDays[n],_aYears[n],calendar);
 
-    if ((_indexCorr == -1) && (_aTimes[n] >= 0)){ _indexCorr = n; }
-    if ((_aTimes[n] >= 0) && (_aTimes[n] < model_duration)){ _nSampVal++; }
+    if ((_firstIndex == DOESNT_EXIST) && (_aTimes[n] >= 0)){ _firstIndex = n; }
   }
   if (!is_observation)
   {
-    ExitGracefullyIf(_nSampVal <= 0,
-                     "CIrregularTimeSeries::Initialize: time series data not available during model simulation", BAD_DATA);
+    ExitGracefully("CIrregularTimeSeries::Initialize: irregular time series can only be used for observational data", BAD_DATA);
+  }
+
+  Resample(timestep,model_duration);
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Resamples time series to regular intervals of 1 timestep (tstep) over model duration, starting with timestep 0 from 0..dt
+/// these will be mostly blanks for irregular time series
+///
+/// \param &tstep [in] Model timestep (in days)
+/// \param &model_duration [in] Model simulation duration (in days)
+//
+void CIrregularTimeSeries::Resample(const double &tstep,const double &model_duration)
+{
+  int nSampVal=(int)(ceil(model_duration/tstep-TIME_CORRECTION));
+
+  InitializeResample(nSampVal,tstep); //allocates memory
+
+  double t=0;
+  int i=_firstIndex;
+
+  for (int nn=0;nn<_nSampVal;nn++){
+    _aSampVal[nn]=GetAvgValue(t,tstep);
+    t+=tstep;
   }
 }
-
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns number of values
 /// \return Number of values
@@ -144,7 +161,7 @@ int    CIrregularTimeSeries::GetNumValues() const{ return _nVals; }
 
 
 ///////////////////////////////////////////////////////////////////
-/// \brief Returns the time of the time series data point for which n is an index
+/// \brief Returns the *model time* of the time series data point for which n is an index
 /// \param n [in] Index
 /// \return time of time series data point for which n is an index
 //
@@ -160,17 +177,10 @@ double CIrregularTimeSeries::GetValue(const int n)const{return _aVal[n];}
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns index corresponding to time _aTimes[n]<t_mod<_aTimes[n+1]
 /// \param t_mod [in] model time
-/// \return sample index nn, where nn=n-_indexCorr (nn=0 for first data in model duration)
+/// \return timestep number nn
 //
 int    CIrregularTimeSeries::GetTimeIndexFromModelTime(const double &t_mod) const {
-  int n;
-  if (t_mod<_aTimes[_indexCorr+1]){return 0;}
-  for(n = _indexCorr; n < _nVals-1; n++)
-  {
-    if(_aTimes[n+1]>=t_mod) { break; } //\todo[optimize]
-  }
-  if (t_mod>_aTimes[_nVals-1]){return _nVals-1-_indexCorr;}
-  return n-_indexCorr;
+  return min((int)(max(floor((t_mod+TIME_CORRECTION)/_sampInterval),0.0)),_nSampVal-1);
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -198,14 +208,14 @@ double CIrregularTimeSeries::GetAvgValue(const double &t, const double &tstep) c
   int count = 0;
   for (int n = 0; n < _nVals; n++)
   {
-    if ( _aTimes[n]>=t && _aTimes[n]<=(t+tstep) )
+    if ( _aTimes[n]>=t && _aTimes[n]<(t+tstep) )
     {
       sum += _aVal[n];
       count++;
     }
   }
   if (count > 0){ return sum / count; }
-  else { return RAV_BLANK_DATA; }
+  else          { return RAV_BLANK_DATA; }
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -260,34 +270,8 @@ double CIrregularTimeSeries::GetMaxValue(const double &t, const double &tstep) c
 /// \brief Returns 0 since time series is assumed to be instantaneous
 /// \return 0.0
 //
-double CIrregularTimeSeries::GetSampledInterval() const{return 0.0;}
 double CIrregularTimeSeries::GetInterval() const{return 0.0;}
 
-///////////////////////////////////////////////////////////////////
-/// \brief Returns nnth value within the model time
-/// \notes must be called after initializing
-///
-/// \param nn [in] index
-/// \return time series value
-//
-double CIrregularTimeSeries::GetSampledValue(const int nn) const{return _aVal[nn+_indexCorr];}
-
-///////////////////////////////////////////////////////////////////
-/// \brief Returns time of the nnth value within the model time
-/// \notes must be called after initializing
-///
-/// \param nn [in] index
-/// \return time
-//
-double CIrregularTimeSeries::GetSampledTime(const int nn) const{return _aTimes[nn+_indexCorr];}
-
-///////////////////////////////////////////////////////////////////
-/// \brief Returns number of values within model time
-/// \notes must be called after initializing
-///
-/// \return number of values
-//
-int    CIrregularTimeSeries::GetNumSampledValues() const{return _nSampVal;}
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Parses standard single time series format from file and creates time series object

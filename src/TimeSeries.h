@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2025 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef TIMESERIES_H
 #define TIMESERIES_H
@@ -31,10 +31,6 @@ private:/*------------------------------------------------------*/
   double  _interval; ///< uniform interval between data points (in days)
   double     *_aVal; ///< Array of magnitude of pulse (variable units)
   int      _nPulses; ///< number of pulses (total duration=(nPulses-1)*_interval)
-
-  double *_aSampVal; ///< Array of resampled time series values every timestep for model duration
-  int     _nSampVal; ///< size of aSampVal (~model_duration/timestep)
-  double  _sampInterval; ///< timestep of resampled timeseries
 
   bool   _sub_daily; ///< true if smallest time interval is sub-daily
 
@@ -84,8 +80,6 @@ public:/*-------------------------------------------------------*/
                   const   bool is_observation,
                   const    int calendar);
 
-  void InitializeResample(const int nSampVal, const double sampInterval);
-
   bool   IsDaily      () const;
   int    GetStartYear () const;
   double GetStartDay  () const;
@@ -98,11 +92,6 @@ public:/*-------------------------------------------------------*/
   int    GetNumValues () const;
   double GetTime      (const int n) const;
   double GetValue     (const int n) const;
-
-  double GetSampledValue(const int nn) const; //nn is timestep number
-  double GetSampledTime (const int nn) const; //nn is timestep number
-  double GetSampledInterval() const;
-  int    GetNumSampledValues() const;
 
   int    GetTimeIndexFromModelTime(const double &t_mod) const;
 
@@ -121,7 +110,7 @@ public:/*-------------------------------------------------------*/
 
   double GetModelledValue(const double &t,const ts_type type) const;
   void   SetValue        (const int n, const double &val);
-  void   SetSampledValue (const int nn, const double &val);
+  
   void   ShiftInTime     (const double t, const optStruct &Options);
 
   static CTimeSeries *ReadTimeSeriesFromNetCDF(const optStruct &Options,    // model options (such as simulation period)

@@ -30,9 +30,6 @@ CTimeSeries::CTimeSeries(string Name, long long loc_ID, double one_value)
   _sub_daily=false;
   _t_corr   =0.0;
   _pulse    =true;
-  _aSampVal =NULL; //generated in Resample() routine
-  _nSampVal =0;    //generated in Resample() routine
-  _sampInterval=1.0;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -77,11 +74,6 @@ CTimeSeries::CTimeSeries(string     Name,
   }
   _sub_daily=(_interval<(1.0-TIME_CORRECTION));//to account for potential roundoff error
   _t_corr=0.0;
-
-  _aSampVal =NULL; //generated in Resample() routine
-  _nSampVal =0;
-  _sampInterval = 1.0;
-
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -119,10 +111,6 @@ CTimeSeries::CTimeSeries(string     Name,
 
   _sub_daily=(_interval<(1.0-TIME_CORRECTION));//to account for potential roundoff error
   _t_corr=0.0;
-
-  _aSampVal =NULL; //generated in Resample() routine
-  _nSampVal =0;
-  _sampInterval=1.0;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -147,9 +135,6 @@ CTimeSeries::CTimeSeries(string Name,
   }
   _sub_daily=t._sub_daily;
   _t_corr   =0.0;
-
-  _aSampVal =NULL; //generated in Resample() routine
-  _nSampVal =0;
 }
 ///////////////////////////////////////////////////////////////////
 /// \brief Implementation of the destructor
@@ -158,7 +143,6 @@ CTimeSeries::~CTimeSeries()
 {
   if (DESTRUCTOR_DEBUG){cout<<"    DELETING TIME SERIES"<<endl;}
   delete [] _aVal;     _aVal =NULL;
-  delete [] _aSampVal; _aSampVal=NULL;
 }
 
 /*****************************************************************
@@ -300,30 +284,6 @@ void CTimeSeries::Resample(const double &tstep,          //days
       _aSampVal[nn] = GetValue(t);
     }
     t+=tstep;
-  }
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Initializes arrays for the resampled time series
-///
-/// \param nSampVal [in] Number of values in the resampled time series
-/// \param sampInterval [in] Time interval of the resampled time series (in days)
-//
-void CTimeSeries::InitializeResample(const int nSampVal, const double sampInterval)
-{
-  _nSampVal=nSampVal;
-  _sampInterval=sampInterval;
-  ExitGracefullyIf(_nSampVal<=0,"CTimeSeries::InitializeResample: bad # of samples",RUNTIME_ERR);
-
-  if(_aSampVal!=NULL){delete[] _aSampVal;}
-
-  _aSampVal=NULL;
-  _aSampVal=new double [_nSampVal];
-  ExitGracefullyIf(_aSampVal==NULL,"CTimeSeries::Resample",OUT_OF_MEMORY);
-
-  //Initialize with blanks
-  for (int nn=0;nn<_nSampVal;nn++){
-    _aSampVal[nn] = RAV_BLANK_DATA;
   }
 }
 
@@ -498,46 +458,7 @@ void   CTimeSeries::Multiply     (const double &factor)
     _aVal [n]*=factor;
   }
 }
-///////////////////////////////////////////////////////////////////
-/// \brief Returns average value of time series during timestep nn of model simulation (nn=0..nSteps-1)
-/// \notes must be called after resampling
-///
-/// \param nn [in] time step number (measured from simulation start)
-/// \return Average value of time series data over time step nn
-//
-double CTimeSeries::GetSampledValue(const int nn) const
-{
-  if (nn>_nSampVal-1){
-    return RAV_BLANK_DATA;
-  }
-  return _aSampVal[nn];
-}
-///////////////////////////////////////////////////////////////////
-/// \brief Returns the model time of the resampled time series at index nn
-/// \param nn [in] Index
-/// \return time of time series data point for which nn is an index
-//
-double CTimeSeries::GetSampledTime(const int nn) const
-{
-  return _sampInterval*nn;
-}
-///////////////////////////////////////////////////////////////////
-/// \brief Returns data interval of resampled timeseries
-/// \notes this is usually model timestep
-/// \return resampled data interval (in days)
-//
-double CTimeSeries::GetSampledInterval() const
-{
-  return _sampInterval;
-}
-///////////////////////////////////////////////////////////////////
-/// \brief Returns the number resampled values
-/// \return Number of resampled values
-//
-int CTimeSeries::GetNumSampledValues() const
-{
-  return _nSampVal;
-}
+
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns average value of time series during day model_day of model simulation
 /// \notes uses precalculated value if available
@@ -608,20 +529,7 @@ void CTimeSeries::SetValue(const int n, const double &val)
   _aVal[n]=val;
 }
 
-///////////////////////////////////////////////////////////////////
-/// \brief enables sampled values to be overwritten to store model-generated information
-/// \notes must use with caution!! Poor encapsulation of data
-///
-/// \param nn [in] index of sampled value
-/// \param val [in] value to overwrite
-//
-void CTimeSeries::SetSampledValue(const int nn, const double &val)
-{
-#ifdef _STRICTCHECK_
-  ExitGracefullyIf(nn>=_nSampVal, "CTimeSeries::SetSampledValue: Overwriting array allocation",RUNTIME_ERR);
-#endif
-  _aSampVal[nn]=val;
-}
+
 
 ///////////////////////////////////////////////////////////////////
 /// \brief sums together two time series

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 #include "EnergyTransport.h"
@@ -2844,7 +2844,7 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
 
     invalid_data=false;
     pBasin=GetSubBasinByID (_pObservedTS[i]->GetLocID());
-    if (pBasin==NULL)
+    if ((pBasin==NULL) && (svtyp==UNRECOGNIZED_SVTYPE))
     {
       invalid_data=true;
     }
@@ -2856,6 +2856,7 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
         invalid_data=true;
       }
     }
+
 
     if (invalid_data)
     {
@@ -2929,26 +2930,33 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
       value=0;
     }
 
-    _pModeledTS[i]->SetValue(n,value);
-    _pModeledTS[i]->SetSampledValue(n,value); //Handles blank value issue in final time  step
+    // only set values within diagnostic evaluation times. The rest stay as BLANK_DATA
+    if((tt.model_time < Options.diag_start_time) || (tt.model_time >= Options.diag_end_time))
+    {
+      value= RAV_BLANK_DATA;
+    }
 
-    obsTime =_pObservedTS[i]->GetSampledTime(_aObsIndex[i]); // time of the next observation
-    //if(_pObservedTS[i]->GetType()==CTimeSeriesABC::TS_IRREGULAR) {obsTime+=Options.timestep;}//JRC: Not the most elegant fix, but Diagnostics are updated prior to Solver (no longer)
-
-    //if model time is such that next unprocessed observation has occurred, update modeled
-    while ((tt.model_time >= obsTime+ _pObservedTS[i]->GetSampledInterval()) &&
-			     (_aObsIndex[i]<_pObservedTS[i]->GetNumSampledValues()))
-		{
-      value=RAV_BLANK_DATA;
-      // only set values within diagnostic evaluation times. The rest stay as BLANK_DATA
-      if ((obsTime >= Options.diag_start_time) && (obsTime <= Options.diag_end_time))
-      {
-        value= _pModeledTS[i]->GetModelledValue(obsTime,_pObservedTS[i]->GetType());
+    
+    if(_pObservedTS[i]->GetType()==CTimeSeriesABC::TS_REGULAR) 
+    {
+      _pModeledTS[i]->SetValue(n,value);
+      _pModeledTS[i]->SetSampledValue(n,value); //Handles blank value issue in final time  step
+    }
+    else if(_pObservedTS[i]->GetType()==CTimeSeriesABC::TS_IRREGULAR)
+    {
+      obsTime =_pObservedTS[i]->GetTime(_aObsIndex[i]); // time of the next observation
+      while ((obsTime<tt.model_time) && (_aObsIndex[i]<_pObservedTS[i]->GetNumSampledValues()-1)){
+        _aObsIndex[i]++;
+        obsTime =_pObservedTS[i]->GetTime(_aObsIndex[i]);
       }
-      _pModeledTS[i]->SetSampledValue(_aObsIndex[i],value); //JRC : \todo[fix]: I'm not sure if this makes sense for irregular time series
-      _aObsIndex[i]++;
-      obsTime =_pObservedTS[i]->GetSampledTime(_aObsIndex[i]);
-      //if(_pObservedTS[i]->GetType()==CTimeSeriesABC::TS_IRREGULAR) {obsTime+=Options.timestep;}
+      if ((obsTime>=tt.model_time) && (obsTime<tt.model_time+Options.timestep)) {
+        _pModeledTS[i]->SetValue(_aObsIndex[i],value);
+        _pModeledTS[i]->SetSampledValue(n,value);
+        _aObsIndex[i]++;
+      }
+      else{
+        _pModeledTS[i]->SetSampledValue(n,RAV_BLANK_DATA);
+      }
     }
   }
 }
