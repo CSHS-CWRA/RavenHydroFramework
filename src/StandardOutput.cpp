@@ -1744,13 +1744,7 @@ void CModel::RunDiagnostics(const optStruct &Options)
 
   DIAG.close();
 
-  //reset for ensemble mode
-  for(int i=0;i<_nObservedTS;i++)
-  {
-    _aObsIndex[i]=0;
-  }
-
-  // reporting of sim-obs values for observations not otherwise reported
+  // reporting of sim-obs values for observations not otherwise reported (PERIOD ENDING)
   //----------------------------------------------------------------------------
   int layer_ind;
   double obsval,modval;
@@ -1771,11 +1765,20 @@ void CModel::RunDiagnostics(const optStruct &Options)
       }
 
       DIAG2<<"time,date,hour,observed"+svname+",simulated"+svname<<endl;
+      time_struct tt;
+      string thisdate,thishour;
+      double t_start;
       for (int nn=0; nn<_pObservedTS[i]->GetNumSampledValues();nn++)
       {
+        t_start=this->GetEnsemble()->GetStartTime(g_current_e);
+
+        JulianConvert(t_start+nn*Options.timestep,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
+        string thisdate=tt.date_string;                   //refers to date and time at END of time step
+        thishour=DecDaysToHours(tt.julian_day);
+
         obsval=_pObservedTS[i]->GetSampledValue(nn);
         modval=_pModeledTS [i]->GetSampledValue(nn);
-        //DIAG2<<nn<<" "<<thistime<<","<<thishr<<","<<obsval<<","<<modval<<endl;
+        DIAG2<<nn<<" "<<thisdate<<","<<thishour<<","<<obsval<<","<<modval<<endl;
       }
       DIAG2.close();
     }

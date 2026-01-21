@@ -827,7 +827,7 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
       Tbar_km = FunkyTemperatureIntegral(k, m, _aEnthalpySource[p],
                                          hin_hist[m+0-1],
                                          hin_hist[m+1-1],
-                                         hin_hist[m+2-1],
+                                         hin_hist[min(m+2-1,_nMinHist[p]-1)],
                                          beta, dt);
       dA=(aRouteHydro[k]/m)*As;
       if (aRouteHydro[0]!=1.0){ //otherwise, dA will be zero anyhow -avoids divide by zero error
@@ -901,7 +901,7 @@ double CEnthalpyModel::GetEnergyLossesInTransit(const int p, double& Q_sens, dou
       Tbar_km = FunkyTemperatureIntegral(k, m, _aEnthalpySource2[p],
                                         hin_hist[m+0-1],
                                         hin_hist[m+1-1],
-                                        hin_hist[m+2-1],
+                                        hin_hist[min(m+2-1,_nMlatHist[p]-1)],
                                         beta, tstep);
       dA=1.0/k*aUnitHydro[k];
       Q_sens   +=dA*_aInCatch_a[p]*HCP_WATER*(temp_air-Tbar_km);   //[MJ/m3/K]*[1/d]*[K]=[MJ/m3/d]

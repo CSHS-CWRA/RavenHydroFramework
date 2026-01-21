@@ -520,6 +520,7 @@ public:/*-------------------------------------------------------*/
   void        ClearTimeSeriesData        (const optStruct &Options);
 
   //called during simulation:
+  void        RebootTimeVariables        (const optStruct &Options);
   void        UpdateParameter            (const class_type  &ctype,
                                           const string      pname,
                                           const string      cname,

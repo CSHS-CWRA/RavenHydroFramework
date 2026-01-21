@@ -2848,6 +2848,10 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
     {
       invalid_data=true;
     }
+    else if ((pBasin==NULL) && (datatype == "RESERVOIR_STAGE")) //because svtyp would not be UNRECOGNIZED
+    {
+      invalid_data=true;
+    }
     else if ( (datatype == "RESERVOIR_STAGE") ||
               (datatype == "RESERVOIR_INFLOW") ||
               (datatype == "RESERVOIR_NETINFLOW") ||

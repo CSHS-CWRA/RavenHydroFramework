@@ -183,6 +183,7 @@ int main(int argc, char* argv[])
     }
 
     pModel->GetEnsemble()->FinishEnsembleRun(pModel,Options,tt,e);
+    pModel->RebootTimeVariables(Options);//for ensemble sims
   }/* end ensemble loop*/
 
 

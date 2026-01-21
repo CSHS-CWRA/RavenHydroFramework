@@ -1090,3 +1090,32 @@ void CModel::GenerateGaugeWeights(double **&aWts, const forcing_type forcing, co
 
   delete[] has_data;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief reboots all necessary variables for ensemble mode 
+//
+void CModel::RebootTimeVariables(const optStruct &Options)
+{
+  for (int i=0;i<_nObservedTS;i++)
+  {
+    _aObsIndex[i]=0;
+  }
+
+  for (int k=0; k<_nHydroUnits;k++)
+  {
+    for (int js=0;js<_nTotalConnections;js++){_aCumulativeBal[k][js]=0.0;}
+    for (int js=0;js<_nTotalConnections;js++){_aFlowBal[k][js]=0.0;}
+  }
+
+  _nTotalLatConnections=0;
+  for (int j=0; j<_nProcesses;j++){
+    _nTotalLatConnections+=_pProcesses[j]->GetNumLatConnections();
+  }
+  if(_nTotalLatConnections>0){
+    for(int jss=0;jss<_nTotalLatConnections;jss++){
+      _aCumulativeLatBal[jss]=0.0;
+      _aFlowLatBal      [jss]=0.0;
+    }
+  }
+  _CumulInput   =_CumulOutput  =0.0;
+
+}
