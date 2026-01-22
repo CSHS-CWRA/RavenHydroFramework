@@ -254,13 +254,6 @@ void   CConstituentModel::RouteMass(const int          p,          // SB index
                                     const time_struct &tt) const
 {
   //==============================================================
-  // route from catchment
-  //==============================================================
-  //const double * aUnitHydro =_pModel->GetSubBasin(p)->GetUnitHydrograph();
-  //const double * aQlatHist  =_pModel->GetSubBasin(p)->GetLatHistory();
-  //Mlat_new=ApplyInCatchmentRouting(p,aUnitHydro,aQlatHist,_aMlatHist[p],_nMlatHist[p], Options.timestep);
-
-  //==============================================================
   // route along channel
   //==============================================================
   const double * aRouteHydro=_pModel->GetSubBasin(p)->GetRoutingHydrograph();
@@ -396,6 +389,8 @@ void   CConstituentModel::UpdateMassOutflows( const int     p,
 
     _aMout_res_last[p]=_aMout_res[p];
     _aMout_res     [p]=((pRes->GetOutflowRate()*SEC_PER_DAY)/pRes->GetStorage())*_aMres[p]; //mg/d or MJ/d
+
+    if (pRes->GetStorage()==0){_aMout_res[p]=0.0;}
 
     _aMsed_last    [p]=_aMsed[p];
     _aMsed         [p]=ResSedMass;
