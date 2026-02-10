@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "StateVariables.h"
@@ -172,6 +172,7 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
   case(GLACIER_ICE):        {name="Glacier Ice";                break;}
   case(GLACIER_CC):         {name="Glacier Cold Content";       break;}
   case(FIRN):               {name="Firn";                       break;}
+  case(FIRN_GRAVITY):       {name="Firn Specific Gravity";      break;}
 
   case(SNOW_ALBEDO):        {name="Snow Albedo";                break;}
   case(CROP_HEAT_UNITS):    {name="Crop Heat Units";            break;}
@@ -283,6 +284,7 @@ string CStateVariable::GetStateVarUnits(const sv_type typ)
   case(GLACIER_ICE):      {units="mm";   break;}
   case(GLACIER_CC):       {units="mm";   break;}
   case(FIRN):             {units="mm";   break;}
+  case(FIRN_GRAVITY):     {units="none"; break;}
 
   case(SNOW_ALBEDO):      {units="none"; break;}
 
@@ -372,6 +374,7 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
   else if (!tmp.compare("GLACIER_CC"      )){typ=GLACIER_CC;}
   else if (!tmp.compare("GLACIER_COLD_CONTENT")){typ=GLACIER_CC;}
   else if (!tmp.compare("FIRN"            )){typ=FIRN;}
+  else if (!tmp.compare("FIRN_GRAVITY"    )){typ=FIRN_GRAVITY;}
   else if (!tmp.compare("CUM_SNOWMELT"    )){typ=CUM_SNOWMELT;}
   else if (!tmp.compare("SNOW_TEMP"       )){typ=SNOW_TEMP;}
   else if (!tmp.compare("SNOW_ALBEDO"     )){typ=SNOW_ALBEDO;}
@@ -471,6 +474,7 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
     case(GLACIER_ICE):        {name="GLACIER_ICE";              break;}
     case(GLACIER_CC):         {name="GLACIER_CC";               break;}
     case(FIRN):               {name="FIRN";                     break;}
+    case(FIRN_GRAVITY):       {name="FIRN_GRAVITY";             break;}
 
     case(SNOW_ALBEDO):        {name="SNOW_ALBEDO";              break;}
     case(CROP_HEAT_UNITS):    {name="CROP_HEAT_UNITS";          break;}

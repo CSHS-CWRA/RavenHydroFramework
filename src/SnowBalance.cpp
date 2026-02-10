@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------
   Fully coupled snow balance routines
   ----------------------------------------------------------------*/
@@ -18,61 +18,59 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, CModelABC *pModel)
 {
   type =bal_type;
 
-  int iSnow; //used by all snow balance routines
+  int iSnow,iPonded,iFirn; //used by all snow balance routines
   iSnow   =pModel->GetStateVarIndex(SNOW);
+  iPonded =pModel->GetStateVarIndex(PONDED_WATER);
+  iFirn   =pModel->GetStateVarIndex(FIRN);
+
+  int add=0;
+  if (iFirn!=DOESNT_EXIST){add=1;}
 
   if (type==SNOBAL_SIMPLE_MELT)
   {
-    int iPond=pModel->GetStateVarIndex(PONDED_WATER);
+    CHydroProcessABC::DynamicSpecifyConnections(1+add);
 
-    CHydroProcessABC::DynamicSpecifyConnections(1);
-
-    iFrom[0]=iSnow;  iTo[0]=iPond;
+    iFrom[0]=iSnow;  iTo[0]=iPonded;
   }
   else if (type==SNOBAL_COLD_CONTENT)
   {
-    int iSnowLiq,iCC,iAtmosEn,iSW;
+    int iSnowLiq,iCC,iAtmosEn;
     iSnowLiq=pModel->GetStateVarIndex(SNOW_LIQ);
     iCC     =pModel->GetStateVarIndex(COLD_CONTENT);
     iAtmosEn=pModel->GetStateVarIndex(ENERGY_LOSSES);
-    iSW     =pModel->GetStateVarIndex(SURFACE_WATER);
 
-    CHydroProcessABC::DynamicSpecifyConnections(5);//nConnections=5
+    CHydroProcessABC::DynamicSpecifyConnections(5+add);
 
     iFrom[0]=iCC;       iTo[0]=iAtmosEn;//rates[0]: COLD_CONTENT->ENERGY_LOSSES
     iFrom[1]=iSnowLiq;  iTo[1]=iSnow;   //rates[1]: SNOW_LIQ->SNOW
     iFrom[2]=iAtmosEn;  iTo[2]=iCC;     //rates[2]: ENERGY_LOSSES->COLD_CONTENT
-    iFrom[3]=iSnow;     iTo[3]=iSW;     //rates[3]: SNOW ->SURFACE_WATER
-    iFrom[4]=iSnowLiq;  iTo[4]=iSW;     //rates[4]: SNOW_LIQ->SURFACE_WATER
+    iFrom[3]=iSnow;     iTo[3]=iPonded; //rates[3]: SNOW ->PONDED
+    iFrom[4]=iSnowLiq;  iTo[4]=iPonded; //rates[4]: SNOW_LIQ->PONDED
   }
   else if (type==SNOBAL_HBV)
   {
-    int iSnowLiq,iSoil,iPond;
+    int iSnowLiq,iSoil;
     iSnowLiq  =pModel->GetStateVarIndex(SNOW_LIQ);
     iSoil     =pModel->GetStateVarIndex(SOIL,0);
-    iPond     =pModel->GetStateVarIndex(PONDED_WATER);
 
-    CHydroProcessABC::DynamicSpecifyConnections(5);
+    CHydroProcessABC::DynamicSpecifyConnections(5+add);
 
     iFrom[0]=iSnow;       iTo[0]=iSnowLiq;       //rates[0]: SNOW->SNOW_LIQ
     iFrom[1]=iSnow;       iTo[1]=iSoil;          //rates[1]: SNOW->SOIL
     iFrom[2]=iSnowLiq;    iTo[2]=iSoil;          //rates[2]: SNOW_LIQ->SOIL
-    iFrom[3]=iSnow;       iTo[3]=iPond;          //rates[3]: SNOW->PONDED_WATER
-    iFrom[4]=iSnowLiq;    iTo[4]=iPond;          //rates[4]: SNOW_LIQ->PONDED_WATER
+    iFrom[3]=iSnow;       iTo[3]=iPonded;        //rates[3]: SNOW->PONDED_WATER
+    iFrom[4]=iSnowLiq;    iTo[4]=iPonded;        //rates[4]: SNOW_LIQ->PONDED_WATER
   }
   else if (type==SNOBAL_UBCWM)
   {
-    int iSnowLiq,iCumMelt,iPonded,iSnowCov,iColdCont;
+    int iSnowLiq,iCumMelt,iSnowCov,iColdCont, iSnowDef;
     iSnowLiq  =pModel->GetStateVarIndex(SNOW_LIQ);
-    iPonded   =pModel->GetStateVarIndex(PONDED_WATER);
     iSnowCov  =pModel->GetStateVarIndex(SNOW_COVER);
     iColdCont =pModel->GetStateVarIndex(COLD_CONTENT);
     iCumMelt  =pModel->GetStateVarIndex(CUM_SNOWMELT);
-
-    int iSnowDef;
     iSnowDef  =pModel->GetStateVarIndex(SNOW_DEFICIT);
 
-    CHydroProcessABC::DynamicSpecifyConnections(7); //nConnections=7
+    CHydroProcessABC::DynamicSpecifyConnections(7+add); //nConnections=7
 
     iFrom[0]=iSnow;       iTo[0]=iSnowLiq;       //rates[0]: SNOW->SNOW_LIQ
     iFrom[1]=iSnowLiq;    iTo[1]=iPonded;        //rates[1]: SNOW_LIQ->PONDED
@@ -84,20 +82,18 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, CModelABC *pModel)
   }
   else if (type==SNOBAL_CEMA_NEIGE)
   {
-    int iSnowCov,iPonded;
+    int iSnowCov;
     iSnowCov  =pModel->GetStateVarIndex(SNOW_COVER);
-    iPonded   =pModel->GetStateVarIndex(PONDED_WATER);
 
-    CHydroProcessABC::DynamicSpecifyConnections(2); //nConnections=2
+    CHydroProcessABC::DynamicSpecifyConnections(2+add); //nConnections=2
 
     iFrom[0]=iSnow;       iTo[0]=iPonded;            //rates[0]: SNOW->PONDED
     iFrom[1]=iSnowCov;    iTo[1]=iSnowCov;           //rates[1]: snow cover modification
   }
   else if(type==SNOBAL_TWO_LAYER)
   {
-    int iSnowfall,iPonded,iSLSurf,iSLPack,iCCSurf,iCCPack,iSnowTemp,iCumMelt;
+    int iSnowfall,iSLSurf,iSLPack,iCCSurf,iCCPack,iSnowTemp,iCumMelt;
     iSnowfall =pModel->GetStateVarIndex(NEW_SNOW);
-    iPonded   =pModel->GetStateVarIndex(PONDED_WATER);
     iSLSurf   =pModel->GetStateVarIndex(SNOW_LIQ,0);
     iSLPack   =pModel->GetStateVarIndex(SNOW_LIQ,1);
     iCCSurf   =pModel->GetStateVarIndex(COLD_CONTENT,0);
@@ -105,7 +101,7 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, CModelABC *pModel)
     iSnowTemp =pModel->GetStateVarIndex(SNOW_TEMP);
     iCumMelt = pModel->GetStateVarIndex(CUM_SNOWMELT);
 
-    CHydroProcessABC::DynamicSpecifyConnections(10); //nConnections=10
+    CHydroProcessABC::DynamicSpecifyConnections(10+add); //nConnections=10
 
     iFrom[0]=iSnowfall;   iTo[0]=iSnow;      //rates[0]: SNOWFALL         -> SNOW
     iFrom[1]=iPonded;     iTo[1]=iSLSurf;    //rates[1]: Rain             -> SNOW_LIQ surface
@@ -120,15 +116,14 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, CModelABC *pModel)
   }
   else if(type==SNOBAL_GAWSER)
   {
-    int iSnowfall, iPonded, iSWC, iSDEP, iLWC, iAtm;
+    int iSnowfall, iSWC, iSDEP, iLWC, iAtm;
     iSnowfall =pModel->GetStateVarIndex(NEW_SNOW);
-    iPonded   =pModel->GetStateVarIndex(PONDED_WATER);
     iSWC      =pModel->GetStateVarIndex(SNOW);
     iSDEP     =pModel->GetStateVarIndex(SNOW_DEPTH);
     iLWC      =pModel->GetStateVarIndex(SNOW_LIQ);
     iAtm      =pModel->GetStateVarIndex(ATMOSPHERE);
 
-    CHydroProcessABC::DynamicSpecifyConnections(10); //nConnections=10
+    CHydroProcessABC::DynamicSpecifyConnections(10+add); //nConnections=10
 
     iFrom[0]=iSWC;        iTo[0]=iLWC;       //rates[0]: SNOW             -> SNOW_LIQ       (MELT_I in GAWSER)
     iFrom[1]=iPonded;     iTo[1]=iLWC;       //rates[1]: RAIN              -> LWC
@@ -144,12 +139,11 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, CModelABC *pModel)
   }
   else if(type==SNOBAL_CRHM_EBSM)
   {
-    int iSnowLiq,iPonded,iColdCont;
+    int iSnowLiq,iColdCont;
     iSnowLiq  =pModel->GetStateVarIndex(SNOW_LIQ);
-    iPonded   =pModel->GetStateVarIndex(PONDED_WATER);
     iColdCont =pModel->GetStateVarIndex(COLD_CONTENT);
 
-    CHydroProcessABC::DynamicSpecifyConnections(5); //nConnectons=5
+    CHydroProcessABC::DynamicSpecifyConnections(5+add); //nConnectons=5
 
     iFrom[0]=iSnow;       iTo[0]=iSnowLiq;       //rates[0]: SNOW->SNOW_LIQ
     iFrom[1]=iSnow;       iTo[1]=iPonded;        //rates[1]: SNOW->PONDED
@@ -159,12 +153,11 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, CModelABC *pModel)
   }
   else if(type==SNOBAL_HMETS)
   {
-    int iSnowLiq,iCumMelt,iPonded;
+    int iSnowLiq,iCumMelt;
     iSnowLiq  =pModel->GetStateVarIndex(SNOW_LIQ);
-    iPonded   =pModel->GetStateVarIndex(PONDED_WATER);
     iCumMelt  =pModel->GetStateVarIndex(CUM_SNOWMELT);
 
-    CHydroProcessABC::DynamicSpecifyConnections(5); //nConnectons=5
+    CHydroProcessABC::DynamicSpecifyConnections(5+add); //nConnectons=5
 
     iFrom[0]=iSnow;       iTo[0]=iSnowLiq;       //rates[0]: SNOW->SNOW_LIQ
     iFrom[1]=iSnow;       iTo[1]=iPonded;        //rates[1]: SNOW->PONDED
@@ -174,6 +167,12 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, CModelABC *pModel)
   }
   else{
     ExitGracefully("CmvSnowBalance::Constructor: undefined snow balance type",BAD_DATA);
+  }
+
+  if (iFirn!=DOESNT_EXIST){
+    iPonded   =pModel->GetStateVarIndex(PONDED_WATER);
+    iFrom[_nConnections-1]=iFirn;
+    iTo  [_nConnections-1]=iPonded; //rates[N-1]: FIRN->PONDED
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -527,11 +526,11 @@ void CmvSnowBalance::GetRatesOfChange(const double               *state_var,
     double ripe=max(SL-SWI*SWE,0.0);
     SL-=ripe;
 
-    rates[0]=to_liq/tstep;   //SNOW->SNOW_LIQ
-    rates[1]=melt  /tstep;   //SNOW->PONDED_WATER (runoff)
-    rates[2]=ripe;           //SNOW_LIQ->PONDED (not explicit here)
-    rates[3]=freeze/tstep;   //SNOW_LIQ->SNOW (refreeze)
-    rates[4]=(melt+to_liq)/tstep;   //CUM_SNOWMELT->CUM_SNOWMELT
+    rates[0]=to_liq/tstep;         //SNOW->SNOW_LIQ
+    rates[1]=melt  /tstep;         //SNOW->PONDED_WATER (runoff)
+    rates[2]=ripe;                 //SNOW_LIQ->PONDED (not explicit here)
+    rates[3]=freeze/tstep;         //SNOW_LIQ->SNOW (refreeze)
+    rates[4]=(melt+to_liq)/tstep;  //CUM_SNOWMELT->CUM_SNOWMELT
 
     if(SWE<=0.0){ rates[4]=-state_var[iFrom[4]]/tstep; } //reset to zero as needed
   }
@@ -708,10 +707,23 @@ void CmvSnowBalance::GetRatesOfChange(const double               *state_var,
       rates[2] = snowmelt / tstep;                       //rates[2]: SNOW->PONDED
       rates[6] = (snow_d - state_var[iFrom[6]]) / tstep; //rates[6]: snow deficit modification
     }
-
-
   }//end UBC Melt
 
+  double SC=pHRU->GetSnowCover();
+  //Adjust results for proportion of snow cover (JRC: MUST CHECK FOR BACKWARD COMPATIBILITY)
+  //THIS WILL NOT WORK FOR UBCWM, WHICH HAS EMBEDDED SNOW COVER CALCS
+  for (int i=0;i<_nConnections; i++){
+    //rates[i]*=SC;
+  }
+
+  //Handle melt of Firn, if needed
+  int iFirn=pModel->GetStateVarIndex(FIRN);
+  if ((Options.glacier_model_on) && (iFirn!=DOESNT_EXIST))
+  {
+    double potmelt=pHRU->GetForcingFunctions()->potential_melt;
+    
+    rates[_nConnections-1]=(1-SC)*potmelt;
+  }
 };
 /*****************************************************************
    Cold Content Balance :Get Rates of Change

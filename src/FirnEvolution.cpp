@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ------------------------------------------------------------------
   Firn Evolution
   ----------------------------------------------------------------*/
@@ -22,6 +22,8 @@ CmvFirnEvolution::CmvFirnEvolution(firn_evolution_type fe_type,
   iTo  [0]=pModel->GetStateVarIndex(FIRN);
   iFrom[1]=pModel->GetStateVarIndex(FIRN);
   iTo  [1]=pModel->GetStateVarIndex(GLACIER_ICE);
+  iFrom[2]=pModel->GetStateVarIndex(FIRN_GRAVITY);
+  iTo  [2]=pModel->GetStateVarIndex(FIRN_GRAVITY);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -66,10 +68,11 @@ void CmvFirnEvolution::GetParticipatingStateVarList(firn_evolution_type type,sv_
 {
   if (type==FIRNEVOL_SIMPLE)
   {
-    nSV=3;
+    nSV=4;
     aSV[0]=GLACIER_ICE;  aLev[0]=DOESNT_EXIST;
     aSV[1]=FIRN;         aLev[1]=DOESNT_EXIST;
     aSV[2]=SNOW;         aLev[2]=DOESNT_EXIST; //\todo [funct]: multilayer snowpacks
+    aSV[3]=FIRN_GRAVITY; aLev[3]=DOESNT_EXIST;
   }
 }
 
@@ -93,14 +96,54 @@ void CmvFirnEvolution::GetRatesOfChange( const double             *state_var,
                                        const time_struct &tt,
                                        double      *rates) const
 {
-  if (pHRU->GetHRUType()!=HRU_GLACIER){return;}
 
   //----------------------------------------------------------------------
   if (type==FIRNEVOL_SIMPLE)
   {
-    double SWE=state_var[iFrom[0]];
-    if (SWE>1000){}
-    rates[0]=0.001*(SWE-1000);
+    double snow_to_firn=0.0;    //[mm/d]
+    double firn_to_glacier=0.0; //[mm/d]
+    double firn_grav_change=0.0;//[1/d]
+    
+    double firnPct=0.5;               //percentage of snow remaining in summer converted to firn \todo[funct] - make this a parameter
+    const double PACKED_GRAVITY=0.5;  //500 kg/m3 - density of snow converted to firn
+    const double THRESH_GRAVITY=0.83; //830 kg/m3 - density at which firn converts to ice (pore close off density)
+    const double DENS_GRADIENT =0.005;//density gradient of firn (assumes ~300 kg/m3 over ~60m)
+
+    double SWE =state_var[iFrom[0]];
+    double firn=state_var[iTo  [0]];
+    double grav=state_var[iFrom[2]];
+
+    double firn_compaction_rate=0.03; //[1/mm/d] ~0.33 m/yr for 25m depth
+
+    //if snow still present at end of summer, convert percentage to firn
+    double grav_new;
+    bool isMidnight=(tt.model_time-rvn_floor(tt.model_time+TIME_CORRECTION)<REAL_SMALL);
+    if (((pHRU->GetLatRad()>=0.0) && (tt.julian_day==213) && (isMidnight)) || //Aug 1 in northern hemisphere
+        ((pHRU->GetLatRad()< 0.0) && (tt.julian_day==32 ) && (isMidnight)))   //Feb 1 in southern hemisphere
+    {
+      snow_to_firn=(firnPct*SWE)/Options.timestep; 
+      grav_new=grav*(firn)+PACKED_GRAVITY*(firnPct*SWE);
+      firn+=snow_to_firn*Options.timestep;
+      firn_grav_change=(grav-grav_new)/Options.timestep; //assume deep snow is at 500 kg/m3
+      grav=grav_new;  
+    }
+
+    //all firn > density threshold converted to glacier ice
+    if (THRESH_GRAVITY<(grav+0.5*DENS_GRADIENT*firn))
+    {
+      firn_to_glacier=firn*(1.0-THRESH_GRAVITY/(grav+0.5*DENS_GRADIENT*firn))/Options.timestep;
+      grav_new=0.5*(THRESH_GRAVITY+grav-0.5*DENS_GRADIENT*firn);                     
+      firn-=firn_to_glacier*Options.timestep;
+      firn_grav_change=(grav-grav_new)/Options.timestep; //assume deep snow is at 500 kg/m3
+      grav=grav_new;
+    }
+
+    //compact firn
+    firn_grav_change+=firn*firn_compaction_rate; //linear compaction rate [1/d/mm] 
+
+    rates[0]=snow_to_firn;     //SNOW->FIRN
+    rates[1]=firn_to_glacier;  //FIRN->GLACIER_ICE
+    rates[2]=firn_grav_change; //FIRN_GRAVITY change
   }
 };
 
@@ -120,10 +163,4 @@ void   CmvFirnEvolution::ApplyConstraints( const double           *state_var,
                                          const time_struct &tt,
                                          double      *rates) const
 {
-  if (pHRU->GetHRUType()!=HRU_GLACIER){return;}
-
-  if (rates[0]<0.0){rates[0]=0.0;}//positivity constraint on melt
-
-  //cant remove more than is there
-  //rates[0]=threshMin(rates[0],state_var[iFrom[0]]/Options.timestep,0.0);
 }

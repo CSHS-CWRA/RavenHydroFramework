@@ -1,6 +1,6 @@
 ﻿/*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2025 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
 
   Includes declaration of global constants, enumerated types, and
   shared common & hydrological functions
@@ -913,6 +913,7 @@ enum sv_type
 
   // Snow/Glacier variables
   SNOW_DEPTH,              ///< [mm] Snow depth - surrogate for density
+  FIRN_GRAVITY,            ///< [0..1] Firn specific gravity (relative to water=1) 
   PERMAFROST_DEPTH,        ///< [mm] depth of permafrost
   THAW_DEPTH,              ///< [mm] depth of thaw
   SNOW_DEPTH_STDDEV,       ///< log([mm]) Snow depth standard deviation
