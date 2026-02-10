@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2025 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "TimeSeries.h"
 #include "ParseLib.h"
@@ -834,7 +834,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long lon
     bool step=false;
     if (Len >= 2) {
       if(!strcmp(s[1],"INTERPOLATE")){step=false;}
-      if(!strcmp(s[1],"STEP"       )){step=true;}
+      if(!strcmp(s[1],"STEP"       )){step=true;is_pulse=true;}
     }
 
     int    *days=new int    [366]; //sized for max # of events
@@ -913,7 +913,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long lon
     bool step=false;
     if (Len >= 3) {
       if(!strcmp(s[1],"INTERPOLATE")){step=false;}
-      if(!strcmp(s[1],"STEP"       )){step=true;}
+      if(!strcmp(s[1],"STEP"       )){step=true;is_pulse=true;}
       nEvents=s_to_i(s[2]);
     }
     else{
