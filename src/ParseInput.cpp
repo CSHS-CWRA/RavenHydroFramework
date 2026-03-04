@@ -588,6 +588,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":LateralDivert"             )){code=240;}
     else if  (!strcmp(s[0],":SnowRedistribute"          )){code=241;}
     else if  (!strcmp(s[0],":GlacierIceFlow"            )){code=242;}
+    else if  (!strcmp(s[0],":FirnEvolution"             )){code=243;}
     //...
     else if  (!strcmp(s[0],":-->RedirectFlow"           )){code=294;}
     else if  (!strcmp(s[0],":ProcessGroup"              )){code=295;}
@@ -2443,7 +2444,7 @@ bool ParseMainInputFile (CModel     *&pModel,
                                     pModel);
       }
       else{
-        pMover = new CmvSnowBalance(sbtype, pModel);
+        pMover = new CmvSnowBalance(sbtype, DOESNT_EXIST, pModel);
       }
       AddProcess(pModel,pMover,pProcGroup);
       break;
@@ -3171,7 +3172,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(242):  //----------------------------------------------
     { /*Glacier Ice Flow
-        :GlacierIceFlow [string method] GLACIER_ICE GLACIER_ICE */
+        :GlacierIceFlow ICEFLOW_RAVEN GLACIER_ICE GLACIER_ICE */
       if (Options.noisy) { cout << "Lateral Glacier Ice Flow Process" << endl; }
       if (Len < 4) { ImproperFormatWarning(":GlacierIceFlow", p, Options.noisy); break; }
 
@@ -3710,8 +3711,13 @@ bool ParseMainInputFile (CModel     *&pModel,
   INPUT.close();
 
   // Add TOTAL_SWE state variable if any snow is simulated
-  if (pModel->GetStateVarIndex(SNOW) != -1) {
+  if (pModel->GetStateVarIndex(SNOW) != DOESNT_EXIST) {
     tmpS[0] = TOTAL_SWE; tmpLev[0]=0; tmpN=1;
+    pModel->AddStateVariables(tmpS,tmpLev,tmpN);
+  }
+  // Add GLACIER_MB state variable if any glacier is simulated
+  if (pModel->GetStateVarIndex(GLACIER_ICE) != DOESNT_EXIST){
+    tmpS[0] = GLACIER_MB; tmpLev[0]=0; tmpN=1;
     pModel->AddStateVariables(tmpS,tmpLev,tmpN);
   }
 

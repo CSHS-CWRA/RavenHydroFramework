@@ -12,13 +12,28 @@
 /// \brief   Implementation of the constructor
 /// \details For combined modelling of melt, refreeze, and energy content
 /// \param   bal_type Method of balancing energy selected
+/// \param   iSnowTo index of 'To' state variable (should be ponded water or snow_liq)
 //
-CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, CModelABC *pModel)
-  :CHydroProcessABC(SNOW_BALANCE, pModel)
+CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, int iSnowTo, CModelABC *pModel) :
+  CHydroProcessABC(SNOW_BALANCE, pModel)
 {
-  type =bal_type;
+  _type = bal_type;
 
-  int iSnow,iPonded,iFirn; //used by all snow balance routines
+  _iSnowTo=iSnowTo;
+
+  //connections handled in initialize
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Implementation of the default destructor
+//
+CmvSnowBalance::~CmvSnowBalance(){}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Initializes snow balance modelling object
+//
+void CmvSnowBalance::Initialize()
+{
+ int iSnow,iPonded,iFirn; //used by all snow balance routines
   iSnow   =pModel->GetStateVarIndex(SNOW);
   iPonded =pModel->GetStateVarIndex(PONDED_WATER);
   iFirn   =pModel->GetStateVarIndex(FIRN);
@@ -26,13 +41,17 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, CModelABC *pModel)
   int add=0;
   if (iFirn!=DOESNT_EXIST){add=1;}
 
-  if (type==SNOBAL_SIMPLE_MELT)
-  {
-    CHydroProcessABC::DynamicSpecifyConnections(1+add);
 
-    iFrom[0]=iSnow;  iTo[0]=iPonded;
+  if (_type == SNOBAL_SIMPLE_MELT)
+  {
+    sv_type typ=pModel->GetStateVarType(_iSnowTo);
+    if ((typ != PONDED_WATER) && (typ != SNOW_LIQ)){
+      ExitGracefully("CmvSnowBalance Constructor: SNOBAL_SIMPLE_MELT target should be either PONDED_WATER or SNOW_LIQ",BAD_DATA_WARN);
+    }
+    CHydroProcessABC::DynamicSpecifyConnections(1+add);
+    iFrom[0] = iSnow;  iTo[0] = _iSnowTo;
   }
-  else if (type==SNOBAL_COLD_CONTENT)
+  else if (_type==SNOBAL_COLD_CONTENT)
   {
     int iSnowLiq,iCC,iAtmosEn;
     iSnowLiq=pModel->GetStateVarIndex(SNOW_LIQ);
@@ -47,7 +66,7 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, CModelABC *pModel)
     iFrom[3]=iSnow;     iTo[3]=iPonded; //rates[3]: SNOW ->PONDED
     iFrom[4]=iSnowLiq;  iTo[4]=iPonded; //rates[4]: SNOW_LIQ->PONDED
   }
-  else if (type==SNOBAL_HBV)
+  else if (_type==SNOBAL_HBV)
   {
     int iSnowLiq,iSoil;
     iSnowLiq  =pModel->GetStateVarIndex(SNOW_LIQ);
@@ -61,7 +80,7 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, CModelABC *pModel)
     iFrom[3]=iSnow;       iTo[3]=iPonded;        //rates[3]: SNOW->PONDED_WATER
     iFrom[4]=iSnowLiq;    iTo[4]=iPonded;        //rates[4]: SNOW_LIQ->PONDED_WATER
   }
-  else if (type==SNOBAL_UBCWM)
+  else if (_type==SNOBAL_UBCWM)
   {
     int iSnowLiq,iCumMelt,iSnowCov,iColdCont, iSnowDef;
     iSnowLiq  =pModel->GetStateVarIndex(SNOW_LIQ);
@@ -80,7 +99,7 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, CModelABC *pModel)
     iFrom[5]=iCumMelt;    iTo[5]=iCumMelt;       //rates[5]: cumulative melt modification
     iFrom[6]=iSnowDef;    iTo[6]=iSnowDef;       //rates[6]: snow deficit modification
   }
-  else if (type==SNOBAL_CEMA_NEIGE)
+  else if (_type==SNOBAL_CEMA_NEIGE)
   {
     int iSnowCov;
     iSnowCov  =pModel->GetStateVarIndex(SNOW_COVER);
@@ -90,7 +109,7 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, CModelABC *pModel)
     iFrom[0]=iSnow;       iTo[0]=iPonded;            //rates[0]: SNOW->PONDED
     iFrom[1]=iSnowCov;    iTo[1]=iSnowCov;           //rates[1]: snow cover modification
   }
-  else if(type==SNOBAL_TWO_LAYER)
+  else if(_type==SNOBAL_TWO_LAYER)
   {
     int iSnowfall,iSLSurf,iSLPack,iCCSurf,iCCPack,iSnowTemp,iCumMelt;
     iSnowfall =pModel->GetStateVarIndex(NEW_SNOW);
@@ -114,7 +133,7 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, CModelABC *pModel)
     iFrom[8]=iSnowTemp;   iTo[8]=iSnowTemp;  //rates[8]: Snow Temp
     iFrom[9]=iCumMelt;    iTo[9]=iCumMelt;   //rates[9]: Cumulative Melt
   }
-  else if(type==SNOBAL_GAWSER)
+  else if(_type==SNOBAL_GAWSER)
   {
     int iSnowfall, iSWC, iSDEP, iLWC, iAtm;
     iSnowfall =pModel->GetStateVarIndex(NEW_SNOW);
@@ -137,7 +156,7 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, CModelABC *pModel)
     iFrom[9]=iSWC;        iTo[9]=iPonded;    //rates[9]: SNOW             -> PONDED         (MELT_2 in GAWSER)
 
   }
-  else if(type==SNOBAL_CRHM_EBSM)
+  else if(_type==SNOBAL_CRHM_EBSM)
   {
     int iSnowLiq,iColdCont;
     iSnowLiq  =pModel->GetStateVarIndex(SNOW_LIQ);
@@ -151,7 +170,7 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, CModelABC *pModel)
     iFrom[3]=iSnowLiq;    iTo[3]=iSnow;          //rates[3]: SNOW_LIQ->SNOW [refreeze]
     iFrom[4]=iColdCont;   iTo[4]=iColdCont;      //rates[4]: CC modification
   }
-  else if(type==SNOBAL_HMETS)
+  else if(_type==SNOBAL_HMETS)
   {
     int iSnowLiq,iCumMelt;
     iSnowLiq  =pModel->GetStateVarIndex(SNOW_LIQ);
@@ -175,42 +194,6 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, CModelABC *pModel)
     iTo  [_nConnections-1]=iPonded; //rates[N-1]: FIRN->PONDED
   }
 }
-//////////////////////////////////////////////////////////////////
-/// \brief   Implementation of the constructor
-/// \details For combined modelling of melt, refreeze, and energy content
-/// \param   bal_type Method of balancing energy selected
-/// \param   iSnowTo index of 'To' state variable (should be ponded water or snow_liq)
-//
-CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, int iSnowTo, CModelABC *pModel) :
-  CHydroProcessABC(SNOW_BALANCE, pModel)
-{
-  type = bal_type;
-
-  int iSnow; //used by all snow balance routines
-  iSnow = pModel->GetStateVarIndex(SNOW);
-
-  if (type == SNOBAL_SIMPLE_MELT)
-  {
-    sv_type typ=pModel->GetStateVarType(iSnowTo);
-    if ((typ != PONDED_WATER) && (typ != SNOW_LIQ)){
-      ExitGracefully("CmvSnowBalance Constructor: SNOBAL_SIMPLE_MELT target should be either PONDED_WATER or SNOW_LIQ",BAD_DATA_WARN);
-    }
-    CHydroProcessABC::DynamicSpecifyConnections(1);
-    iFrom[0] = iSnow;  iTo[0] = iSnowTo;
-  }
-  else{
-    ExitGracefully("CmvSnowBalance::Constructor: incorrect constructor for this type.",RUNTIME_ERR);
-  }
-}
-//////////////////////////////////////////////////////////////////
-/// \brief Implementation of the default destructor
-//
-CmvSnowBalance::~CmvSnowBalance(){}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Initializes snow balance modelling object
-//
-void CmvSnowBalance::Initialize(){}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns participating parameter list
@@ -221,52 +204,52 @@ void CmvSnowBalance::Initialize(){}
 //
 void CmvSnowBalance::GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const
 {
-  if (type==SNOBAL_SIMPLE_MELT)
+  if (_type==SNOBAL_SIMPLE_MELT)
   {
     nP=0;
   }
-  else if (type==SNOBAL_COLD_CONTENT)
+  else if (_type==SNOBAL_COLD_CONTENT)
   {
     nP=1;
     aP[0]="SNOW_SWI";        aPC[0]=CLASS_GLOBAL;
   }
-  else if (type==SNOBAL_HBV)
+  else if (_type==SNOBAL_HBV)
   {
     nP=2;
     aP[0]="REFREEZE_FACTOR"; aPC[0]=CLASS_LANDUSE;
     aP[1]="SNOW_SWI";        aPC[1]=CLASS_GLOBAL;
   }
-  else if (type==SNOBAL_UBCWM)
+  else if (_type==SNOBAL_UBCWM)
   {
     nP=3;
     aP[0]="CC_DECAY_COEFF";   aPC[0]=CLASS_LANDUSE;
     aP[1]="SNOW_SWI";         aPC[1]=CLASS_GLOBAL;
     aP[2]="SNOW_PATCH_LIMIT"; aPC[2]=CLASS_LANDUSE;
   }
-  else if (type==SNOBAL_CEMA_NEIGE)
+  else if (_type==SNOBAL_CEMA_NEIGE)
   {
     nP=1;
     aP[0]="AVG_ANNUAL_SNOW";  aPC[0]=CLASS_GLOBAL;
   }
-  else if (type==SNOBAL_TWO_LAYER)
+  else if (_type==SNOBAL_TWO_LAYER)
   {
     nP=2;
     aP[0]="MAX_SWE_SURFACE";    aPC[0]=CLASS_GLOBAL;
     aP[1]="SNOW_SWI";           aPC[1]=CLASS_GLOBAL;
   }
-  else if (type==SNOBAL_GAWSER)
+  else if (_type==SNOBAL_GAWSER)
   {
     nP=3;
     aP[0]="SNOW_SWI";         aPC[0]=CLASS_GLOBAL;
     aP[1]="REFREEZE_FACTOR";  aPC[1]=CLASS_LANDUSE;
     aP[2]="MELT_FACTOR";      aPC[2]=CLASS_LANDUSE;
   }
-  else if(type==SNOBAL_CRHM_EBSM)
+  else if(_type==SNOBAL_CRHM_EBSM)
   {
     nP=1;
     aP[0]="SNOW_SWI";         aPC[0]=CLASS_GLOBAL;
   }
-  else if(type==SNOBAL_HMETS)
+  else if(_type==SNOBAL_HMETS)
   {
     nP=6;
     aP[0]="REFREEZE_FACTOR";     aPC[0]=CLASS_LANDUSE;
@@ -279,6 +262,12 @@ void CmvSnowBalance::GetParticipatingParamList(string *aP, class_type *aPC, int 
   else
   {
     ExitGracefully("CmvSnowBalance::GetParticipatingParamList: undefined snow balance algorithm",BAD_DATA);
+  }
+
+  int iFirn=pModel->GetStateVarIndex(FIRN);
+  if (iFirn!=DOESNT_EXIST)
+  {
+    aP[nP]="FIRN_MELT_CORR"; aPC[nP]=CLASS_LANDUSE;  nP++;
   }
 }
 
@@ -377,6 +366,8 @@ void CmvSnowBalance::GetParticipatingStateVarList(snowbal_type bal_type,
   else{
     nSV=0;
   }
+
+  //aSV[nSV]=FIRN; aLev[nSV]=DOESNT_EXIST; nSV++;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -404,12 +395,12 @@ void CmvSnowBalance::GetRatesOfChange(const double               *state_var,
                                       double     *rates) const
 {
   //------------------------------------------------------------
-  if (type==SNOBAL_SIMPLE_MELT)
+  if (_type==SNOBAL_SIMPLE_MELT)
   {
     rates[0]=max(pHRU->GetForcingFunctions()->potential_melt,0.0);
   }
   //------------------------------------------------------------
-  else if (type==SNOBAL_CEMA_NEIGE)
+  else if (_type==SNOBAL_CEMA_NEIGE)
   {
     double pot_melt,snow_cov,SWE;
     double avg_annual_snow = pModel->GetGlobalParams()->GetParams()->avg_annual_snow;
@@ -426,22 +417,22 @@ void CmvSnowBalance::GetRatesOfChange(const double               *state_var,
     rates[1]=(snow_cov-state_var[iFrom[1]])/Options.timestep;   //change in snow cover
   }
   //------------------------------------------------------------
-  else if (type==SNOBAL_COLD_CONTENT)
+  else if (_type==SNOBAL_COLD_CONTENT)
   {
     ColdContentBalance(state_var,pHRU,Options,tt,rates);
   }
   //-----------------------------------------------------------
-  else if(type==SNOBAL_TWO_LAYER)
+  else if(_type==SNOBAL_TWO_LAYER)
   {
     TwoLayerBalance(state_var,pHRU,Options,tt,rates);
   }
   //-------------------------------------------------------------
-  else if(type==SNOBAL_GAWSER)
+  else if(_type==SNOBAL_GAWSER)
   {
     GawserBalance(state_var,pHRU,Options,tt,rates);
   }
   //------------------------------------------------------------
-  else if (type==SNOBAL_HBV)
+  else if (_type==SNOBAL_HBV)
   {
     double Ka    =pHRU->GetSurfaceProps()->refreeze_factor;//[mm/d/K]
     double Ta    =pHRU->GetForcingFunctions()->temp_daily_ave;
@@ -478,12 +469,12 @@ void CmvSnowBalance::GetRatesOfChange(const double               *state_var,
     }
   }
   //------------------------------------------------------------
-  else if(type==SNOBAL_CRHM_EBSM)
+  else if(_type==SNOBAL_CRHM_EBSM)
   {
     CRHMSnowBalance(state_var,pHRU,Options,tt,rates);
   }
   //------------------------------------------------------------
-  else if(type==SNOBAL_HMETS)
+  else if(_type==SNOBAL_HMETS)
   {
     double SWE     =state_var[iFrom[0]];//snow, SWE mm
     double SL      =state_var[iFrom[3]];//liquid snow, mm
@@ -535,7 +526,7 @@ void CmvSnowBalance::GetRatesOfChange(const double               *state_var,
     if(SWE<=0.0){ rates[4]=-state_var[iFrom[4]]/tstep; } //reset to zero as needed
   }
   //------------------------------------------------------------
-  else if (type == SNOBAL_UBCWM)
+  else if (_type == SNOBAL_UBCWM)
   {
     double SWE = state_var[iFrom[0]]; //snow as SWE [mm]
     double Sliq = state_var[iFrom[1]]; //liquid snow [mm]
@@ -720,9 +711,11 @@ void CmvSnowBalance::GetRatesOfChange(const double               *state_var,
   int iFirn=pModel->GetStateVarIndex(FIRN);
   if ((Options.glacier_model_on) && (iFirn!=DOESNT_EXIST))
   {
+    double firn_melt_corr=pHRU->GetSurfaceProps()->firn_melt_corr;
+
     double potmelt=pHRU->GetForcingFunctions()->potential_melt;
     
-    rates[_nConnections-1]=(1-SC)*potmelt;
+    rates[_nConnections-1]=(1.0-SC)*firn_melt_corr*potmelt;
   }
 };
 /*****************************************************************
@@ -1320,14 +1313,14 @@ void  CmvSnowBalance::ApplyConstraints( const double             *state_vars,
                                         double     *rates) const
 {
 
-  if (type==SNOBAL_SIMPLE_MELT)
+  if (_type==SNOBAL_SIMPLE_MELT)
   {
     if (rates[0]<0.0){rates[0]=0.0;}//positivity constraint
 
     //cant remove more than is there
     rates[0]=threshMin(rates[0],max(state_vars[iFrom[0]]/Options.timestep,0.0),0.0);
   }
-  else if (type == SNOBAL_UBCWM)
+  else if (_type == SNOBAL_UBCWM)
   {
     //snow cover should never be negative
     // subdaily correction sometimes puts it out of this range
@@ -1335,5 +1328,11 @@ void  CmvSnowBalance::ApplyConstraints( const double             *state_vars,
     rates[4] = threshMin(rates[4], (1-state_vars[iFrom[4]]) / Options.timestep, 0.0);
   }
 
+  int iFirn=pModel->GetStateVarIndex(FIRN);
+  if ((Options.glacier_model_on) && (iFirn!=DOESNT_EXIST))
+  {
+    int q=_nConnections-1;
+    rates[q]=threshMin(rates[q],max(state_vars[iFrom[q]]/Options.timestep,0.0),0.0);
+  }
   return;//most constraints contained in routine itself
 }

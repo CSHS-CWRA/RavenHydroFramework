@@ -30,6 +30,7 @@ public:/*-------------------------------------------------------*/
 
   //inherited functions
   void Initialize();
+  void InitializePostRVC(const optStruct &Options);
 
   static void GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV);
 

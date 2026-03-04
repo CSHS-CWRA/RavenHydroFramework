@@ -23,8 +23,8 @@ void MassEnergyBalance( CModel            *pModel,
   int NS,NB,nHRUs,nConnections=0,nProcesses;   //array sizes (local copies)
   int nConstituents;                           //
   int iSW, iAtm, iAET, iGW, iRO;               //Surface water, atmospheric precip, used PET, runoff indices
-  int iTotalSWE;                               //total SWE index
-
+  int iTotalSWE,iGlacierMB;                    //total SWE index, glacier MB index
+  
   int maxLatConns=0;
   int maxConns=0;
   int maxTotConns=0;
@@ -162,9 +162,10 @@ void MassEnergyBalance( CModel            *pModel,
     }
   }
 
-  iSW      =pModel->GetStateVarIndex(SURFACE_WATER);
-  iAtm     =pModel->GetStateVarIndex(ATMOS_PRECIP);
-  iTotalSWE=pModel->GetStateVarIndex(TOTAL_SWE);
+  iSW       =pModel->GetStateVarIndex(SURFACE_WATER);
+  iAtm      =pModel->GetStateVarIndex(ATMOS_PRECIP);
+  iTotalSWE =pModel->GetStateVarIndex(TOTAL_SWE);
+  iGlacierMB=pModel->GetStateVarIndex(GLACIER_MB);
 
   // Used PET and runoff reboots to zero every timestep==============
   iAET=pModel->GetStateVarIndex(AET);
@@ -687,7 +688,8 @@ void MassEnergyBalance( CModel            *pModel,
   }//end (c=0;c<nConstituents;c++)
 
   //update state variable values=====================================
-  for (k=0;k<nHRUs;k++){
+  for (k=0;k<nHRUs;k++)
+  {
     pHRU=pModel->GetHydroUnit(k);
 
     if(pHRU->IsEnabled())
@@ -703,7 +705,17 @@ void MassEnergyBalance( CModel            *pModel,
           }
         }
       }
-
+      //update glacier MB variable
+      if (iGlacierMB != DOESNT_EXIST) {
+        aPhinew[k][iGlacierMB] =0.0;
+        for (int i = 0; i < NS; i++)
+        {
+          sv_type typ=pModel->GetStateVarType(i);
+          if ((typ == SNOW) || (typ == SNOW_LIQ) || (typ == FIRN) || (typ == GLACIER_ICE) || (typ == GLACIER)) {
+            aPhinew[k][iGlacierMB] += aPhinew[k][i];
+          }
+        }
+      }
       for(i=0;i<NS;i++){
         pHRU->SetStateVarValue(i,aPhinew[k][i]);
       }

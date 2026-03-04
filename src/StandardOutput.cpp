@@ -241,11 +241,6 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
             }
           }
         }
-         if (pSB->GetID() == 8) {//TMP DEBUG
-         _HYDRO<<","<<pSB->GetID()  <<" (Qlast) [m3/s]";
-         _HYDRO<<","<<pSB->GetID()  <<" (Qend) [m3/s]";
-         _HYDRO<<","<<pSB->GetID()  <<" (Qinhist) [m3/s]";
-         }
       }
     }
     _HYDRO<<endl;
@@ -830,12 +825,6 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
                   else                                             { _HYDRO << ","; }
                 }
               }
-            }
-            if (pSB->GetID() == 8) {//TMP DEBUG
-              double Qlast=pSB->GetLastOutflowRate();
-              double Qout =pSB->GetOutflowRate();
-              double Qin =pSB->GetInflowHistory()[0];
-              _HYDRO<<","<<Qlast<<","<<Qout<<","<<Qin;
             }
           }
         }

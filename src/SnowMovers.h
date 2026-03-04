@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------
   class definitions:
   CmvSublimation
@@ -195,7 +195,8 @@ enum snowbal_type
 class CmvSnowBalance: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
-  snowbal_type type; ///< Method of energy-balance selected
+  snowbal_type _type;    ///< Method of energy-balance selected
+  int          _iSnowTo; ///< index of recipient store (for SNOWBAL_SIMPLE_MELT), DOESNT_EXIST, otherwise
 
   void ColdContentBalance(const double           *state_vars,
                             const CHydroUnit       *pHRU,
@@ -222,8 +223,6 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvSnowBalance(snowbal_type  bal_type,
-                 CModelABC *pModel);
   CmvSnowBalance(snowbal_type bal_type,
                  int iSnowTo,
                  CModelABC *pModel);

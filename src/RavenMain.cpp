@@ -128,6 +128,7 @@ int main(int argc, char* argv[])
     pModel->RecalculateHRUDerivedParams(Options,tt);
     pModel->UpdateHRUForcingFunctions  (Options,tt);
     pModel->UpdateDiagnostics          (Options,tt);
+    pModel->InitializePostRVC          (Options);
     pModel->WriteMinorOutput           (Options,tt);
 
     //Solve water/energy balance over time--------------------------------

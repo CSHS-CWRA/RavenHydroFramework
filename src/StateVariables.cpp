@@ -139,6 +139,7 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
   case(NEW_SNOW):           {name="New Snow";                   break;}
   case(SNOW_LIQ):           {name="Snow Melt (Liquid)";         break;}
   case(TOTAL_SWE):          {name="Total SWE";                  break;}
+  case(GLACIER_MB):         {name="Glacier Mass Balance";       break;}
   case(WETLAND):            {name="Wetlands";                   break;}
   case(CUM_INFIL):          {name="Cumulative infiltration";    break;}
   case(GA_MOISTURE_INIT):   {name="Green Ampt initial soil Water"; break;}
@@ -252,6 +253,7 @@ string CStateVariable::GetStateVarUnits(const sv_type typ)
   case(NEW_SNOW):         {units="mm"; break;}
   case(SNOW_LIQ):         {units="mm"; break;}
   case(TOTAL_SWE):        {units="mm"; break;}
+  case(GLACIER_MB):       {units="mm"; break;}
   case(WETLAND):          {units="mm"; break;}
   case(CUM_INFIL):        {units="mm"; break;}
   case(GA_MOISTURE_INIT): {units="mm"; break;}
@@ -355,6 +357,7 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
   else if (!tmp.compare("SNOWLIQ"         )){typ=SNOW_LIQ;}
   else if (!tmp.compare("SNOW_LIQ"        )){typ=SNOW_LIQ;}
   else if (!tmp.compare("TOTAL_SWE"       )){typ=TOTAL_SWE;}
+  else if (!tmp.compare("GLACIER_MB"      )){typ=GLACIER_MB;}
   else if (!tmp.compare("SNOW_DEPTH"      )){typ=SNOW_DEPTH;}
   else if (!tmp.compare("SNOW_TEMP"       )){typ=SNOW_TEMP;}
   else if (!tmp.compare("COLD_CONTENT"    )){typ=COLD_CONTENT;}
@@ -443,6 +446,7 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
     case(NEW_SNOW):           {name="NEW_SNOW";                 break;}
     case(SNOW_LIQ):           {name="SNOW_LIQ";                 break;}
     case(TOTAL_SWE):          {name="TOTAL_SWE";                break;}
+    case(GLACIER_MB):         {name="GLACIER_MB";               break;}
     case(WETLAND):            {name="WETLAND";                  break;}
     case(CUM_INFIL):          {name="CUM_INFIL";                break;}
     case(GA_MOISTURE_INIT):   {name="GA_MOISTURE_INIT";         break;}

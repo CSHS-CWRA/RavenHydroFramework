@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2025 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------
   Properties.h
   ------------------------------------------------------------------
@@ -257,12 +257,13 @@ struct surface_struct
   double lakesnow_buffer_ht;///< [mmSWE]   height of snow above which potential melt energy doest reach lake ice
 
   //Glacier parameters
-  double glac_storage_coeff;  ///< [-]     maximum linear storage coefficient for glacial melt =K*G
+  double glac_storage_coeff;   ///< [-]    maximum linear storage coefficient for glacial melt =K*G
   double HBV_melt_glacier_corr;///< [-]    degree day correction factor for glacial melt (MRG in HBV-EC)
-  double HBV_glacier_Kmin;  ///< [-]       minimum linear storage coefficient for glacial melt =K*G (KG1 in HBV-EC)
-  double HBV_glacier_Ag;    ///< [1/mm]    extinction coefficient for diminishing storage coefficient with snow depth atop glacier, AG (K=Kmin+(Kmax-Kmin)*exp(-ag*snow_depth))
-
-  double CC_decay_coeff;    ///< [1/d]     linear decay coefficient for decreasing cold content
+  double HBV_glacier_Kmin;     ///< [-]    minimum linear storage coefficient for glacial melt =K*G (KG1 in HBV-EC)
+  double HBV_glacier_Ag;       ///< [1/mm] extinction coefficient for diminishing storage coefficient with snow depth atop glacier, AG (K=Kmin+(Kmax-Kmin)*exp(-ag*snow_depth))
+  double firn_melt_corr;       ///< [-]    adjustment correction for firn melt (similar in function to HBV_melt_glacier_corr
+  double firn_compaction_rate; ///< [%/yr] compaction rate of firn
+  double CC_decay_coeff;       ///< [1/d]  linear decay coefficient for decreasing cold content
 
   //runoff parameters
   double SCS_CN;            ///< [-]       SCS curve number (for antecedent wetness condition II)

@@ -91,14 +91,20 @@ void CmvLatIceFlow::Initialize()
     }
   }
   delete [] found;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Initialization (prior to solution, after reading initial conditions)
+// store initial glacier bottom for all HRUs
+//
+void CmvLatIceFlow::InitializePostRVC(const optStruct &Options)
+{
+  int iGlacierIce=_pModel->GetStateVarIndex(GLACIER_ICE);
 
-  //store initial glacier bottom for all HRUs
   _aInitGlacierHeight=new double [_pModel->GetNumHRUs()];
   for (int k=0;k<_pModel->GetNumHRUs();k++){
     _aInitGlacierHeight[k]=(DENSITY_WATER/DENSITY_ICE)*_pModel->GetHydroUnit(k)->GetStateVarValue(iGlacierIce);
   }
 }
-
 //////////////////////////////////////////////////////////////////
 /// \brief Sets reference to participating state variables
 /// \param se_type [in] Model of soil evaporation used
@@ -176,9 +182,11 @@ void CmvLatIceFlow::GetLateralExchange(const double *const *state_vars,
 
     velocity*=(-surf_grad)/fabs(surf_grad); //to get direction of flow right (opposite gradient)
 
+    //cout<<"velocity: "<<velocity<<" m/d fl:"<<distance<<" m "<<surf_grad<<" m/m H:"<<H<<" m"<<_aInitGlacierHeight[_kFrom[q]]<<" "<<_aInitGlacierHeight[_kTo[q]]<<" "<<elev_from<<" "<<elev_to<<endl;
+
     exchange_rates[q]=velocity*width*H*MM_PER_METER; //[mm-m2/d]
 
-    if (surf_grad<0){exchange_rates[q]=max(exchange_rates[q],+stor_from*Afrom/Options.timestep);}
-    else            {exchange_rates[q]=min(exchange_rates[q],-stor_to  *Ato  /Options.timestep);}
+    if (surf_grad<0){exchange_rates[q]=min(exchange_rates[q],+stor_from*Afrom/Options.timestep);}
+    else            {exchange_rates[q]=max(exchange_rates[q],-stor_to  *Ato  /Options.timestep);}
   }
 }

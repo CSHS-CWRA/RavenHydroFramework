@@ -888,6 +888,7 @@ enum sv_type
   GLACIER_ICE,             ///< [mm] Glacier ice - typically assumed to be infinite reservoir.
   FIRN,                    ///< [mm] Firn atop glacier 
   LAKE_STORAGE,            ///< [mm] Net lake storage - relative to equilibrium datum - can go negative
+  GLACIER_MB,              ///< [mm] equivalent to GLACIER_ICE+GLACIER+FIRN+SNOW (diagnostic variable)
 
   CONVOLUTION,             ///< [mm] Convolution storage - for conceptual models with intermediate convolution steps
   CONV_STOR,               ///< [mm] Convolution sub-storage - tracks internal water mass for convolution

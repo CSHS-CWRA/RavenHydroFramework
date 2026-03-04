@@ -92,6 +92,7 @@ public:/*-------------------------------------------------------*/
   void                 Redirect(const int toSVindex, const int newToSVindex);
 
   virtual void Initialize();
+  virtual void InitializePostRVC(const optStruct &Options){return;}
   virtual void GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const=0;
 
   //calculates and returns rates of water/energy LOSS of "iFrom" Storage Units/state variables (e.g., [mm/d] or [MJ/m2/d])
