@@ -2941,7 +2941,7 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
     }
 
     
-    if(_pObservedTS[i]->GetType()==CTimeSeriesABC::TS_REGULAR) 
+    if     (_pObservedTS[i]->GetType()==CTimeSeriesABC::TS_REGULAR) 
     {
       _pModeledTS[i]->SetValue(n,value);
       _pModeledTS[i]->SetSampledValue(n,value); //Handles blank value issue in final time  step
@@ -2949,14 +2949,16 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
     else if(_pObservedTS[i]->GetType()==CTimeSeriesABC::TS_IRREGULAR)
     {
       obsTime =_pObservedTS[i]->GetTime(_aObsIndex[i]); // time of the next observation
-      while ((obsTime<tt.model_time) && (_aObsIndex[i]<_pObservedTS[i]->GetNumSampledValues()-1)){
+      while ((obsTime<tt.model_time) && (_aObsIndex[i]<_pObservedTS[i]->GetNumValues()-1)){
         _aObsIndex[i]++;
         obsTime =_pObservedTS[i]->GetTime(_aObsIndex[i]);
       }
       if ((obsTime>=tt.model_time) && (obsTime<tt.model_time+Options.timestep)) {
         _pModeledTS[i]->SetValue(_aObsIndex[i],value);
         _pModeledTS[i]->SetSampledValue(n,value);
-        _aObsIndex[i]++;
+        if(_aObsIndex[i]<_pObservedTS[i]->GetNumValues()-1){
+          _aObsIndex[i]++;
+        }
       }
       else{
         _pModeledTS[i]->SetSampledValue(n,RAV_BLANK_DATA);

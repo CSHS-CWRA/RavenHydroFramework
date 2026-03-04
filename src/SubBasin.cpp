@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2025 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "SubBasin.h"
 
@@ -1972,22 +1972,50 @@ void CSubBasin::InitializeFlowStates(const double& Qin_avg,const double& Qlat_av
     //Calculate Initial Channel Storage from flowrate
     //------------------------------------------------------------------------
     _channel_storage=0.0;
-    if((Options.routing!=ROUTE_NONE) && (Options.routing!=ROUTE_EXTERNAL))
+	
+    if ((Options.routing==ROUTE_NONE) || (Options.routing==ROUTE_EXTERNAL))
+    {
+      _channel_storage=0.0;
+    }
+    else if (Options.routing==ROUTE_HYDROLOGIC)
     {
       for(seg=0;seg<_nSegments;seg++)
       {
         _channel_storage+=_pChannel->GetArea(_aQout[seg],_slope,_mannings_n)*(_reach_length/_nSegments); //[m3]
       }
     }
-
-    //initialize rivulet storage
-    //------------------------------------------------------------------------
-    double sum(0.0);
-    for(int n=0;n<_nQlatHist;n++)
+    else if ((Options.routing==ROUTE_PLUG_FLOW) || (Options.routing==ROUTE_DIFFUSIVE_WAVE))
     {
-      sum+=(n+1)*_aUnitHydro[n];
+      double sum=0;
+      for(int n=_nQinHist-1;n>0;n--)//n=0 is instantaneously released so only previous appear in storage
+      {
+        sum+=_aRouteHydro[n];
+        _channel_storage+=_aQinHist[n]*sum*(Options.timestep*SEC_PER_DAY);//[m3];
+      }
     }
-    _rivulet_storage=sum*Qlat_avg*(Options.timestep*SEC_PER_DAY);//[m3];
+    else if((Options.routing==ROUTE_MUSKINGUM) || (Options.routing==ROUTE_MUSKINGUM_CUNGE))
+    {
+      double dx=_reach_length/(double)(_nSegments);
+      double K=GetMuskingumK(dx);
+      double X=GetMuskingumX(dx);
+      _channel_storage=K*(X*Qin_avg+(1.0-X)*_aQout[0]); //S=K(XI+(1-X)O)
+      for(seg=1;seg<_nSegments;seg++)
+      {
+        _channel_storage+=K*(X*_aQout[seg-1]+(1.0-X)*_aQout[seg]);
+      }
+    }
+   _channel_storage+=_aQout[_nSegments-1]*(Options.timestep*SEC_PER_DAY);
+   _channel_storage-=Qlat_avg*(Options.timestep*SEC_PER_DAY);
+
+    //Calculate initial rivulet storage
+    //------------------------------------------------------------------------
+    double sum=0.0;
+    for(int n=_nQlatHist-1;n>0; n--)//n=0 is instantaneously released so only previous appear in storage
+    {
+      sum+=_aUnitHydro[n];
+      _rivulet_storage+=sum*Qlat_avg*(Options.timestep*SEC_PER_DAY);//[m3];
+    }
+    _rivulet_storage+=Qlat_avg*Options.timestep*(Options.timestep*SEC_PER_DAY); 
   } //end if disabled
 }
 /////////////////////////////////////////////////////////////////
@@ -2356,9 +2384,7 @@ void CSubBasin::UpdateOutflows   (const double         *aQo,    //[m3/s]
 
   //volume change from linearly varying downstream outflow over this time step
   dV-=0.5*(_aQout[_nSegments-1]+_QoutLast)*dt;
-
-  //volume change from lateral inflows over previous time step (corrects for the fact that _aQout is channel flow plus that added from lateral inflow)
-  dV+=0.5*(Qlat_new+_QlatLast)*dt;
+  dV+=0.5*(Qlat_new+_QlatLast)*dt; //(corrects for the fact that _aQout is channel flow plus that added from lateral inflow)
 
   //volume change from irrigation
   dV-=0.5*(_Qirr+_QirrLast)*dt;

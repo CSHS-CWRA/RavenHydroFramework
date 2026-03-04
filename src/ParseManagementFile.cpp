@@ -543,7 +543,9 @@ void ParseManagementFile(CModel *&pModel,const optStruct &Options)
           }
           exp_condition *pCond;
           pCond=pDO->ParseCondition((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename(),Options);
-          pGoal->AddOpCondition(pCond);
+          if(pCond!=NULL) {
+            pGoal->AddOpCondition(pCond);
+          }
         }
         //----------------------------------------------
         else if (!strcmp(s[0], ":Penalty"))

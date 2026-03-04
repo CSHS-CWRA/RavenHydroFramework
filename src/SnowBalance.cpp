@@ -21,26 +21,13 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, int iSnowTo, CModelABC *pM
 
   _iSnowTo=iSnowTo;
 
-  //connections handled in initialize
-}
-//////////////////////////////////////////////////////////////////
-/// \brief Implementation of the default destructor
-//
-CmvSnowBalance::~CmvSnowBalance(){}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Initializes snow balance modelling object
-//
-void CmvSnowBalance::Initialize()
-{
- int iSnow,iPonded,iFirn; //used by all snow balance routines
+  int iSnow,iPonded,iFirn; //used by all snow balance routines
   iSnow   =pModel->GetStateVarIndex(SNOW);
   iPonded =pModel->GetStateVarIndex(PONDED_WATER);
   iFirn   =pModel->GetStateVarIndex(FIRN);
 
   int add=0;
   if (iFirn!=DOESNT_EXIST){add=1;}
-
 
   if (_type == SNOBAL_SIMPLE_MELT)
   {
@@ -187,13 +174,21 @@ void CmvSnowBalance::Initialize()
   else{
     ExitGracefully("CmvSnowBalance::Constructor: undefined snow balance type",BAD_DATA);
   }
-
   if (iFirn!=DOESNT_EXIST){
     iPonded   =pModel->GetStateVarIndex(PONDED_WATER);
     iFrom[_nConnections-1]=iFirn;
     iTo  [_nConnections-1]=iPonded; //rates[N-1]: FIRN->PONDED
   }
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Implementation of the default destructor
+//
+CmvSnowBalance::~CmvSnowBalance(){}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Initializes snow balance modelling object
+//
+void CmvSnowBalance::Initialize(){}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns participating parameter list

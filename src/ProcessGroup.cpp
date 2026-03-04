@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "ProcessGroup.h"
 #include "Model.h"
@@ -31,11 +31,13 @@ CProcessGroup::~CProcessGroup()
 //
 void CProcessGroup::Initialize()
 {
+
   //populates iFrom, iTo, once group is populated
   int nConn;
   int N=0;
   for(int j=0;j<_nSubProcesses;j++)
   {
+    _pSubProcesses[j]->Initialize();
     nConn=_pSubProcesses[j]->GetNumConnections();
     N+=nConn;
   }
@@ -52,6 +54,13 @@ void CProcessGroup::Initialize()
     q1+=nConn;
   }
 }
+void CProcessGroup::InitializePostRVC(const optStruct   &Options)
+{
+  for(int j=0;j<_nSubProcesses;j++){
+    _pSubProcesses[j]->InitializePostRVC(Options);
+  }
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief Returns rates of change in all state variables modeled over time step
 /// \param *state_var [in] Array of current state variables in HRU
