@@ -2137,9 +2137,11 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
     // ----------------------------------------------------------------
     // Solve the LP problem!
     // ----------------------------------------------------------------
+    lp_lib::unscale    (pLinProg); //required because we adjust the matrix iteratively
+    lp_lib::set_scaling(pLinProg, SCALE_CURTISREID+SCALE_EQUILIBRATE+SCALE_INTEGERS);
+
     //lp_lib::set_scaling(pLinProg,SCALE_NONE);
     //lp_lib::set_scaling(pLinProg, SCALE_CURTISREID);  //May wish to look for scaling improvements
-    //lp_lib::set_scaling(pLinProg, SCALE_CURTISREID+SCALE_EQUILIBRATE+SCALE_INTEGERS);
     //lp_lib::set_scaling(pLinProg, SCALE_GEOMETRIC + SCALE_EQUILIBRATE + SCALE_INTEGERS +SCALE_DYNUPDATE);
     //lp_lib::set_break_numeric_accuracy(pLinProg, 1e-6);
     //lp_lib::set_basiscrash(pLinProg, CRASH_MOSTFEASIBLE);
