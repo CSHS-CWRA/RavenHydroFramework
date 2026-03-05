@@ -886,7 +886,7 @@ enum sv_type
   WETLAND,                 ///< [mm] deep wetland depression storage
   GLACIER,                 ///< [mm] Glacier melt/reservoir storage
   GLACIER_ICE,             ///< [mm] Glacier ice - typically assumed to be infinite reservoir.
-  FIRN,                    ///< [mm] Firn atop glacier 
+  FIRN,                    ///< [mm] Firn atop glacier
   LAKE_STORAGE,            ///< [mm] Net lake storage - relative to equilibrium datum - can go negative
   GLACIER_MB,              ///< [mm] equivalent to GLACIER_ICE+GLACIER+FIRN+SNOW (diagnostic variable)
 
@@ -914,7 +914,7 @@ enum sv_type
 
   // Snow/Glacier variables
   SNOW_DEPTH,              ///< [mm] Snow depth - surrogate for density
-  FIRN_GRAVITY,            ///< [0..1] Firn specific gravity (relative to water=1) 
+  FIRN_GRAVITY,            ///< [0..1] Firn specific gravity (relative to water=1)
   PERMAFROST_DEPTH,        ///< [mm] depth of permafrost
   THAW_DEPTH,              ///< [mm] depth of thaw
   SNOW_DEPTH_STDDEV,       ///< log([mm]) Snow depth standard deviation

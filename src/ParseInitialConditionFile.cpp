@@ -377,7 +377,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
             WriteWarning("Initial conditions specified for state variable not in model ("+to_string(s[i+1])+")",Options.noisy);
           }
 
-          if ((typ==ATMOS_PRECIP) || (typ==ATMOSPHERE) || 
+          if ((typ==ATMOS_PRECIP) || (typ==ATMOSPHERE) ||
             ((typ==GLACIER_ICE) && (!Options.glacier_model_on))){//initial conditions of cumulative precip, evap, and glacier loss ignored, left at zero
             SVinds[i]=DOESNT_EXIST;
           }

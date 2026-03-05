@@ -78,7 +78,7 @@ void CmvLatIceFlow::Initialize()
       sortPointerArray<CHydroUnit>(sortHRUs,nHRUs,sortByElevation);
 
       for (int k=0;k<nHRUs-1;k++)
-      { 
+      {
         _kFrom   [q] = sortHRUs[k  ]->GetGlobalIndex();
         _kTo     [q] = sortHRUs[k+1]->GetGlobalIndex();
 
@@ -137,7 +137,7 @@ void CmvLatIceFlow::GetLateralExchange(const double *const *state_vars,
                                             const time_struct &tt,
                                             double *exchange_rates) const
 {
-  //because HRUs are sorted from high elev to low, 'from' and 'to' are directed downhill, not necessarily in flow direction 
+  //because HRUs are sorted from high elev to low, 'from' and 'to' are directed downhill, not necessarily in flow direction
   double stor_from,stor_to,Afrom,Ato;
   double elev_from,elev_to;   //elevation is actually *initial* elevation, including glacier cover, as consistent with most DEMs
   double gelev_from,gelev_to; //ground elevation, [masl]
@@ -171,12 +171,12 @@ void CmvLatIceFlow::GetLateralExchange(const double *const *state_vars,
     //slope=(gelev_from-gelev_to)/distance; //bottom surface slope
     slope=surf_grad; //if interpreted as surface gradient (JRC: I think this is appropriate interpretation)
 
-    if (surf_grad<0){H=Hfrom;} 
+    if (surf_grad<0){H=Hfrom;}
     else            {H=Hto;  }
     //H=0.5*(Hfrom+Hto); //alternative option
 
     width=0.5*(Afrom/len_from+Ato/len_to);
-    
+
     velocity = ((2*A)/(n+2))*pow(DENSITY_ICE*GRAVITY*fabs(slope),n)*pow(H,n+1); //[m/s]
     velocity*=SEC_PER_DAY; //[m/d]
 

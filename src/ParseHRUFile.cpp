@@ -1184,7 +1184,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
       break;
     }
     case(22):  //----------------------------------------------
-    {/* :HRUFlowLengths 
+    {/* :HRUFlowLengths
           {HRUID} {value} x nHRUs (or less)
         :EndHRUFlowLengths
       */
@@ -1205,7 +1205,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             CHydroUnit *pHRU=pModel->GetHRUByID(HRUID);
             if (pHRU==NULL){
               WriteWarning("Parsing RVH file: Bad HRU index in :HRUFlowLengths command. Will be ignored",Options.noisy);
-            } 
+            }
             else{
               pHRU->SetFlowLength(s_to_d(s[1]));
             }

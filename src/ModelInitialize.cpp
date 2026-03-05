@@ -1100,7 +1100,7 @@ void CModel::GenerateGaugeWeights(double **&aWts, const forcing_type forcing, co
   delete[] has_data;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief reboots all necessary variables for ensemble mode 
+/// \brief reboots all necessary variables for ensemble mode
 //
 void CModel::RebootTimeVariables(const optStruct &Options)
 {

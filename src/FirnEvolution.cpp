@@ -13,7 +13,7 @@
 /// \param melt_type [in] Model of firn evolution selected
 //
 CmvFirnEvolution::CmvFirnEvolution(firn_evolution_type fe_type,
-                                   CModel             *pModel): 
+                                   CModel             *pModel):
   CHydroProcessABC(FIRN_EVOLUTION, pModel)
 {
   type =fe_type;
@@ -106,7 +106,7 @@ void CmvFirnEvolution::GetRatesOfChange( const double             *state_var,
     double snow_to_firn=0.0;    //[mm/d]
     double firn_to_glacier=0.0; //[mm/d]
     double firn_grav_change=0.0;//[1/d]
-    
+
     double firnPct=1.0;               //percentage of snow remaining in summer converted to firn \todo[funct] - make this a parameter
     const double PACKED_GRAVITY=0.5;  //500 kg/m3 - density of snow converted to firn
     const double THRESH_GRAVITY=0.83; //830 kg/m3 - density at which firn converts to ice (pore close off density)
@@ -136,7 +136,7 @@ double firn_old=firn;
       }
       firn+=snow_to_firn*Options.timestep;
       firn_grav_change=(grav_new-grav)/Options.timestep; //assume deep snow is at 500 kg/m3
-      grav=grav_new;  
+      grav=grav_new;
     }
 
     double bottom_grav=(grav+0.5*DENS_GRADIENT*firn);
@@ -152,7 +152,7 @@ double firn_old=firn;
     }
 
     //compact firn
-    firn_grav_change+=firn_compaction_rate; //linear compaction rate [1/d] 
+    firn_grav_change+=firn_compaction_rate; //linear compaction rate [1/d]
 
     //cout<<" "<<pHRU->GetHRUID()<<" "<<snow_to_firn<<" "<<firn_to_glacier<<" "<<firn_grav_change<<" firn new/old: "<<firn<<" "<<firn_old<<" grav: "<<grav<<" "<<bottom_grav<<" "<<top_grav<<endl;
     rates[0]=snow_to_firn;     //SNOW->FIRN

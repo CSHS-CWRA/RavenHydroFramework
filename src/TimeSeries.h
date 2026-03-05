@@ -110,7 +110,7 @@ public:/*-------------------------------------------------------*/
 
   double GetModelledValue(const double &t,const ts_type type) const;
   void   SetValue        (const int n, const double &val);
-  
+
   void   ShiftInTime     (const double t, const optStruct &Options);
 
   static CTimeSeries *ReadTimeSeriesFromNetCDF(const optStruct &Options,    // model options (such as simulation period)

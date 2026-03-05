@@ -513,7 +513,7 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
     rates[3]=delayed;   //PONDED->CONVOL[1]
   }
   else if (type==INF_XINANXIANG)
-  { //from Xinanxiang model 
+  { //from Xinanxiang model
     double stor       =state_vars[iTopSoil];
     double max_stor   =pHRU->GetSoilCapacity(0);
     double b=0.0;//pHRU->GetSoilProps(0)->xinanxiang_b;
@@ -523,7 +523,7 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
 
     double wmm=max_stor*(1.0+b);//mm
     double a=(1.0 - pow((1.0 - stor / max_stor),1.0 / (1.0 + b)));//mm
-    
+
     runoff=direct-(max_stor - stor)+ max_stor * pow(1.0 - min(direct+a, wmm) / wmm,1.0 + b);
 
     runoff=max(runoff,0.0);

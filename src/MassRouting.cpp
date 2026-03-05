@@ -351,7 +351,7 @@ void   CConstituentModel::RouteMassInReservoir(const int          p,          //
 ///
 /// \param p              [in] subbasin index
 /// \param **aMoutnew     [in] Array of new mass outflows [mg/d] [size:  nsegments x _nConstituents]
-/// \param Mlat_new      [in] new lateral mass transport from in-catchment routing 
+/// \param Mlat_new      [in] new lateral mass transport from in-catchment routing
 /// \param ResMass       [in] new reservoir mass [mg]
 /// \param ResMass       [in] new reservoir sediment mass [mg]
 /// \param MassOutflow   [out] new mass outflow [mg/d] from last segment or reservoir
