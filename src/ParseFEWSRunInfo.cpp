@@ -321,6 +321,22 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
       }
     }
 
+    if (optionsonly) {
+      retval = nc_inq_attlen(ncid,varid_props,"NetCDFUseBasinFullname",&att_len);
+      if (retval != NC_ENOTATT)
+      {
+        HandleNetCDFErrors(retval);
+        char* boolean = new char[att_len + 1];
+        retval = nc_get_att_text(ncid,varid_props,"NetCDFUseBasinFullname",boolean);       HandleNetCDFErrors(retval);// read attribute text
+        boolean[att_len] = '\0';// add string determining character
+
+        Options.use_fullname_cf_role = (!strcmp(boolean,"true"));
+
+        if(Options.noisy) { cout << "ParseRunInfoFile: read properties:NetCDFUseBasinFullname from NetCDF: " << (!strcmp(boolean,"true"))  << endl; }
+        delete[] boolean;
+      }
+    }
+
     // Other attributes with info embedded in attribute name
     int nAttributes;
     char att_name[NC_MAX_NAME];

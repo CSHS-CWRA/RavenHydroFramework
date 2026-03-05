@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------
   class definitions:
   CProcessGroup
@@ -37,6 +37,7 @@ public:/*-------------------------------------------------------*/
 
   //inherited functions
   void Initialize();
+  void InitializePostRVC(const optStruct   &Options);
   void GetRatesOfChange(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,

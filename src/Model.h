@@ -513,6 +513,7 @@ public:/*-------------------------------------------------------*/
   //called only once prior to simulation:
   void        Initialize                 (const optStruct &Options);
   void        InitializeBasins           (const optStruct &Options,const bool re_init);
+  void        InitializePostRVC          (const optStruct &Options);
   void        InitializePostRVM          (const optStruct &Options);
   void        WriteOutputFileHeaders     (const optStruct &Options);
   void        GenerateGriddedPrecipVars  (const optStruct &Options);
@@ -520,6 +521,7 @@ public:/*-------------------------------------------------------*/
   void        ClearTimeSeriesData        (const optStruct &Options);
 
   //called during simulation:
+  void        RebootTimeVariables        (const optStruct &Options);
   void        UpdateParameter            (const class_type  &ctype,
                                           const string      pname,
                                           const string      cname,

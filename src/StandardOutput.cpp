@@ -241,11 +241,6 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
             }
           }
         }
-         if (pSB->GetID() == 8) {//TMP DEBUG
-         _HYDRO<<","<<pSB->GetID()  <<" (Qlast) [m3/s]";
-         _HYDRO<<","<<pSB->GetID()  <<" (Qend) [m3/s]";
-         _HYDRO<<","<<pSB->GetID()  <<" (Qinhist) [m3/s]";
-         }
       }
     }
     _HYDRO<<endl;
@@ -830,12 +825,6 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
                   else                                             { _HYDRO << ","; }
                 }
               }
-            }
-            if (pSB->GetID() == 8) {//TMP DEBUG
-              double Qlast=pSB->GetLastOutflowRate();
-              double Qout =pSB->GetOutflowRate();
-              double Qin =pSB->GetInflowHistory()[0];
-              _HYDRO<<","<<Qlast<<","<<Qout<<","<<Qin;
             }
           }
         }
@@ -1744,13 +1733,7 @@ void CModel::RunDiagnostics(const optStruct &Options)
 
   DIAG.close();
 
-  //reset for ensemble mode
-  for(int i=0;i<_nObservedTS;i++)
-  {
-    _aObsIndex[i]=0;
-  }
-
-  // reporting of sim-obs values for observations not otherwise reported
+  // reporting of sim-obs values for observations not otherwise reported (PERIOD ENDING)
   //----------------------------------------------------------------------------
   int layer_ind;
   double obsval,modval;
@@ -1771,11 +1754,20 @@ void CModel::RunDiagnostics(const optStruct &Options)
       }
 
       DIAG2<<"time,date,hour,observed"+svname+",simulated"+svname<<endl;
+      time_struct tt;
+      string thisdate,thishour;
+      double t_start;
       for (int nn=0; nn<_pObservedTS[i]->GetNumSampledValues();nn++)
       {
+        t_start=this->GetEnsemble()->GetStartTime(g_current_e);
+
+        JulianConvert(t_start+nn*Options.timestep,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
+        string thisdate=tt.date_string;                   //refers to date and time at END of time step
+        thishour=DecDaysToHours(tt.julian_day);
+
         obsval=_pObservedTS[i]->GetSampledValue(nn);
         modval=_pModeledTS [i]->GetSampledValue(nn);
-        //DIAG2<<nn<<" "<<thistime<<","<<thishr<<","<<obsval<<","<<modval<<endl;
+        DIAG2<<nn<<" "<<thisdate<<","<<thishour<<","<<obsval<<","<<modval<<endl;
       }
       DIAG2.close();
     }
@@ -2096,18 +2088,20 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     tmp2="timeseries_id";
     tmp3="1";
     retval = nc_put_att_text(_HYDRO_ncid, varid_bsim, "long_name",  tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
-    retval = nc_put_att_text(_HYDRO_ncid, varid_bsim, "cf_role"  , tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
+    if(!Options.use_fullname_cf_role) {
+    retval = nc_put_att_text(_HYDRO_ncid, varid_bsim, "cf_role"  , tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);}
     retval = nc_put_att_text(_HYDRO_ncid, varid_bsim, "units"    , tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
 
-    // (d) create variable  and set attributes for"basin_fullname"
+    // (d) create variable  and set attributes for "basin_fullname"
     dimids1[0] = nbasins_dimid;
-    retval = nc_def_var(_HYDRO_ncid, "basin_fullname", NC_STRING, ndims1, dimids1, &varid_bsim2);       HandleNetCDFErrors(retval);
+    retval = nc_def_var(_HYDRO_ncid, "basin_fullname", NC_STRING, ndims1, dimids1, &varid_bsim2);  HandleNetCDFErrors(retval);
     tmp ="Name of sub-basins with simulated outflows";
     tmp2="timeseries_id";
     tmp3="1";
-    retval = nc_put_att_text(_HYDRO_ncid, varid_bsim2, "long_name",  tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
-    retval = nc_put_att_text(_HYDRO_ncid, varid_bsim2, "cf_role"  , tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
-    retval = nc_put_att_text(_HYDRO_ncid, varid_bsim2, "units"    , tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
+    retval = nc_put_att_text(_HYDRO_ncid, varid_bsim2, "long_name",  tmp.length(), tmp.c_str());   HandleNetCDFErrors(retval);
+    if(Options.use_fullname_cf_role) {
+    retval = nc_put_att_text(_HYDRO_ncid, varid_bsim2, "cf_role"  , tmp2.length(),tmp2.c_str());   HandleNetCDFErrors(retval);}
+    retval = nc_put_att_text(_HYDRO_ncid, varid_bsim2, "units"    , tmp3.length(),tmp3.c_str());   HandleNetCDFErrors(retval);
 
     varid_qsim= NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_sim","Simulated outflows","m**3 s**-1");
     varid_qobs= NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_obs","Observed outflows" ,"m**3 s**-1");
@@ -2180,7 +2174,8 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
       tmp2="timeseries_id";
       tmp3="1";
       retval = nc_put_att_text(_RESSTAGE_ncid,varid_bsim,"long_name", tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
-      retval = nc_put_att_text(_RESSTAGE_ncid,varid_bsim,"cf_role",  tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
+      if(!Options.use_fullname_cf_role) {
+      retval = nc_put_att_text(_RESSTAGE_ncid,varid_bsim,"cf_role",  tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);}
       retval = nc_put_att_text(_RESSTAGE_ncid,varid_bsim,"units",    tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
 
       // (d) create variable  and set attributes for"basin_fullname"
@@ -2190,7 +2185,8 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
       tmp2="timeseries_id";
       tmp3="1";
       retval = nc_put_att_text(_RESSTAGE_ncid, varid_bsim2, "long_name",  tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
-      retval = nc_put_att_text(_RESSTAGE_ncid, varid_bsim2, "cf_role"  , tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
+      if(Options.use_fullname_cf_role) {
+      retval = nc_put_att_text(_RESSTAGE_ncid, varid_bsim2, "cf_role"  , tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);}
       retval = nc_put_att_text(_RESSTAGE_ncid, varid_bsim2, "units"    , tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
 
 
@@ -2353,17 +2349,19 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
       tmp2="timeseries_id";
       tmp3="1";
       retval = nc_put_att_text(_RESMB_ncid,varid_bsim,"long_name", tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
-      retval = nc_put_att_text(_RESMB_ncid,varid_bsim,"cf_role",  tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
+      if(!Options.use_fullname_cf_role) {
+      retval = nc_put_att_text(_RESMB_ncid,varid_bsim,"cf_role",  tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);}
       retval = nc_put_att_text(_RESMB_ncid,varid_bsim,"units",    tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
 
       // (d) create variable  and set attributes for"basin_fullname"
       dimids1[0] = nbasins_dimid;
-      retval = nc_def_var(_RESMB_ncid, "basin_fullname", NC_STRING, ndims1, dimids1, &varid_bsim2);       HandleNetCDFErrors(retval);
+      retval = nc_def_var(_RESMB_ncid, "basin_fullname", NC_STRING, ndims1, dimids1, &varid_bsim2);   HandleNetCDFErrors(retval);
       tmp ="subbasin name of reservoirs with simulated stage";
       tmp2="timeseries_id";
       tmp3="1";
       retval = nc_put_att_text(_RESMB_ncid, varid_bsim2, "long_name",  tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
-      retval = nc_put_att_text(_RESMB_ncid, varid_bsim2, "cf_role"  , tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
+      if(Options.use_fullname_cf_role) {
+      retval = nc_put_att_text(_RESMB_ncid, varid_bsim2, "cf_role"  , tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);}
       retval = nc_put_att_text(_RESMB_ncid, varid_bsim2, "units"    , tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
 
       varid= NetCDFAddMetadata2D(_RESMB_ncid,time_dimid,nbasins_dimid,"stage",    "stage",  "m");

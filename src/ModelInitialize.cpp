@@ -382,7 +382,16 @@ void CModel::Initialize(const optStruct &Options)
     WriteWarning("CModelInitialize: the model time step and model start time is such that midnight does not correspond to a time step ending. This will cause issues with use of daily temperature forcings (and potentially other errors) throughout the simulation.", Options.noisy);
   }
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Initializes SB demand members AFTER RVC FILE READ
+/// \param &Options [in] Global model options information
+//
+void CModel::InitializePostRVC(const optStruct& Options)
+{
+  for (int j=0; j<_nProcesses; j++){
+    _pProcesses[j]->InitializePostRVC(Options);
+  }
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes SB demand members AFTER RVM FILE READ
 /// \param &Options [in] Global model options information
@@ -1089,4 +1098,33 @@ void CModel::GenerateGaugeWeights(double **&aWts, const forcing_type forcing, co
   }
 
   delete[] has_data;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief reboots all necessary variables for ensemble mode 
+//
+void CModel::RebootTimeVariables(const optStruct &Options)
+{
+  for (int i=0;i<_nObservedTS;i++)
+  {
+    _aObsIndex[i]=0;
+  }
+
+  for (int k=0; k<_nHydroUnits;k++)
+  {
+    for (int js=0;js<_nTotalConnections;js++){_aCumulativeBal[k][js]=0.0;}
+    for (int js=0;js<_nTotalConnections;js++){_aFlowBal[k][js]=0.0;}
+  }
+
+  _nTotalLatConnections=0;
+  for (int j=0; j<_nProcesses;j++){
+    _nTotalLatConnections+=_pProcesses[j]->GetNumLatConnections();
+  }
+  if(_nTotalLatConnections>0){
+    for(int jss=0;jss<_nTotalLatConnections;jss++){
+      _aCumulativeLatBal[jss]=0.0;
+      _aFlowLatBal      [jss]=0.0;
+    }
+  }
+  _CumulInput   =_CumulOutput  =0.0;
+
 }

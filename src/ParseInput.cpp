@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2025 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 
 #include "RavenInclude.h"
@@ -13,6 +13,7 @@
 #include "SnowMovers.h"
 #include "VegetationMovers.h"
 #include "GlacierProcesses.h"
+#include "IceFlow.h"
 #include "Albedo.h"
 #include "CropGrowth.h"
 #include "DepressionProcesses.h"
@@ -189,7 +190,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   bool              runmode_overridden(false);
   bool              rundir_overridden(false);
   int               num_ensemble_members=1;
-  unsigned int      random_seed=0; //actually random
+  unsigned int      random_seed=0;    //actually random
   ifstream          INPUT;
   ifstream          INPUT2;           //For Secondary input
   CParser          *pMainParser=NULL; //for storage of main parser while reading secondary files
@@ -199,7 +200,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   sv_type          *tmpS;
   int              *tmpLev;
 
-  int               code;            //Parsing vars
+  int               code;             //Parsing vars
   bool              ended(false);
   bool              is_temp(false);
   int               Len,line(0);
@@ -286,6 +287,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.allow_soil_overfill     =false;
   Options.pavics                  =false;
   Options.deltaresFEWS            =false;
+  Options.use_fullname_cf_role    =false;
   Options.res_overflowmode        =OVERFLOW_ALL;
 
   //Groundwater model options
@@ -341,6 +343,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.stateinfo_filename      ="";
   Options.paraminfo_filename      ="";
   Options.flowinfo_filename       ="";
+  Options.glacier_model_on        =false;
 
   Options.NetCDF_chunk_mem        =10; //MB
 
@@ -492,6 +495,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":FEWSBasinStateInfoFile"    )){code=112;}
     else if  (!strcmp(s[0],":TimeOfConcentrationMethod" )){code=113;}
     else if  (!strcmp(s[0],":StateOverrideEndTime"      )){code=114;}//AFTER :StartDate,:Calendar commands
+    else if  (!strcmp(s[0],":NetCDFUseBasinFullname"    )){code=115;}
 
     else if  (!strcmp(s[0],":WriteGroundwaterHeads"     )){code=510;}//GWMIGRATE -TO REMOVE
     else if  (!strcmp(s[0],":WriteGroundwaterFlows"     )){code=511;}//GWMIGRATE -TO REMOVE
@@ -583,6 +587,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":LakeFreeze"                )){code=239;}
     else if  (!strcmp(s[0],":LateralDivert"             )){code=240;}
     else if  (!strcmp(s[0],":SnowRedistribute"          )){code=241;}
+    else if  (!strcmp(s[0],":GlacierIceFlow"            )){code=242;}
+    else if  (!strcmp(s[0],":FirnEvolution"             )){code=243;}
     //...
     else if  (!strcmp(s[0],":-->RedirectFlow"           )){code=294;}
     else if  (!strcmp(s[0],":ProcessGroup"              )){code=295;}
@@ -1975,7 +1981,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else {ExitGracefully("ParseInput :TimeOfConcentrationMethod: Unrecognized method",BAD_DATA_WARN);}
       break;
     }
-   case(114):  //--------------------------------------------
+    case(114):  //--------------------------------------------
     {/*:StateOverrideEndTime [yyyy-mm-dd] [00:00:00]*///AFTER StartDate or JulianStartDay and JulianStartYear commands
       if(Options.noisy) { cout << "State Override End Time" << endl; }
       if(Len<3) { ImproperFormatWarning(":StateOverrideEndTime",p,Options.noisy); break; }
@@ -1985,6 +1991,12 @@ bool ParseMainInputFile (CModel     *&pModel,
       Options.sv_override_endtime=TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day,tt.year,Options.calendar);
       if(Options.forecast_shift!=0) { Options.sv_override_endtime+=Options.forecast_shift; }
 
+      break;
+    }
+    case(115):  //--------------------------------------------
+    {/*:NetCDFUseBasinFullname */
+      if(Options.noisy) { cout << "NetCDFUseBasinFullname" << endl; }
+      Options.use_fullname_cf_role=true;
       break;
     }
     case(160):  //--------------------------------------------
@@ -2432,7 +2444,7 @@ bool ParseMainInputFile (CModel     *&pModel,
                                     pModel);
       }
       else{
-        pMover = new CmvSnowBalance(sbtype, pModel);
+        pMover = new CmvSnowBalance(sbtype, DOESNT_EXIST, pModel);
       }
       AddProcess(pModel,pMover,pProcGroup);
       break;
@@ -3133,8 +3145,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(241):  //----------------------------------------------
-    {
-      /*Snow Redistribution
+    { /*Snow Redistribution
         :SnowRedistribute [string method] [SV] [Max_snow_height] */
       if (Options.noisy) { cout << "Snow Redistribution Process" << endl; }
       if (Len < 4) { ImproperFormatWarning(":SnowRedistribute", p, Options.noisy); break; }
@@ -3156,6 +3167,35 @@ bool ParseMainInputFile (CModel     *&pModel,
                                       max_snow_height,
                                       r_type,
                                       pModel);
+      AddProcess(pModel, pMover, pProcGroup);
+      break;
+    }
+    case(242):  //----------------------------------------------
+    { /*Glacier Ice Flow
+        :GlacierIceFlow ICEFLOW_RAVEN GLACIER_ICE GLACIER_ICE */
+      if (Options.noisy) { cout << "Lateral Glacier Ice Flow Process" << endl; }
+      if (Len < 4) { ImproperFormatWarning(":GlacierIceFlow", p, Options.noisy); break; }
+
+      pMover = new CmvLatIceFlow(pModel);
+      AddProcess(pModel, pMover, pProcGroup);
+      Options.glacier_model_on=true;
+      break;
+    }
+    case(243):  //----------------------------------------------
+    {/*Firn Evolution
+       :FirnEvolution [string method] MULTIPLE MULTIPLE*/
+      if (Options.noisy){cout <<"Firn Evolution Process"<<endl;}
+      if (Len<2){ImproperFormatWarning(":FirnEvolution",p,Options.noisy); break;}
+      firn_evolution_type fe_type=FIRNEVOL_SIMPLE;
+      if      (!strcmp(s[1],"FIRNEVOL_SIMPLE"    )){fe_type=FIRNEVOL_SIMPLE;}
+      else {
+        ExitGracefully("ParseMainInputFile: Unrecognized firn evolution process representation",BAD_DATA_WARN); break;
+      }
+
+      CmvFirnEvolution::GetParticipatingStateVarList(fe_type,tmpS,tmpLev,tmpN);
+      pModel->AddStateVariables(tmpS,tmpLev,tmpN);
+
+      pMover = new CmvFirnEvolution(fe_type, pModel);
       AddProcess(pModel, pMover, pProcGroup);
       break;
     }
@@ -3671,8 +3711,13 @@ bool ParseMainInputFile (CModel     *&pModel,
   INPUT.close();
 
   // Add TOTAL_SWE state variable if any snow is simulated
-  if (pModel->GetStateVarIndex(SNOW) != -1) {
+  if (pModel->GetStateVarIndex(SNOW) != DOESNT_EXIST) {
     tmpS[0] = TOTAL_SWE; tmpLev[0]=0; tmpN=1;
+    pModel->AddStateVariables(tmpS,tmpLev,tmpN);
+  }
+  // Add GLACIER_MB state variable if any glacier is simulated
+  if (pModel->GetStateVarIndex(GLACIER_ICE) != DOESNT_EXIST){
+    tmpS[0] = GLACIER_MB; tmpLev[0]=0; tmpN=1;
     pModel->AddStateVariables(tmpS,tmpLev,tmpN);
   }
 

@@ -512,33 +512,26 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
     rates[2]=runoff;    //PONDED->CONVOL[0]
     rates[3]=delayed;   //PONDED->CONVOL[1]
   }
-  //-----------------------------------------------------------------
-  else if(type==INF_XINANXIANG)
-  {
-    // from Jayawardena, AW and MC Zhou A modified spatial soil moisture storage capacity distribution curve for the Xinanjiang model.
-    // Journal of Hydrology, 227(1-4), p93-113, 2000
-
-    double b=1.0;//pHRU->GetSoilProps(0)->Xinanxiang_b;
-    double c=1.0;//pHRU->GetSoilProps(0)->Xinanxiang_shp; [-0.5<c<0.5]
+  else if (type==INF_XINANXIANG)
+  { //from Xinanxiang model 
     double stor       =state_vars[iTopSoil];
-    double tens_stor  =pHRU->GetSoilTensionStorageCapacity(0);
     double max_stor   =pHRU->GetSoilCapacity(0);
-    double infil,sat_excess,direct;
+    double b=0.0;//pHRU->GetSoilProps(0)->xinanxiang_b;
+    double runoff,infil;//[mm]
 
-    direct=(1.0-Fimp)*rainthru;
+    double direct=(1.0-Fimp)*(rainthru*Options.timestep);//mm
 
-    double sat =max(0.0,stor/tens_stor);
-    double sat1=max(0.0,stor/(max_stor-tens_stor));
-    if(sat<=0.5-c) { infil=(    pow(0.5-c,1-b)*pow(  sat,b))*direct; }
-    else           { infil=(1.0-pow(0.5+c,1-b)*pow(1-sat,b))*direct; }
+    double wmm=max_stor*(1.0+b);//mm
+    double a=(1.0 - pow((1.0 - stor / max_stor),1.0 / (1.0 + b)));//mm
+    
+    runoff=direct-(max_stor - stor)+ max_stor * pow(1.0 - min(direct+a, wmm) / wmm,1.0 + b);
 
-    sat_excess=1.0;//(1.0-pow(1-sat1,n))*direct;
+    runoff=max(runoff,0.0);
+    infil=direct-runoff;
 
-    ExitGracefully("INF_XINANXIANG",STUB);
-
-    infil=(1.0-Fimp)*infil; //correct for impermeable surfaces (?)
-    rates[0]=infil;          //PONDED->SOIL
-    rates[1]=rainthru-infil; //PONDED->SW
+    infil=(1.0-Fimp)*infil; //correct for impermeable surfaces
+    rates[0]=(infil         )/Options.timestep; //PONDED->SOIL
+    rates[1]=(rainthru-infil)/Options.timestep; //PONDED->SW
   }
   //----------------------------------------------------------------------------
   else if(type==INF_PDM)

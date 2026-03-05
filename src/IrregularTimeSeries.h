@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2025 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef IRREGULARTIMESERIES_H
 #define IRREGULARTIMESERIES_H
@@ -23,8 +23,9 @@ private:/*------------------------------------------------------*/
   double     *_aTimes ;   ///< Array of model times
   double     *_aVal;      ///< Array of values
   int         _nVals;     ///< number of values
-  int         _indexCorr; ///< index of first value within model time
-  int         _nSampVal;  ///< number of values within model time
+  int         _firstIndex;///< index of first value after model start time (or DOESNT_EXIST if all observations prior to model start)
+
+  void Resample(const double &tstep, const double &model_duration);
 
 public:/*-------------------------------------------------------*/
   //Constructors:
@@ -56,11 +57,6 @@ public:/*-------------------------------------------------------*/
   double GetAvgValue  (const double &t, const double &tstep) const;
   double GetMinValue  (const double &t, const double &tstep) const;
   double GetMaxValue  (const double &t, const double &tstep) const;
-
-  double GetSampledValue(const int nn) const; //nn is timestep number
-  double GetSampledTime(const int nn) const; //nn is timestep number
-  double GetSampledInterval() const;
-  int    GetNumSampledValues() const;
 
   int    GetTimeIndexFromModelTime(const double &t_mod) const;
 

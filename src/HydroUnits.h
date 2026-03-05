@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2025 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef HYDROUNITS_H
 #define HYDROUNITS_H
@@ -31,7 +31,7 @@ private:/*------------------------------------------------------*/
   location                  _Centroid;  ///< centroid of HRU
   HRU_type                   _HRUType;  ///< Standard, Lake, Rock, Glacier, etc...
   bool                      _Disabled;  ///< true if processes are not simulated for this HRU
-  bool                    _res_linked;  ///> true if HRU is linked to Reservoir
+  bool                    _res_linked;  ///> true if HRU is linked to Reservoir 
 
   //Model State variables:
   double                  *_aStateVar;  ///< Array of *current value* of state variable i with size CModel::nStateVars [mm] for water storage, permafrost depth, snow depth, [MJ/m^2] for energy storage
@@ -43,6 +43,7 @@ private:/*------------------------------------------------------*/
   double                _AvgElevation;  ///< average elevation of HRU [masl]
   double                   _AvgAspect;  ///< average terrain aspect [rad counterclockwise from north]
   double                    _AvgSlope;  ///< average terrain slope [rad]
+  double                 _flow_length;  ///> approximate HRU length in flow direction [m] (default=sqrt(area))
 
   double                      _LatRad;  ///< latitude of centroid [rad]
   double                       _LatEq;  ///< equivalent latitude for slope/aspect  [rad]
@@ -94,6 +95,7 @@ public:/*-------------------------------------------------------*/
   inline double          GetArea         () const { return _Area;        }
   inline int             GetSubBasinIndex() const { return _SubbasinInd; }
   inline HRU_type        GetHRUType      () const { return _HRUType;     } //(standard, lake, rock, or glacier)
+  inline double          GetFlowLength   () const { return _flow_length; }
   inline bool            IsLake          () const { return (_HRUType==HRU_LAKE);}
   bool                   IsLinkedToReservoir() const;
 
@@ -150,6 +152,7 @@ public:/*-------------------------------------------------------*/
 
   //Manipulator functions (used in initialization)
   void          Initialize              (const int UTM_zone);
+  void          SetFlowLength           (const double &len);
 
   //Manipulator functions (used in solution method)
   void          SetStateVarValue        (const int           i,

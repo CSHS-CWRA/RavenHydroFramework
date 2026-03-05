@@ -254,13 +254,6 @@ void   CConstituentModel::RouteMass(const int          p,          // SB index
                                     const time_struct &tt) const
 {
   //==============================================================
-  // route from catchment
-  //==============================================================
-  //const double * aUnitHydro =_pModel->GetSubBasin(p)->GetUnitHydrograph();
-  //const double * aQlatHist  =_pModel->GetSubBasin(p)->GetLatHistory();
-  //Mlat_new=ApplyInCatchmentRouting(p,aUnitHydro,aQlatHist,_aMlatHist[p],_nMlatHist[p], Options.timestep);
-
-  //==============================================================
   // route along channel
   //==============================================================
   const double * aRouteHydro=_pModel->GetSubBasin(p)->GetRoutingHydrograph();
@@ -356,7 +349,9 @@ void   CConstituentModel::RouteMassInReservoir(const int          p,          //
 /// \remark Called *after* RouteMass routine is called in Solver.cpp, to reset
 /// the mass outflow rates for this basin
 ///
+/// \param p              [in] subbasin index
 /// \param **aMoutnew     [in] Array of new mass outflows [mg/d] [size:  nsegments x _nConstituents]
+/// \param Mlat_new      [in] new lateral mass transport from in-catchment routing 
 /// \param ResMass       [in] new reservoir mass [mg]
 /// \param ResMass       [in] new reservoir sediment mass [mg]
 /// \param MassOutflow   [out] new mass outflow [mg/d] from last segment or reservoir
@@ -396,6 +391,8 @@ void   CConstituentModel::UpdateMassOutflows( const int     p,
 
     _aMout_res_last[p]=_aMout_res[p];
     _aMout_res     [p]=((pRes->GetOutflowRate()*SEC_PER_DAY)/pRes->GetStorage())*_aMres[p]; //mg/d or MJ/d
+
+    if (pRes->GetStorage()==0){_aMout_res[p]=0.0;}
 
     _aMsed_last    [p]=_aMsed[p];
     _aMsed         [p]=ResSedMass;

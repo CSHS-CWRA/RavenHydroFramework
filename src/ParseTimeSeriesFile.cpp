@@ -1301,6 +1301,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Options.noisy) { cout <<"Override simulated state"<<endl; }
 
       int kk=DOESNT_EXIST;
+      string svname =to_string(s[1]);
       string grpname=to_string(s[2]);
       CHRUGroup *pHRUgrp=pModel->GetHRUGroup(grpname);
       if (pHRUgrp==NULL){
@@ -1308,11 +1309,18 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         break;
       }
       kk=pHRUgrp->GetGlobalIndex();
-      pTimeSer=CTimeSeries::Parse(p,false,"OverrideState_"+to_string(s[0])+"_"+grpname, kk, "none", Options);
+      pTimeSer=CTimeSeries::Parse(p,false,"OverrideState_"+svname+"_"+grpname, kk, "none", Options);
       int layer_ind;
-      sv_type typ=pModel->GetStateVarInfo()->StringToSVType(s[1],layer_ind,false);
-
+      sv_type typ=pModel->GetStateVarInfo()->StringToSVType(svname,layer_ind,false);
+      if (typ==UNRECOGNIZED_SVTYPE){
+        ExitGracefully("ParseTimeSeriesFile: unrecognized state variable name provided in :OverrideState command",BAD_DATA_WARN);
+        break;
+      }
       int i=pModel->GetStateVarIndex(typ,layer_ind);
+      if(i==DOESNT_EXIST) {
+        ExitGracefully("ParseTimeSeriesFile: invalid state variable (not in model) provided in :OverrideState command",BAD_DATA_WARN);
+        break;
+      }
       sv_over *pSO=new sv_over(pTimeSer,kk,i);
       pModel->AddStateVarOverride(pSO);
 

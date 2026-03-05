@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////
 ///  Raven Library Source Code
-///  Copyright (c) 2008-2023 the Raven Development Team
+///  Copyright (c) 2008-2025 the Raven Development Team
 //////////////////////////////////////////////////////////////////
 
 #include <time.h>
@@ -54,6 +54,7 @@ string GetProcessName(process_type p)
   case(GLACIER_MELT):       {name="Glacier Melt";             break;}
   case(GLACIER_RELEASE):    {name="Glacier Release";          break;}
   case(GLACIER_INFIL):      {name="Glacier Infiltration";     break;}
+  case(FIRN_EVOLUTION):     {name="Firn Evolution";           break;}
   case(SNOW_ALBEDO_EVOLVE): {name="Snow Albedo Evolution";    break;}
   case(BLOWING_SNOW):       {name="Blowing Snow";             break;}
   case(LAKE_FREEZING):      {name="Lake Freezing";            break;}
@@ -71,6 +72,7 @@ string GetProcessName(process_type p)
   case(LAT_FLUSH):          {name="Lateral Flush";            break;}
   case(LAT_EQUIL):          {name="Lateral Equilibrate";      break;}
   case(LAT_REDISTRIBUTE):   {name="Snow Redistribution";      break;}
+  case(LAT_ICE_FLOW):       {name="Glacier Ice Flow";         break;}
 
   case(MASS_LOADING):       {name="Mass Loading";             break;}
   case(DECAY):              {name="Decay";                    break;}

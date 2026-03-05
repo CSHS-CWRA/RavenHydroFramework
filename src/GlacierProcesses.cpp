@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ------------------------------------------------------------------
   Glacier Ice Melting
   Glacier Routing
@@ -186,7 +186,9 @@ void   CmvGlacierMelt::ApplyConstraints( const double           *state_var,
   if (rates[0]<0.0){rates[0]=0.0;}//positivity constraint on melt
 
   //cant remove more than is there
-  //rates[0]=threshMin(rates[0],state_var[iFrom[0]]/Options.timestep,0.0);
+  if (Options.glacier_model_on){
+    rates[0]=threshMin(rates[0],state_var[iFrom[0]]/Options.timestep,0.0);
+  }
 }
 
 
