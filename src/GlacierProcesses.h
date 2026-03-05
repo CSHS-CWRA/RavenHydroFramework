@@ -143,7 +143,7 @@ public:/*-------------------------------------------------------*/
 /// \brief Methods of modeling firn evolution
 //
 enum firn_evolution_type{
-  FIRNEVOL_SIMPLE   
+  FIRNEVOL_SIMPLE
 };
 ////////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for transition from snow to firn to glacier

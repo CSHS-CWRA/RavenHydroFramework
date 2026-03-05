@@ -1972,7 +1972,7 @@ void CSubBasin::InitializeFlowStates(const double& Qin_avg,const double& Qlat_av
     //Calculate Initial Channel Storage from flowrate
     //------------------------------------------------------------------------
     _channel_storage=0.0;
-	
+
     if ((Options.routing==ROUTE_NONE) || (Options.routing==ROUTE_EXTERNAL))
     {
       _channel_storage=0.0;
@@ -2015,7 +2015,7 @@ void CSubBasin::InitializeFlowStates(const double& Qin_avg,const double& Qlat_av
       sum+=_aUnitHydro[n];
       _rivulet_storage+=sum*Qlat_avg*(Options.timestep*SEC_PER_DAY);//[m3];
     }
-    _rivulet_storage+=Qlat_avg*Options.timestep*(Options.timestep*SEC_PER_DAY); 
+    _rivulet_storage+=Qlat_avg*Options.timestep*(Options.timestep*SEC_PER_DAY);
   } //end if disabled
 }
 /////////////////////////////////////////////////////////////////

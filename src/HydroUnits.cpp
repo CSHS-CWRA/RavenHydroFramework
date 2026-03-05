@@ -390,7 +390,7 @@ void    CHydroUnit::Initialize      (const int UTM_zone)
 /// \param len [in] - flow length, in meters
 //
 void  CHydroUnit::SetFlowLength           (const double &len)
-{  
+{
   if (len<0){
     string warn="Negative or zero flow length set for HRU "+to_string(_ID);
     ExitGracefully(warn.c_str(),BAD_DATA_WARN); return;

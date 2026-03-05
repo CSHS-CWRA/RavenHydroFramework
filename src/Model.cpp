@@ -2940,8 +2940,8 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
       value= RAV_BLANK_DATA;
     }
 
-    
-    if     (_pObservedTS[i]->GetType()==CTimeSeriesABC::TS_REGULAR) 
+
+    if     (_pObservedTS[i]->GetType()==CTimeSeriesABC::TS_REGULAR)
     {
       _pModeledTS[i]->SetValue(n,value);
       _pModeledTS[i]->SetSampledValue(n,value); //Handles blank value issue in final time  step

@@ -709,7 +709,7 @@ void CmvSnowBalance::GetRatesOfChange(const double               *state_var,
     double firn_melt_corr=pHRU->GetSurfaceProps()->firn_melt_corr;
 
     double potmelt=pHRU->GetForcingFunctions()->potential_melt;
-    
+
     rates[_nConnections-1]=(1.0-SC)*firn_melt_corr*potmelt;
   }
 };

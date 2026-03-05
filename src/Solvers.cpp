@@ -24,7 +24,7 @@ void MassEnergyBalance( CModel            *pModel,
   int nConstituents;                           //
   int iSW, iAtm, iAET, iGW, iRO;               //Surface water, atmospheric precip, used PET, runoff indices
   int iTotalSWE,iGlacierMB;                    //total SWE index, glacier MB index
-  
+
   int maxLatConns=0;
   int maxConns=0;
   int maxTotConns=0;
