@@ -846,7 +846,6 @@ enum toc_method
 
 enum assimtype
 {
-  DA_RAVEN_DEFAULT, ///< multiplicative scaling assimilation upstream propagation
   DA_ECCC           ///< additive assimilation upstream propagation
 };
 ////////////////////////////////////////////////////////////////////

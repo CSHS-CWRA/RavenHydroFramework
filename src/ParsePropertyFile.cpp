@@ -914,7 +914,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
        :ChannelRatingCurves [optional string name]
          :Bedslope {double slope}
          :StageRelations
-           {double depth double area double topwidth double discharge [double perim] }x num survey points
+           {double depth double area double topwidth double discharge [double perim] }x num curve points
          :EndStageRelations
        :EndChannelProfile*/
       string tag;
