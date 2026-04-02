@@ -579,6 +579,8 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   // (b) Define the time variable.
   dimids1[0] = time_dimid;
   retval = nc_def_var(_netcdf_ID, "time", NC_DOUBLE, ndims1,dimids1, &varid_time); HandleNetCDFErrors(retval);
+  // Enable deflate compression for time variable (shuffle, zlib, deflate_level)
+  retval = nc_def_var_deflate(_netcdf_ID, varid_time, 1, 1, NETCDF_DEFLATE_LEVEL); HandleNetCDFErrors(retval);
 
   // (c) Assign units attributes to the netCDF VARIABLES.
   //     --> converts start day into "hours since YYYY-MM-DD HH:MM:SS"
@@ -616,6 +618,8 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
 
     dimids1[0] = ndata_dimid;
     retval = nc_def_var(_netcdf_ID, group_name.c_str(), NC_STRING, ndims1, dimids1, &varid_grps); HandleNetCDFErrors(retval);
+    // Enable deflate compression for group variable
+    retval = nc_def_var_deflate(_netcdf_ID, varid_grps, 1, 1, NETCDF_DEFLATE_LEVEL); HandleNetCDFErrors(retval);
 
     //(c) set some attributes to variable "HRUID" or "SBID"
     tmp =long_name;
@@ -632,6 +636,8 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
     dimids2[0] = time_dimid;
     dimids2[1] = ndata_dimid;
     retval = nc_def_var(_netcdf_ID, netCDFtag.c_str(), NC_DOUBLE, ndims2, dimids2, &varid_data);    HandleNetCDFErrors(retval);
+    // Enable deflate compression for data variable
+    retval = nc_def_var_deflate(_netcdf_ID, varid_data, 1, 1, NETCDF_DEFLATE_LEVEL); HandleNetCDFErrors(retval);
 
     //(f) set some attributes to variable _netCDFtag
     tmp=_timeAggStr+" "+_statStr+" "+_varName+" "+_spaceAggStr;
