@@ -2059,7 +2059,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   // time
   // ----------------------------------------------------------
   // (a) Define the DIMENSIONS. NetCDF will hand back an ID
-  ntime = ceil(Options.duration / Options.timestep);
+  ntime = (int)(ceil((Options.duration+TIME_CORRECTION)/Options.timestep));
   retval = nc_def_dim(_HYDRO_ncid, "time", ntime, &time_dimid);  HandleNetCDFErrors(retval);
 
   /// Define the time variable. Assign units attributes to the netCDF VARIABLES.
@@ -3077,7 +3077,7 @@ int NetCDFAddMetadata2D(const int fileid,const int time_dimid,int nbasins_dimid,
   retval = nc_inq_dimlen(fileid, time_dimid, &chunksize2[0]); HandleNetCDFErrors(retval);
    // Set nbasins chunksize to number ensuring that chunks have approximately 10 MB of data (assuming double precision)
   retval = nc_inq_dimlen(fileid, nbasins_dimid, &chunksize2[1]); HandleNetCDFErrors(retval);
-  chunksize2[1] = max((size_t)1, min(chunksize2[1], (size_t)(10 * 1024 * 1024 / sizeof(double) / chunksize2[0]))); // Ensure at least one basin per chunk
+  chunksize2[1] = max((size_t)1, min(chunksize2[1], (size_t)(NETCDF_CHUNKSIZE_MB * 1024 * 1024 / sizeof(double) / chunksize2[0]))); // Ensure at least one basin per chunk
   // Set chunksize
   retval = nc_def_var_chunking(fileid, varid, NC_CHUNKED, chunksize2); HandleNetCDFErrors(retval);
 
