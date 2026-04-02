@@ -581,6 +581,9 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   retval = nc_def_var(_netcdf_ID, "time", NC_DOUBLE, ndims1,dimids1, &varid_time); HandleNetCDFErrors(retval);
   // Enable deflate compression for time variable (shuffle, zlib, deflate_level)
   retval = nc_def_var_deflate(_netcdf_ID, varid_time, 1, 1, NETCDF_DEFLATE_LEVEL); HandleNetCDFErrors(retval);
+  // Set chunksize for time variable
+
+
 
   // (c) Assign units attributes to the netCDF VARIABLES.
   //     --> converts start day into "hours since YYYY-MM-DD HH:MM:SS"
