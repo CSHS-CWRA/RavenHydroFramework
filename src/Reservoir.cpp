@@ -511,17 +511,17 @@ double  CReservoir::GetLakeConvectionCoeff() const { return _lake_convcoeff; }
 //////////////////////////////////////////////////////////////////
 /// \returns current outflow rate [m3/s]
 //
-double  CReservoir::GetOutflowRate       (const bool adjusted) const { 
+double  CReservoir::GetOutflowRate       (const bool adjusted) const {
   if (adjusted){return max(_Qout+_DAadjust,0.0);}
-  else         {return _Qout;} 
+  else         {return _Qout;}
 }
 
 //////////////////////////////////////////////////////////////////
 /// \returns previous outflow rate [m3/s]
 //
-double CReservoir::GetOldOutflowRate     (const bool adjusted) const { 
+double CReservoir::GetOldOutflowRate     (const bool adjusted) const {
   if (adjusted){return max(_Qout_last+_DAadjust_last,0.0);}
-  else         {return _Qout_last;} 
+  else         {return _Qout_last;}
 }
 
 //////////////////////////////////////////////////////////////////
