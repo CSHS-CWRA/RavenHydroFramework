@@ -336,9 +336,6 @@ const int     MAX_SV_LAYERS       =160;         ///< Max number of layers per st
 const int     MAX_SOILLAYERS      =50;          ///< Max number of soil layers in profile
 const int     MAX_STATE_VAR_TYPES =100;         ///< Max number of *types* of state variables in model
 const int     MAX_STATE_VARS      =500;         ///< Max number of simulated state variables manipulable by one process (CAdvection worst offender)
-const int     MAX_SOIL_PROFILES   =200;         ///< Max number of soil profiles
-const int     MAX_VEG_CLASSES     =200;         ///< Max number of vegetation classes
-const int     MAX_LULT_CLASSES    =200;         ///< Max number of lult classes
 const int     MAX_TERRAIN_CLASSES =50;          ///< Max number of terrain classes
 const int     MAX_SURVEY_PTS      =500;         ///< Max number of survey points
 const int     MAX_CONSTITUENTS    =10;          ///< Max number of transported constituents
@@ -851,7 +848,6 @@ enum toc_method
 
 enum assimtype
 {
-  DA_RAVEN_DEFAULT, ///< multiplicative scaling assimilation upstream propagation
   DA_ECCC           ///< additive assimilation upstream propagation
 };
 ////////////////////////////////////////////////////////////////////
@@ -1358,6 +1354,22 @@ string GetProcessName(process_type ptype);
 bool   DynArrayAppend(void **& pArr,void *xptr,int &size);
 int    SmartIntervalSearch(const double &x, const double *ax, const int N,const int ilast);
 int    NearSearchIndex(const int i, int guess_p, const int size);
+// Append by copying
+template <typename T>
+void DynAppend(T*& arr, const T& item, const int &size)
+{
+    // Allocate the new array; guard it so we don't leak if something throws
+    std::unique_ptr<T[]> new_arr(new T[size + 1]);
+
+    for (int i = 0; i < size; ++i) {
+      new_arr[i] = arr[i];
+    }
+    new_arr[size+1] = item;
+
+    delete[] arr;
+    arr = new_arr.release(); //required for new arr to not be deleted when out of scope
+    size++;
+}
 
 //Threshold Correction Functions-----------------------------------
 double threshPositive(const double &val);
