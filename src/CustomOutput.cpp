@@ -217,7 +217,57 @@ void CCustomOutput::SetHistogramParams(const double minv,const double maxv, cons
   _hist_max=maxv;
   _nBins=numBins;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Compute the approximate number of time steps for the output array
+/// \param Options [in] Global model options information
+/// \return Number of time steps (int)
+int CCustomOutput::ComputeNumTimeSteps(const optStruct &Options) const
+{
+  // Example assumes Options has julian_start_day, timestep, and custom_interval
 
+  double julian_end_day;
+  int julian_end_year;
+  time_struct start, end;
+
+  JulianConvert(0, Options.julian_start_day, Options.julian_start_year, Options.calendar, start);
+  JulianConvert(Options.duration, Options.julian_start_day, Options.julian_start_year, Options.calendar, end);
+
+  // Compute the end date in Julian day and year format
+  // AddTime(Options.julian_start_day, Options.julian_start_year, Options.duration, Options.calendar, julian_end_day, julian_end_year);
+  // ntime = (int)(ceil((Options.duration+TIME_CORRECTION)/Options.timestep));
+  double dt = Options.timestep;
+  int nsteps = 0;
+  switch(_timeAgg) {
+    case YEARLY:
+      nsteps = int(end.year - start.year);
+      break;
+    case WATER_YEARLY:
+    // wateryr_mo: Starting month of the water year
+      nsteps = int(end.year - start.year);
+      if ((start.month < end.month) & (start.month < Options.wateryr_mo) & (end.month >= Options.wateryr_mo)) nsteps++;
+      if ((start.month > end.month) & (start.month >= Options.wateryr_mo) & (end.month < Options.wateryr_mo)) nsteps--;
+      break;
+    case MONTHLY:
+      nsteps = int((end.year - start.year) * 12 + (end.month - start.month));
+      break;
+    case DAILY:
+      nsteps = int(ceil(Options.duration));
+      break;
+    case EVERY_NDAYS:
+      nsteps = int(ceil(Options.duration / Options.custom_interval));
+      break;
+    case EVERY_TSTEP:
+      nsteps = int(ceil(Options.duration / dt));
+      break;
+    case ENTIRE_SIM:
+      nsteps = 1;
+      break;
+    default:
+      nsteps = 0;
+      break;
+  }
+  return max(0, nsteps);
+}
 ///////////////////////////////////////////////////////////////////
 /// \brief Allocates memory and initialize data storage of a CCustomOutput object
 /// \remarks Called prior to simulation. Determines size of and allocates memory for (member) data[][] array needed in statistical calculations
@@ -577,6 +627,8 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   // (a) Define the DIMENSIONS. NetCDF will hand back an ID for each.
 
   // TODO: Set dimension size instead of unlimited.
+  cout << "Would create time dimension with size " << ComputeNumTimeSteps(Options) << endl;
+
   retval = nc_def_dim(_netcdf_ID, "time", NC_UNLIMITED, &time_dimid);              HandleNetCDFErrors(retval);
 
   // (b) Define the time variable.
