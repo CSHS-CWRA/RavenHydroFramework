@@ -604,6 +604,7 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
 
   int         retval;                                // error value for NetCDF routines
   size_t      start[1], count[1];                    // determines where and how much will be written to NetCDF
+  size_t      ntime;                                 // Number of time steps
   size_t      chunksize2[2];
   string      tmp,tmp2,tmp3,tmp4;
 
@@ -627,9 +628,9 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   // (a) Define the DIMENSIONS. NetCDF will hand back an ID for each.
 
   // TODO: Set dimension size instead of unlimited.
-  cout << "Would create time dimension with size " << ComputeNumTimeSteps(Options) << endl;
+  ntime = ComputeNumTimeSteps(Options);
 
-  retval = nc_def_dim(_netcdf_ID, "time", NC_UNLIMITED, &time_dimid);              HandleNetCDFErrors(retval);
+  retval = nc_def_dim(_netcdf_ID, "time", ntime, &time_dimid);              HandleNetCDFErrors(retval);
 
   // (b) Define the time variable.
   dimids1[0] = time_dimid;
@@ -638,8 +639,8 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   // Enable deflate compression for time variable (shuffle, zlib, deflate_level)
   retval = nc_def_var_deflate(_netcdf_ID, varid_time, 1, 1, NETCDF_DEFLATE_LEVEL); HandleNetCDFErrors(retval);
 
-  // TODO: Set chunksize to len(time)
-  // retval = nc_def_var_chunking(_netcdf_ID, varid_time, NC_CHUNKED, -1); HandleNetCDFErrors(retval);
+  // Set chunksize to len(time)
+  retval = nc_def_var_chunking(_netcdf_ID, varid_time, NC_CHUNKED, &ntime); HandleNetCDFErrors(retval);
 
 
   // (c) Assign units attributes to the netCDF VARIABLES.
@@ -701,10 +702,10 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
     // Enable deflate compression for data variable
     retval = nc_def_var_deflate(_netcdf_ID, varid_data, 1, 1, NETCDF_DEFLATE_LEVEL); HandleNetCDFErrors(retval);
 
-    // TODO: Set chunksizes for data variable (time, ndata)
-    //chunksize2[0]=_nDataItems; //chunk along time dimension
-    //chunksize2[1] = max((size_t)1, min(_nData, (size_t)(NETCDF_CHUNKSIZE_MB * 1024 * 1024 / sizeof(double) / chunksize2[0]))); // Ensure at least one basin per chunk
-    //retval = nc_def_var_chunking(_netcdf_ID, varid_data, NC_CHUNKED, chunksize2); HandleNetCDFErrors(retval);
+    // Set chunksizes for data variable (time, ndata)
+    chunksize2[0] = ntime; //chunk along time dimension
+    chunksize2[1] = max((size_t)1, min(_nData, (size_t)(NETCDF_CHUNKSIZE_MB * 1024 * 1024 / sizeof(double) / chunksize2[0]))); // Ensure at least one basin per chunk
+    retval = nc_def_var_chunking(_netcdf_ID, varid_data, NC_CHUNKED, chunksize2); HandleNetCDFErrors(retval);
 
     //(f) set some attributes to variable _netCDFtag
     tmp=_timeAggStr+" "+_statStr+" "+_varName+" "+_spaceAggStr;
