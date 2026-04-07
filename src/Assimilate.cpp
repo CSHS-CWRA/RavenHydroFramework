@@ -157,7 +157,7 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
         {
           Qobs  = _pObservedTS[i]->GetSampledValue(nn);   //mean timestep flow
           Qobs2 = _pObservedTS[i]->GetSampledValue(nn+1); //mean timestep flow
-          
+
           //override initial conditions directly
          if ((nn==1) && (Qobs!=RAV_BLANK_DATA)){
             _pSubBasins[p]->SetQout(Qobs);

@@ -99,7 +99,7 @@ private:/*-------------------------------------------------------*/
 
   double        _DAadjust;            //< outflow adjustment - used for reporting overriden flows [m3/s]
   double        _DAadjust_last;       //< outflow adjustment [m3/s] from previous time step
-  
+
   int           _dry_timesteps;      //< number of time steps this reservoir dried out  during simulation
 
   //state variables :
