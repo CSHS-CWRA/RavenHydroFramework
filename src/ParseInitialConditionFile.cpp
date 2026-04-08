@@ -647,7 +647,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
             pBasin->GetReservoir()->SetControlFlow(s_to_i(s[1]),s_to_d(s[2]),s_to_d(s[3]));
           }
         }
-        else if(!strcmp(s[0],":ResDAadj"))
+        else if(!strcmp(s[0],":ResDAscale"))
         {
           if(Len>=3) {
             pBasin->GetReservoir()->SetDataAssimFactors(s_to_d(s[1]),s_to_d(s[2]));

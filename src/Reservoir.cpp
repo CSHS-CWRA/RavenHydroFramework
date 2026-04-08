@@ -93,8 +93,8 @@ void CReservoir::BaseConstructor(const string Name,const long long SBID)
   _assimilate_stage=false;
   _assim_blank=true;
   _pObsStage=NULL;
-  _DAadjust=0.0;
-  _DAadjust_last=0.0;
+  _DAscale=1.0;
+  _DAscale_last=1.0;
 
   _dry_timesteps=0;
 }
@@ -511,18 +511,12 @@ double  CReservoir::GetLakeConvectionCoeff() const { return _lake_convcoeff; }
 //////////////////////////////////////////////////////////////////
 /// \returns current outflow rate [m3/s]
 //
-double  CReservoir::GetOutflowRate       (const bool adjusted) const {
-  if (adjusted){return max(_Qout+_DAadjust,0.0);}
-  else         {return _Qout;}
-}
+double  CReservoir::GetOutflowRate       () const { return _DAscale*_Qout; }
 
 //////////////////////////////////////////////////////////////////
 /// \returns previous outflow rate [m3/s]
 //
-double CReservoir::GetOldOutflowRate     (const bool adjusted) const {
-  if (adjusted){return max(_Qout_last+_DAadjust_last,0.0);}
-  else         {return _Qout_last;}
-}
+double CReservoir::GetOldOutflowRate     () const { return _DAscale_last*_Qout_last; }
 
 //////////////////////////////////////////////////////////////////
 /// \returns current outflow rate from control structure i[m3/s]
@@ -534,7 +528,7 @@ double  CReservoir::GetControlOutflow    (const int i) const { return _aQstruct[
 //
 double  CReservoir::GetIntegratedOutflow(const double& tstep) const
 {
-  return 0.5*(max(_Qout+_DAadjust,0.0)+max(_Qout_last+_DAadjust_last,0.0))*(tstep*SEC_PER_DAY); //integrated
+  return 0.5*(_DAscale*_Qout+_DAscale_last*_Qout_last)*(tstep*SEC_PER_DAY); //integrated
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1149,10 +1143,10 @@ void CReservoir::SetDemandMultiplier(const double &value)
 //////////////////////////////////////////////////////////////////
 /// \brief sets data assimilation scale factors (read from .rvc file)
 //
-void CReservoir::SetDataAssimFactors(const double& da_adj,const double& da_adj_last)
+void CReservoir::SetDataAssimFactors(const double& da_scale,const double& da_scale_last)
 {
-  _DAadjust     =da_adj;
-  _DAadjust_last=da_adj_last;
+  _DAscale     =da_scale;
+  _DAscale_last=da_scale_last;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1229,19 +1223,39 @@ void  CReservoir::DisableOutflow()
   for (int i=0;i<_Np;i++){_aQ[i]=0.0;_aQunder[i]=0.0;}
 }
 //////////////////////////////////////////////////////////////////
-/// \brief adjust all internal flows by adjustment amount (for assimilation/nudging)
+/// \brief scales all internal flows by scale factor (for assimilation/nudging)
 /// \remark Messes with mass balance something fierce!
 ///
 /// \return mass added to system [m3]
 //
-double CReservoir::AdjustFlow(const double& Qadjust, const bool overriding, const double& tstep, const double& t)
+double CReservoir::ScaleFlow(const double& scale,const bool overriding, const double& tstep, const double &t)
 {
-  _DAadjust_last=_DAadjust;
-  _DAadjust=Qadjust;
+  double va=0.0; //volume added
+  double sf=(scale-1.0)/scale;
+
+  _DAscale=scale;
 
   //Estimate volume added through scaling
+  va+=0.5*(_Qout_last+_Qout)*sf*tstep*SEC_PER_DAY;
+
+  return va;
+}
+double CReservoir::AdjustFlow(const double& Qadjust, const bool overriding, const double& tstep, const double& t)
+{
+
+  _DAscale=1.0;
+  _DAscale_last=1.0;
+
+  double scale=(_Qout+Qadjust)/_Qout;
+  if (_Qout==0.0){scale=1.0;}
+
   double va=0.0; //volume added
-  va+=0.5*(_DAadjust_last+_DAadjust)*tstep*SEC_PER_DAY;
+  double sf=(scale-1.0)/scale;
+
+  _DAscale=scale;
+
+  //Estimate volume added through scaling
+  va+=0.5*(_Qout_last+_Qout)*sf*tstep*SEC_PER_DAY;
 
   return va;
 }
@@ -1276,6 +1290,9 @@ void  CReservoir::UpdateStage(const double &new_stage,const double &res_outflow,
     _aQstruct_last[i]=_aQstruct[i];
     _aQstruct     [i]=aQstruct_new[i];
   }
+
+  _DAscale_last=_DAscale;
+  _DAscale   =1.0;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns AET [mm/d], meant to be called at end of time step
@@ -1856,8 +1873,8 @@ void CReservoir::WriteToSolutionFile (ofstream &RVC) const
 {
   RVC<<"    :ResFlow, "<<_Qout<<","<<_Qout_last<<endl;
   RVC<<"    :ResStage, "<<_stage<<","<<_stage_last<<endl;
-  if((_DAadjust_last!=0.0) || (_DAadjust!=0.0)){
-    RVC<<"    :ResDAadj, "<<_DAadjust<<","<<_DAadjust_last<<endl;
+  if(_DAscale_last!=1.0) {
+    RVC<<"    :ResDAscale, "<<_DAscale<<","<<_DAscale_last<<endl;
   }
   for (int i = 0; i < _nControlStructures; i++) {
     RVC<<"    :ControlFlow, "<<i<<","<<_aQstruct[i]<<","<<_aQstruct_last[i]<<endl;
