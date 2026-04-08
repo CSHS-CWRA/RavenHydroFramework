@@ -2021,7 +2021,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   string      tmpFilename;
   int         p;                                     // loop over all sub-basins
   string      tmp,tmp2,tmp3;
-
+  size_t      chunksize_time;                                 // Size of output time dimension
 
   // initialize all potential file IDs with -9 == "not existing and hence not opened"
   _HYDRO_ncid    = -9;   // output file ID for Hydrographs.nc         (-9 --> not opened)
@@ -2069,7 +2069,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   retval = nc_def_var_deflate(_HYDRO_ncid, varid_time, 1, 1, NETCDF_DEFLATE_LEVEL); HandleNetCDFErrors(retval);
 
   // Set chunksize to the number of time steps
-  size_t chunksize_time = min(1, Options.n_out_time);
+  chunksize_time = min(1, Options.n_out_time);
   retval = nc_def_var_chunking(_HYDRO_ncid, varid_time, NC_CHUNKED, &chunksize_time); HandleNetCDFErrors(retval);
 
   // define precipitation variable
@@ -2149,7 +2149,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     // time
     // ----------------------------------------------------------
     // (a) Define the DIMENSIONS. NetCDF will hand back an ID
-    retval = nc_def_dim(_RESSTAGE_ncid,"time",ntime,&time_dimid);  HandleNetCDFErrors(retval);
+    retval = nc_def_dim(_RESSTAGE_ncid,"time",Options.n_out_time,&time_dimid);  HandleNetCDFErrors(retval);
 
     /// Define the time variable. Assign units attributes to the netCDF VARIABLES.
     dimids1[0] = time_dimid;
@@ -2231,7 +2231,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     // time vector
     // ----------------------------------------------------------
     // Define the DIMENSIONS. NetCDF will hand back an ID
-    retval = nc_def_dim(_STORAGE_ncid, "time", ntime, &time_dimid);  HandleNetCDFErrors(retval);
+    retval = nc_def_dim(_STORAGE_ncid, "time", Options.n_out_time, &time_dimid);  HandleNetCDFErrors(retval);
 
     /// Define the time variable.
     dimids1[0] = time_dimid;
@@ -2281,7 +2281,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     // ----------------------------------------------------------
     // time vector
     // ----------------------------------------------------------
-    retval = nc_def_dim(_FORCINGS_ncid,"time",ntime,&time_dimid);  HandleNetCDFErrors(retval);
+    retval = nc_def_dim(_FORCINGS_ncid,"time",Options.n_out_time,&time_dimid);  HandleNetCDFErrors(retval);
     dimids1[0] = time_dimid;
     retval = nc_def_var(_FORCINGS_ncid,"time",NC_DOUBLE,ndims1,dimids1,&varid_time); HandleNetCDFErrors(retval);
     retval = nc_put_att_text(_FORCINGS_ncid,varid_time,"units",strlen(starttime),starttime);   HandleNetCDFErrors(retval);
@@ -2329,7 +2329,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     // ----------------------------------------------------------
     // time vector
     // ----------------------------------------------------------
-    retval = nc_def_dim(_RESMB_ncid,"time",ntime,&time_dimid);  HandleNetCDFErrors(retval);
+    retval = nc_def_dim(_RESMB_ncid,"time",Options.n_out_time,&time_dimid);  HandleNetCDFErrors(retval);
     dimids1[0] = time_dimid;
     retval = nc_def_var(_RESMB_ncid,"time",NC_DOUBLE,ndims1,dimids1,&varid_time);                HandleNetCDFErrors(retval);
     retval = nc_put_att_text(_RESMB_ncid,varid_time,"units",strlen(starttime),starttime);        HandleNetCDFErrors(retval);
