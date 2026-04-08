@@ -223,20 +223,12 @@ void CCustomOutput::SetHistogramParams(const double minv,const double maxv, cons
 /// \return Number of time steps (int)
 int CCustomOutput::ComputeNumTimeSteps(const optStruct &Options) const
 {
-  // Example assumes Options has julian_start_day, timestep, and custom_interval
-
-  double julian_end_day;
-  int julian_end_year;
+  int nsteps = 0;  // return value
   time_struct start, end;
 
   JulianConvert(0, Options.julian_start_day, Options.julian_start_year, Options.calendar, start);
   JulianConvert(Options.duration, Options.julian_start_day, Options.julian_start_year, Options.calendar, end);
 
-  // Compute the end date in Julian day and year format
-  // AddTime(Options.julian_start_day, Options.julian_start_year, Options.duration, Options.calendar, julian_end_day, julian_end_year);
-  // ntime = (int)(ceil((Options.duration+TIME_CORRECTION)/Options.timestep));
-  double dt = Options.timestep;
-  int nsteps = 0;
   switch(_timeAgg) {
     case YEARLY:
       nsteps = int(end.year - start.year);
@@ -244,8 +236,8 @@ int CCustomOutput::ComputeNumTimeSteps(const optStruct &Options) const
     case WATER_YEARLY:
     // wateryr_mo: Starting month of the water year
       nsteps = int(end.year - start.year);
-      if ((start.month < end.month) & (start.month < Options.wateryr_mo) & (end.month >= Options.wateryr_mo)) nsteps++;
-      if ((start.month > end.month) & (start.month >= Options.wateryr_mo) & (end.month < Options.wateryr_mo)) nsteps--;
+      if ((start.month < end.month) && (start.month < Options.wateryr_mo) && (end.month >= Options.wateryr_mo)) nsteps++;
+      if ((start.month > end.month) && (start.month >= Options.wateryr_mo) && (end.month < Options.wateryr_mo)) nsteps--;
       break;
     case MONTHLY:
       nsteps = int((end.year - start.year) * 12 + (end.month - start.month));
@@ -257,7 +249,7 @@ int CCustomOutput::ComputeNumTimeSteps(const optStruct &Options) const
       nsteps = int(ceil(Options.duration / Options.custom_interval));
       break;
     case EVERY_TSTEP:
-      nsteps = int(ceil(Options.duration / dt));
+      nsteps = int(ceil(Options.duration / Options.timestep));
       break;
     case ENTIRE_SIM:
       nsteps = 1;
@@ -628,7 +620,7 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   // (a) Define the DIMENSIONS. NetCDF will hand back an ID for each.
 
   // TODO: Set dimension size instead of unlimited.
-  ntime = ComputeNumTimeSteps(Options);
+  ntime = max(1, ComputeNumTimeSteps(Options));
 
   retval = nc_def_dim(_netcdf_ID, "time", ntime, &time_dimid);              HandleNetCDFErrors(retval);
 
@@ -679,9 +671,6 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
 
     dimids1[0] = ndata_dimid;
     retval = nc_def_var(_netcdf_ID, group_name.c_str(), NC_STRING, ndims1, dimids1, &varid_grps); HandleNetCDFErrors(retval);
-
-    // Enable deflate compression for group variable
-    retval = nc_def_var_deflate(_netcdf_ID, varid_grps, 1, 1, NETCDF_DEFLATE_LEVEL); HandleNetCDFErrors(retval);
 
     //(c) set some attributes to variable "HRUID" or "SBID"
     tmp =long_name;

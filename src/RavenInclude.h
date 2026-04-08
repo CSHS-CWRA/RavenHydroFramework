@@ -1065,6 +1065,7 @@ struct optStruct
   double           convergence_crit;          ///< convergence criteria
   double           max_iterations;            ///< maximum number of iterations for iterative solver method
   double           timestep;                  ///< numerical method timestep (in days)
+  int              n_out_time;                ///< size of output time dimension
   double           output_interval;           ///< write to output file every x number of timesteps
   ensemble_type    ensemble;                  ///< ensemble type (or ENSEMBLE_NONE if single model)
   string           external_script;           ///< call to external script/.exe once per timestep (or "" if none)
