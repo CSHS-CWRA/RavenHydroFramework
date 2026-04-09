@@ -41,6 +41,7 @@ int main(int argc, char* argv[])
   clock_t     t0, t1;          //computational time markers
   time_struct tt;
   int         nEnsembleMembers;
+  int         retval;
   optStruct   Options;
 
   Options.version=__RAVEN_VERSION__;
@@ -51,7 +52,9 @@ int main(int argc, char* argv[])
   Options.version+=" w/ lp_solve";
 #endif
 
-  ProcessExecutableArguments(argc,argv,Options);
+  retval = ProcessExecutableArguments(argc,argv,Options);
+  if (!retval) { return 0; }
+
   PrepareOutputdirectory(Options);
 
   for (int i=0;i<10;i++){g_debug_vars[i]=0;}
@@ -199,7 +202,7 @@ int main(int argc, char* argv[])
 /// \details filebase has no extension, all others require .rv* extension
 /// \param Options [in] Global model options
 //
-void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
+int ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
 {
   int i=1;
   string word,argument;
@@ -236,7 +239,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
     }
     if ((word=="-p") || (word=="-h") || (word=="-t") || (word=="-e") || (word=="-c") || (word=="-o") ||
         (word=="-s") || (word=="-r") || (word=="-n") || (word=="-l") || (word=="-m") || (word=="-v") ||
-        (word=="-we")|| (word=="-tt")|| (word=="-template")  || (word=="-b") || (i==argc))
+        (word=="-we")|| (word=="-tt")|| (word=="-template")  || (word=="--version") || (word=="-b") || (i==argc))
     {
       if      (mode==0){
         Options.rvi_filename=argument+".rvi";
@@ -282,7 +285,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
       else if (word=="-we"){mode=13; }
       else if (word=="-template"){mode=14;}
       else if (word=="-b"){mode=15;}
-      else if (word=="-v"){Options.pause=false; version_announce=true; mode=10;} //For PAVICS
+      else if (word=="-v" || word=="--version"){Options.pause=false; version_announce=true; mode=10;} //For PAVICS
     }
     else{
       if (argument==""){argument+=word;}
@@ -317,8 +320,10 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
 
   if(version_announce) {
     cout<<Options.version<<endl;
-    ExitGracefully("Version check",SIMULATION_DONE);
+    return 0;
+    // ExitGracefully("Version check",SIMULATION_DONE);
   }
+  return 1;
 }
 
 
