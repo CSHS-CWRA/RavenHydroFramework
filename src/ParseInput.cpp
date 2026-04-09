@@ -3731,7 +3731,7 @@ bool ParseMainInputFile (CModel     *&pModel,
                    "ParseMainInputFile::Model duration less than zero. Make sure :EndDate is after :StartDate.",BAD_DATA_WARN);
 
   // Compute the size of the output's time dimension
-  Options.n_out_time = (int)(floor(ceil(Options.duration/Options.timestep))/Options.output_interval);
+  Options.n_out_time = (int)(floor(ceil((Options.duration + TIME_CORRECTION)/Options.timestep))/Options.output_interval);
   if (Options.n_out_time==0) {
     WriteAdvisory("ParseMainInputFile::Number of output time steps is zero. Check :Duration, :Timestep, and :OutputInterval commands.",BAD_DATA);
   }

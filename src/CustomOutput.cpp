@@ -218,10 +218,10 @@ void CCustomOutput::SetHistogramParams(const double minv,const double maxv, cons
   _nBins=numBins;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Compute the approximate number of time steps for the output array
+/// \brief Compute the approximate number of time steps for the output array. This is not meant to be exact. Do not allocate memory based on this value.
 /// \param Options [in] Global model options information
 /// \return Number of time steps (int)
-int CCustomOutput::ComputeNumTimeSteps(const optStruct &Options) const
+int CCustomOutput::ApproximateNumTimeSteps(const optStruct &Options) const
 {
   int nsteps = 0;  // return value
   time_struct start, end;
@@ -258,7 +258,7 @@ int CCustomOutput::ComputeNumTimeSteps(const optStruct &Options) const
       nsteps = 0;
       break;
   }
-  return max(0, nsteps);
+  return max(0, nsteps); // Ensure non-negative and account for partial time step at end of simulation
 }
 ///////////////////////////////////////////////////////////////////
 /// \brief Allocates memory and initialize data storage of a CCustomOutput object
@@ -595,9 +595,8 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   int         ndata_dimid,varid_data,varid_grps(0);  // dimension ID, variable ID for simulated data and group (HRU/SB) info
 
   int         retval;                                // error value for NetCDF routines
-  size_t      start[1], count[1];                    // determines where and how much will be written to NetCDF
-  size_t      ntime;                                 // Number of time steps
-  size_t      chunksize2[2];
+  size_t      start[1], count[1];                    // determines where and how much will be written to NetCDF                                 // Number of time steps
+  size_t      chunksize2[2];                          // Chunksize (time, data)
   string      tmp,tmp2,tmp3,tmp4;
 
   bool cant_support=(_aggstat==AGG_RANGE || _aggstat==AGG_95CI || _aggstat==AGG_QUARTILES || _aggstat==AGG_HISTOGRAM);
@@ -619,10 +618,8 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   // ----------------------------------------------------------
   // (a) Define the DIMENSIONS. NetCDF will hand back an ID for each.
 
-  // TODO: Set dimension size instead of unlimited.
-  ntime = max(1, ComputeNumTimeSteps(Options));
-
-  retval = nc_def_dim(_netcdf_ID, "time", ntime, &time_dimid);              HandleNetCDFErrors(retval);
+  chunksize2[0] = ApproximateNumTimeSteps(Options) + 1;
+  retval = nc_def_dim(_netcdf_ID, "time", NC_UNLIMITED, &time_dimid);              HandleNetCDFErrors(retval);
 
   // (b) Define the time variable.
   dimids1[0] = time_dimid;
@@ -632,7 +629,7 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   retval = nc_def_var_deflate(_netcdf_ID, varid_time, 1, 1, NETCDF_DEFLATE_LEVEL); HandleNetCDFErrors(retval);
 
   // Set chunksize to len(time)
-  retval = nc_def_var_chunking(_netcdf_ID, varid_time, NC_CHUNKED, &ntime); HandleNetCDFErrors(retval);
+  retval = nc_def_var_chunking(_netcdf_ID, varid_time, NC_CHUNKED, &chunksize2[0]); HandleNetCDFErrors(retval);
 
 
   // (c) Assign units attributes to the netCDF VARIABLES.
@@ -692,7 +689,6 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
     retval = nc_def_var_deflate(_netcdf_ID, varid_data, 1, 1, NETCDF_DEFLATE_LEVEL); HandleNetCDFErrors(retval);
 
     // Set chunksizes for data variable (time, ndata)
-    chunksize2[0] = ntime; //chunk along time dimension
     chunksize2[1] = max((size_t)1, min(_nData, (size_t)(NETCDF_CHUNKSIZE_MB * 1024 * 1024 / sizeof(double) / chunksize2[0]))); // Ensure at least one basin per chunk
     retval = nc_def_var_chunking(_netcdf_ID, varid_data, NC_CHUNKED, chunksize2); HandleNetCDFErrors(retval);
 

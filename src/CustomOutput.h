@@ -126,7 +126,7 @@ public:/*------------------------------------------------------*/
 
   void        SetHistogramParams(const double min,const double max, const int numBins);
 
-  int         ComputeNumTimeSteps(const optStruct &Options) const;
+  int         ApproximateNumTimeSteps(const optStruct &Options) const;
 
   spatial_agg GetSpatialAgg() const;
 

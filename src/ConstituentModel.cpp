@@ -1004,7 +1004,6 @@ void CConstituentModel::WriteNetCDFOutputFileHeaders(const optStruct& Options)
   const int   ndims2 = 2;
   int         dimids1[ndims1];          // array which will contain all dimension ids for a variable
   int         retval,ncid;
-  size_t      ntime;                    // Size of the time dimension
 
   //converts start day into "hours since YYYY-MM-DD HH:MM:SS"  (model start time)
   char  starttime[200]; // start time string in format 'hours since YYY-MM-DD HH:MM:SS'
@@ -1043,8 +1042,7 @@ void CConstituentModel::WriteNetCDFOutputFileHeaders(const optStruct& Options)
   // time vector
   // ----------------------------------------------------------
   // Define the DIMENSIONS. NetCDF will hand back an ID
-  size_t ntime = min(1, Options.n_out_time);
-  retval = nc_def_dim(_CONC_ncid,"time",ntime,&time_dimid);  HandleNetCDFErrors(retval);
+  retval =    (_CONC_ncid,"time",NC_UNLIMITED,&time_dimid);  HandleNetCDFErrors(retval);
 
   /// Define the time variable.
   dimids1[0] = time_dimid;
@@ -1096,7 +1094,7 @@ void CConstituentModel::WriteNetCDFOutputFileHeaders(const optStruct& Options)
     // time vector
     // ----------------------------------------------------------
     // Define the DIMENSIONS. NetCDF will hand back an ID
-    retval = nc_def_dim(_POLLUT_ncid,"time",ntime,&time_dimid);  HandleNetCDFErrors(retval);
+    retval = nc_def_dim(_POLLUT_ncid,"time",NC_UNLIMITED,&time_dimid);  HandleNetCDFErrors(retval);
 
     /// Define the time variable.
     dimids1[0] = time_dimid;
@@ -1184,7 +1182,7 @@ void CConstituentModel::WriteNetCDFOutputFileHeaders(const optStruct& Options)
     // time vector
     // ----------------------------------------------------------
     // Define the DIMENSIONS. NetCDF will hand back an ID
-    retval = nc_def_dim(_LOADING_ncid,"time",ntime,&time_dimid);  HandleNetCDFErrors(retval);
+    retval = nc_def_dim(_LOADING_ncid,"time",NC_UNLIMITED,&time_dimid);  HandleNetCDFErrors(retval);
 
     /// Define the time variable.
     dimids1[0] = time_dimid;

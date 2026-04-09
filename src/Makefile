@@ -18,9 +18,9 @@
 appname := Raven.exe
 
 CXX      := g++
-CXXFLAGS := -Wno-deprecated
+CXXFLAGS := -Wno-deprecated -g
 LDLIBS   :=
-LDFLAGS  :=
+LDFLAGS  := -g
 
 # OPTION 0) some compilers require the c++11 flag, some may not
 CXXFLAGS += -std=c++11 -fPIC
