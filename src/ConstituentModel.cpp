@@ -1042,7 +1042,7 @@ void CConstituentModel::WriteNetCDFOutputFileHeaders(const optStruct& Options)
   // time vector
   // ----------------------------------------------------------
   // Define the DIMENSIONS. NetCDF will hand back an ID
-  retval =    (_CONC_ncid,"time",NC_UNLIMITED,&time_dimid);  HandleNetCDFErrors(retval);
+  retval = nc_def_dim(_CONC_ncid,"time",NC_UNLIMITED,&time_dimid);  HandleNetCDFErrors(retval);
 
   /// Define the time variable.
   dimids1[0] = time_dimid;
