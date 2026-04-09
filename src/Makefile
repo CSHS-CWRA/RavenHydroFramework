@@ -15,19 +15,20 @@
 #            Feb 2025    James Craig and Bohao Tang - support for new Mac (Applie Silicon)
 ###
 # appname := raven_rev$(shell svnversion -n . | sed -e 's/:/-/g')_$(shell uname -o).exe
+# To debug, add -g to CXXFLAGS and LDFLAGS
 appname := Raven.exe
 
 CXX      := g++
-CXXFLAGS := -Wno-deprecated -g
+CXXFLAGS := -Wno-deprecated
 LDLIBS   :=
-LDFLAGS  := -g
+LDFLAGS  :=
 
 # OPTION 0) some compilers require the c++11 flag, some may not
 CXXFLAGS += -std=c++11 -fPIC
 
 # OPTION 1) include netcdf - uncomment following two commands (assumes netCDF path = /usr/local):
-CXXFLAGS += -Dnetcdf
-LDLIBS   += -L/usr/local -lnetcdf
+#CXXFLAGS += -Dnetcdf
+#LDLIBS   += -L/usr/local -lnetcdf
 
 # OPTION 1b) include netcdf - for newer MacOS with Apple Silicon (use with option 1 also uncommented)
 #CXXFLAGS += -I/opt/homebrew/include
