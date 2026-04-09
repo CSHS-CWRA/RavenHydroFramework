@@ -595,7 +595,7 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   int         ndata_dimid,varid_data,varid_grps(0);  // dimension ID, variable ID for simulated data and group (HRU/SB) info
 
   int         retval;                                // error value for NetCDF routines
-  size_t      start[1], count[1];                    // determines where and how much will be written to NetCDF                                 // Number of time steps
+  size_t      start[1], count[1];                    // determines where and how much will be written to NetCDF
   size_t      chunksize2[2];                          // Chunksize (time, data)
   string      tmp,tmp2,tmp3,tmp4;
 
@@ -618,7 +618,6 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   // ----------------------------------------------------------
   // (a) Define the DIMENSIONS. NetCDF will hand back an ID for each.
 
-  chunksize2[0] = ApproximateNumTimeSteps(Options) + 1;
   retval = nc_def_dim(_netcdf_ID, "time", NC_UNLIMITED, &time_dimid);              HandleNetCDFErrors(retval);
 
   // (b) Define the time variable.
@@ -629,6 +628,7 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   retval = nc_def_var_deflate(_netcdf_ID, varid_time, 1, 1, NETCDF_DEFLATE_LEVEL); HandleNetCDFErrors(retval);
 
   // Set chunksize to len(time)
+  chunksize2[0] = ApproximateNumTimeSteps(Options) + 1;
   retval = nc_def_var_chunking(_netcdf_ID, varid_time, NC_CHUNKED, &chunksize2[0]); HandleNetCDFErrors(retval);
 
 

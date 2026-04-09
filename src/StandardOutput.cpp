@@ -2061,7 +2061,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   /// Define the time variable. Assign units attributes to the netCDF VARIABLES.
   dimids1[0] = time_dimid;
   // Set chunksize to the number of time steps
-  chunksize_time = Options.n_out_time + 1;
+  chunksize_time = Options.n_out_time;
 
   retval = nc_def_var(_HYDRO_ncid, "time", NC_DOUBLE, ndims1,dimids1, &varid_time); HandleNetCDFErrors(retval);
   // Enable compression and chunking
@@ -2149,7 +2149,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     // time
     // ----------------------------------------------------------
     // (a) Define the DIMENSIONS. NetCDF will hand back an ID
-    retval = nc_def_dim(_RESSTAGE_ncid,"time", NC_UNLIMITED, &time_dimid);  HandleNetCDFErrors(retval);
+    retval = nc_def_dim(_RESSTAGE_ncid,"time",NC_UNLIMITED,&time_dimid);  HandleNetCDFErrors(retval);
 
     /// Define the time variable. Assign units attributes to the netCDF VARIABLES.
     dimids1[0] = time_dimid;
@@ -2289,7 +2289,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     // ----------------------------------------------------------
     // time vector
     // ----------------------------------------------------------
-    retval = nc_def_dim(_FORCINGS_ncid,"time", NC_UNLIMITED, &time_dimid);  HandleNetCDFErrors(retval);
+    retval = nc_def_dim(_FORCINGS_ncid,"time",NC_UNLIMITED,&time_dimid);  HandleNetCDFErrors(retval);
 
     dimids1[0] = time_dimid;
     retval = nc_def_var(_FORCINGS_ncid,"time",NC_DOUBLE,ndims1,dimids1,&varid_time); HandleNetCDFErrors(retval);
@@ -2342,7 +2342,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     // ----------------------------------------------------------
     // time vector
     // ----------------------------------------------------------
-    retval = nc_def_dim(_RESMB_ncid,"time", NC_UNLIMITED, &time_dimid);  HandleNetCDFErrors(retval);
+    retval = nc_def_dim(_RESMB_ncid,"time",NC_UNLIMITED,&time_dimid);  HandleNetCDFErrors(retval);
 
 
     dimids1[0] = time_dimid;
