@@ -70,6 +70,7 @@ void CModel::Initialize(const optStruct &Options)
       }
     }
   }
+
   // reserve memory for mass balance arrays
   //--------------------------------------------------------------
   _aCumulativeBal = new double * [_nHydroUnits];

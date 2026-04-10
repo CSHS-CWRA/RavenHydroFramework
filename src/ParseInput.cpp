@@ -1445,6 +1445,9 @@ bool ParseMainInputFile (CModel     *&pModel,
       if(Options.noisy) { cout <<"Output File Interval"<<endl; }
       if(Len<2) { ImproperFormatWarning(":OutputInterval",p,Options.noisy);  break; }
       Options.output_interval = s_to_d(s[1]);
+      if (Options.output_interval <= 0) {
+        ExitGracefully("ParseInput :OutputInterval: Output interval must be greater than 0",BAD_DATA_WARN);
+      }
       break;
     }
     case(53):  //--------------------------------------------
@@ -3728,6 +3731,12 @@ bool ParseMainInputFile (CModel     *&pModel,
                    "ParseMainInputFile::Must have a postitive time step",BAD_DATA);
   ExitGracefullyIf(Options.duration<0,
                    "ParseMainInputFile::Model duration less than zero. Make sure :EndDate is after :StartDate.",BAD_DATA_WARN);
+
+  // Compute the size of the output's time dimension
+  Options.n_out_time = (int)(floor(ceil((Options.duration + TIME_CORRECTION)/Options.timestep))/Options.output_interval);
+  if (Options.n_out_time==0) {
+    WriteAdvisory("ParseMainInputFile::Number of output time steps is zero. Check :Duration, :Timestep, and :OutputInterval commands.",BAD_DATA);
+  }
 
   if((Options.nNetCDFattribs>0) && (Options.output_format!=OUTPUT_NETCDF)){
     WriteAdvisory("ParseMainInputFile: NetCDF attributes were specified but output format is not NetCDF.",Options.noisy);
