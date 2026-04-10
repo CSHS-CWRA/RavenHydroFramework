@@ -2061,7 +2061,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   /// Define the time variable. Assign units attributes to the netCDF VARIABLES.
   dimids1[0] = time_dimid;
   // Set chunksize to the number of time steps
-  chunksize_time = Options.n_out_time;
+  chunksize_time = max(1, Options.n_out_time);
 
   retval = nc_def_var(_HYDRO_ncid, "time", NC_DOUBLE, ndims1,dimids1, &varid_time); HandleNetCDFErrors(retval);
   // Enable compression and chunking
@@ -3046,6 +3046,7 @@ int NetCDFAddMetadata(const int fileid,const int time_dimid,string shortname,str
   int retval;
   int dimids[1];
   dimids[0] = time_dimid;
+  int    time_varid;
   size_t chunksize[1];
 
   static double fill_val[] = {NETCDF_BLANK_VALUE};
@@ -3053,12 +3054,11 @@ int NetCDFAddMetadata(const int fileid,const int time_dimid,string shortname,str
 
   // (a) create variable precipitation
   retval = nc_def_var(fileid,shortname.c_str(),NC_DOUBLE,1,dimids,&varid); HandleNetCDFErrors(retval);
-
   // Set compression
   retval = nc_def_var_deflate(fileid, varid, 1, 1, NETCDF_DEFLATE_LEVEL); HandleNetCDFErrors(retval);
-  // Get the chunksize of the time dimension
-  retval = nc_inq_var_chunking(fileid, time_dimid, NULL, &chunksize[0]); HandleNetCDFErrors(retval);
-  // Set chunksize to number of time steps, or 1 if time dimension is unlimited
+  // Set the chunksize to the chunksize of the time variable
+  retval = nc_inq_varid(fileid, "time", &time_varid); HandleNetCDFErrors(retval);
+  retval = nc_inq_var_chunking(fileid, time_varid, NULL, &chunksize[0]); HandleNetCDFErrors(retval);
   retval = nc_def_var_chunking(fileid, varid, NC_CHUNKED, chunksize); HandleNetCDFErrors(retval);
 
   // (b) add attributes to variable
@@ -3084,6 +3084,7 @@ int NetCDFAddMetadata2D(const int fileid,const int time_dimid,int nbasins_dimid,
 #ifdef _RVNETCDF_
   int    retval;
   int    dimids2[2];
+  int    time_varid;
   string tmp;
   size_t chunksize2[2];
 
@@ -3098,11 +3099,10 @@ int NetCDFAddMetadata2D(const int fileid,const int time_dimid,int nbasins_dimid,
   // Set compression
   retval = nc_def_var_deflate(fileid, varid, 1, 1, NETCDF_DEFLATE_LEVEL); HandleNetCDFErrors(retval);
   // Set time chunksize to number of time steps
-  retval = nc_inq_var_chunking(fileid, time_dimid, NULL, &chunksize2[0]); HandleNetCDFErrors(retval);
+  retval = nc_inq_varid(fileid, "time", &time_varid); HandleNetCDFErrors(retval);
+  retval = nc_inq_var_chunking(fileid, time_varid, NULL, &chunksize2[0]); HandleNetCDFErrors(retval);
    // Set nbasins chunksize to number ensuring that chunks have approximately 10 MB of data (assuming double precision)
   retval = nc_inq_dimlen(fileid, nbasins_dimid, &chunksize2[1]); HandleNetCDFErrors(retval);
-
-
   chunksize2[1] = max((size_t)1, min(chunksize2[1], (size_t)(NETCDF_CHUNKSIZE_MB * 1024 * 1024 / sizeof(double) / chunksize2[0]))); // Ensure at least one basin per chunk
   // Set chunksize
   retval = nc_def_var_chunking(fileid, varid, NC_CHUNKED, chunksize2); HandleNetCDFErrors(retval);

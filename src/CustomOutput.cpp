@@ -689,7 +689,7 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
     retval = nc_def_var_deflate(_netcdf_ID, varid_data, 1, 1, NETCDF_DEFLATE_LEVEL); HandleNetCDFErrors(retval);
 
     // Set chunksizes for data variable (time, ndata)
-    chunksize2[1] = max((size_t)1, min(_nData, (size_t)(NETCDF_CHUNKSIZE_MB * 1024 * 1024 / sizeof(double) / chunksize2[0]))); // Ensure at least one basin per chunk
+    chunksize2[1] = max((size_t)1, min((size_t)_nData, (size_t)(NETCDF_CHUNKSIZE_MB * 1024 * 1024 / sizeof(double) / chunksize2[0]))); // Ensure at least one basin per chunk
     retval = nc_def_var_chunking(_netcdf_ID, varid_data, NC_CHUNKED, chunksize2); HandleNetCDFErrors(retval);
 
     //(f) set some attributes to variable _netCDFtag

@@ -1445,6 +1445,9 @@ bool ParseMainInputFile (CModel     *&pModel,
       if(Options.noisy) { cout <<"Output File Interval"<<endl; }
       if(Len<2) { ImproperFormatWarning(":OutputInterval",p,Options.noisy);  break; }
       Options.output_interval = s_to_d(s[1]);
+      if (Options.output_interval <= 0) {
+        ExitGracefully("ParseInput :OutputInterval: Output interval must be greater than 0",BAD_DATA_WARN);
+      }
       break;
     }
     case(53):  //--------------------------------------------
