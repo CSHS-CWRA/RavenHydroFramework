@@ -18,12 +18,12 @@ inline void FinalizeGracefully(const char *statement, exitcode code)
 {
   // errors can occur earlier than the initialization of global pModel variable
   if (pModel == NULL) {
-    cout << "============== Early Gracefully Exit ==============" << endl;
-    cout << "Error Statement: " << statement << endl;
+    cerr << "============== Early Gracefully Exit ==============" << endl;
+    cerr << "Error Statement: " << statement << endl;
     if (code!=SIMULATION_DONE) {
-    cout << "Error Code: " << code << endl;
+    cerr << "Error Code: " << code << endl;
     }
-    cout << "---------------------------------------------------" << endl;
+    cerr << "---------------------------------------------------" << endl;
     return;
   }
 
@@ -57,11 +57,11 @@ inline void FinalizeGracefully(const char *statement, exitcode code)
   }
   if (code==BAD_DATA_WARN){return;}//just write these errors to a file if not in strict mode
 
-  cout <<endl<<endl;
-  cout <<"============== Exiting Gracefully =========================="<<endl;
-  cout <<"Exiting Gracefully: "<<statement                             <<endl;
-  cout << typeline                                                     <<endl;
-  cout <<"============================================================"<<endl;
+  cerr <<endl<<endl;
+  cerr <<"============== Exiting Gracefully =========================="<<endl;
+  cerr <<"Exiting Gracefully: "<<statement                             <<endl;
+  cerr << typeline                                                     <<endl;
+  cerr <<"============================================================"<<endl;
 
   delete pModel; pModel=NULL; //deletes EVERYTHING!
 
