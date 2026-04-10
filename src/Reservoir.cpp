@@ -511,12 +511,18 @@ double  CReservoir::GetLakeConvectionCoeff() const { return _lake_convcoeff; }
 //////////////////////////////////////////////////////////////////
 /// \returns current outflow rate [m3/s]
 //
-double  CReservoir::GetOutflowRate       () const { return _DAscale*_Qout; }
+double  CReservoir::GetOutflowRate       (const bool adjusted) const {
+  if (adjusted){return max(_Qout+_DAadjust,0.0);}
+  else         {return _Qout;}
+}
 
 //////////////////////////////////////////////////////////////////
 /// \returns previous outflow rate [m3/s]
 //
-double CReservoir::GetOldOutflowRate     () const { return _DAscale_last*_Qout_last; }
+double CReservoir::GetOldOutflowRate     (const bool adjusted) const {
+  if (adjusted){return max(_Qout_last+_DAadjust_last,0.0);}
+  else         {return _Qout_last;}
+}
 
 //////////////////////////////////////////////////////////////////
 /// \returns current outflow rate from control structure i[m3/s]

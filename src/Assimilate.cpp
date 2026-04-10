@@ -166,6 +166,25 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
         {
           Qobs = _pObservedTS[i]->GetSampledValue(nn); //mean timestep flow
           Qobs2 = _pObservedTS[i]->GetSampledValue(nn+1); //mean timestep flow
+
+          //override initial conditions directly
+         if ((nn==1) && (Qobs!=RAV_BLANK_DATA)){
+            _pSubBasins[p]->SetQout(Qobs);
+            if (_pSubBasins[p]->GetReservoir()!=NULL)
+            {
+              _pSubBasins[p]->GetReservoir()->SetInitialFlow(Qobs,Qobs,true,tt,Options);
+            }
+            else{
+              _pSubBasins[p]->SetQout(Qobs);
+
+              int N=_pSubBasins[p]->GetInflowHistorySize();
+              double *aQobs=new double [N];
+              for (int jj=0;jj<N;jj++){aQobs[jj]=Qobs;}
+              _pSubBasins[p]->SetQinHist(N,aQobs);
+              delete[] aQobs;
+            }
+          }
+
           ObsExists=true;
           break; //avoids duplicate observations
         }

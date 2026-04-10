@@ -34,7 +34,12 @@ void  AddToMasterParamList   (string        *&aPm, class_type       *&aPCm, int 
 void  AddNewSoilClass       (CSoilClass **&pSoilClasses, soil_struct **&parsed_soils,
                              string *&soiltags, int &num_parsed_soils, int nConstits,
                              const string name, bool isdefault, CModel *pModel);
-
+void  AddNewLULTClass       (CLandUseClass **&pLandUseClasses, surface_struct **&parsed_lults,
+                             string *&lulttags, int &num_parsed_lults,
+                             const string name, bool isdefault, CModel *pModel);
+void  AddNewVegClass        (CVegetationClass **&pVegClasses, veg_struct **&parsed_vegs,
+                             string *&vegtags, int &num_parsed_vegs,
+                             const string name, bool isdefault, CModel *pModel);
 //////////////////////////////////////////////////////////////////
 /// \brief This method parses the class properties .rvp file
 ///
@@ -79,9 +84,6 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
 
   int               num_parsed_aqstacks=0;
 
-  const int         MAX_PROPERTIES_PER_LINE=20;
-
-  int               MAX_NUM_IN_CLASS=max(max(MAX_VEG_CLASSES,MAX_LULT_CLASSES),2000);
   bool              invalid_index;
   int               num_read;
   int              *indices;
@@ -524,6 +526,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       invalid_index=ParsePropArray(p,indices,properties,num_read,soiltags,nParamStrings,num_parsed_soils,aAliases,nAliases);
       ExitGracefullyIf(invalid_index,
                        "ParseClassPropertiesFile: Invalid soiltype code in SoilParameterList command",BAD_DATA);
+
       if (Options.noisy){
         for (int j=0;j<nParamStrings-1;j++){cout<<"  "<<aParamStrings[j+1]<<endl;}
       }
@@ -1531,7 +1534,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     pSoilClasses[c]->AutoCalculateSoilProps          (*parsed_soils[c],*parsed_soils[0],pModel->GetTransportModel()->GetNumConstituents());
   }
   for (int c=1;c<num_parsed_lult;c++) {
-    pModel->GetLanduseClass(c-1)->AutoCalculateLandUseProps(parsed_surf[c], parsed_surf[0]);
+    pLUClasses  [c]->AutoCalculateLandUseProps     (*parsed_surf[c], *parsed_surf[0]);
   }
   for (int c=1;c<num_parsed_terrs;c++){
     pTerrClasses[c-1]->AutoCalculateTerrainProps    (parsed_terrs[c],parsed_terrs[0]);
@@ -1588,8 +1591,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
 
   pModel->CheckForChannelXSectsDuplicates(Options);
 
-  delete [] indices;
-  for (int i=0;i<MAX_NUM_IN_CLASS;i++){delete [] properties[i];}delete [] properties;
+
   delete p;
 
   return true;
@@ -1648,6 +1650,10 @@ bool ParsePropArray(CParser          *p,           //parser
       for (int j=1;j<line_length;j++){
         properties[num_read][j-1]=AutoOrDoubleOrAlias(s[j],pAliases,nAliases);
       }
+      DeletePropArray(indices,properties,num_read);
+
+      properties=tmpproperties;
+      indices=tmpind;
       num_read++;
     }
     else{
@@ -1795,7 +1801,66 @@ void AddNewSoilClass(CSoilClass **&pSoilClasses,
   //cout<<" SOIL CLASS ADDED: "<<soiltags[num_parsed_soils]<<endl;
   num_parsed_soils++;
 }
+///////////////////////////////////////////////////////////////////
+/// \brief dynamically adds a new LULT class to the array of parsed LULT classes.
+//
+void  AddNewLULTClass       (CLandUseClass **&pLandUseClasses, surface_struct **&parsed_lults,
+                             string *&lulttags, int &num_parsed_lults,
+                             const string name, bool isdefault, CModel *pModel){
+  CLandUseClass *pLC;
+  pLC = new CLandUseClass(name, pModel);
+  int tmp = num_parsed_lults;
+  if (!DynArrayAppend((void**&)(pLandUseClasses), (void*)(pLC), tmp)){
+    ExitGracefully("AddNewLULTClass: creating NULL lult class", BAD_DATA);}
 
+  //create new lult structure, dynamically add to array, initialize properties
+  surface_struct *pSS;
+  pSS=new surface_struct();
+  tmp=num_parsed_lults;
+  if (!DynArrayAppend((void**&)(parsed_lults),(void*)(pSS),tmp)){
+    ExitGracefully("AddNewLULTClass: creating NULL lult class",BAD_DATA);}
+
+  CLandUseClass::InitializeSurfaceProperties(name,*parsed_lults[num_parsed_lults], isdefault);
+
+  //create new lult name, dynamically add to array
+  string *tmpLult=new string[num_parsed_lults+1];
+  for(int i=0;i<num_parsed_lults;i++){ tmpLult[i]= lulttags[i];}
+  delete[] lulttags;
+  lulttags=tmpLult;
+  lulttags[num_parsed_lults] = name;
+
+  num_parsed_lults++;
+}
+///////////////////////////////////////////////////////////////////
+/// \brief dynamically adds a new veg class to the array of parsed vegetation classes.
+//
+void  AddNewVegClass        (CVegetationClass **&pVegClasses, veg_struct **&parsed_vegs,
+                             string *&vegtags, int &num_parsed_vegs,
+                             const string name, bool isdefault, CModel *pModel){
+  CVegetationClass *pVC;
+  pVC = new CVegetationClass(name, pModel);
+  int tmp = num_parsed_vegs;
+  if (!DynArrayAppend((void**&)(pVegClasses), (void*)(pVC), tmp)){
+    ExitGracefully("AddNewLULTClass: creating NULL lult class", BAD_DATA);}
+
+  //create new veg structure, dynamically add to array, initialize properties
+  veg_struct *pSS;
+  pSS=new veg_struct();
+  tmp=num_parsed_vegs;
+  if (!DynArrayAppend((void**&)(parsed_vegs),(void*)(pSS),tmp)){
+    ExitGracefully("AddNewLULTClass: creating NULL lult class",BAD_DATA);}
+
+  CVegetationClass::InitializeVegetationProps(name,*parsed_vegs[num_parsed_vegs], isdefault);
+
+  //create new veg name, dynamically add to array
+  string *tmpVeg=new string[num_parsed_vegs+1];
+  for(int i=0;i<num_parsed_vegs;i++){ tmpVeg[i]= vegtags[i];}
+  delete[] vegtags;
+  vegtags=tmpVeg;
+  vegtags[num_parsed_vegs] = name;
+
+  num_parsed_vegs++;
+}
 ///////////////////////////////////////////////////////////////////
 /// \brief Given list of nP needed parameters aP[] of type aPC[], generates template .rvp file
 ///

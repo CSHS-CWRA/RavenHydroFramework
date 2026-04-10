@@ -39,6 +39,7 @@
 #include <string>
 #include <strstream>
 #include <sstream>
+#include <memory>
 
 using namespace std;
 
@@ -1359,6 +1360,22 @@ string GetProcessName(process_type ptype);
 bool   DynArrayAppend(void **& pArr,void *xptr,int &size);
 int    SmartIntervalSearch(const double &x, const double *ax, const int N,const int ilast);
 int    NearSearchIndex(const int i, int guess_p, const int size);
+// Append by copying
+template <typename T>
+void DynAppend(T*& arr, const T& item, int &size)
+{
+    // Allocate the new array; guard it so we don't leak if something throws
+    std::unique_ptr<T[]> new_arr(new T[size + 1]);
+
+    for (int i = 0; i < size; ++i) {
+      new_arr[i] = arr[i];
+    }
+    new_arr[size+1] = item;
+
+    delete[] arr;
+    arr = new_arr.release(); //required for new arr to not be deleted when out of scope
+    size++;
+}
 
 //Threshold Correction Functions-----------------------------------
 double threshPositive(const double &val);

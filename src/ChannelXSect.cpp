@@ -389,7 +389,7 @@ double CChannelXSect::GetDiffusivity(const double &Q, const double &SB_slope, co
 {
   ExitGracefullyIf(Q<=0,"CChannelXSect::GetDiffusivity: Invalid channel flowrate",BAD_DATA);
 
-  ///< diffusivity from Roberson et al. 1995, Hydraulic Engineering \cite Roberson1998
+  ///< diffusivity from Roberson et al. 1995, Hydraulic Engineering
   double slope_mult=1.0;
   double Q_mult    =1.0;
   GetFlowCorrections(SB_slope,SB_n,slope_mult,Q_mult);

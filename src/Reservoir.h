@@ -97,8 +97,8 @@ private:/*-------------------------------------------------------*/
   const CTimeSeriesABC *_pObsStage;  ///< observed lake stage
   bool          _assim_blank;        ///< true if observed stage is blank this time step
 
-  double        _DAscale;            //< outflow scale factor - used for reporting overriden flows
-  double        _DAscale_last;       //< outflow scale factor for previous time step
+  double        _DAadjust;            //< outflow adjustment - used for reporting overriden flows [m3/s]
+  double        _DAadjust_last;       //< outflow adjustment [m3/s] from previous time step
 
   int           _dry_timesteps;      //< number of time steps this reservoir dried out  during simulation
 
