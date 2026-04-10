@@ -39,6 +39,7 @@
 #include <string>
 #include <strstream>
 #include <sstream>
+#include <memory>
 
 using namespace std;
 
@@ -1354,7 +1355,7 @@ int    SmartIntervalSearch(const double &x, const double *ax, const int N,const 
 int    NearSearchIndex(const int i, int guess_p, const int size);
 // Append by copying
 template <typename T>
-void DynAppend(T*& arr, const T& item, const int &size)
+void DynAppend(T*& arr, const T& item, int &size)
 {
     // Allocate the new array; guard it so we don't leak if something throws
     std::unique_ptr<T[]> new_arr(new T[size + 1]);
