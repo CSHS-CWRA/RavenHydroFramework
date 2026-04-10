@@ -1,6 +1,6 @@
 ﻿/*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2025 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef MODEL_H
 #define MODEL_H
@@ -143,7 +143,6 @@ private:/*------------------------------------------------------*/
   int          _nAggDiagnostics;  ///< number of aggregated diagnostics
 
   //Data Assimilation
-  double             *_aDAscale; ///< array of data assimilation flow scaling parameters [size: _nSubBasins] (NULL w/o DA)
   double            *_aDAlength; ///< array of downstream distance to nearest DA observation [m] [size: _nSubBasins] (NULL w/o DA)
   double           *_aDAQadjust; ///< array of flow adjustments [m3/s] [size: _nSubBasins]
   double          *_aDADrainSum; ///< sum of assimilated drainage areas upstream of a subbasin outlet [km2] [size: _nSubBasins]
@@ -153,7 +152,6 @@ private:/*------------------------------------------------------*/
   double              *_aDAobsQ; ///< array of observed flow values in basins [size: _nSubBasins]  (NULL w/o DA)
   double             *_aDAobsQ2; ///< array of observed flow values in next time step [size: _nSubBasins]   (NULL w/o DA)
   double    *_aDASinceLastBlank; ///< array of time steps since last blank value occurred [size: _nSubBasins] (NULL w/o DA)
-  double        *_aDAscale_last; ///< array of scale factors from previous time step  [size: _nSubBasins]  (NULL w/o DA)
 
   force_perturb**_pPerturbations; ///< array of pointers to perturbation data; defines which forcing functions to perturb and how [size: _nPerturbations]
   int            _nPerturbations; ///< number of forcing functions to perturb

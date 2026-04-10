@@ -1321,7 +1321,6 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       for (int p = 0; p < _nSubBasins; p++) {
         if((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->IsEnabled())){
           if (Options.assim_method==DA_ECCC){ASSIM<<","<<_aDAQadjust[p]<<" ";}
-          else                              {ASSIM<<","<<_aDAscale  [p]<<" ";}
         }
       }
       ASSIM<<endl;

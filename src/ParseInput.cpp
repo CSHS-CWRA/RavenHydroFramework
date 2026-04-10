@@ -332,7 +332,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.aNetCDFattribs          =NULL;
   Options.assimilate_flow         =false;
   Options.assimilate_stage        =false;
-  Options.assim_method            =DA_RAVEN_DEFAULT;
+  Options.assim_method            =DA_ECCC;
   Options.assimilation_start      =-1.0; //start before simulation
   Options.sv_override_endtime     =ALMOST_INF;
   Options.time_zone               =0;
@@ -1815,8 +1815,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:AssimilationMethod [method]*/
       if(Options.noisy) { cout << "Assimilation Method" << endl; }
       if (Len<2){ImproperFormatWarning(":AssimilationMethod",p,Options.noisy); break;}
-      if      (!strcmp(s[1],"DA_RAVEN_DEFAULT"        )){Options.assim_method=DA_RAVEN_DEFAULT;}
-      else if (!strcmp(s[1],"DA_ECCC"                 )){Options.assim_method=DA_ECCC;}
+      if (!strcmp(s[1],"DA_ECCC"                 )){Options.assim_method=DA_ECCC;}
       break;
     }
     case(97):  //--------------------------------------------

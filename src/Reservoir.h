@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2025 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------
   Reservoir.h
   ------------------------------------------------------------------
@@ -97,8 +97,8 @@ private:/*-------------------------------------------------------*/
   const CTimeSeriesABC *_pObsStage;  ///< observed lake stage
   bool          _assim_blank;        ///< true if observed stage is blank this time step
 
-  double        _DAscale;            //< outflow scale factor - used for reporting overriden flows
-  double        _DAscale_last;       //< outflow scale factor for previous time step
+  double        _DAadjust;            //< outflow adjustment - used for reporting overriden flows [m3/s]
+  double        _DAadjust_last;       //< outflow adjustment [m3/s] from previous time step
 
   int           _dry_timesteps;      //< number of time steps this reservoir dried out  during simulation
 
@@ -107,14 +107,16 @@ private:/*-------------------------------------------------------*/
   double       _stage_last;          ///< stage at beginning of current time step [m]
   double       _Qout;                ///< outflow corresponding to current stage [m3/s]
   double       _Qout_last;           ///< outflow at beginning of current time step [m3/s]
-  double       _MB_losses;           ///< losses over current time step [m3]
-  double       _AET;                 ///< losses through AET only [m3]
-  double       _Precip;              ///< gains through precipitation [m3]
-  double       _GW_seepage;          ///< losses to GW only [m3] (negative for GW gains)
   double      *_aQstruct;            ///< array of flows from control structures at end of time step [m3/s]
   double      *_aQstruct_last;       ///< array of flows from control structures at start of time step [m3/s]
   double      *_aQdelivered;         ///< amount of water demand delivered for each demand [m3/s] (for management optimization)
   double      *_aQreturned;          ///< amount of water returned for each demand [m3/s]
+
+  //diagnostic/flux variables
+  double       _MB_losses;           ///< losses over current time step [m3]
+  double       _AET;                 ///< losses through AET only [m3]
+  double       _Precip;              ///< gains through precipitation [m3]
+  double       _GW_seepage;          ///< losses to GW only [m3] (negative for GW gains)
 
   res_constraint _constraint;        ///< current constraint type
 
@@ -140,14 +142,14 @@ private:/*-------------------------------------------------------*/
   int                 _nControlStructures; ///< number of outflow control structures
   CControlStructure **_pControlStructures; ///< Array of pointer to outflow control structures
 
-  //GW information :
+  //GW parameters :
   double       _seepage_const;       ///< seepage constant [m3/s/m] for groundwater losses Q=k*(h-h_loc)
   double       _local_GW_head;       ///< local head [m] (same  for groundwater losses Q=k*(h-h_loc)
 
   void       BaseConstructor(const string Name,const long long SBID); //because some versions of c++ don't like delegating constructors
 
-  double     GetVolume (const double &ht) const;
-  double     GetArea   (const double &ht) const;
+  double     GetVolume     (const double &ht) const;
+  double     GetArea       (const double &ht) const;
   double     GetWeirOutflow(const double &ht, const double &adj) const;
 
   double     GetDZTROutflow(const double &V,const double &Qin,const time_struct &tt,const optStruct &Options) const;
@@ -180,8 +182,8 @@ public:/*-------------------------------------------------------*/
 
   double            GetStorage               () const; //[m3]
   double            GetOldStorage            () const; //[m3]
-  double            GetOutflowRate           () const; //[m3/s]
-  double            GetOldOutflowRate        () const; //[m3/s]
+  double            GetOutflowRate           (const bool adjusted=true) const; //[m3/s]
+  double            GetOldOutflowRate        (const bool adjusted=true) const; //[m3/s]
   double            GetIntegratedOutflow     (const double &tstep) const; //[m3]
   double            GetControlOutflow        (const int i) const; //[m3]
   double            GetIntegratedControlOutflow(const int i, const double& tstep) const; //[m3]
@@ -278,7 +280,6 @@ public:/*-------------------------------------------------------*/
   void              InitializePostRVM        (const optStruct &Options);
 
   //Called during simulation:
-
   void              UpdateDemands            (const optStruct& Options, const time_struct& tt);
   double            RouteWater               (const double      &Qin_old,
                                               const double      &Qin_new,
@@ -297,7 +298,6 @@ public:/*-------------------------------------------------------*/
   void              WriteToSolutionFile      (ofstream &OUT) const;
   void              UpdateReservoir          (const time_struct &tt, const optStruct &Options);
   void              UpdateMassBalance        (const time_struct &tt, const double &tstep, const optStruct &Options);
-  double            ScaleFlow                (const double &scale, const bool overriding,const double &tstep,const double &t);
   double            AdjustFlow               (const double &Qadjust, const bool overriding,const double &tstep,const double &t);
   void              AddToDeliveredDemand     (const int ii, const double &Q);
   void              RecordReturnFlow         (const int ii, const double& Qret);
