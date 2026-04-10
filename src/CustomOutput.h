@@ -126,7 +126,10 @@ public:/*------------------------------------------------------*/
 
   void        SetHistogramParams(const double min,const double max, const int numBins);
 
+  int         ApproximateNumTimeSteps(const optStruct &Options) const;
+
   spatial_agg GetSpatialAgg() const;
+
   void        InitializeCustomOutput(const optStruct &Options);
 
   void        WriteFileHeader  (const optStruct &Options);

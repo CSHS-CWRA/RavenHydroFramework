@@ -251,6 +251,8 @@ const double  USE_TEMPLATE_VALUE      =-55555.5;                                
 const double  NOT_NEEDED              =-66666.6;                                ///< arbitrary value indicating that a non-auto parameter is not needed for the current model configuration
 const double  NOT_NEEDED_AUTO         =-77777.7;                                ///< arbitrary value indicating that a autogeneratable parameter is not needed for the current model configuration
 const double  NETCDF_BLANK_VALUE      =-9999.0;                                 ///< NetCDF flag for blank value
+const int     NETCDF_DEFLATE_LEVEL    = 6;                                      ///< NetCDF deflate level (compression 1-9)
+const int     NETCDF_CHUNKSIZE_MB     = 10;                                     ///< NetCDF chunk size in MB (must be >1 for compression to work)
 const double  RAV_BLANK_DATA          =-1.2345;                                 ///< double corresponding to blank/void data item (also used in input files)
 const double  DIRICHLET_TEMP          =-9999.0;                                 ///< dirichlet concentration flag corresponding to air temperature
 const int     FROM_STATION_VAR        =-55;                                     ///< special flag indicating that NetCDF indices should be looked up from station attribute table
@@ -1067,6 +1069,7 @@ struct optStruct
   double           convergence_crit;          ///< convergence criteria
   double           max_iterations;            ///< maximum number of iterations for iterative solver method
   double           timestep;                  ///< numerical method timestep (in days)
+  size_t           n_out_time;                ///< size of output time dimension
   double           output_interval;           ///< write to output file every x number of timesteps
   ensemble_type    ensemble;                  ///< ensemble type (or ENSEMBLE_NONE if single model)
   string           external_script;           ///< call to external script/.exe once per timestep (or "" if none)

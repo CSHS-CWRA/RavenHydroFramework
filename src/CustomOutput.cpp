@@ -217,7 +217,49 @@ void CCustomOutput::SetHistogramParams(const double minv,const double maxv, cons
   _hist_max=maxv;
   _nBins=numBins;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Compute the approximate number of time steps for the output array. This is not meant to be exact. Do not allocate memory based on this value.
+/// \param Options [in] Global model options information
+/// \return Number of time steps (int)
+int CCustomOutput::ApproximateNumTimeSteps(const optStruct &Options) const
+{
+  int nsteps = 0;  // return value
+  time_struct start, end;
 
+  JulianConvert(0, Options.julian_start_day, Options.julian_start_year, Options.calendar, start);
+  JulianConvert(Options.duration, Options.julian_start_day, Options.julian_start_year, Options.calendar, end);
+
+  switch(_timeAgg) {
+    case YEARLY:
+      nsteps = int(end.year - start.year);
+      break;
+    case WATER_YEARLY:
+    // wateryr_mo: Starting month of the water year
+      nsteps = int(end.year - start.year);
+      if ((start.month < end.month) && (start.month < Options.wateryr_mo) && (end.month >= Options.wateryr_mo)) nsteps++;
+      if ((start.month > end.month) && (start.month >= Options.wateryr_mo) && (end.month < Options.wateryr_mo)) nsteps--;
+      break;
+    case MONTHLY:
+      nsteps = int((end.year - start.year) * 12 + (end.month - start.month));
+      break;
+    case DAILY:
+      nsteps = int(ceil(Options.duration));
+      break;
+    case EVERY_NDAYS:
+      nsteps = int(ceil(Options.duration / Options.custom_interval));
+      break;
+    case EVERY_TSTEP:
+      nsteps = int(ceil(Options.duration / Options.timestep));
+      break;
+    case ENTIRE_SIM:
+      nsteps = 1;
+      break;
+    default:
+      nsteps = 0;
+      break;
+  }
+  return max(0, nsteps); // Ensure non-negative and account for partial time step at end of simulation
+}
 ///////////////////////////////////////////////////////////////////
 /// \brief Allocates memory and initialize data storage of a CCustomOutput object
 /// \remarks Called prior to simulation. Determines size of and allocates memory for (member) data[][] array needed in statistical calculations
@@ -554,6 +596,7 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
 
   int         retval;                                // error value for NetCDF routines
   size_t      start[1], count[1];                    // determines where and how much will be written to NetCDF
+  size_t      chunksize2[2];                          // Chunksize (time, data)
   string      tmp,tmp2,tmp3,tmp4;
 
   bool cant_support=(_aggstat==AGG_RANGE || _aggstat==AGG_95CI || _aggstat==AGG_QUARTILES || _aggstat==AGG_HISTOGRAM);
@@ -574,11 +617,20 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   // time
   // ----------------------------------------------------------
   // (a) Define the DIMENSIONS. NetCDF will hand back an ID for each.
+
   retval = nc_def_dim(_netcdf_ID, "time", NC_UNLIMITED, &time_dimid);              HandleNetCDFErrors(retval);
 
   // (b) Define the time variable.
   dimids1[0] = time_dimid;
   retval = nc_def_var(_netcdf_ID, "time", NC_DOUBLE, ndims1,dimids1, &varid_time); HandleNetCDFErrors(retval);
+
+  // Enable deflate compression for time variable (shuffle, zlib, deflate_level)
+  retval = nc_def_var_deflate(_netcdf_ID, varid_time, 1, 1, NETCDF_DEFLATE_LEVEL); HandleNetCDFErrors(retval);
+
+  // Set chunksize to len(time)
+  chunksize2[0] = ApproximateNumTimeSteps(Options) + 1;
+  retval = nc_def_var_chunking(_netcdf_ID, varid_time, NC_CHUNKED, &chunksize2[0]); HandleNetCDFErrors(retval);
+
 
   // (c) Assign units attributes to the netCDF VARIABLES.
   //     --> converts start day into "hours since YYYY-MM-DD HH:MM:SS"
@@ -632,6 +684,13 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
     dimids2[0] = time_dimid;
     dimids2[1] = ndata_dimid;
     retval = nc_def_var(_netcdf_ID, netCDFtag.c_str(), NC_DOUBLE, ndims2, dimids2, &varid_data);    HandleNetCDFErrors(retval);
+
+    // Enable deflate compression for data variable
+    retval = nc_def_var_deflate(_netcdf_ID, varid_data, 1, 1, NETCDF_DEFLATE_LEVEL); HandleNetCDFErrors(retval);
+
+    // Set chunksizes for data variable (time, ndata)
+    chunksize2[1] = max((size_t)1, min(_nData, (size_t)(NETCDF_CHUNKSIZE_MB * 1024 * 1024 / sizeof(double) / chunksize2[0]))); // Ensure at least one basin per chunk
+    retval = nc_def_var_chunking(_netcdf_ID, varid_data, NC_CHUNKED, chunksize2); HandleNetCDFErrors(retval);
 
     //(f) set some attributes to variable _netCDFtag
     tmp=_timeAggStr+" "+_statStr+" "+_varName+" "+_spaceAggStr;
