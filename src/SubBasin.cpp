@@ -57,6 +57,7 @@ CSubBasin::CSubBasin( const long long      Identifier,
   _GW_exch_coeff     =0.0;
   _bed_conductivity  =0.0;
   _bed_thickness     =0.5; //m
+  _mean_slope        =0.0;
 
   _t_conc            =AUTO_COMPUTE;
   _t_peak            =AUTO_COMPUTE;
@@ -1499,55 +1500,6 @@ void CSubBasin::SetUnusableFlowPercentage(const double &val)
     "CSubBasin:SetUnusableFlowPercentage: invalid value for :UnusableFlowPercentage (must be between zero and one).",BAD_DATA_WARN);
   _unusable_flow_pct=val;
 }
-
-//////////////////////////////////////////////////////////////////
-/// \brief scales all internal flows by scale factor (for assimilation/nudging)
-/// \remark Messes with mass balance something fierce!
-/// \param &scale [in] Flow scaling factor
-/// \param &overriding [in] True if Qlast should be scaled (overriding); false for no-data scaling
-/// \param &tstep [in] time step [d]
-/// \param &t [in] - current model time
-/// \return volume added to system [m3]
-//
-double CSubBasin::ScaleAllFlows(const double &scale, const bool overriding, const double &tstep, const double &t)
-{
-  double va=0.0; //volume added [m3]
-  double sf=(scale-1.0)/scale;
-
-  if(!overriding)
-  {
-    for(int n=0;n<_nQlatHist;n++) {
-      _aQlatHist[n]*=scale;  upperswap(_aQlatHist[n],0.0);
-      va+=_aQlatHist[n]*sf*tstep*SEC_PER_DAY;
-    }
-    for(int n=0;n<_nQinHist; n++) {
-      _aQinHist[n]*=scale; upperswap(_aQinHist[n],0.0);
-      va+=_aQinHist[n]*sf*tstep*SEC_PER_DAY;
-    }
-    for(int i=0;i<_nSegments;i++) {
-      _aQout[i]*=scale; upperswap(_aQout[i],0.0);
-      va+=0.5*(_aQout[i]+_aQout[i+1])*sf*tstep*SEC_PER_DAY;
-    }
-  }
-
-  if((overriding) && (_pReservoir==NULL)) {
-    for (int i=0;i<_nSegments;i++)
-    {
-      _aQout[i]*=scale;  upperswap(_aQout[i],0.0);
-      va+=0.5*(_aQout[i]+_aQout[i+1])*sf*tstep*SEC_PER_DAY;
-    }
-  }
-
-  if(_pReservoir!=NULL) {
-    va+=_pReservoir->ScaleFlow(scale,overriding,tstep,t);
-  }
-
-  //Estivate volume added through scaling
-  _channel_storage*=scale; va+=_channel_storage*sf;
-  _rivulet_storage*=scale; va+=_rivulet_storage*sf;
-  return va;
-}
-
 //////////////////////////////////////////////////////////////////
 /// \brief adjusts all internal flows by corresponding magnitude (for assimilation/nudging)
 /// \remark Messes with mass balance something fierce!
@@ -1588,7 +1540,7 @@ double CSubBasin::AdjustAllFlows(const double &adjust, const bool overriding,con
       va+=adjust*tstep*SEC_PER_DAY;
     }
   }
-  else if((overriding) && (assimsite)) //just update Qin
+  else if((overriding) && (assimsite)) //just update Qout
   {
     for (int i=0;i<_nSegments;i++)
     {

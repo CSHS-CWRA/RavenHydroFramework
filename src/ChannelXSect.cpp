@@ -260,17 +260,17 @@ double      CChannelXSect::GetNPoints()          const { return _nPoints; }
 /// \brief Returns Riverbed slope
 /// \return Riverbed slope [m/m]
 //
-double      CChannelXSect::GetBedslope()         const { return _bedslope;}
+double      CChannelXSect::GetBedslope   ()             const { return _bedslope;}
 
-double      CChannelXSect::GetAQAt(const int i)  const { return _aQ[i];}
+double      CChannelXSect::GetAQAt       (const int i)  const { return _aQ[i];}
 
-double      CChannelXSect::GetAStageAt(const int i)  const { return _aStage[i];}
+double      CChannelXSect::GetAStageAt   (const int i)  const { return _aStage[i];}
 
 double      CChannelXSect::GetATopWidthAt(const int i)  const { return _aTopWidth[i];}
 
-double      CChannelXSect::GetAXAreaAt(const int i)  const { return _aXArea[i];}
+double      CChannelXSect::GetAXAreaAt   (const int i)  const { return _aXArea[i];}
 
-double      CChannelXSect::GetAPerimAt(const int i)  const { return _aPerim[i];}
+double      CChannelXSect::GetAPerimAt   (const int i)  const { return _aPerim[i];}
 
 /*****************************************************************
    Rating Curve Interpolation functions
@@ -381,15 +381,15 @@ double  CChannelXSect::GetCelerity(const double &Q, const double &SB_slope,const
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns diffusivity of channel [m/s]
-/// \param &Q [in] Channel flowrate [m3/s]
-/// \param &bedslope [in] Slope of riverbed [m/m]
+/// \param Q [in] Channel flowrate [m3/s]
+/// \param bedslope [in] Slope of riverbed [m/m]
 /// \return Diffusivity of channel at specified flowrate and slope [m3/s]
 //
 double CChannelXSect::GetDiffusivity(const double &Q, const double &SB_slope, const double &SB_n) const
 {
   ExitGracefullyIf(Q<=0,"CChannelXSect::GetDiffusivity: Invalid channel flowrate",BAD_DATA);
 
-  ///< diffusivity from Roberson et al. 1995, Hydraulic Engineering \cite Roberson1998
+  ///< diffusivity from Roberson et al. 1995, Hydraulic Engineering 
   double slope_mult=1.0;
   double Q_mult    =1.0;
   GetFlowCorrections(SB_slope,SB_n,slope_mult,Q_mult);
@@ -398,7 +398,7 @@ double CChannelXSect::GetDiffusivity(const double &Q, const double &SB_slope, co
 
 //////////////////////////////////////////////////////////////////
 /// \brief checks to see if reference flow is in excess of channel maximum; throws warning if it is
-/// \param &Qref [in] Reference flowrate [m3/s]
+/// \param Qref [in] Reference flowrate [m3/s]
 /// \param SB_slope [in] subbasin slope (or AUTO_COMPUTE, if channel slope to be used)
 /// \param SB_n [in] subbasin mannings  (or AUTO_COMPUTE, if channel mannings to be used)
 /// \param SBID [in] subbasin identifier
@@ -454,15 +454,15 @@ void CChannelXSect::GetPropsFromProfile(const double &elev,
       Pi=sqrt(dx*dx+(zu-zl)*(zu-zl));
       if ((i>0) && (_aElev[i-1]>_aElev[i]) && (_aX[i-1]==_aX[i])) //handles straight adjacent sides (left)
       {
-        if(elev<=_aElev[i-1]){Pi+=(elev      -_aElev[i]);}
-        else                {Pi+=(_aElev[i-1]-_aElev[i]);}
+        if(elev<=_aElev[i-1]){Pi+=(elev       -_aElev[i]);}
+        else                 {Pi+=(_aElev[i-1]-_aElev[i]);}
       }
       if ((i<(_nSurveyPts-2)) && (_aElev[i+2]>_aElev[i+1]) && (_aX[i+2]==_aX[i+1])) //handles straight adjacent sides (right)
       {
-        if(elev<=_aElev[i+2]){Pi+=(elev      -_aElev[i+1]);}
-        else                {Pi+=(_aElev[i+2]-_aElev[i+1]);}
+        if(elev<=_aElev[i+2]){Pi+=(elev       -_aElev[i+1]);}
+        else                 {Pi+=(_aElev[i+2]-_aElev[i+1]);}
       }
-      if (i==0)             {Pi+=(elev-_aElev[i]  );}
+      if (i==0)              {Pi+=(elev-_aElev[i]  );}
       if (i==_nSurveyPts-2)  {Pi+=(elev-_aElev[i+1]);}
     }
     else  //partially wet part of profile (includes riverbank)
