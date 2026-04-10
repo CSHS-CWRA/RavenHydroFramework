@@ -9,6 +9,8 @@
 #include "GlobalParams.h"
 #include "SoilAndLandClasses.h"
 #include <string>
+
+
 struct val_alias
 {
   string tag;
@@ -23,9 +25,10 @@ double AutoOrDoubleOrAlias(const string s, val_alias **aAl,const int nAl)
   }
   return AutoOrDouble(s);
 }
-bool ParsePropArray(CParser *p,int *indices,double **properties,
-                    int &num_read,string *tags,const int line_length,const int max_classes,
-                    val_alias **pAliases,  const int nAliases);
+bool  ParsePropArray        (CParser *p,int *&indices,double **&properties,
+                             int &num_read,string *tags,const int line_length,const int max_classes,
+                             val_alias **pAliases,  const int nAliases);
+void  DeletePropArray       (int *indices,double **properties,int num_read);
 void  RVPParameterWarning   (string *aP, class_type *aPC, int &nP, CModel* pModel);
 void  CreateRVPTemplate     (string *aP, class_type *aPC, int &nP, const optStruct &Options);
 void  ImproperFormatWarning(string command,CParser *p,bool noisy);
@@ -34,7 +37,12 @@ void  AddToMasterParamList   (string        *&aPm, class_type       *&aPCm, int 
 void  AddNewSoilClass       (CSoilClass **&pSoilClasses, soil_struct **&parsed_soils,
                              string *&soiltags, int &num_parsed_soils, int nConstits,
                              const string name, bool isdefault, CModel *pModel);
-
+void  AddNewLULTClass       (CLandUseClass **&pLandUseClasses, surface_struct **&parsed_lults,
+                             string *&lulttags, int &num_parsed_lults,
+                             const string name, bool isdefault, CModel *pModel);
+void  AddNewVegClass        (CVegetationClass **&pVegClasses, veg_struct **&parsed_vegs,
+                             string *&vegtags, int &num_parsed_vegs,
+                             const string name, bool isdefault, CModel *pModel);
 //////////////////////////////////////////////////////////////////
 /// \brief This method parses the class properties .rvp file
 ///
@@ -55,14 +63,14 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   global_struct     parsed_globals;
 
   int               num_parsed_veg=0;
-  CVegetationClass *pVegClasses[MAX_VEG_CLASSES];
-  veg_struct        parsed_veg [MAX_VEG_CLASSES];
-  string            vegtags    [MAX_VEG_CLASSES];
+  CVegetationClass **pVegClasses=NULL;
+  veg_struct       **parsed_veg =NULL;
+  string            *vegtags    =NULL;
 
   int               num_parsed_lult = 0;  // counter for the number of LULT classes parsed
-  surface_struct    parsed_surf [MAX_LULT_CLASSES];
-  CLandUseClass    *pLUClasses  [MAX_LULT_CLASSES];
-  string            lulttags    [MAX_LULT_CLASSES];
+  surface_struct  **parsed_surf=NULL;
+  CLandUseClass   **pLUClasses =NULL;
+  string           *lulttags   =NULL;
 
   int               num_parsed_soils=0;
   CSoilClass      **pSoilClasses=NULL;
@@ -75,17 +83,14 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   string            terraintags [MAX_TERRAIN_CLASSES];
 
   int               num_parsed_profiles=0;
-  CSoilProfile     *pProfiles   [MAX_SOIL_PROFILES];
+  CSoilProfile     **pProfiles=NULL;
 
   int               num_parsed_aqstacks=0;
 
-  const int         MAX_PROPERTIES_PER_LINE=20;
-
-  int               MAX_NUM_IN_CLASS=max(max(MAX_VEG_CLASSES,MAX_LULT_CLASSES),2000);
   bool              invalid_index;
   int               num_read;
-  int              *indices;
-  double          **properties;
+  int              *indices=NULL;
+  double          **properties=NULL;
   string            aParamStrings[MAXINPUTITEMS];
   int               nParamStrings=0;
 
@@ -95,25 +100,14 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   pModel->GetGlobalParams()->InitializeGlobalParameters(global_template,true);
   pModel->GetGlobalParams()->InitializeGlobalParameters(parsed_globals,false);
 
-  CVegetationClass::InitializeVegetationProps ("[DEFAULT]",parsed_veg[0],true);//zero-index canopy is template
-  vegtags    [0]="[DEFAULT]";
-  num_parsed_veg++;
 
+  AddNewVegClass (pVegClasses,  parsed_veg,  vegtags, num_parsed_veg,"[DEFAULT]",true,pModel);
   AddNewSoilClass(pSoilClasses, parsed_soils, soiltags, num_parsed_soils, pModel->GetTransportModel()->GetNumConstituents(), "[DEFAULT]", true, pModel);//zero-index soil is template
-
-  CLandUseClass::InitializeSurfaceProperties("[DEFAULT]", parsed_surf[0], true); // zero-index LULT is template
-  lulttags    [0]="[DEFAULT]";
-  num_parsed_lult++;
+  AddNewLULTClass(pLUClasses,   parsed_surf,  lulttags, num_parsed_lult,"[DEFAULT]",true,pModel);
 
   CTerrainClass::InitializeTerrainProperties(parsed_terrs[0],true);//zero-index terrain is template
   terraintags [0]="[DEFAULT]";
   num_parsed_terrs++;
-
-  indices   =new int     [MAX_NUM_IN_CLASS];
-  properties=new double *[MAX_NUM_IN_CLASS];
-  for (int i=0;i<MAX_NUM_IN_CLASS;i++){
-    properties[i]=new double [MAX_PROPERTIES_PER_LINE];
-  }
 
   const int MAX_PARAMS=100;
   int         nP;
@@ -189,17 +183,17 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     }
     else if (aPCmaster[p]==CLASS_VEGETATION)
     {
-      val=CVegetationClass::GetVegetationProperty(parsed_veg[0],aPmaster[p]);
+      val=CVegetationClass::GetVegetationProperty(*parsed_veg[0],aPmaster[p]);
       if (val==NOT_NEEDED_AUTO){val=AUTO_COMPUTE;}
       else if (val==NOT_NEEDED){val=NOT_SPECIFIED;}
-      CVegetationClass::SetVegetationProperty    (parsed_veg[0],aPmaster[p],val);
+      CVegetationClass::SetVegetationProperty    (*parsed_veg[0],aPmaster[p],val);
     }
     else if (aPCmaster[p]==CLASS_LANDUSE   )
     {
-      val = CLandUseClass::GetSurfaceProperty(parsed_surf[0], aPmaster[p]);
+      val = CLandUseClass::GetSurfaceProperty    (*parsed_surf[0], aPmaster[p]);
       if (val == NOT_NEEDED_AUTO){val = AUTO_COMPUTE;}
       else if (val == NOT_NEEDED){val = NOT_SPECIFIED;}
-      CLandUseClass::SetSurfaceProperty(parsed_surf[0], aPmaster[p], val);
+      CLandUseClass::SetSurfaceProperty          (*parsed_surf[0], aPmaster[p], val);
     }
     else if (aPCmaster[p]==CLASS_TERRAIN   )
     {
@@ -449,10 +443,10 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
         if      (IsComment(s[0], Len)){}//comment line
         else if (Len>=2)
         {
-          if (num_parsed_profiles>=MAX_SOIL_PROFILES-1){
-            ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of soil profiles",BAD_DATA);}
-
-          pProfiles[num_parsed_profiles] = new CSoilProfile(s[0], pModel);
+          //dynamically add to stack
+          int tmp=num_parsed_profiles;
+          CSoilProfile *pNewSoil= new CSoilProfile(s[0],pModel);
+          DynArrayAppend((void**&)(pProfiles),(void*)(pNewSoil),tmp);
 
           int nhoriz=s_to_i(s[1]);
           ExitGracefullyIf(nhoriz<0,
@@ -524,6 +518,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       invalid_index=ParsePropArray(p,indices,properties,num_read,soiltags,nParamStrings,num_parsed_soils,aAliases,nAliases);
       ExitGracefullyIf(invalid_index,
                        "ParseClassPropertiesFile: Invalid soiltype code in SoilParameterList command",BAD_DATA);
+
       if (Options.noisy){
         for (int j=0;j<nParamStrings-1;j++){cout<<"  "<<aParamStrings[j+1]<<endl;}
       }
@@ -534,6 +529,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           CSoilClass::SetSoilProperty(*parsed_soils[indices[i]],aParamStrings[j+1],properties[i][j]);
         }
       }
+      DeletePropArray(indices,properties,num_read);
       bool found_in_master;
       for (int j=0;j<nParamStrings-1;j++){
         found_in_master=false;
@@ -564,17 +560,13 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
         else if (!strcmp(s[0],":Units")){} //units are explicit within Raven - useful for GUIs
         else if ((Len==3) || (Len==4))
         {
-          if (num_parsed_lult>=MAX_LULT_CLASSES-1){
-            ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of LU/LT classes",BAD_DATA);}
 
-          CLandUseClass::InitializeSurfaceProperties(s[0], parsed_surf[num_parsed_lult], false);
-          lulttags  [num_parsed_lult]   = s[0];
-          pLUClasses[num_parsed_lult-1] = new CLandUseClass(s[0], pModel);
-          parsed_surf[num_parsed_lult].impermeable_frac = s_to_d(s[1]);
+          AddNewLULTClass(pLUClasses,parsed_surf,lulttags,num_parsed_lult,s[0],false,pModel);
+
+          parsed_surf[num_parsed_lult-1]->impermeable_frac = s_to_d(s[1]);
           if (Len>=3){
-            parsed_surf[num_parsed_lult].forest_coverage = s_to_d(s[2]);
+            parsed_surf[num_parsed_lult-1]->forest_coverage = s_to_d(s[2]);
           }
-          num_parsed_lult++;
         }
         else{
           ImproperFormatWarning(":LandUseClasses",p,Options.noisy);
@@ -626,11 +618,12 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       for (int i=0; i<num_read; i++)
       {
         for (int j=0;j<nParamStrings-1;j++) {
-          CLandUseClass::SetSurfaceProperty(parsed_surf[indices[i]],
+          CLandUseClass::SetSurfaceProperty(*parsed_surf[indices[i]],
                                             aParamStrings[j+1],
                                             properties[i][j]);
         }
       }
+      DeletePropArray(indices,properties,num_read);
       bool found_in_master;
       for (int j=0;j<nParamStrings-1;j++){
         found_in_master=false;
@@ -672,17 +665,11 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
         else if (!strcmp(s[0],":Units")){} //units are explicit within Raven - useful for GUIs
         else if (Len==4)
         {
-          if (num_parsed_veg>=MAX_VEG_CLASSES-1){
-            ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of vegetation classes",BAD_DATA);}
+          AddNewVegClass(pVegClasses,parsed_veg,vegtags,num_parsed_veg,s[0],false,pModel);
 
-          CVegetationClass::InitializeVegetationProps(s[0], parsed_veg [num_parsed_veg], false);
-          pVegClasses[num_parsed_veg-1] = new CVegetationClass(s[0], pModel);
-          vegtags    [num_parsed_veg] = s[0];
-          parsed_veg [num_parsed_veg].max_height    = s_to_d(s[1]);
-          parsed_veg [num_parsed_veg].max_LAI       = s_to_d(s[2]);
-          parsed_veg [num_parsed_veg].max_leaf_cond = s_to_d(s[3]);
-
-          num_parsed_veg++;
+          parsed_veg [num_parsed_veg-1]->max_height    = s_to_d(s[1]);
+          parsed_veg [num_parsed_veg-1]->max_LAI       = s_to_d(s[2]);
+          parsed_veg [num_parsed_veg-1]->max_leaf_cond = s_to_d(s[3]);
         }
         else{
           ImproperFormatWarning(":VegetationClasses",p,Options.noisy);  break;
@@ -704,9 +691,10 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
                        "ParseClassPropertiesFile: Invalid vegetation code in SeasonalCanopyLAI command",BAD_DATA);
       for (int i=0;i<num_read;i++){
         for (int mon=0;mon<12;mon++){
-          parsed_veg[indices[i]].relative_LAI[mon]=properties[i][mon];
+          parsed_veg[indices[i]]->relative_LAI[mon]=properties[i][mon];
         }
       }
+      DeletePropArray(indices,properties,num_read);
       break;
     }
     case(202):  //----------------------------------------------
@@ -720,9 +708,10 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
                        "ParseClassPropertiesFile: Invalid vegetation code in SeasonalCanopyHeight command",BAD_DATA);
       for (int i=0;i<num_read;i++){
         for (int mon=0;mon<12;mon++){
-          parsed_veg[indices[i]].relative_ht[mon]=properties[i][mon];
+          parsed_veg[indices[i]]->relative_ht[mon]=properties[i][mon];
         }
       }
+      DeletePropArray(indices,properties,num_read);
       break;
     }
     case(203):  //----------------------------------------------
@@ -772,11 +761,13 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       {
         for (int j=0;j<nParamStrings-1;j++)
         {
-          CVegetationClass::SetVegetationProperty(parsed_veg   [indices[i]],
+          CVegetationClass::SetVegetationProperty(*parsed_veg   [indices[i]],
                                                   aParamStrings[j+1],
                                                   properties   [i][j]);
         }
       }
+      DeletePropArray(indices,properties,num_read);
+
       bool found_in_master;
       for (int j=0;j<nParamStrings-1;j++){
         found_in_master=false;
@@ -919,15 +910,12 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       break;
     }
     case(501):  //----------------------------------------------
-    {/*ChannelRatingCurves
+    {/*
        :ChannelRatingCurves [optional string name]
          :Bedslope {double slope}
-           :SurveyPoints
-           {double x double bed_elev}x num survey points
-         :EndSurveyPoints
-         :RoughnessZones
-           {double x_z double mannings_n}xnum roughness zones
-         :EndRoughnessZones
+         :StageRelations
+           {double depth double area double topwidth double discharge [double perim] }x num curve points
+         :EndStageRelations
        :EndChannelProfile*/
       string tag;
       double slope=0.0;
@@ -1079,6 +1067,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           CTerrainClass::SetTerrainProperty(parsed_terrs[indices[i]],aParamStrings[j+1],properties[i][j]);
         }
       }
+      DeletePropArray(indices,properties,num_read);
       break;
     }
     case(700):  //----------------------------------------------
@@ -1525,16 +1514,16 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   pModel->GetGlobalParams()->AutoCalculateGlobalParams(parsed_globals,global_template);
 
   for (int c=1;c<num_parsed_veg;c++){
-    pVegClasses [c-1]->AutoCalculateVegetationProps  (parsed_veg[c],parsed_veg[0]);
+    pVegClasses [c]->AutoCalculateVegetationProps  (*parsed_veg[c],  *parsed_veg[0]);
   }
   for (int c=1;c<num_parsed_soils;c++){
-    pSoilClasses[c]->AutoCalculateSoilProps          (*parsed_soils[c],*parsed_soils[0],pModel->GetTransportModel()->GetNumConstituents());
+    pSoilClasses[c]->AutoCalculateSoilProps        (*parsed_soils[c],*parsed_soils[0],pModel->GetTransportModel()->GetNumConstituents());
   }
   for (int c=1;c<num_parsed_lult;c++) {
-    pModel->GetLanduseClass(c-1)->AutoCalculateLandUseProps(parsed_surf[c], parsed_surf[0]);
+    pLUClasses  [c]->AutoCalculateLandUseProps     (*parsed_surf[c], *parsed_surf[0]);
   }
   for (int c=1;c<num_parsed_terrs;c++){
-    pTerrClasses[c-1]->AutoCalculateTerrainProps    (parsed_terrs[c],parsed_terrs[0]);
+    pTerrClasses[c-1]->AutoCalculateTerrainProps   ( parsed_terrs[c], parsed_terrs[0]);
   }
 
   if (!Options.silent){
@@ -1588,8 +1577,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
 
   pModel->CheckForChannelXSectsDuplicates(Options);
 
-  delete [] indices;
-  for (int i=0;i<MAX_NUM_IN_CLASS;i++){delete [] properties[i];}delete [] properties;
+
   delete p;
 
   return true;
@@ -1605,8 +1593,8 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
 ///     CLASS_TAGM, v1, v2, v3, v4,... \n
 ///   :EndProperties
 /// \param *p [in] File parsing object
-/// \param *indices [out] Index number of class (with reference to tags[] array)
-/// \param **properties [out] array of model properties
+/// \param *indices [out] Array storing index number of class (with reference to tags[] array), dynamically generated
+/// \param **properties [out] 2D array of model properties, dynamically generated
 /// \param &num_read [out] Number of rows read
 /// \param *tags [in] Array of tag names
 /// \param line_length [in] Number of expected columns in array
@@ -1614,8 +1602,8 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
 /// \return True if operation is successful
 //
 bool ParsePropArray(CParser          *p,           //parser
-                    int              *indices,     //output: index number of class (with reference to tags[] array)
-                    double          **properties,  //output: array of properties
+                    int             *&indices,     //output: index number of class (with reference to tags[] array)
+                    double         **&properties,  //output: array of properties
                     int              &num_read,    //output: number of rows read
                     string           *tags,        //array of tag names
                     const int         line_length, //number of expected columns in array
@@ -1643,11 +1631,26 @@ bool ParsePropArray(CParser          *p,           //parser
         cout <<"bad tag:"<<s[0]<<endl;
         return true;
       }//invalid class index
-      indices[num_read]=index;
 
-      for (int j=1;j<line_length;j++){
-        properties[num_read][j-1]=AutoOrDoubleOrAlias(s[j],pAliases,nAliases);
+      int     *tmpind       =new int     [num_read+1];
+      double **tmpproperties=new double *[num_read+1];
+
+      for (int i=0;i<num_read;i++){
+        tmpind       [i]=indices[i];
+        tmpproperties[i]=new double [line_length];
+        for (int j=0;j<line_length;j++){
+          tmpproperties[i][j]=properties[i][j];
+        }
       }
+      tmpind       [num_read]=index;
+      tmpproperties[num_read]=new double[line_length];
+      for(int j=1;j<line_length;j++) {
+        tmpproperties[num_read][j-1]=AutoOrDoubleOrAlias(s[j],pAliases,nAliases);
+      }
+      DeletePropArray(indices,properties,num_read);
+
+      properties=tmpproperties;
+      indices=tmpind;
       num_read++;
     }
     else{
@@ -1657,6 +1660,13 @@ bool ParsePropArray(CParser          *p,           //parser
     if (!strncmp(s[0],":End",4)){done=true;}
   }
   return false;
+}
+void DeletePropArray(int *indices,double **properties,int num_read)
+{
+  if (num_read==0){return;}
+  delete [] indices;
+  for (int i=0;i<num_read;i++){delete [] properties[i];}
+  delete [] properties;
 }
 ///////////////////////////////////////////////////////////////////
 /// \brief Given list of nP needed parameters aP[] of type aPC[], warns user if some are not found associated with classes
@@ -1792,10 +1802,68 @@ void AddNewSoilClass(CSoilClass **&pSoilClasses,
   soiltags=tmpSoil;
   soiltags[num_parsed_soils] = name;
 
-  //cout<<" SOIL CLASS ADDED: "<<soiltags[num_parsed_soils]<<endl;
   num_parsed_soils++;
 }
+///////////////////////////////////////////////////////////////////
+/// \brief dynamically adds a new LULT class to the array of parsed LULT classes.
+//
+void  AddNewLULTClass       (CLandUseClass **&pLandUseClasses, surface_struct **&parsed_lults,
+                             string *&lulttags, int &num_parsed_lults,
+                             const string name, bool isdefault, CModel *pModel){
+  CLandUseClass *pLC;
+  pLC = new CLandUseClass(name, pModel);
+  int tmp = num_parsed_lults;
+  if (!DynArrayAppend((void**&)(pLandUseClasses), (void*)(pLC), tmp)){
+    ExitGracefully("AddNewLULTClass: creating NULL lult class", BAD_DATA);}
 
+  //create new lult structure, dynamically add to array, initialize properties
+  surface_struct *pSS;
+  pSS=new surface_struct();
+  tmp=num_parsed_lults;
+  if (!DynArrayAppend((void**&)(parsed_lults),(void*)(pSS),tmp)){
+    ExitGracefully("AddNewLULTClass: creating NULL lult class",BAD_DATA);}
+
+  CLandUseClass::InitializeSurfaceProperties(name,*parsed_lults[num_parsed_lults], isdefault);
+
+  //create new lult name, dynamically add to array
+  string *tmpLult=new string[num_parsed_lults+1];
+  for(int i=0;i<num_parsed_lults;i++){ tmpLult[i]= lulttags[i];}
+  delete[] lulttags;
+  lulttags=tmpLult;
+  lulttags[num_parsed_lults] = name;
+
+  num_parsed_lults++;
+}
+///////////////////////////////////////////////////////////////////
+/// \brief dynamically adds a new veg class to the array of parsed vegetation classes.
+//
+void  AddNewVegClass        (CVegetationClass **&pVegClasses, veg_struct **&parsed_vegs,
+                             string *&vegtags, int &num_parsed_vegs,
+                             const string name, bool isdefault, CModel *pModel){
+  CVegetationClass *pVC;
+  pVC = new CVegetationClass(name, pModel);
+  int tmp = num_parsed_vegs;
+  if (!DynArrayAppend((void**&)(pVegClasses), (void*)(pVC), tmp)){
+    ExitGracefully("AddNewLULTClass: creating NULL lult class", BAD_DATA);}
+
+  //create new veg structure, dynamically add to array, initialize properties
+  veg_struct *pSS;
+  pSS=new veg_struct();
+  tmp=num_parsed_vegs;
+  if (!DynArrayAppend((void**&)(parsed_vegs),(void*)(pSS),tmp)){
+    ExitGracefully("AddNewLULTClass: creating NULL lult class",BAD_DATA);}
+
+  CVegetationClass::InitializeVegetationProps(name,*parsed_vegs[num_parsed_vegs], isdefault);
+
+  //create new veg name, dynamically add to array
+  string *tmpVeg=new string[num_parsed_vegs+1];
+  for(int i=0;i<num_parsed_vegs;i++){ tmpVeg[i]= vegtags[i];}
+  delete[] vegtags;
+  vegtags=tmpVeg;
+  vegtags[num_parsed_vegs] = name;
+
+  num_parsed_vegs++;
+}
 ///////////////////////////////////////////////////////////////////
 /// \brief Given list of nP needed parameters aP[] of type aPC[], generates template .rvp file
 ///

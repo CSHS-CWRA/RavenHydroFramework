@@ -58,8 +58,6 @@ CModel::CModel(const int        nsoillayers,
   _aOrderedSBind  =NULL;
   _aDownstreamInds=NULL;
 
-  _aDAscale       =NULL; //Initialized in InitializeDataAssimilation
-  _aDAscale_last  =NULL;
   _aDAQadjust     =NULL;
   _aDADrainSum    =NULL;
   _aDADownSum     =NULL;
@@ -216,8 +214,6 @@ CModel::~CModel()
   delete [] _aOutputTimes;   _aOutputTimes=NULL;
   delete [] _aObsIndex;      _aObsIndex=NULL;
 
-  delete [] _aDAscale;       _aDAscale=NULL;
-  delete [] _aDAscale_last;  _aDAscale_last=NULL;
   delete [] _aDAQadjust;     _aDAQadjust=NULL;
   delete [] _aDADrainSum;    _aDADrainSum=NULL;
   delete [] _aDADownSum;     _aDADownSum=NULL;

@@ -28,7 +28,7 @@ typedef const double * const * const Ironclad2DArray;     ///< unmodifiable 2d a
 //************************************************************************
 const int    MAXINPUTITEMS  =   1000;  ///< maximum delimited input items per line
 const int    MAXCHARINLINE  =  10000;  ///< maximum characters in line
-const bool   parserdebug=false;   ///< turn to true for debugging of parser
+const bool   parserdebug=false;        ///< turn to true for debugging of parser
 
 ///////////////////////////////////////////////////////
 /// \brief Types of parsing errors
