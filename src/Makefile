@@ -15,6 +15,7 @@
 #            Feb 2025    James Craig and Bohao Tang - support for new Mac (Applie Silicon)
 ###
 # appname := raven_rev$(shell svnversion -n . | sed -e 's/:/-/g')_$(shell uname -o).exe
+# To debug, add -g to CXXFLAGS and LDFLAGS
 appname := Raven.exe
 
 CXX      := g++
