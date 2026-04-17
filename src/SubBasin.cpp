@@ -1439,6 +1439,10 @@ void CSubBasin::SetQlatHist(const int N, const double *aQl, const double QlLast)
   if(N==0) { return; }
   for (int i=0;i<min(_nQlatHist,N);i++){_aQlatHist[i]=aQl[i];}
   _QlatLast=QlLast;
+   _Qlocal=0.0;
+   for(int n=0;n<_nQlatHist;n++) {
+     _Qlocal+=_aUnitHydro[n]*_aQlatHist[n];
+   }
 }
 
 /////////////////////////////////////////////////////////////////

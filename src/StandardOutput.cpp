@@ -2060,11 +2060,11 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   /// Define the time variable. Assign units attributes to the netCDF VARIABLES.
   dimids1[0] = time_dimid;
   // Set chunksize to the number of time steps
-  chunksize_time = max(1, Options.n_out_time);
+  chunksize_time = max(1, (int)(Options.n_out_time));
 
-  retval = nc_def_var(_HYDRO_ncid, "time", NC_DOUBLE, ndims1,dimids1, &varid_time); HandleNetCDFErrors(retval);
+  retval = nc_def_var(_HYDRO_ncid, "time", NC_DOUBLE, ndims1,dimids1, &varid_time);   HandleNetCDFErrors(retval);
   // Enable compression and chunking
-  retval = nc_def_var_deflate(_HYDRO_ncid, varid_time, 1, 1, NETCDF_DEFLATE_LEVEL); HandleNetCDFErrors(retval);
+  retval = nc_def_var_deflate (_HYDRO_ncid, varid_time, 1, 1, NETCDF_DEFLATE_LEVEL);  HandleNetCDFErrors(retval);
   retval = nc_def_var_chunking(_HYDRO_ncid, varid_time, NC_CHUNKED, &chunksize_time); HandleNetCDFErrors(retval);
 
   retval = nc_put_att_text(_HYDRO_ncid, varid_time, "units"   ,      strlen(starttime)  , starttime);   HandleNetCDFErrors(retval);
