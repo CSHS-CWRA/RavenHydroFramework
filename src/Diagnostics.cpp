@@ -52,6 +52,7 @@ string CDiagnostic::GetName() const
   case(DIAG_PCT_PDIFF):         {return "DIAG_PCT_PDIFF";}
   case(DIAG_ABS_PCT_PDIFF):     {return "DIAG_ABS_PCT_PDIFF";}
   case(DIAG_TMVOL):             {return "DIAG_TMVOL";}
+  case(DIAG_TMVOL_MARE):        {return "DIAG_TMVOL_MARE";}
   case(DIAG_RCOEF):             {return "DIAG_RCOEF"; }
   case(DIAG_NSC):               {return "DIAG_NSC";}
   case(DIAG_RSR):               {return "DIAG_RSR";}
@@ -768,6 +769,70 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     else
     {
       string warn = "DIAG_TMVOL not calculated. Missing non-zero weighted observations during simulation duration.";
+      WriteWarning(warn, Options.noisy);
+      return -ALMOST_INF;
+    }
+  }
+  case (DIAG_TMVOL_MARE): //GJ Mean Absolute Monthly Percentage Error----------------------------------------------------
+  {
+    int mon = 1;
+    double tmvol_abs = 0.0; // Cumulative absolute monthly percentage
+    double tempsum = 0.0;   // Net monthly error (Mod - Obs)
+    double obs_sum = 0.0;   // Total monthly observed volume
+    int m_count = 0;        // Count of valid months
+    time_struct tt;
+
+    // Find month of first valid entry
+    for (nn = nnstart; nn < nnend; nn++) {
+      if (baseweight[nn] != 0) {
+        JulianConvert(nn, Options.julian_start_day, Options.julian_start_year,
+                      Options.calendar, tt);
+        mon = tt.month;
+        break;
+      }
+    }
+
+    // Perform diagnostics
+    for (nn = nnstart; nn < nnend; nn++) {
+      obsval = pTSObs->GetSampledValue(nn);
+      modval = pTSMod->GetSampledValue(nn);
+      weight = baseweight[nn];
+
+      if (weight != 0) {
+        JulianConvert(nn, Options.julian_start_day, Options.julian_start_year,
+                      Options.calendar, tt);
+
+        // When the month changes, finalize the calculation for the previous
+        // month
+        if (tt.month != mon) {
+          if (obs_sum > 0) {
+            // Calculate Absolute Percentage: |(Error / Total Observed)| * 100
+            tmvol_abs += fabs(tempsum / obs_sum) * 100.0;
+            m_count++;
+          }
+
+          mon = tt.month;
+          tempsum = 0.0;
+          obs_sum = 0.0;
+        }
+
+        tempsum += (modval - obsval) * weight;
+        obs_sum += obsval * weight;
+      }
+      N += weight;
+    }
+
+    // Add the final month in the sequence
+    if (obs_sum > 0) {
+      tmvol_abs += fabs(tempsum / obs_sum) * 100.0;
+      m_count++;
+    }
+
+    if (m_count > 0) {
+      // Return the average of all monthly absolute percentage errors
+      return tmvol_abs / (double)m_count;
+    } else {
+      string warn = "DIAG_TMVOL_MARE not calculated. Missing data.";
       WriteWarning(warn, Options.noisy);
       return -ALMOST_INF;
     }
@@ -1493,7 +1558,8 @@ diag_type StringToDiagnostic(string distring)
   else if (!distring.compare("PDIFF"                )){return DIAG_PDIFF;}
   else if (!distring.compare("PCT_PDIFF"            )){return DIAG_PCT_PDIFF;}
   else if (!distring.compare("ABS_PCT_PDIFF"        )){return DIAG_ABS_PCT_PDIFF;}
-  else if (!distring.compare("TMVOL"                )){return DIAG_TMVOL;}
+  else if (!distring.compare("TMVOL"                )){return DIAG_TMVOL;} 
+  else if (!distring.compare("TMVOL_MARE"           )){return DIAG_TMVOL_MARE;}
   else if (!distring.compare("RCOEF"                )){return DIAG_RCOEF;}
   else if (!distring.compare("NSC"                  )){return DIAG_NSC;}
   else if (!distring.compare("RSR"                  )){return DIAG_RSR;}
