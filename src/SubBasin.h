@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2025 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef SUBBASIN_H
 #define SUBBASIN_H
@@ -381,6 +381,9 @@ public:/*-------------------------------------------------------*/
   double            GetAvgForcing      (const forcing_type &ftype) const;
   double            GetAvgCumulFlux    (const int i,const bool to) const;
   double            GetAvgCumulFluxBet (const int iFrom,const int iTo) const;
+  double            GetTotalResStorage () const;
+  double            GetTotalRivuletStor() const;
+  double            GetTotalChannelStor() const;
   bool              IsInGroup          (const long long SBID) const;
   bool              IsDisabled         () const;
 };

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "SubBasin.h"
 
@@ -200,4 +200,31 @@ double CSubbasinGroup::GetAvgCumulFluxBet (const int iFrom, const int iTo) const
     areasum+=area;
   }
   return sum/areasum;
+}
+double CSubbasinGroup::GetTotalResStorage () const
+{
+  double sum=0.0;
+  for(int p=0;p<_nSubbasins;p++)
+  {
+    sum    +=_pSubbasins[p]->GetReservoirStorage();
+  }
+  return sum;
+}
+double CSubbasinGroup::GetTotalRivuletStor() const
+{
+  double sum=0.0;
+  for(int p=0;p<_nSubbasins;p++)
+  {
+    sum    +=_pSubbasins[p]->GetRivuletStorage();
+  }
+  return sum;
+}
+double CSubbasinGroup::GetTotalChannelStor() const
+{
+  double sum=0.0;
+  for(int p=0;p<_nSubbasins;p++)
+  {
+    sum    +=_pSubbasins[p]->GetChannelStorage();
+  }
+  return sum;
 }

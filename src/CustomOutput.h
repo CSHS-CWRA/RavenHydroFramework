@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2025 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------
   Custom output generation
   ----------------------------------------------------------------*/
@@ -52,6 +52,9 @@ enum diagnostic
   VAR_STATE_VAR,        ///< track state variable
   VAR_FORCING_FUNCTION, ///< track forcing function
   VAR_STREAMFLOW,       ///< track streamflow
+  VAR_RESERVOIR_STORAGE,///< track reservoir storage
+  VAR_CHANNEL_STORAGE,  ///< track channel storage
+  VAR_RIVULET_STORAGE,  ///< track rivulet storage
   VAR_HYD_COND,         ///< track hydraulic conductivity
   VAR_FROM_FLUX,        ///< track gross flux from specific state variable
   VAR_TO_FLUX,          ///< track gross flux to specific state variable
