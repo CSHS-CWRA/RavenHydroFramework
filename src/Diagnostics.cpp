@@ -1558,7 +1558,7 @@ diag_type StringToDiagnostic(string distring)
   else if (!distring.compare("PDIFF"                )){return DIAG_PDIFF;}
   else if (!distring.compare("PCT_PDIFF"            )){return DIAG_PCT_PDIFF;}
   else if (!distring.compare("ABS_PCT_PDIFF"        )){return DIAG_ABS_PCT_PDIFF;}
-  else if (!distring.compare("TMVOL"                )){return DIAG_TMVOL;} 
+  else if (!distring.compare("TMVOL"                )){return DIAG_TMVOL;}
   else if (!distring.compare("TMVOL_MARE"           )){return DIAG_TMVOL_MARE;}
   else if (!distring.compare("RCOEF"                )){return DIAG_RCOEF;}
   else if (!distring.compare("NSC"                  )){return DIAG_NSC;}
