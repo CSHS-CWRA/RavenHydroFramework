@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 
 // The Basic Model Interface (BMI)  class for Raven.
@@ -11,6 +11,18 @@
 #include "BMI.h"
 #include "Model.h"
 
+const int GRID_SUBBASIN=1;
+const int GRID_HRU     =0;
+
+// constants used in the config file (cfg_file) parsing
+const string CFG_FILE_CLIARGS_TAG = "cli_args";
+const string CFG_FILE_INPVARS_TAG = "input_vars";
+const string CFG_FILE_OUTVARS_TAG = "output_vars";
+const string CFG_FILE_IOVAR_FORCE_TAG = "forcing";
+const string CFG_FILE_IOVAR_HRUST_TAG = "hru_state";
+const string CFG_FILE_IOVAR_SUBST_TAG = "subbasin_state";
+const string CFG_FILE_IOVAR_FLUX_TAG = "flux";
+
 class CRavenBMI : public bmixx::Bmi
 {
   private:
@@ -18,10 +30,19 @@ class CRavenBMI : public bmixx::Bmi
     optStruct   Options;
     time_struct tt;
 
+    // vectors storing input/output variable names and ids are filled in the Initialize function
+    std::vector<std::string> _input_var_names;
+    std::vector<int>         _input_var_ids;
+    std::vector<std::string> _output_var_names;
+    std::vector<int>         _output_var_ids;
+    std::vector<int>         _output_var_layer_index;
+    std::vector<std::string> _output_var_type;
+
     // Internal functions for reading the YAML config file.
-    void ReadConfigFile(std::string config_file);
-    std::vector<char *> SplitLine(std::string line);
-    void ProcessConfigFileArgument(std::string config_key, std::string config_value);
+    void _ReadConfigFile(std::string config_file);
+    std::vector<char *> _SplitLineByWhitespace(std::string line);
+    std::vector<std::string> _SplitLineByColon(std::string line);
+    bool _IsValidSubBasinStateVariable(std::string var_name);
 
   public:
     CRavenBMI();
