@@ -122,6 +122,7 @@ void CRavenBMI::_ReadConfigFile(std::string config_file)
   ifstream CONFIG;
   CONFIG.open(config_file);
   if (CONFIG.fail()) {
+    cout<<"ERROR: Cannot find configuration file " + config_file<<endl;
     throw std::logic_error("Cannot find configuration file " + config_file);
     return;
   }

@@ -113,13 +113,21 @@ class CRavenBMI : public bmixx::Bmi
 /// instance of the model and one to destroy/free an instance.
 /// More: https://github.com/NOAA-OWP/ngen/blob/master/doc/BMI_MODELS.md#bmi-c-model-as-shared-library-1
 
+
+#if defined(_WIN32)
+	  #define LIB_API __declspec(dllexport) 
+#elif defined(__GNUC__)
+    #define LIB_API __attribute__((visibility("default")))
+#else
+    #define LIB_API
+#endif
 extern "C"
 {
   //////////////////////////////////////////////////////////////////
   /// \brief Create a new instance of the model as expected by NextGen.
   /// \return A pointer to the newly allocated instance.
   //
-	CRavenBMI *bmi_model_create()
+	LIB_API CRavenBMI *bmi_model_create()
 	{
 		return new CRavenBMI();
 	}
@@ -128,7 +136,7 @@ extern "C"
   /// \brief Destroy/free an instance created with @see bmi_model_create
   /// \param ptr A pointer to the instance to be destroyed.
   //
-	void bmi_model_destroy(CRavenBMI *ptr)
+	LIB_API void bmi_model_destroy(CRavenBMI *ptr)
 	{
 		delete ptr;
 	}

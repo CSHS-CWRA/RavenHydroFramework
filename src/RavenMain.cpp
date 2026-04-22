@@ -7,9 +7,10 @@
 #include "RavenMain.h"
 #include "Model.h"
 #include "UnitTesting.h"
+
 #ifdef STANDALONE
     #include "GracefulEndStandalone.h"
-#elif BMI_LIBRARY
+#else
     #include "GracefulEndBMI.h"
 #endif
 
@@ -21,6 +22,8 @@ double g_debug_vars[10];
 bool   g_disable_freezing =false;
 double g_min_storage      =0.0;
 int    g_current_e        =DOESNT_EXIST;
+int    g_warn_count       =1;
+string g_last_warning     =""; 
 
 static string RavenBuildDate(__DATE__);
 
@@ -35,6 +38,7 @@ void ParseManagementFile       (CModel *&pModel, const optStruct &Options);
 /// for using WD\output subdirectory, can use "-o .\output\"
 /// \return Success of main method
 //
+#ifdef STANDALONE
 int main(int argc, char* argv[])
 {
   double      t;
@@ -194,7 +198,7 @@ int main(int argc, char* argv[])
   ExitGracefully("Successful Simulation",SIMULATION_DONE);
   return 0;
 }
-
+#endif
 //////////////////////////////////////////////////////////////////
 /// \param argc [in] number of command line arguments to executable
 /// \param argv[] [in] executable arguments; Raven.exe [filebase] [-p rvp_file] [-h hru_file] [-t rvt_file] [-c rvc_file] [-o output_dir]

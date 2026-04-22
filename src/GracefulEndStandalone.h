@@ -42,6 +42,7 @@ inline void FinalizeGracefully(const char *statement, exitcode code)
   }
 
   if (code != RAVEN_OPEN_ERR) { //avoids recursion problems
+    WriteWarning("",false);//prints last warning in memory, if present
     ofstream WARNINGS;
     WARNINGS.open((Options->main_output_dir+"Raven_errors.txt").c_str(),ios::app);
     if (WARNINGS.fail()) {

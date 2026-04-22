@@ -19,7 +19,11 @@
 #ifndef _LPSOLVE_
 //#define _LPSOLVE_       // uncomment if compiling lpsolve Demand Optimization version of Raven
 #endif
-#define STANDALONE
+#ifndef _BMI_LIBRARY_  //compiler or CMAke flag
+#define STANDALONE    // comment out if compiling as DLL
+#else
+#define BMI_LIBRARY
+#endif
 #ifdef netcdf
 #define _RVNETCDF_      // if Makefile is used this will be automatically be uncommented if netCDF library is available
 #endif
@@ -94,6 +98,8 @@ Other comments:
 extern string g_output_directory; ///< Had to be here to avoid passing Options structure around willy-nilly
 extern double g_debug_vars[10];   ///< can store any variables used during debugging; written to raven_debug.csv if debug_mode is on
 extern bool   g_suppress_warnings;///< Had to be here to avoid passing Options structure around willy-nilly
+extern string g_last_warning;     ///
+extern int    g_warn_count;       
 extern bool   g_suppress_zeros;   ///< converts all output numbers less than REAL_SMALL to zero
 extern bool   g_disable_freezing; ///< disables freezing impacts in thermal wrapper code
 extern double g_min_storage;      ///< minimum soil storage

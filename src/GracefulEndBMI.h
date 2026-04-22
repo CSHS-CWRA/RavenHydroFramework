@@ -11,7 +11,7 @@ Copyright (c) 2008-2023 the Raven Development Team
 /// \param statement [in] String to print to user upon exit
 /// \param code [in] Code to determine why the system is exiting
 //
-inline void FinalizeGracefully(const char *statement, exitcode code)
+void FinalizeGracefully(const char *statement, exitcode code)
 {
   string typeline;
   switch (code){
@@ -51,7 +51,7 @@ inline void FinalizeGracefully(const char *statement, exitcode code)
 /// \param statement [in] String to print to user upon exit
 /// \param code [in] Code to determine why the system is exiting
 //
-inline void ExitGracefully(const char *statement, exitcode code)
+void ExitGracefully(const char *statement, exitcode code)
 {
   FinalizeGracefully(statement, code);
 }
