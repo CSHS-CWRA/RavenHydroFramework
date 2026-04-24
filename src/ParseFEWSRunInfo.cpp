@@ -543,15 +543,16 @@ bool ParseNetCDFStateFile(CModel *&pModel,const optStruct &Options)
   // check quality of initial state variables
   //======================================================================
   CHydroUnit* pHRU;
-  double *v = new double[pModel->GetNumStateVars()];
+  int nSV=pModel->GetNumStateVars();
+  double *v = new double[nSV];
   for (int k = 0; k < pModel->GetNumHRUs(); k++)
   {
     pHRU = pModel->GetHydroUnit(k);
-    for (int i = 0; i < pModel->GetNumStateVars(); i++)
+    for (int i = 0; i < nSV; i++)
     {
       v[i] = pHRU->GetStateVarValue(i);
     }
-    for (int i = 0; i < pModel->GetNumStateVars(); i++)
+    for (int i = 0; i < nSV; i++)
     {
       double maxv = max(pHRU->GetStateVarMax(i, v, Options, true), 0.0); //ignores all variable maximum thresholds that are dependent upon model state
       if ((v[i] - maxv) > PRETTY_SMALL)// check for capacity

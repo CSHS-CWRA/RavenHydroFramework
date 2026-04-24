@@ -1207,7 +1207,7 @@ void CCustomOutput::CloseFiles(const optStruct& Options)
   _time_index=0;
 }
 
-int  ParseSVTypeIndex(string s,CModel *&pModel, CStateVariable *pStateVar);  // defined in ParseInput.cpp
+int  ParseSVTypeIndex(string s,CModel *pModel, CStateVariable *pStateVar);  // defined in ParseInput.cpp
 //////////////////////////////////////////////////////////////////
 /// \brief Parses custom output command
 // Format:

@@ -46,7 +46,7 @@ bool ParseNetCDFRunInfoFile    (CModel *&pModel, optStruct &Options,bool runname
 bool ParseNetCDFStateFile      (CModel *&pModel, const optStruct &Options);
 bool ParseNetCDFParamFile      (CModel *&pModel, const optStruct &Options);
 bool ParseNetCDFFlowStateFile  (CModel *&pModel, const optStruct &Options);
-int  ParseSVTypeIndex          (string s,  CModel *&pModel, CStateVariable *pStateVar);
+int  ParseSVTypeIndex          (string s,CModel *pModel, CStateVariable *pStateVar);
 void ImproperFormatWarning     (string command, CParser *p, bool noisy);
 void AddProcess                (CModel *pModel, CHydroProcessABC* pMover, CProcessGroup *pProcGroup);
 void AddNetCDFAttribute        (optStruct &Options,const string att,const string &val);
@@ -3790,7 +3790,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 /// \param *&pModel [in] Input model object
 /// \return Integer index of state variable ins tate variable arrays, or DOESNT_EXIST (-1) if is is invalid
 //
-int  ParseSVTypeIndex(string s, CModel *&pModel, CStateVariable *pStateVar)
+int  ParseSVTypeIndex(string s, CModel *pModel, CStateVariable *pStateVar)
 {
   int ind;
   int layer_ind(-1);
