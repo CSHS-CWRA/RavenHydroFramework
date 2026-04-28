@@ -78,8 +78,6 @@ CSubBasin::CSubBasin( const long long      Identifier,
   _res_disabled      =false;
   _assimilate        =false;
 
-  _pUpstreamGroup =NULL;
-
   // estimate reach length and _nSegments if needed
   //-----------------------------------------------------------------------
   double max_len = _pModel->GetGlobalParams()->GetParams()->max_reach_seglength*M_PER_KM;
@@ -186,7 +184,6 @@ CSubBasin::~CSubBasin()
   delete [] _aQreturned;
   delete _pEnviroMinFlow;_pEnviroMinFlow=NULL;
   delete _pReservoir;
-  delete _pUpstreamGroup;
 }
 /*****************************************************************
    Accessors
@@ -464,11 +461,6 @@ double CSubBasin::GetAvgCumulFluxBet(const int iFrom,const int iTo) const
   }
   if (_basin_area==0.0){return 0.0;}
   return sum/_basin_area;
-}
-
-CSubbasinGroup *CSubBasin::GetUpstreamGroup         () const
-{
-  return _pUpstreamGroup;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1575,14 +1567,6 @@ void CSubBasin::SetDownstreamBasin(const CSubBasin* pSB)
   _pDownSB=pSB;
   if (_pReservoir!=NULL){_pReservoir->SetDownstreamBasin(pSB); }
 }
-/////////////////////////////////////////////////////////////////
-/// \brief Sets upstream subbasin group (performed by model during routing initialization)
-/// \param pSBGroup [in] pointer to upstream subbasin group
-//
-void CSubBasin::SetUpstreamSBGroup       (CSubbasinGroup *pSBGroup)
-{
-  _pUpstreamGroup=pSBGroup;
-}
 
 /////////////////////////////////////////////////////////////////
 /// \brief increment quantity of total delivered demand from management
@@ -1671,7 +1655,7 @@ double    CSubBasin::CalculateBasinArea()
   {
     ExitGracefullyIf(_pHydroUnits[k]->GetArea()<=0.0,
       "CSubBasin::CalculateBasinArea: one or more HRUs has a negative or zero area",BAD_DATA);
-    if(_pHydroUnits[k]->IsEnabled())
+    //if(_pHydroUnits[k]->IsEnabled())
     {
       _basin_area+=_pHydroUnits[k]->GetArea();
     }
@@ -1854,11 +1838,6 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     _pEnviroMinFlow->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,false,Options.calendar);
   }
   //must be initialized AFTER RVM FILE READ
-
-  //determine upstream subbasin group
-  //------------------------------------------------------------------------
-  //int nUpstream;
-  //CModel::GetUpstreamSubbasins(_ID,nUpstream);
 
   //QA/QC check of Muskingum parameters, if necessary
   //------------------------------------------------------------------------

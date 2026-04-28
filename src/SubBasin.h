@@ -102,8 +102,6 @@ private:/*------------------------------------------------------*/
 
   int               _nSegments;        ///< Number of river segments used in routing( >=1)
 
-  CSubbasinGroup   *_pUpstreamGroup;   ///< pointer to subbasin group upstream of this subbasin (including this basin)
-
   //Reservoir
   CReservoir      *_pReservoir;   ///< Reservoir object (or NULL, if no reservoir)
   bool           _res_disabled;   ///< true if lake or reservoir should be disabled/never created
@@ -240,8 +238,6 @@ public:/*-------------------------------------------------------*/
   int             GetOutflowArraySize      () const;
   int             GetNumDiversions         () const;
 
-  CSubbasinGroup *GetUpstreamGroup         () const;
-
   double          GetOutflowRate           () const;                   //[m3/s] from final reach segment OR reservoir, point in time
   double          GetChannelOutflowRate    () const;                   //[m3/s] from final reach segment (NOT reservoir), point in time, BEFORE diversions included
   double          GetLastChannelOutflowRate() const;                   //[m3/s] from final reach segment (NOT reservoir), point in time, BEFORE diversions included
@@ -313,7 +309,6 @@ public:/*-------------------------------------------------------*/
   void            SetQinHist               (const int N, const double *aQi);
   void            SetDownstreamID          (const long long down_SBID);
   void            SetDownstreamBasin       (const CSubBasin *pSB);
-  void            SetUpstreamSBGroup       (CSubbasinGroup *pSBGroup);
   void            SetGauged                (const bool isgauged);
   void            Disable                  ();
   void            Enable                   ();

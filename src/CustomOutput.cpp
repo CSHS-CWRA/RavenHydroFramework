@@ -925,6 +925,56 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
   bool is_concentration=false;
   is_concentration = (_var == VAR_STATE_VAR) && (pModel->GetStateVarType(_svind)==CONSTITUENT);
 
+  //--Precalculate drainage area averaged values in one sweep-----------------------
+  // go from upstream to downstream summing cumulative area*value
+  // at end, divide by drainage area to get area-weighted mean value
+  double *aDrainageVals=NULL;
+  double area;
+  if (_spaceAgg==BY_DRAINAGE)
+  {
+    aDrainageVals  =new double[pModel->GetNumSubBasins()];
+    double     *sum=new double[pModel->GetNumSubBasins()];
+    double *areasum=new double[pModel->GetNumSubBasins()]; //required when some basins are disabled (drainage area=0)
+    for (int p=0;p<pModel->GetNumSubBasins();p++){
+      sum[p]=0;
+      areasum[p]=0.0;
+      aDrainageVals[p]=0;
+    }
+    CSubBasin *pSB;
+    long long SBdown;
+    int p,p_down;
+    for (int pp=0;pp<pModel->GetNumSubBasins();pp++)
+    {
+      p=pModel->GetOrderedSubBasinIndex(pp);
+      pSB=pModel->GetSubBasin(p);
+      area=pSB->GetBasinArea();
+      if      (is_concentration           ){val=pSB->GetAvgConcentration(_svind);}
+      else if (_var==VAR_STATE_VAR        ){val=pSB->GetAvgStateVar     (_svind);}
+      else if (_var==VAR_FORCING_FUNCTION ){val=pSB->GetAvgForcing      (_ftype);}
+      else if (_var==VAR_TO_FLUX          ){val=pSB->GetAvgCumulFlux    (_svind,true);}
+      else if (_var==VAR_FROM_FLUX        ){val=pSB->GetAvgCumulFlux    (_svind,false);}
+      else if (_var==VAR_BETWEEN_FLUX     ){val=pSB->GetAvgCumulFluxBet (_svind,_svind2);}
+      else if (_var==VAR_STREAMFLOW       ){}//do nothing
+      else if (_var==VAR_RESERVOIR_STORAGE){val=pSB->GetReservoirStorage();}
+      else if (_var==VAR_CHANNEL_STORAGE  ){val=pSB->GetChannelStorage  ();}
+      else if (_var==VAR_RIVULET_STORAGE  ){val=pSB->GetRivuletStorage  ();}
+      sum    [p]+=area*val;
+      areasum[p]+=area;
+      SBdown=pSB->GetDownstreamID();
+      if (SBdown>=0){
+        p_down=pModel->GetSubBasinByID(SBdown)->GetGlobalIndex();
+        sum    [p_down]+=sum    [p];
+        areasum[p_down]+=areasum[p];
+      }
+    }
+    for (int p=0;p<pModel->GetNumSubBasins();p++)
+    {
+      aDrainageVals[p]=sum[p]/areasum[p];//pModel->GetSubBasin(p)->GetDrainageArea();
+    }
+    delete [] sum;
+  }
+
+
   //Sift through HRUs, BASINs or watershed, updating aggregate statistics
   //--------------------------------------------------------------------------
   //_nData=1 if BY_WATERSHED, =nSubBasins if BY_BASIN, =nHRUs if BY_HRU...
@@ -934,7 +984,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
     if (is_concentration){
       if      (_spaceAgg==BY_HRU        ) { val=pModel->GetTransportModel()->GetConcentration(k,_svind);}
       else if (_spaceAgg==BY_BASIN      ) { val=pModel->GetSubBasin     (k)->GetAvgConcentration(_svind); }
-      else if (_spaceAgg==BY_DRAINAGE   ) { val=pModel->GetSubBasin     (k)->GetUpstreamGroup()->GetAvgConcentration(_svind);}
+      else if (_spaceAgg==BY_DRAINAGE   ) { val=aDrainageVals[k];                                         }
       else if (_spaceAgg==BY_WSHED      ) { val=pModel->                     GetAvgConcentration(_svind); }
       else if (_spaceAgg==BY_HRU_GROUP  ) { val=pModel->GetHRUGroup     (k)->GetAvgConcentration(_svind); }
       else if (_spaceAgg==BY_SB_GROUP   ) { val=pModel->GetSubBasinGroup(k)->GetAvgConcentration(_svind); }
@@ -943,7 +993,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
     else if (_var==VAR_STATE_VAR){
       if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit     (k)->GetStateVarValue(_svind);}
       else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin      (k)->GetAvgStateVar  (_svind);}
-      else if (_spaceAgg==BY_DRAINAGE   ){val=pModel->GetSubBasin      (k)->GetUpstreamGroup()->GetAvgStateVar(_svind);}
+      else if (_spaceAgg==BY_DRAINAGE   ){val=aDrainageVals[k];                                      }
       else if (_spaceAgg==BY_WSHED      ){val=pModel->                      GetAvgStateVar  (_svind);}
       else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup      (k)->GetAvgStateVar  (_svind);}
       else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetAvgStateVar  (_svind);}
@@ -952,7 +1002,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
     else if (_var==VAR_FORCING_FUNCTION){
       if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit     (k)->GetForcing   (_ftype);}
       else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin      (k)->GetAvgForcing(_ftype);}
-      else if (_spaceAgg==BY_DRAINAGE   ){val=pModel->GetSubBasin      (k)->GetUpstreamGroup()->GetAvgForcing(_ftype);}
+      else if (_spaceAgg==BY_DRAINAGE   ){val=aDrainageVals[k];                                   }
       else if (_spaceAgg==BY_WSHED      ){val=pModel->                      GetAvgForcing(_ftype);}
       else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup      (k)->GetAvgForcing(_ftype);}
       else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetAvgForcing(_ftype);}
@@ -961,7 +1011,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
     else if (_var == VAR_TO_FLUX){
       if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit     (k)->GetCumulFlux   (_svind,true);}
       else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin      (k)->GetAvgCumulFlux(_svind,true);}
-      else if (_spaceAgg==BY_DRAINAGE   ){val=pModel->GetSubBasin      (k)->GetUpstreamGroup()->GetAvgCumulFlux(_svind,true);}
+      else if (_spaceAgg==BY_DRAINAGE   ){val=aDrainageVals[k];                                          }
       else if (_spaceAgg==BY_WSHED      ){val=pModel->                      GetAvgCumulFlux(_svind,true);}
       else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup      (k)->GetAvgCumulFlux(_svind,true);}
       else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetAvgCumulFlux(_svind,true);}
@@ -970,7 +1020,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
     else if (_var == VAR_FROM_FLUX){
       if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit     (k)->GetCumulFlux   (_svind,false);}
       else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin      (k)->GetAvgCumulFlux(_svind,false);}
-      else if (_spaceAgg==BY_DRAINAGE   ){val=pModel->GetSubBasin      (k)->GetUpstreamGroup()->GetAvgCumulFlux(_svind,false); }
+      else if (_spaceAgg==BY_DRAINAGE   ){val=aDrainageVals[k];                                           }
       else if (_spaceAgg==BY_WSHED      ){val=pModel->                      GetAvgCumulFlux(_svind,false);}
       else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup      (k)->GetAvgCumulFlux(_svind,false);}
       else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetAvgCumulFlux(_svind,false);}
@@ -979,7 +1029,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
     else if (_var == VAR_BETWEEN_FLUX){
       if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit     (k)->GetCumulFluxBet   (_svind,_svind2);}
       else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin      (k)->GetAvgCumulFluxBet(_svind,_svind2);}
-      else if (_spaceAgg==BY_DRAINAGE   ){val=pModel->GetSubBasin      (k)->GetUpstreamGroup()->GetAvgCumulFluxBet(_svind,_svind2); }
+      else if (_spaceAgg==BY_DRAINAGE   ){val=aDrainageVals[k];                                                }
       else if (_spaceAgg==BY_WSHED      ){val=pModel->                      GetAvgCumulFluxBet(_svind,_svind2);}
       else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup      (k)->GetAvgCumulFluxBet(_svind,_svind2);}
       else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetAvgCumulFluxBet(_svind,_svind2);}
@@ -996,8 +1046,8 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
     }
     else if(_var==VAR_RESERVOIR_STORAGE) {
       if      (_spaceAgg==BY_HRU        ){val=RAV_BLANK_DATA;                                        }
-      else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin      (k)->GetReservoirStorage();}
-      else if (_spaceAgg==BY_DRAINAGE   ){val=pModel->GetSubBasin      (k)->GetUpstreamGroup()->GetTotalResStorage();} 
+      else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin      (k)->GetReservoirStorage();   }
+      else if (_spaceAgg==BY_DRAINAGE   ){val=aDrainageVals[k];                                      } 
       else if (_spaceAgg==BY_WSHED      ){val=RAV_BLANK_DATA;} //todo [funct] - may wish to support later
       else if (_spaceAgg==BY_HRU_GROUP  ){val=RAV_BLANK_DATA;}
       else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetTotalResStorage();    } 
@@ -1006,7 +1056,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
     else if(_var==VAR_CHANNEL_STORAGE) {
       if      (_spaceAgg==BY_HRU        ){val=RAV_BLANK_DATA;                                        }
       else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin      (k)->GetChannelStorage();     }
-      else if (_spaceAgg==BY_DRAINAGE   ){val=pModel->GetSubBasin      (k)->GetUpstreamGroup()->GetTotalChannelStor();   } 
+      else if (_spaceAgg==BY_DRAINAGE   ){val=aDrainageVals[k];                                      } 
       else if (_spaceAgg==BY_WSHED      ){val=RAV_BLANK_DATA;} //todo [funct] - may wish to support later
       else if (_spaceAgg==BY_HRU_GROUP  ){val=RAV_BLANK_DATA;}
       else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetTotalChannelStor();   } 
@@ -1015,7 +1065,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
     else if(_var==VAR_RIVULET_STORAGE) {
       if      (_spaceAgg==BY_HRU        ){val=RAV_BLANK_DATA;                                         }
       else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin      (k)->GetRivuletStorage();      }
-      else if (_spaceAgg==BY_DRAINAGE   ){val=pModel->GetSubBasin      (k)->GetUpstreamGroup()->GetTotalRivuletStor();} 
+      else if (_spaceAgg==BY_DRAINAGE   ){val=aDrainageVals[k];                                       } 
       else if (_spaceAgg==BY_WSHED      ){val=RAV_BLANK_DATA;} //todo [funct] - may wish to support later
       else if (_spaceAgg==BY_HRU_GROUP  ){val=RAV_BLANK_DATA;}
       else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetTotalRivuletStor();    }
@@ -1160,6 +1210,8 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       if (k==_nData-1){_count=0;}//don't reboot count until last HRU/basin is done
     }//end if (reset)
   }//end for (k=0;...
+
+  delete[] aDrainageVals;
 
   if (reset){
     if ((pModel->GetEnsemble() != NULL) && (pModel->GetEnsemble()->DontWriteOutput())) { return; }

@@ -543,48 +543,112 @@ int         CModel::GetSubBasinIndex(const long long SBID) const
 /// \param SBID [in] long long int subbasin ID
 /// \param nUpstream [out] size of array of pointers of subbasins
 /// \return array of pointers to subbasins upstream of subbasin SBID, including that subbasin
+/// with help from MS Copilot
 //
-const CSubBasin **CModel::GetUpstreamSubbasins(const long long SBID,int &nUpstream) const
-{
+const CSubBasin **CModel::GetUpstreamSubbasins(const long long SBID, int &nUpstream) const{
+
   static const CSubBasin **pSBs=new const CSubBasin *[_nSubBasins];
+  CSubBasin *pSB;
+  int p_down;
 
-  bool *isUpstr=new bool [_nSubBasins];
-  for(int p=0;p<_nSubBasins;p++) { isUpstr[p]=false; }
-
-  int p=GetSubBasinIndex(SBID);
-  if((p==DOESNT_EXIST) || (p==INDEX_NOT_FOUND)) {
+  int p_targ=GetSubBasinIndex(SBID);
+  if((p_targ==DOESNT_EXIST) || (p_targ==INDEX_NOT_FOUND)) {
     string warn="CModel::GetUpstreamSubbasins: invalid subbasin ID "+to_string(SBID)+" (:ReservoirDownstreamDemand command ? )";
     ExitGracefully(warn.c_str(),BAD_DATA);return NULL;
   }
-  isUpstr[p]=true;
 
-  const int MAX_ITER=1000;
-  int numUpstr=0;
-  int numUpstrOld=1;
-  int iter=0;
-  int down_p;
-  do
+  // ---------------------------
+  // 1. Build reverse adjacency
+  // ---------------------------
+
+  // Count how many nodes flow into each node
+  int *in_degree = new int[_nSubBasins];
+
+  for (int p = 0; p < _nSubBasins; p++) {
+    in_degree[p]=0;
+  }
+  for (int p = 0; p < _nSubBasins; p++) {
+    pSB=GetSubBasinByID(_pSubBasins[p]->GetDownstreamID());
+    if (pSB!=NULL){
+      int p_down = pSB->GetGlobalIndex();
+      in_degree[p_down]++;
+    }
+  }
+
+    // Allocate reverse lists
+  CSubBasin ***upstream = new CSubBasin** [_nSubBasins];
+  for (int p = 0; p < _nSubBasins; p++) {
+    if (in_degree[p]>0){
+      upstream[p]=new CSubBasin*[in_degree[p]];
+    }
+    else{
+      upstream[p]=NULL;
+    }
+    in_degree[p] = 0; // reuse as insertion index
+  }
+
+  // Fill reverse lists
+  for (int p = 0; p < _nSubBasins; p++) {
+    pSB=GetSubBasinByID(_pSubBasins[p]->GetDownstreamID());
+    if (pSB!=NULL) {
+      p_down = pSB->GetGlobalIndex();
+      upstream[p_down][in_degree[p_down]] = _pSubBasins[p];
+      in_degree[p_down]++;
+    }
+  }
+
+  // ---------------------------
+  // 2. Traverse upstream
+  // ---------------------------
+
+  bool *visited = new bool[_nSubBasins];
+  for (int p = 0; p < _nSubBasins; p++) {
+    visited[p]=false;
+  }
+
+  nUpstream = 0;
+
+  // Simple manual stack (DFS)
+  CSubBasin **stack = new CSubBasin *[_nSubBasins];
+  int top = 0;
+
+  stack[top] = _pSubBasins[p_targ];
+  top++;
+  visited[p_targ] = true;
+
+  pSBs[nUpstream] = _pSubBasins[p_targ];
+  nUpstream++;
+
+  while (top > 0) 
   {
-    numUpstrOld=numUpstr;
-    for(p=0;p<_nSubBasins;p++) {
-      down_p=GetSubBasinIndex(_pSubBasins[p]->GetDownstreamID());
-      if(down_p!=DOESNT_EXIST) {
-        if(isUpstr[down_p]==true) { isUpstr[p]=true;}
+    top--;
+    CSubBasin *current = stack[top];
+
+    int p = current->GetGlobalIndex();
+    for (int i = 0; i < in_degree[p]; i++) {
+      CSubBasin *pSB = upstream[p][i];
+      if (!visited[pSB->GetGlobalIndex()]) {
+          visited[pSB->GetGlobalIndex()] = true;
+          pSBs[nUpstream] = pSB;
+          nUpstream++;
+          stack[top] = pSB;
+          top++;
       }
     }
-    numUpstr=0;
-    for(p=0;p<_nSubBasins;p++) {
-      if(isUpstr[p]==true) { numUpstr++; }
-    }
-    iter++;
-  } while ((iter<MAX_ITER) && (numUpstr!=numUpstrOld));
-  //cout<<"upstream basin calculations iterations = "<<iter<<" "<<numUpstr<<" basins found upstream of basin "<<SBID<<endl;
-  nUpstream=numUpstr;
-  int count=0;
-  for(p=0;p<_nSubBasins;p++) {
-    if (isUpstr[p]==true){pSBs[count]=_pSubBasins[p];count++; }
   }
-  delete [] isUpstr;
+
+  // ---------------------------
+  // 3. Cleanup helpers
+  // ---------------------------
+
+  for (int p = 0; p < _nSubBasins; p++) {
+      delete[] upstream[p];
+  }
+  delete[] upstream;
+  delete[] in_degree;
+  delete[] visited;
+  delete[] stack;
+
   return pSBs;
 }
 //////////////////////////////////////////////////////////////////
