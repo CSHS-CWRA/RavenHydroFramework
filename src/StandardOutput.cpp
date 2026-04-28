@@ -681,12 +681,14 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
   int     i,iCumPrecip,k;
   double  output_int = 0.0;
   double  mod_final = 0.0;
+  double  val,Qin,P,E,GW;
   double  S,currentWater;
   string  thisdate;
   string  thishour;
   bool    silent=true; //for debugging
   bool    quiet=true;  //for debugging
   double  t;
+  long long SBID;
 
   CSubBasin* pSB;
 
@@ -782,6 +784,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
       //Write hydrographs for gauged watersheds to Hydrographs.csv (ALWAYS DONE)
       //----------------------------------------------------------------
+      
       if (Options.ave_hydrograph)
       {
         _HYDRO<<usetime<<","<<usedate<<","<<usehour;
@@ -794,12 +797,18 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
           if (pSB->IsGauged()  && (pSB->IsEnabled()))
           {
             _HYDRO<<","<<pSB->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
-
+            SBID=pSB->GetID();
+            /*FASTER OPTION
+            if (pSB->GetFlowObsTS()!=NULL){
+              double val = pSB->GetFlowObsTS()->GetAvgValue(tt.model_time,Options.timestep); //time shift handled in CTimeSeries::Parse
+              if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
+              else                                             { _HYDRO << ",";       }
+            }*/
             for (i = 0; i < _nObservedTS; i++)
             {
-              if (IsContinuousFlowObs(_pObservedTS[i],pSB->GetID()))
+              if (IsContinuousFlowObs(_pObservedTS[i],SBID))
               {
-                double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep); //time shift handled in CTimeSeries::Parse
+                val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep); //time shift handled in CTimeSeries::Parse
                 if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
                 else                                             { _HYDRO << ",";       }
               }
@@ -809,18 +818,24 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
             }
             if (pSB->GetReservoir() != NULL){
               _HYDRO<<","<<pSB->GetIntegratedReservoirInflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
-                if (Options.write_netresinflow){
-                  double Qin=pSB->GetIntegratedReservoirInflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
-                  double P  =pSB->GetReservoir()->GetReservoirPrecipGains(Options.timestep)/(Options.timestep*SEC_PER_DAY);
-                  double E  =pSB->GetReservoir()->GetReservoirEvapLosses (Options.timestep)/(Options.timestep*SEC_PER_DAY);
-                  double GW =pSB->GetReservoir()->GetReservoirGWLosses   (Options.timestep)/(Options.timestep*SEC_PER_DAY);
-                  _HYDRO<<","<<Qin+P-E-GW;
-                }
+              if (Options.write_netresinflow){
+                Qin=pSB->GetIntegratedReservoirInflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
+                P  =pSB->GetReservoir()->GetReservoirPrecipGains(Options.timestep)/(Options.timestep*SEC_PER_DAY);
+                E  =pSB->GetReservoir()->GetReservoirEvapLosses (Options.timestep)/(Options.timestep*SEC_PER_DAY);
+                GW =pSB->GetReservoir()->GetReservoirGWLosses   (Options.timestep)/(Options.timestep*SEC_PER_DAY);
+                _HYDRO<<","<<Qin+P-E-GW;
+              }
+              /*FASTER OPTION
+              if (pSB->GetInflowObsTS()!=NULL){
+                double val = pSB->GetInflowObsTS()->GetAvgValue(tt.model_time,Options.timestep); //time shift handled in CTimeSeries::Parse
+                if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
+                else                                             { _HYDRO << ",";       }
+              }*/
               for(i = 0; i < _nObservedTS; i++)
               {
                 if(IsContinuousInflowObs(_pObservedTS[i],pSB->GetID()))
                 {
-                  double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep); //time shift handled in CTimeSeries::Parse
+                  val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep); //time shift handled in CTimeSeries::Parse
                   if((val != RAV_BLANK_DATA) && (tt.model_time>0)) { _HYDRO << "," << val; }
                   else                                             { _HYDRO << ","; }
                 }
@@ -843,11 +858,16 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
             if(pSB->IsGauged()  && (pSB->IsEnabled()))
             {
               _HYDRO<<","<<pSB->GetOutflowRate();
-
+              /*FASTER OPTION
+              if (pSB->GetFlowObsTS()!=NULL){
+                double val = pSB->GetFlowObsTS()->GetAvgValue(tt.model_time,Options.timestep); 
+                if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
+                else                                             { _HYDRO << ",";       }
+              }*/
               for(i = 0; i < _nObservedTS; i++){
                 if(IsContinuousFlowObs(_pObservedTS[i],pSB->GetID()))
                 {
-                  double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
+                  val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
                   if((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
                   else                                            { _HYDRO << ","; }
                 }
@@ -858,17 +878,23 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
               if(pSB->GetReservoir() != NULL){
                 _HYDRO<<","<<pSB->GetReservoirInflow();
                 if (Options.write_netresinflow){
-                  double Qin=pSB->GetReservoirInflow();
-                  double P  =pSB->GetReservoir()->GetReservoirPrecipGains(Options.timestep)/(Options.timestep*SEC_PER_DAY);
-                  double E  =pSB->GetReservoir()->GetReservoirEvapLosses (Options.timestep)/(Options.timestep*SEC_PER_DAY);
-                  double GW =pSB->GetReservoir()->GetReservoirGWLosses   (Options.timestep)/(Options.timestep*SEC_PER_DAY);
+                  Qin=pSB->GetReservoirInflow();
+                  P  =pSB->GetReservoir()->GetReservoirPrecipGains(Options.timestep)/(Options.timestep*SEC_PER_DAY);
+                  E  =pSB->GetReservoir()->GetReservoirEvapLosses (Options.timestep)/(Options.timestep*SEC_PER_DAY);
+                  GW =pSB->GetReservoir()->GetReservoirGWLosses   (Options.timestep)/(Options.timestep*SEC_PER_DAY);
                   _HYDRO<<","<<Qin+P-E-GW;
                 }
+                /*FASTER OPTION
+                if (pSB->GetInflowObsTS()!=NULL){
+                  double val = pSB->GetInflowObsTS()->GetAvgValue(tt.model_time,Options.timestep); //time shift handled in CTimeSeries::Parse
+                  if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
+                  else                                             { _HYDRO << ",";       }
+                }*/
                 for(i = 0; i < _nObservedTS; i++)
                 {
                   if(IsContinuousInflowObs(_pObservedTS[i],pSB->GetID()))
                   {
-                    double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep); //time shift handled in CTimeSeries::Parse
+                    val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep); //time shift handled in CTimeSeries::Parse
                     if((val != RAV_BLANK_DATA) && (tt.model_time>0)) { _HYDRO << "," << val; }
                     else                                             { _HYDRO << ",";        }
                   }
@@ -970,7 +996,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
             for(i = 0; i < _nObservedTS; i++){
               if(IsContinuousLevelObs(_pObservedTS[i],pSB->GetID()))
               {
-                double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
+                val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
                 if((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _LEVELS << "," << val; }
                 else                                            { _LEVELS << ","; }
               }
@@ -1002,7 +1028,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 	          for (i = 0; i < _nObservedTS; i++){
 	            if (IsContinuousStageObs(_pObservedTS[i],pSB->GetID()))
 	            {
-                  double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
+                val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
 	              if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _RESSTAGE << "," << val; }
 	              else                                             { _RESSTAGE << ",";        }
 	            }
@@ -1499,7 +1525,6 @@ void CModel::WriteMajorOutput(const time_struct &tt, string solfile, bool final)
     WriteRatingCurves(*Options);
   }
 }
-
 
 //////////////////////////////////////////////////////////////////
 /// \brief Writes major output to file at the end of simulation

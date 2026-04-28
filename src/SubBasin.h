@@ -55,6 +55,7 @@ private:/*------------------------------------------------------*/
   double           _basin_area;   ///< contributing surface area for subbasin [km2]
   double        _drainage_area;   ///< total upstream drainage area [km2] (includes subbasin area)
   long long     _downstream_ID;   ///< ID of downstream subbasin; if <0, then this outflows outside the model domain
+  int            _downstream_p;   ///< global index of downstream subbasin; DOESNT_EXIST if this is a terminal outlet
   bool                 _gauged;   ///< if true, hydrographs are generated for downstream flows
   bool           _is_headwater;   ///< true if no subbasins drain into this one and _pInflowHydro==NULL
   bool             _is_conduit;   ///< true if basin is 'conduit' basin, and shouldn't have HRUs
@@ -200,6 +201,7 @@ public:/*-------------------------------------------------------*/
   double               GetCelerity          () const;
   double               GetDiffusivity       () const;
   long long            GetDownstreamID      () const;
+  int                  GetDownstreamIndex   () const;
   int                  GetNumHRUs           () const;
   const CHydroUnit    *GetHRU               (const int k) const;
   bool                 IsGauged             () const;

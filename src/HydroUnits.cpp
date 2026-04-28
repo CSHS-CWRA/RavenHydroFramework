@@ -692,8 +692,6 @@ double  CHydroUnit::GetSnowSWE      () const
 //
 double  CHydroUnit::GetSnowCover () const
 {
-  const optStruct *Options=_pModel->GetOptStruct();
-
   int    iSnFrac=_pModel->GetStateVarIndex(SNOW_COVER);
   int    iSnow  =_pModel->GetStateVarIndex(SNOW);
 
@@ -705,6 +703,7 @@ double  CHydroUnit::GetSnowCover () const
   }
   else  //snowcover depletion curves
   {
+    const optStruct *Options=_pModel->GetOptStruct();
     if(Options->snow_depletion==SNOWCOV_NONE)
     {
       if(GetSnowSWE()<NEGLIGBLE_SNOW) { return 0.0; }

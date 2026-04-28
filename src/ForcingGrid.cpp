@@ -861,6 +861,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
 
       //Read from NetCDF (this is the bottleneck of this code)
       retval=nc_get_vars_double(ncid,varid_f,nc_start,nc_length,nc_stride,&aTmp2D[0][0]);
+      //retval=nc_get_vara_double(ncid,varid_f,nc_start,nc_length,&aTmp2D[0][0]); //supposedly faster, but testing finds otherwise
       HandleNetCDFErrors(retval);
       new_chunk_read = true;
 

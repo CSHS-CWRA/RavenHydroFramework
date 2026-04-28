@@ -941,7 +941,6 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       aDrainageVals[p]=0;
     }
     CSubBasin *pSB;
-    long long SBdown;
     int p,p_down;
     for (int pp=0;pp<pModel->GetNumSubBasins();pp++)
     {
@@ -960,9 +959,9 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       else if (_var==VAR_RIVULET_STORAGE  ){val=pSB->GetRivuletStorage  ();}
       sum    [p]+=area*val;
       areasum[p]+=area;
-      SBdown=pSB->GetDownstreamID();
-      if (SBdown>=0){
-        p_down=pModel->GetSubBasinByID(SBdown)->GetGlobalIndex();
+
+      p_down=pSB->GetDownstreamIndex();
+      if (p_down!=DOESNT_EXIST){
         sum    [p_down]+=sum    [p];
         areasum[p_down]+=areasum[p];
       }

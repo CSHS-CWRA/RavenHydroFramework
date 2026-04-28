@@ -43,6 +43,7 @@ CSubBasin::CSubBasin( const long long      Identifier,
   _name              =Name;
   _is_conduit        =is_conduit;
   _global_p          =DOESNT_EXIST;
+  _downstream_p      =DOESNT_EXIST;
 
   _basin_area        =0.0;
   _drainage_area     =0.0;
@@ -224,6 +225,12 @@ double                  CSubBasin::GetDrainageArea     () const {return _drainag
 /// \return ID of downstream subbasin (or DOESNT_EXIST if there is none)
 //
 long long               CSubBasin::GetDownstreamID     () const {return _downstream_ID; }
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns global index of downstream subbasin
+/// \return global index (or DOESNT_EXIST if there is none)
+//
+int                    CSubBasin::GetDownstreamIndex     () const {return _downstream_p; }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns reach length [m]
@@ -1566,6 +1573,7 @@ void CSubBasin::SetDownstreamBasin(const CSubBasin* pSB)
 {
   _pDownSB=pSB;
   if (_pReservoir!=NULL){_pReservoir->SetDownstreamBasin(pSB); }
+  _downstream_p=_pDownSB->GetGlobalIndex();
 }
 
 /////////////////////////////////////////////////////////////////
@@ -1731,6 +1739,8 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
   if (_pInflowHydro != NULL){_is_headwater=false;}
 
   _drainage_area=total_drain_area;
+
+
 
   if(!_disabled){
     //Estimate reference flow in non-headwater basins from annual average runoff
