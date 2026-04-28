@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 
 #include "ForcingGrid.h"
@@ -897,7 +897,6 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
       }
     }
 
-
     // Copy all data from aTmp array to member array _aVal.
     // -------------------------------
     double val;
@@ -911,6 +910,10 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
             val=aTmp3D[icol-_WinStart[0]][irow-_WinStart[1]][it];
             if(val==missval) { CheckValue3D(val,missval,it,irow,icol); }
             if(val==fillval) { CheckValue3D(val,fillval,it,irow,icol); }
+            if(rvn_isnan(val)) {
+              string warn="CForcingGrid::ReadData: NaN data found in forcing file "+_filename+". Cannot proceed.";
+              ExitGracefully(warn.c_str(),BAD_DATA);
+            }
             _aVal[it][ic]=_LinTrans_a*val+_LinTrans_b;
 
           }
@@ -923,6 +926,10 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
 		        val=aTmp3D[irow-_WinStart[1]][icol-_WinStart[0]][it];
             if(val==missval) { CheckValue3D(val,missval,it,irow,icol); }
             if(val==fillval) { CheckValue3D(val,fillval,it,irow,icol); }
+            if(rvn_isnan(val)) {
+              string warn="CForcingGrid::ReadData: NaN data found in forcing file "+_filename+". Cannot proceed.";
+              ExitGracefully(warn.c_str(),BAD_DATA);
+            }
             _aVal[it][ic]=_LinTrans_a*val+_LinTrans_b;
 		      }
 		    }
@@ -934,6 +941,10 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
             val=aTmp3D[icol-_WinStart[0]][it][irow-_WinStart[1]];
             if(val==missval) { CheckValue3D(val,missval,it,irow,icol); }
             if(val==fillval) { CheckValue3D(val,fillval,it,irow,icol); }
+            if(rvn_isnan(val)) {
+              string warn="CForcingGrid::ReadData: NaN data found in forcing file "+_filename+". Cannot proceed.";
+              ExitGracefully(warn.c_str(),BAD_DATA);
+            }
             _aVal[it][ic]=_LinTrans_a*val+_LinTrans_b;
           }
         }
@@ -946,6 +957,10 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
             if(!((Options.deltaresFEWS) && (it==0))) {
               if(val==missval) { CheckValue3D(val,missval,it,irow,icol); }
               if(val==fillval) { CheckValue3D(val,fillval,it,irow,icol); }
+              if(rvn_isnan(val)) {
+                string warn="CForcingGrid::ReadData: NaN data found in forcing file "+_filename+". Cannot proceed.";
+                ExitGracefully(warn.c_str(),BAD_DATA);
+              }
             }
             _aVal[it][ic]=_LinTrans_a*val+_LinTrans_b;
           }
@@ -958,6 +973,10 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
             val=aTmp3D[irow-_WinStart[1]][it][icol-_WinStart[0]];
             if(val==missval) { CheckValue3D(val,missval,it,irow,icol); }
             if(val==fillval) { CheckValue3D(val,fillval,it,irow,icol); }
+            if(rvn_isnan(val)) {
+              string warn="CForcingGrid::ReadData: NaN data found in forcing file "+_filename+". Cannot proceed.";
+              ExitGracefully(warn.c_str(),BAD_DATA);
+            }
             _aVal[it][ic]=_LinTrans_a*val+_LinTrans_b;
           }
         }
@@ -968,7 +987,11 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
             CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
             val=aTmp3D[it][irow-_WinStart[1]][icol-_WinStart[0]];
             if(val==missval) { CheckValue3D(val,missval,it,irow,icol);}
-            if(val==fillval) { CheckValue3D(val,fillval,it,irow,icol); }
+            if(val==fillval) { CheckValue3D(val,fillval,it,irow,icol);}
+            if(rvn_isnan(val)) {
+              string warn="CForcingGrid::ReadData: NaN data found in forcing file "+_filename+". Cannot proceed.";
+              ExitGracefully(warn.c_str(),BAD_DATA);
+            }
             _aVal[it][ic]=_LinTrans_a*val+_LinTrans_b;
           }
         }
@@ -982,6 +1005,10 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
             val=aTmp2D[_IdxNonZeroGridCells[ic]][it];
             if(val==missval) { CheckValue2D(val,missval,_IdxNonZeroGridCells[ic],it); }   // throw error  if value to read in equals "missing_value"
             if(val==fillval) { CheckValue2D(val,fillval,_IdxNonZeroGridCells[ic],it); }   // throw error  if value to read in equals "_FillValue"
+            if(rvn_isnan(val)) {
+              string warn="CForcingGrid::ReadData: NaN data found in forcing file "+_filename+". Cannot proceed.";
+              ExitGracefully(warn.c_str(),BAD_DATA);
+            }
             _aVal[it][ic]=_LinTrans_a*val+_LinTrans_b;
           }
         }
@@ -992,7 +1019,10 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
             val=aTmp2D[it][_IdxNonZeroGridCells[ic]];
             if(val==missval)  { CheckValue2D(val,missval,it,_IdxNonZeroGridCells[ic]); }  // throw error if value to read in equals "missing_value"
             if(val==fillval)  { CheckValue2D(val,fillval,it,_IdxNonZeroGridCells[ic]); }  // throw error if value to read in equals "_FillValue"
-            if(rvn_isnan(val)){ CheckValue2D(val,NAN,    it,_IdxNonZeroGridCells[ic]); }
+            if(rvn_isnan(val)) {
+              string warn="CForcingGrid::ReadData: NaN data found in forcing file "+_filename+". Cannot proceed.";
+              ExitGracefully(warn.c_str(),BAD_DATA);
+            }
             _aVal[it][ic]=_LinTrans_a*val+_LinTrans_b;
           }
         }
