@@ -54,7 +54,7 @@ void   CModel::CorrectTemp(const optStruct   &Options,
     double dry_lapse=this->_pGlobalParams->GetParams()->adiabatic_lapse;//[C/km]
     double wet_lapse=this->_pGlobalParams->GetParams()->wet_adiabatic_lapse;//[C/km]
     double P_range  =this->_pGlobalParams->GetParams()->UBC_lapse_params.A0PPTP; //[mm/d]
-    double w=min(max(F.precip/P_range,1.0),0.0);
+    double w=max(min(F.precip/P_range,1.0),0.0);
     double lapse=(w)*wet_lapse+(1-w)*dry_lapse;
     lapse/=1000.0;//convert to C/m
 

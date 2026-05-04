@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 #include "Precipitation.h"
@@ -255,7 +255,7 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
     }
   }
 
-  if ((pHRU->IsLake()) && (!lake_frozen))
+  if      ((pHRU->IsLake()) && (!lake_frozen))
   {
     if (pHRU->IsLinkedToReservoir()) {
       rates[qSW]=snowthru+rainthru; //handles case when both reservoirs and lake storage used
@@ -329,24 +329,27 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
       else{
         rates[qLake]=rainthru; // in lake, all water just added
       }
-
-      if (pModel->StateVarExists(ICE_THICKNESS))
-      {
-         rates[qPondToLake ]+=state_vars[iPond ]/Options.timestep; //handles on-lake snowmelt whether ice is present or not
-      }
     }
     else if (pHRU->GetHRUType() == HRU_WETLAND)
     {
       rates[qDep] =rainthru; //ponded water goes to depression in wetland
-
-      if (pModel->StateVarExists(ICE_THICKNESS))
-      {
-         rates[qPondToDep ]+=state_vars[iPond ]/Options.timestep; //handles on-wetland snowmelt whether ice is present or not
-      }
     }
     else{
       //everything remaining goes to ponded water variable, usually handled by infiltration and/or abstraction algorithms
       rates[qPond]=rainthru;
+    }
+  }
+
+  //Handle any ponded water present in lakes and wetlands, frozen or not
+  if (pModel->StateVarExists(ICE_THICKNESS))
+  {
+    if(pHRU->GetHRUType() == HRU_LAKE)
+    {
+      rates[qPondToLake]=state_vars[iPond ]/Options.timestep; 
+    }
+    else if (pHRU->GetHRUType() == HRU_WETLAND)
+    {
+      rates[qPondToDep ]=state_vars[iPond ]/Options.timestep; 
     }
   }
 }

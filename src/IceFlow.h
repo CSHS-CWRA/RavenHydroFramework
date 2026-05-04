@@ -21,12 +21,16 @@ class CmvLatIceFlow: public CLateralExchangeProcessABC
 private:/*------------------------------------------------------*/
   double *_aInitGlacierHeight; //initial glacier height, in mm [size: nHRUs]
 
+  CLatConnect **_pLatConnect;  //< array of pointers to HRU source/recipient pairs [size:_nLatConnect]
+  int           _nLatConnect;  //< number of HRU source/recipient pairs
+
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvLatIceFlow(CModel *pModel);
   ~CmvLatIceFlow();
 
   void SetHRUWidth(const int k, const double &w);
+  void AddConnectionArray(CLatConnect **pConnections, const int nConnections);
 
   //inherited functions
   void Initialize();

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -9,6 +9,7 @@
 #include "ParseLib.h"
 #include "ControlStructures.h"
 #include "LatConnect.h"
+#include "IceFlow.h"
 
 CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long int &HRUID,const optStruct &Options);
 
@@ -1127,17 +1128,17 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     }
     case(21):  //----------------------------------------------
     {/*
-        :LateralConnections [SNOW_REDISTRIBUTE or other lateral process name]
+        :LateralConnections [SNOW_REDISTRIBUTE or ICE_FLOW]
           {HRU1} {HRU2} {value} x nConnections
         :EndLateralConnections
       */
       if (Options.noisy) { cout << "   LateralConnections..." << endl; }
       int nLat=0;
       CLatConnect **pLat=NULL;
-      bool snow_redist=false;
+      process_type proc_type=NULL_PROCESS_TYPE;
 
       if(Len < 2) { pp->ImproperFormat(s); break;}
-      if (!strcmp(s[1],"SNOW_REDISTRIBUTE")){snow_redist=true;}
+      if (!strcmp(s[1],"SNOW_REDISTRIBUTE")){proc_type=LAT_REDISTRIBUTE;}
 
       while (((Len==0) || (strcmp(s[0],":EndLateralConnections"))) && (!end_of_file))
       {
@@ -1171,10 +1172,16 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
 
         //copy array of connections to appropriate process
         for (int j=0;j<pModel->GetNumProcesses();j++){
-          if ( (snow_redist) && (pModel->GetProcessType(j)==LAT_REDISTRIBUTE) )
+          if (pModel->GetProcessType(j)==proc_type) 
           {
-            CmvLatRedistribute *pProc=(CmvLatRedistribute*)(pModel->GetProcess(j));
-            pProc->AddConnectionArray(pLat,nLat);
+            if (proc_type==LAT_REDISTRIBUTE){
+              CmvLatRedistribute *pProc=(CmvLatRedistribute*)(pModel->GetProcess(j));
+              pProc->AddConnectionArray(pLat,nLat);
+            }
+            else if (proc_type==LAT_ICE_FLOW){
+              CmvLatIceFlow *pProc=(CmvLatIceFlow*)(pModel->GetProcess(j));
+              pProc->AddConnectionArray(pLat,nLat);
+            }
           }
         }
 

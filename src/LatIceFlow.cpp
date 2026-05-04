@@ -7,6 +7,7 @@ CmvLatIceFlow - simulates lateral flow of glacier ice
 #include "RavenInclude.h"
 #include "HydroProcessABC.h"
 #include "IceFlow.h"
+#include "LatConnect.h"
 
 /*****************************************************************
    Constructor/Destructor
@@ -25,7 +26,18 @@ CmvLatIceFlow::CmvLatIceFlow(CModel *pModel)
 CmvLatIceFlow::~CmvLatIceFlow()
 {
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Copies connnection array - called during RVH file read
+//
+void CmvLatIceFlow::AddConnectionArray(CLatConnect **pConnections, const int nConnections)
+{
+  _nLatConnect=nConnections;
 
+  _pLatConnect=new CLatConnect *[_nLatConnect];
+  for (int n=0; n<_nLatConnect;n++){
+    _pLatConnect[n]=new CLatConnect(*pConnections[n]);
+  }
+}
 bool sortByElevation(const CHydroUnit *pA,const CHydroUnit *pB)
 {
   return (pA->GetElevation() > pB->GetElevation());
@@ -37,7 +49,7 @@ void CmvLatIceFlow::Initialize()
 {
   // Calculate the number of lateral connections
   // All subbasins which include at least one glacier HRU get an array of lateral connections
-  bool *found;
+  /*bool *found;
   found=new bool[_pModel->GetNumSubBasins()];
   for (int p=0;p<_pModel->GetNumSubBasins();p++){
     found[p]=false;
@@ -91,6 +103,35 @@ void CmvLatIceFlow::Initialize()
     }
   }
   delete [] found;
+*/
+
+  if (_nLatConnect==0){
+    ExitGracefully("CmvLatIceFlow::Initialize(): no lateral connections specified. Missing the :LateralConnections command?",BAD_DATA_WARN);
+    return;
+  }
+  // Calculate the number of lateral connections
+  _nLatConnections = _nLatConnect;
+
+  // Allocate memory for the arrays
+  _kFrom    = new int[_nLatConnections];
+  _kTo      = new int[_nLatConnections];
+  _iFromLat = new int[_nLatConnections];
+  _iToLat   = new int[_nLatConnections];
+
+  int iGlacierIce=_pModel->GetStateVarIndex(GLACIER_ICE);
+
+  // Initialize the arrays using the methods from CLatConnect
+  for (int q = 0; q < _nLatConnections; q++)
+  {
+    CLatConnect* connection = _pLatConnect[q];
+
+    _kFrom   [q] = _pModel->GetHRUByID(_pLatConnect[q]->GetSourceHRUID()   )->GetGlobalIndex();
+    _kTo     [q] = _pModel->GetHRUByID(_pLatConnect[q]->GetRecipientHRUID())->GetGlobalIndex();
+
+    _iFromLat[q] = iGlacierIce;
+    _iToLat  [q] = iGlacierIce;
+  }
+
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Initialization (prior to solution, after reading initial conditions)
