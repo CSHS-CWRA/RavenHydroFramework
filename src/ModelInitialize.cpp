@@ -36,7 +36,7 @@ void CModel::Initialize(const optStruct &Options)
                     "CModel::Initialize: Must have at least one SubBasin",BAD_DATA);
   ExitGracefullyIf(_nHydroUnits<1,
                     "CModel::Initialize: Must have at least one hydrologic unit",BAD_DATA);
-  ExitGracefullyIf(_nGauges<1 && _nForcingGrids<1 && (!Options.in_bmi_mode),
+  ExitGracefullyIf(_nGauges<1 && _nForcingGrids<1 && (!Options.use_bmi_weather),
                     "CModel::Initialize: Must have at least one meteorological gauge station or forcing grid",BAD_DATA);
   ExitGracefullyIf(_nProcesses==0,
                     "CModel::Initialize: must have at least one hydrological process included in model",BAD_DATA);
@@ -176,7 +176,7 @@ void CModel::Initialize(const optStruct &Options)
 
   // Generate Gauge Weights from Interpolation (except if in BMI mode and no RVT file is specified)
   //--------------------------------------------------------------
-  if ((!Options.in_bmi_mode) || (strcmp(Options.rvt_filename.c_str(), "") != 0))
+  if (!Options.use_bmi_weather)
   {
     if (!Options.silent){cout <<"  Generating Gauge Interpolation Weights..."<<endl;}
     forcing_type f_gauge=F_PRECIP;

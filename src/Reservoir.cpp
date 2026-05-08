@@ -1508,7 +1508,7 @@ void CReservoir::SetOptimizedOutflow(const double& Qopt)
 //
 void  CReservoir::SetReservoirStage(const double &ht,const double &ht_last)
 {
-  _stage_last=ht_last;
+  if (ht_last!=RAV_BLANK_DATA){_stage_last=ht_last;}
   _stage     =ht;
 }
 

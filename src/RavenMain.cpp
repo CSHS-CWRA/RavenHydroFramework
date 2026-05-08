@@ -233,6 +233,7 @@ int ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
   Options.forecast_shift=0.0;
   Options.warm_ensemble_run="";
   Options.in_bmi_mode = false;  // "regular mode": Raven called from command line
+  Options.use_bmi_weather=false;
   Options.benchmarking=false;
 
   //Parse argument list

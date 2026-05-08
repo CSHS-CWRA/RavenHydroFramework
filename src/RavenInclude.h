@@ -1206,7 +1206,8 @@ struct optStruct
   netcdfatt       *aNetCDFattribs;            ///< array of NetCDF attrributes {attribute/value pair}
   int              nNetCDFattribs;            ///< size of array of NetCDF attributes
   int              NetCDF_chunk_mem;          ///< [MB] size of memory chunk for each forcing grid
-  bool             in_bmi_mode;               ///< true if in BMI mode (no rvt files, no end time)
+  bool             in_bmi_mode;               ///< true if in BMI mode 
+  bool             use_bmi_weather;           ///< true if forcings provided by BMI connection (no rvt, gauges, grids required)
   double           sv_override_endtime;       ///< model time [d] after which state variable overrides are disabled (default: 1e99)
   bool             glacier_model_on;          ///< explicitly tracks GLACIER_ICE rather than treating as infinite reservoir (default: false)
 };

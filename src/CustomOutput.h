@@ -45,17 +45,21 @@ enum time_agg
 };
 
 ///////////////////////////////////////////////////////////////////////
-/// \brief
-/// \docminor This enumerated list and its values need to be described
+/// the variables accessible for writing to CustomOutput and/or being accessed via BMI 
+/// 
 enum diagnostic
 {
-  VAR_STATE_VAR,        ///< track state variable
-  VAR_FORCING_FUNCTION, ///< track forcing function
+  VAR_STATE_VAR,        ///< track any state variable
+  VAR_FORCING_FUNCTION, ///< track any forcing function
+
   VAR_STREAMFLOW,       ///< track streamflow
   VAR_RESERVOIR_STORAGE,///< track reservoir storage
+  VAR_RESERVOIR_STAGE,  ///> track reservoir stage
   VAR_CHANNEL_STORAGE,  ///< track channel storage
   VAR_RIVULET_STORAGE,  ///< track rivulet storage
+
   VAR_HYD_COND,         ///< track hydraulic conductivity
+
   VAR_FROM_FLUX,        ///< track gross flux from specific state variable
   VAR_TO_FLUX,          ///< track gross flux to specific state variable
   VAR_BETWEEN_FLUX      ///< track net flux between specific state variables

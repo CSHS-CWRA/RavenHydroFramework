@@ -709,7 +709,9 @@ bool ParseMainInputFile (CModel     *&pModel,
        :Duration [double time] [hh:mm:ss.00]
        */
       if (Options.noisy) {cout <<"Simulation duration"<<endl;}
-      if (Options.in_bmi_mode) { WriteWarning("ParseMainInputFile: a value was provided for the simulation duration. This may affect the behavior of BMI::Update() after the duration period.", Options.noisy); }
+      if (Options.in_bmi_mode) { 
+        WriteWarning("ParseMainInputFile: a value was provided for the simulation duration. This may affect the behavior of BMI::Update() after the duration period.",Options.noisy);
+      }
       if (Len<2){ImproperFormatWarning(":Duration",p,Options.noisy);  break;}
       double partday=0.0;
       if ((Len>=3) &&  (*(s[2])!='#') && (*(s[2])!='*')){
@@ -781,7 +783,9 @@ bool ParseMainInputFile (CModel     *&pModel,
      */
       if(Options.noisy) { cout<<":EndDate"<<endl; }
       ExitGracefullyIf(Options.julian_start_year==1666,":EndDate command must be after :StartDate command in .rvi file.",BAD_DATA_WARN);
-      if (Options.in_bmi_mode) { WriteWarning("ParseMainInputFile: a value was provided for the simulation end date. This may affect the behavior of BMI::Update() after the simulation end date.", Options.noisy); }
+      if (Options.in_bmi_mode) { 
+        WriteWarning("ParseMainInputFile: a value was provided for the simulation end date. This may affect the behavior of BMI::Update() after the simulation end date.",Options.noisy);
+      }
       if(Len<2) { ImproperFormatWarning(":EndDate",p,Options.noisy); break; }
       time_struct tt;
       if (Len==2){tt=DateStringToTimeStruct(s[1],"00:00:00",Options.calendar);}

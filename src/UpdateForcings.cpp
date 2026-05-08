@@ -235,11 +235,11 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       }
 
       // if in BMI without RVT file, precip and temp values are expected to have been given before this point
-      if (Options.in_bmi_mode && !rvt_file_provided) {
-        F.precip           = _pHydroUnits[k]->GetForcingFunctions()->precip + 0.0;
-        F.precip_daily_ave = _pHydroUnits[k]->GetForcingFunctions()->precip + 0.0;  // TODO: check
+      if (Options.use_bmi_weather) {
+        F.precip           = _pHydroUnits[k]->GetForcingFunctions()->precip;
+        F.precip_daily_ave = _pHydroUnits[k]->GetForcingFunctions()->precip;  // TODO: check
         F.precip_5day      = F.precip * 5;                                          // TODO: check
-        F.temp_ave         = _pHydroUnits[k]->GetForcingFunctions()->temp_ave + 0.0;
+        F.temp_ave         = _pHydroUnits[k]->GetForcingFunctions()->temp_ave;
       }
 
       //-------------------------------------------------------------------
@@ -434,36 +434,35 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       tc = _pSubBasins[p]->GetTemperatureCorrection();
 
       //--Gauge Corrections------------------------------------------------
-      if (Options.in_bmi_mode && !rvt_file_provided)  // temperature was given by the BMI and no gauge corrections are to be applied
+      if (Options.use_bmi_weather)  // temperature was given by the BMI and no gauge corrections are to be applied
       {
         F.temp_daily_ave = F.temp_daily_max = F.temp_daily_min = F.temp_ave;  // TODO: check if this is acceptable
       }
       else if (!(temp_ave_gridded || (temp_daily_min_gridded && temp_daily_max_gridded) || temp_daily_ave_gridded)) //Gauge Data
       {
-          double gauge_corr;
-          F.temp_ave = F.temp_daily_ave = F.temp_daily_max = F.temp_daily_min = 0.0; // leave out monthly for now
-          for (g = 0; g < _nGauges; g++)
-          {
-              gauge_corr = tc + _pGauges[g]->GetTemperatureCorr();
-              wt = _aGaugeWtTemp[k][g];
+        double gauge_corr;
+        F.temp_ave = F.temp_daily_ave = F.temp_daily_max = F.temp_daily_min = 0.0; // leave out monthly for now
+        for (g = 0; g < _nGauges; g++)
+        {
+          gauge_corr = tc + _pGauges[g]->GetTemperatureCorr();
+          wt = _aGaugeWtTemp[k][g];
 
-              F.temp_ave       += wt * (gauge_corr + Fg[g].temp_ave);
-              F.temp_daily_ave += wt * (gauge_corr + Fg[g].temp_daily_ave);
-              F.temp_daily_max += wt * (gauge_corr + Fg[g].temp_daily_max);
-              F.temp_daily_min += wt * (gauge_corr + Fg[g].temp_daily_min);
-
-          }
+          F.temp_ave       += wt * (gauge_corr + Fg[g].temp_ave);
+          F.temp_daily_ave += wt * (gauge_corr + Fg[g].temp_daily_ave);
+          F.temp_daily_max += wt * (gauge_corr + Fg[g].temp_daily_max);
+          F.temp_daily_min += wt * (gauge_corr + Fg[g].temp_daily_min);
+        }
       }
       else //Gridded Data
       {
-          double grid_corr;
-          grid_corr = pGrid_pre->GetTemperatureCorr();
-          if ((tc+grid_corr)!=0.0){
-            F.temp_ave       += tc + grid_corr;
-            F.temp_daily_ave += tc + grid_corr;
-            F.temp_daily_max += tc + grid_corr;
-            F.temp_daily_min += tc + grid_corr;
-          }
+        double grid_corr;
+        grid_corr = pGrid_pre->GetTemperatureCorr();
+        if ((tc+grid_corr)!=0.0){
+          F.temp_ave       += tc + grid_corr;
+          F.temp_daily_ave += tc + grid_corr;
+          F.temp_daily_max += tc + grid_corr;
+          F.temp_daily_min += tc + grid_corr;
+        }
       }
 
       F.temp_ave_unc = F.temp_daily_ave;
@@ -515,7 +514,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       {
         double gauge_corr;
         F.precip=F.precip_5day=F.precip_daily_ave=0.0;
-        if ((!Options.in_bmi_mode) || rvt_file_provided) {
+        if (!Options.use_bmi_weather) {
           // Gauge-based precip and snowfall correction
           for(g=0; g<_nGauges; g++)
           {
@@ -526,12 +525,12 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
             F.precip_5day    += wt*gauge_corr*Fg[g].precip_5day;
           }
         }
-		    else {
+        else {
           // Gauge-less precip and snowfall correction
           gauge_corr         = (F.snow_frac * sc) + ((1.0-F.snow_frac)*rc);
           F.precip           = gauge_corr * _pHydroUnits[k]->GetForcingFunctions()->precip;
-          F.precip_daily_ave = gauge_corr * _pHydroUnits[k]->GetForcingFunctions()->precip;  // TODO: check if this is acceptable
-          F.precip_5day      = gauge_corr * _pHydroUnits[k]->GetForcingFunctions()->precip * 5;   // TODO: check if this is acceptable
+          F.precip_daily_ave = gauge_corr * _pHydroUnits[k]->GetForcingFunctions()->precip;  
+          F.precip_5day      = gauge_corr * _pHydroUnits[k]->GetForcingFunctions()->precip;   
         }
       }
       else //Gridded Data

@@ -47,10 +47,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
   ifstream INPUT3;                //For tertiary input
   CParser *pSecondaryParser=NULL; //for storage of secondary parser while reading tertiary files
 
-  if (Options.in_bmi_mode && (strcmp(Options.rvt_filename.c_str(), "") == 0)) {  // an RVT may not be specified for a BMI run
-    return (true);
-  }
-
   RVT.open(Options.rvt_filename.c_str());
   if (RVT.fail()){
     cout << "ERROR opening *.rvt file: "<<Options.rvt_filename<<endl; return false;}

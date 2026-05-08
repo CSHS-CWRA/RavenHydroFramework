@@ -1442,6 +1442,11 @@ void CSubBasin::SetQlatHist(const int N, const double *aQl, const double QlLast,
       _aQlatHist[i]=aQl[i];
     }
   }
+  else if (tstep_in==tstep)
+  {
+    WriteWarning("CSubBasin::SetQlatHist: size of lateral flow history differs between current model and initial conditions file. Array will be truncated",false);
+    for (int i=0;i<min(_nQlatHist,N);i++){_aQlatHist[i]=aQl[i];}
+  }
   else if (tstep_in>tstep) //e.g., daily to hourly
   {
     int fac=(int)(tstep_in/tstep);
@@ -1486,6 +1491,11 @@ void CSubBasin::SetQinHist(const int N, const double *aQi, const double &tstep_i
     for (int i=0;i<_nQinHist;i++){
       _aQinHist[i]=aQi[i];
     }
+  }
+  else if (tstep_in==tstep)
+  {
+    WriteWarning("CSubBasin::SetQinHist: size of inflow history differs between current model and initial conditions file. Array will be truncated",false);
+    for(int i=0;i<min(_nQinHist,N);i++) { _aQinHist[i]=aQi[i]; }
   }
   else if (tstep_in>tstep) //e.g., daily to hourly
   {
