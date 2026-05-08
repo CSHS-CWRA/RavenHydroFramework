@@ -1400,6 +1400,7 @@ void CModel::WriteMajorOutput(const time_struct &tt, string solfile, bool final)
                   Options->noisy);
   }
   RVC<<":TimeStamp "<<tt.date_string<<" "<<DecDaysToHours(tt.julian_day)<<endl;
+  RVC<<":TimeStep "<<Options->timestep<<endl;
 
   //Header--------------------------
   //write in blocks of 80 state variables

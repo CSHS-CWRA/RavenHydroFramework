@@ -171,7 +171,7 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
               int N=_pSubBasins[p]->GetInflowHistorySize();
               double *aQobs=new double [N];
               for (int jj=0;jj<N;jj++){aQobs[jj]=Qobs;}
-              _pSubBasins[p]->SetQinHist(N,aQobs);
+              _pSubBasins[p]->SetQinHist(N,aQobs,Options.timestep,Options.timestep);
               delete[] aQobs;
             }
           }

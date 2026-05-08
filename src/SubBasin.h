@@ -307,8 +307,8 @@ public:/*-------------------------------------------------------*/
   void            SetRivuletStorage        (const double &V);
   void            SetQout                  (const double &Q);
   void            SetQoutArray             (const int N, const double *aQo, const double QoLast);
-  void            SetQlatHist              (const int N, const double *aQl, const double QlLast);
-  void            SetQinHist               (const int N, const double *aQi);
+  void            SetQlatHist              (const int N, const double *aQl, const double QlLast,const double &tstep_in, const double &tstep);
+  void            SetQinHist               (const int N, const double *aQi, const double &tstep_in, const double &tstep);
   void            SetDownstreamID          (const long long down_SBID);
   void            SetDownstreamBasin       (const CSubBasin *pSB);
   void            SetGauged                (const bool isgauged);

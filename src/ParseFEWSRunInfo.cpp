@@ -720,9 +720,9 @@ bool ParseNetCDFFlowStateFile(CModel*& pModel,const optStruct& Options)
             else if (i==2){//"BASIN_INFLOW"
               int N=pSB->GetInflowHistorySize();
               double *Qin=new double [N];
-              for(int i=0;i<N;i++) { Qin[i]=pSB->GetInflowHistory()[i]; }
+              for(int j=0;j<N;j++) { Qin[j]=pSB->GetInflowHistory()[j]; }
               Qin[0]=state_vec[index]; //overwrite Qin for this time step
-              pSB->SetQinHist(N,Qin);
+              pSB->SetQinHist(N,Qin,Options.timestep,Options.timestep);
               delete [] Qin;
             }
           }

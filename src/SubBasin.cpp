@@ -1429,19 +1429,44 @@ void CSubBasin::SetQout(const double &Q)
 /// \param &N [in] size of aQl array (=_nQlatHist)
 /// \param *aQl array (size N) history of lateral loss rates from HRUs, water still in subbasin [m3/s]
 /// \param QoLast: most recent lateral inflow to reach [m3/s]
+/// \param tstep_in: timestep of solution file
+/// \param tstep: current model timestep
 //
-void CSubBasin::SetQlatHist(const int N, const double *aQl, const double QlLast)
+void CSubBasin::SetQlatHist(const int N, const double *aQl, const double QlLast, const double &tstep_in, const double &tstep)
 {
-  if (N != _nQlatHist) {
-    WriteWarning("CSubBasin::SetQlatHist: size of lateral flow history differs between current model and initial conditions file. Array will be truncated",false);
-  }
   if(N==0) { return; }
-  for (int i=0;i<min(_nQlatHist,N);i++){_aQlatHist[i]=aQl[i];}
   _QlatLast=QlLast;
-   _Qlocal=0.0;
-   for(int n=0;n<_nQlatHist;n++) {
-     _Qlocal+=_aUnitHydro[n]*_aQlatHist[n];
-   }
+
+  if (N==_nQlatHist){
+    for (int i=0;i<_nQlatHist;i++){
+      _aQlatHist[i]=aQl[i];
+    }
+  }
+  else if (tstep_in>tstep) //e.g., daily to hourly
+  {
+    int fac=(int)(tstep_in/tstep);
+    for (int i=0;i<_nQlatHist;i++){
+      int j=(int)(rvn_floor((double)(i)/fac+0.001));
+      _aQlatHist[i]=aQl[j];
+    }
+    WriteAdvisory("CSubBasin::SetQlatHist: size of lateral flow history differs between current model and initial conditions file. Lateral flow was rescaled.",false);
+  }
+  else if (tstep_in<tstep) //e.g., hourly to daily
+  {
+    int fac=(int)(tstep/tstep_in);
+    for (int i=0;i<_nQlatHist;i++){
+      _aQlatHist[i]=0.0;
+      for (int j=0;j<fac;j++){
+        _aQlatHist[i]+=aQl[i*fac+j]/(double)(fac);
+      }
+    }
+    WriteAdvisory("CSubBasin::SetQlatHist: size of lateral flow history differs between current model and initial conditions file. Lateral flow was rescaled.",false);
+  }
+
+  _Qlocal=0.0;
+  for(int n=0;n<_nQlatHist;n++) {
+    _Qlocal+=_aUnitHydro[n]*_aQlatHist[n];
+  }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -1449,14 +1474,37 @@ void CSubBasin::SetQlatHist(const int N, const double *aQl, const double QlLast)
 /// \param &N [in] size of aQi array (=_nQinHist)
 /// \param *aQi array (size N) recent history of inflow to reach [m3/s]
 /// \param QoLast: most recent lateral inflow to reach [m3/s]
+/// \param tstep_in: timestep of solution file
+/// \param tstep: current model timestep
 //
-void CSubBasin::SetQinHist          (const int N, const double *aQi)
+void CSubBasin::SetQinHist(const int N, const double *aQi, const double &tstep_in, const double &tstep)
 {
-  if (N != _nQinHist) {
-    WriteWarning("CSubBasin::SetQinHist: size of inflow history differs between current model and initial conditions file. Array will be truncated",false);
-  }
   if(N==0) { return; }
-  for (int i=0;i<min(_nQinHist,N);i++){_aQinHist[i]=aQi[i];}
+
+  if (N==_nQinHist)
+  {
+    for (int i=0;i<_nQinHist;i++){
+      _aQinHist[i]=aQi[i];
+    }
+  }
+  else if (tstep_in>tstep) //e.g., daily to hourly
+  {
+    int fac=(int)(tstep_in/tstep);
+    for (int i=0;i<_nQlatHist;i++){
+      int j=(int)(rvn_floor((double)(i)/fac+0.001));
+      _aQinHist[i]=aQi[j];
+    }
+  }
+  else if (tstep_in<tstep) //e.g., hourly to daily
+  {
+    int fac=(int)(tstep/tstep_in);
+    for (int i=0;i<_nQlatHist;i++){
+      _aQinHist[i]=0.0;
+      for (int j=0;j<fac;j++){
+        _aQinHist[i]+=aQi[i*fac+j]/(double)(fac);
+      }
+    }
+  }
 }
 
 //////////////////////////////////////////////////////////////////

@@ -620,7 +620,7 @@ void CEnKFEnsemble::UpdateFromStateMatrix(CModel* pModel,optStruct& Options,cons
            aQi[j]=max(_state_matrix[e][ii+j],0.0);
          }
          ii+=N;
-         pBasin->SetQinHist(N,aQi);
+         pBasin->SetQinHist(N,aQi,Options.timestep,Options.timestep);
 
          N=pBasin->GetNumSegments();
          double* aQo=new double[N];
