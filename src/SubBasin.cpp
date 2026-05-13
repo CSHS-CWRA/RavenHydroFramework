@@ -1726,8 +1726,7 @@ double    CSubBasin::CalculateBasinArea()
       _basin_area+=_pHydroUnits[k]->GetArea();
     }
   }
-  ExitGracefullyIf(_basin_area<0.0,
-                   "CSubBasin::CalculateBasinArea: negative subbasin area!", BAD_DATA);
+  if (_basin_area==0){_basin_area=1e-6;}
 
   return _basin_area;
 }
@@ -1784,7 +1783,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
   string warn;
   if ((_nHydroUnits==0) && (!_is_conduit)){ //allowed if conduit
     warn="CSubBasin::Initialize: subbasin "+to_string(_ID)+" has no constituent HRUs and therefore zero area";
-    ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+    WriteAdvisory(warn.c_str(),Options.noisy);
   }
   if ((_nHydroUnits>0) && (_is_conduit)){
     warn="CSubBasin::Initialize: conduit "+to_string(_ID)+" has constituent HRUs. HRUs should not be linked to conduits";
