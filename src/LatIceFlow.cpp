@@ -17,6 +17,9 @@ CmvLatIceFlow - simulates lateral flow of glacier ice
 CmvLatIceFlow::CmvLatIceFlow(CModel *pModel)
                    : CLateralExchangeProcessABC(LAT_ICE_FLOW, pModel)
 {
+  _pLatConnect=NULL;
+  _nLatConnect=0;
+  _aInitGlacierHeight=NULL;
   DynamicSpecifyConnections(0); // purely lateral flow, no vertical
 }
 
@@ -105,10 +108,11 @@ void CmvLatIceFlow::Initialize()
   delete [] found;
 */
 
-  if (_nLatConnect==0){
+  if ((_nLatConnect==0) || (_pLatConnect==NULL)){
     ExitGracefully("CmvLatIceFlow::Initialize(): no lateral connections specified. Missing the :LateralConnections command?",BAD_DATA_WARN);
     return;
   }
+
   // Calculate the number of lateral connections
   _nLatConnections = _nLatConnect;
 
@@ -121,12 +125,15 @@ void CmvLatIceFlow::Initialize()
   int iGlacierIce=_pModel->GetStateVarIndex(GLACIER_ICE);
 
   // Initialize the arrays using the methods from CLatConnect
+  long long ID1,ID2;
+
   for (int q = 0; q < _nLatConnections; q++)
   {
-    CLatConnect* connection = _pLatConnect[q];
+    ID1=_pLatConnect[q]->GetSourceHRUID();
+    ID2=_pLatConnect[q]->GetRecipientHRUID();
 
-    _kFrom   [q] = _pModel->GetHRUByID(_pLatConnect[q]->GetSourceHRUID()   )->GetGlobalIndex();
-    _kTo     [q] = _pModel->GetHRUByID(_pLatConnect[q]->GetRecipientHRUID())->GetGlobalIndex();
+    _kFrom   [q] = _pModel->GetHRUByID(ID1)->GetGlobalIndex();
+    _kTo     [q] = _pModel->GetHRUByID(ID2)->GetGlobalIndex();
 
     _iFromLat[q] = iGlacierIce;
     _iToLat  [q] = iGlacierIce;
@@ -190,10 +197,18 @@ void CmvLatIceFlow::GetLateralExchange(const double *const *state_vars,
   double distance,slope,H,velocity,surf_grad,width;
 
   int iGlacierIce=_pModel->GetStateVarIndex(GLACIER_ICE);
+
+  double *stor=new double [_pModel->GetNumHRUs()];
+  for(int k=0; k<_pModel->GetNumHRUs(); k++)
+  {
+    stor[k] =state_vars[k][iGlacierIce];
+  }
+  
   for(int q=0; q<_nLatConnections; q++)
   {
-    stor_from =state_vars[_kFrom[q]][iGlacierIce];
-    stor_to   =state_vars[_kTo  [q]][iGlacierIce];
+    stor_from =stor[_kFrom[q]];
+    stor_to   =stor[_kTo  [q]];
+
     Afrom     =pHRUs[_kFrom[q]]->GetArea();
     Ato       =pHRUs[_kTo  [q]]->GetArea();
     elev_from =pHRUs[_kFrom[q]]->GetElevation();
@@ -221,13 +236,23 @@ void CmvLatIceFlow::GetLateralExchange(const double *const *state_vars,
     velocity = ((2*A)/(n+2))*pow(DENSITY_ICE*GRAVITY*fabs(slope),n)*pow(H,n+1); //[m/s]
     velocity*=SEC_PER_DAY; //[m/d]
 
-    velocity*=(-surf_grad)/fabs(surf_grad); //to get direction of flow right (opposite gradient)
+    if (slope!=0.0){
+      velocity*=(-slope)/fabs(slope); //to get direction of flow right (opposite gradient)
+    }
 
     //cout<<"velocity: "<<velocity<<" m/d fl:"<<distance<<" m "<<surf_grad<<" m/m H:"<<H<<" m"<<_aInitGlacierHeight[_kFrom[q]]<<" "<<_aInitGlacierHeight[_kTo[q]]<<" "<<elev_from<<" "<<elev_to<<endl;
 
+    //cout<<" velcalc: v:"<<velocity<<" w:"<<width<<" H:"<<H<<" "<<velocity*width*H*MM_PER_METER<< " "<<len_from<<" "<<len_to<<" "<<slope<<endl;
+
     exchange_rates[q]=velocity*width*H*MM_PER_METER; //[mm-m2/d]
 
-    if (surf_grad<0){exchange_rates[q]=min(exchange_rates[q],+stor_from*Afrom/Options.timestep);}
-    else            {exchange_rates[q]=max(exchange_rates[q],-stor_to  *Ato  /Options.timestep);}
+    if (exchange_rates[q]>0){exchange_rates[q]=min(exchange_rates[q],+stor_from*Afrom/Options.timestep);}
+    else                    {exchange_rates[q]=max(exchange_rates[q],-stor_to  *Ato  /Options.timestep);}
+
+    //update local history of storage
+    stor[_kFrom[q]]-=exchange_rates[q]/Afrom*Options.timestep;
+    stor[  _kTo[q]]+=exchange_rates[q]/Ato  *Options.timestep;
+
   }
+  delete [] stor;
 }

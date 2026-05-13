@@ -1138,7 +1138,12 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
       process_type proc_type=NULL_PROCESS_TYPE;
 
       if(Len < 2) { pp->ImproperFormat(s); break;}
-      if (!strcmp(s[1],"SNOW_REDISTRIBUTE")){proc_type=LAT_REDISTRIBUTE;}
+      if      (!strcmp(s[1],"SNOW_REDISTRIBUTE")){proc_type=LAT_REDISTRIBUTE;}
+      else if (!strcmp(s[1],"ICE_FLOW")         ){proc_type=LAT_ICE_FLOW;}
+      else 
+      {
+        WriteWarning("Unrecognized process name in :LateralConnections command in .rvh file", Options.noisy);
+      }
 
       while (((Len==0) || (strcmp(s[0],":EndLateralConnections"))) && (!end_of_file))
       {
@@ -1871,23 +1876,26 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
       if(Options.noisy) { cout << ":StageDischargeTable" << endl; }
       name=s[1];
       p->Tokenize(s,Len);
-      if(Len >= 1) { NQ = s_to_i(s[0]); }
-      double *aQQ    = new double[NQ];
-      double *aQQ_ht = new double[NQ];
-      for(int i = 0; i < NQ; i++) {
-        p->Tokenize(s,Len);
-        if(IsComment(s[0],Len)) { i--; }
-        else {
-          aQQ_ht[i] = s_to_d(s[0]);
-          aQQ   [i] = s_to_d(s[1]);
+      int NQ2;
+      if(Len >= 1) { 
+        NQ2 = s_to_i(s[0]);
+        double *aQQ    = new double[NQ2];
+        double *aQQ_ht = new double[NQ2];
+        for(int i = 0; i < NQ2; i++) {
+          p->Tokenize(s,Len);
+          if(IsComment(s[0],Len)) { i--; }
+          else {
+            aQQ_ht[i] = s_to_d(s[0]);
+            aQQ   [i] = s_to_d(s[1]);
+          }
         }
-      }
-      p->Tokenize(s,Len); //:EndStageDischargeTable
+        p->Tokenize(s,Len); //:EndStageDischargeTable
 
-      CStageDischargeTable *pCurve=new CStageDischargeTable(name,aQQ_ht,aQQ,NQ);
-      DynArrayAppend((void**&)pSDs,(void*)pCurve,nSDs);
-      delete [] aQQ;
-      delete [] aQQ_ht;
+        CStageDischargeTable *pCurve=new CStageDischargeTable(name,aQQ_ht,aQQ,NQ2);
+        DynArrayAppend((void**&)pSDs,(void*)pCurve,nSDs);
+        delete [] aQQ;
+        delete [] aQQ_ht;
+      }
     }
     //----------------------------------------------------------------------------------------------
     else if (!strcmp(s[0], ":BasicWeir")) {
