@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2022 the Raven Development Team
+Copyright (c) 2008-2026 the Raven Development Team
 ------------------------------------------------------------------
-routing of mass/energy in catchment and channel
+routing of mass/energy in catchments, channels, and reservoirs
 ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "SubBasin.h"
@@ -328,6 +328,7 @@ void   CConstituentModel::RouteMassInReservoir(const int          p,          //
     int     iSW = _pModel->GetStateVarIndex(SURFACE_WATER);
     int     ii  = _pTransModel->GetWaterStorIndexFromSVIndex(iSW);
     decay_coeff = _pTransModel->GetGeochemParam(PAR_DECAY_COEFF,_constit_index,ii,DOESNT_EXIST,pHRU);
+    if(decay_coeff==NOT_SPECIFIED) { decay_coeff=0; }
   }
 
   //Explicit solution of Crank-nicolson problem
