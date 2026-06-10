@@ -1399,7 +1399,10 @@ void CModel::WriteMajorOutput(const time_struct &tt, string solfile, bool final)
     WriteWarning(("CModel::WriteMajorOutput: Unable to open output file "+tmpFilename+" for writing.").c_str(),
                   Options->noisy);
   }
-  RVC<<":TimeStamp "<<tt.date_string<<" "<<DecDaysToHours(tt.julian_day)<<endl;
+  time_struct tts;
+  JulianConvert(0,Options->julian_start_day,Options->julian_start_year,Options->calendar,tts);
+  RVC<<":StartTime "<<tts.date_string<<" "<<DecDaysToHours(tts.julian_day)<<endl;
+  RVC<<":TimeStamp "<<tt.date_string <<" "<<DecDaysToHours(tt.julian_day) <<endl;
   RVC<<":TimeStep "<<Options->timestep<<endl;
 
   //Header--------------------------

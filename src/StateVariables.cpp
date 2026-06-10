@@ -6,17 +6,13 @@
 #include "StateVariables.h"
 #include "Transport.h"
 
-//--Initialize Static Variables-----------------------------------
-// int     CStateVariable::_nAliases        =0;
-// string *CStateVariable::_aAliases        =NULL;
-// string *CStateVariable::_aAliasReferences=NULL;
-
 //////////////////////////////////////////////////////////////////
 /// Constructor
 //
 CStateVariable::CStateVariable()
 {
   this->Initialize();
+  _pModel=NULL;
   _pTransportModel=NULL;
 }
 
@@ -84,9 +80,17 @@ void CStateVariable::AddAlias(const string s1, const string s2)
 /// \brief Sets pointer to transport model
 /// \param pTransportModel [in] Pointer to transport model
 //
+void CStateVariable::SetModel(CModel *pModel)
+{
+  _pModel = pModel;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Sets pointer to transport model
+/// \param pTransportModel [in] Pointer to transport model
+//
 void CStateVariable::SetTransportModel(CTransportModel *pTransportModel)
 {
-  this->_pTransportModel = pTransportModel;
+  _pTransportModel = pTransportModel;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -499,7 +503,7 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
 
     //Transport variables
     case(CONSTITUENT):    {
-      name = "!" + this->_pTransportModel->GetConstituentTypeName(layerindex); //e.g., !Nitrogen
+      name = "!" + this->_pTransportModel->GetConstituentTypeName(layerindex); //e.g., !Nitrogen[3]
       break;
     }
     case(CONSTITUENT_SRC):    {
@@ -527,10 +531,17 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
     }
   }
   //multilayer variables
-  if ((typ==SOIL) || (typ==SOIL_TEMP) || (typ==CONSTITUENT)  ||
+  if ((typ==SOIL) || (typ==SOIL_TEMP)   ||
     (typ==CONVOLUTION) || (typ==CONV_STOR) || (typ==LATERAL_EXCHANGE))
   {
     name=name+"["+to_string(layerindex)+"]";
+  }
+  else if (typ==CONSTITUENT){
+    int iWat=this->_pTransportModel->GetWaterStorIndexFromLayer(layerindex);
+    sv_type typ=_pModel->GetStateVarType(iWat);
+    int lay=_pModel->GetStateVarLayer(iWat);
+    string Wat=SVTypeToString(typ,lay);
+    name=name+"_"+Wat;
   }
   if (((typ==SNOW) || (typ==SNOW_LIQ) || (typ==COLD_CONTENT) || (typ==GROUNDWATER)) && (layerindex>0)){
     name=name+"["+to_string(layerindex)+"]";

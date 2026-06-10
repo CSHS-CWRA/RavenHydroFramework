@@ -498,6 +498,9 @@
     <ClCompile Include="FirnEvolution.cpp">
       <Filter>Source Files\Hydrological Processes\Lake/Glacier/Wetland Processes</Filter>
     </ClCompile>
+    <ClCompile Include="AgeTracers.cpp">
+      <Filter>Source Files\Transport Processes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Properties.h">
@@ -718,6 +721,9 @@
     </ClInclude>
     <ClInclude Include="IceFlow.h">
       <Filter>Header Files\Hydrological Processes</Filter>
+    </ClInclude>
+    <ClInclude Include="AgeTracers.h">
+      <Filter>Header Files\Transport</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

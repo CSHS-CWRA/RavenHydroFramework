@@ -667,6 +667,9 @@ void GetUnitNames(constit_type type,bool writemass,string &kg,string &kgd,string
       kg="[1/m2]"; kgd="[1/m2/d]"; mgL="[1/m2]"; //very hard to interpret these units
     }
   }
+  else if(type==AGE_TRACER) {
+    kg="[-]"; kgd="[-]"; mgL="[d]";
+  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief update initial conditions
@@ -694,12 +697,15 @@ void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options)
   //Concentrations or Temperatures file
   //--------------------------------------------------------------------
   if(Options.write_constitmass) {
-    if(_type!=ENTHALPY) { filename=_name+"Mass.csv"; }
-    else                { filename="Enthalpy.csv"; }
+    
+    if      (_type==ENTHALPY)   { filename="Enthalpy.csv";  }
+    else if (_type==AGE_TRACER) { filename="AgeMass.csv";  } //not a sensible request
+    else                        { filename=_name+"Mass.csv";}
   }
   else {
-    if(_type!=ENTHALPY) { filename=_name+"Concentrations.csv";}
-    else                { filename="Temperatures.csv"; }
+    if      (_type==ENTHALPY  ) { filename="Temperatures.csv";}
+    else if (_type==AGE_TRACER) { filename="Ages.csv";}
+    else                        { filename=_name+"Concentrations.csv"; }
   }
   filename=FilenamePrepare(filename,Options);
 
@@ -709,11 +715,11 @@ void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options)
   }
 
   //    Header content ---------------------------
-  if(_type!=ENTHALPY) {
-    _OUTPUT<<"time[d],date,hour,influx"<<kgd<<",Channel Storage"<<kg<<",Rivulet Storage"<<kg;
+  if(_type==ENTHALPY) {
+    _OUTPUT<<"time[d],date,hour,air temp."<<mgL<<",influx"<<kgd<<",Channel Storage"<<kg<<",Rivulet Storage"<<kg; 
   }
   else {
-    _OUTPUT<<"time[d],date,hour,air temp."<<mgL<<",influx"<<kgd<<",Channel Storage"<<kg<<",Rivulet Storage"<<kg;
+    _OUTPUT<<"time[d],date,hour,influx"<<kgd<<",Channel Storage"<<kg<<",Rivulet Storage"<<kg;
   }
 
   for(int ii=0;ii<_pTransModel->GetNumWaterCompartments();ii++)

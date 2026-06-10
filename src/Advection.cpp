@@ -136,8 +136,9 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
   int    nAdvConnections     =pTransModel->GetNumAdvConnections();
   CConstituentModel *pConstit=pTransModel->GetConstituentModel(_constit_ind);
 
-  bool   isEnthalpy=(pConstit->GetType()==ENTHALPY);
-  bool   isIsotope =(pConstit->GetType()==ISOTOPE);
+  bool   isEnthalpy =(pConstit->GetType()==ENTHALPY);
+  bool   isIsotope  =(pConstit->GetType()==ISOTOPE);
+  bool   isAgeTracer=(pConstit->GetType()==AGE_TRACER);
   int    k=pHRU->GetGlobalIndex();
 
   static double *Q =NULL;
@@ -194,26 +195,30 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
       rates[q]=Q[q]*mass/vol*corr; //[mg/m2/d] or [MJ/m2/d]
       if(fabs(rates[q])>mass/tstep) { rates[q]=(Q[q]/fabs(Q[q]))*mass/tstep; }//emptying out compartment
 
-      if ((!isEnthalpy)){ //negative enthalpy/temperature allowed
+      if ((!isEnthalpy) && (!isAgeTracer)){ //negative enthalpy/temperature/age allowed  
         if(mass<-1e-9) { ExitGracefully("CmvAdvection - negative mass",RUNTIME_ERR); }
       }
     }
     else {
-      rates[q]=0.0;
+      rates[q]=0.0;//mass/tstep;
     }
 
     //special consideration - atmospheric precip can have negative storage but still specified concentration or temperature
     //----------------------------------------------------------------------
     if((pModel->GetStateVarType(iF)==ATMOS_PRECIP) &&
-      (pConstit->IsDirichlet(iF,k,tt,Cs,1.0-pHRU->GetForcingFunctions()->snow_frac)))
+      ((isAgeTracer) ||
+      (pConstit->IsDirichlet(iF,k,tt,Cs,1.0-pHRU->GetForcingFunctions()->snow_frac))))
     {
-      if(!isEnthalpy) {
+      if (isEnthalpy) {
+        Cs=pTransModel->GetEnthalpyModel()->GetDirichletEnthalpy(pHRU,Cs);
+      } 
+      else if (isAgeTracer){
+        Cs=tt.model_time+0.5*Options.timestep; //mean age over timestep
+        //Cs=tt.model_time+Options.timestep; //end of time step
+      }
+      else{
         Cs=pConstit->ConvertConcentration(Cs);//[mg/L]->[mg/mm-m2] or [o/oo]->[mg/mm-m2]
       }
-      else {
-        Cs=pTransModel->GetEnthalpyModel()->GetDirichletEnthalpy(pHRU,Cs);
-      }
-
       rates[q]=Q[q]*Cs; //[mg/m2/d] or [MJ/m2/d]
     }
 

@@ -189,9 +189,12 @@ void CHydroProcessABC::DynamicSpecifyConnections(const int nConnects)
 {
   delete [] iFrom; //if these have already been created
   delete [] iTo;
+  iFrom=NULL;
+  iTo=NULL;
   _nConnections=nConnects;
   iFrom=new int [_nConnections];
   iTo  =new int [_nConnections];
+  ExitGracefullyIf(iTo==NULL,"CHydroProcessABC::DynamicSpecifyConnections",OUT_OF_MEMORY);
   for (int q=0;q<_nConnections;q++)
   {
     iFrom[q]    =DOESNT_EXIST;

@@ -12,6 +12,7 @@ coordinates information about constituent storage
 #include "HeatConduction.h"
 #include "EnergyTransport.h"
 #include "IsotopeTransport.h"
+#include "AgeTracers.h"
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implentation of the Transport constructor
@@ -47,8 +48,6 @@ CTransportModel::CTransportModel(CModel *pMod)
 
   _aProcessNames=NULL;
   _nProcessNames=0;
-
-  // _pTransModel=this;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Implentation of the Transport destructor
@@ -70,9 +69,6 @@ CTransportModel::~CTransportModel()
   }
   delete[] _aProcessNames;  _aProcessNames=NULL;
 }
-
-//Static declaration
-// CTransportModel* CTransportModel::_pTransModel=NULL;
 
 //////////////////////////////////////////////////////////////////
 /// \brief converts model layer index (i.e., m in CONSTITUENT[m]) to
@@ -104,18 +100,6 @@ int CTransportModel::GetLayerIndex(const int c,const int i_stor) const
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief returns layer index m corresponding to a specific constituent storage compartment (static version)
-/// \input name in format !Nitrogen|SOIL[2]
-/// \input comp_m layer index of storage compartment (e.g., 2 in above example)
-//
-/*
-int CTransportModel::GetLayerIndexFromName(const string name,const int comp_m) //static
-{
-  return _pTransModel->GetLayerIndexFromName2(name,comp_m);
-}
-*/
-
-//////////////////////////////////////////////////////////////////
 /// \brief returns layer index m corresponding to a specific constituent storage compartment (non-static version)
 /// \input name in format !Nitrogen|SOIL ([2] already trimmed at this point)
 /// \input comp_m layer index of storage compartment (e.g., 2 in above example)
@@ -131,7 +115,7 @@ int CTransportModel::GetLayerIndexFromName2(const string name,const int comp_m) 
 
   tmp=name.substr(1,name.length()-1);             //trim leading '!'
   k=(int)(tmp.find_first_of("|"));                //find char index of "|"
-  if(k==DOESNT_EXIST) { return DOESNT_EXIST; }      //bad format, no "|"
+  if(k==DOESNT_EXIST) { return DOESNT_EXIST; }    //bad format, no "|"
 
   constituent_name=tmp.substr(0,k);
   compartment_name=tmp.substr(k+1,tmp.length()-k);
@@ -523,12 +507,15 @@ double CTransportModel::GetGeochemParam(const gparam_type gtyp,const int c,const
 void   CTransportModel::AddConstituent(string name,constit_type typ,bool is_passive)
 {
   CConstituentModel *pConstitModel;
-  if (typ==ENTHALPY){
+  if      (typ==ENTHALPY){
     _pEnthalpyModel = new CEnthalpyModel(pModel, this, name, _nConstituents);
     pConstitModel=_pEnthalpyModel;
   }
   else if (typ == ISOTOPE) {
     pConstitModel = new CIsotopeModel(pModel, this, name, _nConstituents);
+  }
+  else if (typ == AGE_TRACER){
+    pConstitModel = new CAgeTracer(pModel,this,name,_nConstituents);
   }
   else {
     pConstitModel = new CConstituentModel(pModel, this, name, typ, is_passive, _nConstituents);
@@ -593,6 +580,8 @@ void CTransportModel::Prepare(const optStruct &Options)
       if((iF!=iT) && (CStateVariable::IsWaterStorage(typF,false)) && (CStateVariable::IsWaterStorage(typT,false)))
       { //This is a process that may advect a constituent
         _nAdvConnections++;
+      } else if (typT==CONVOLUTION){
+        _nAdvConnections++; //adds additional connection from convolution to conv_stor[0]
       }
     }
   }
@@ -620,10 +609,22 @@ void CTransportModel::Prepare(const optStruct &Options)
         _iToWater  [qq]=iT;
         _js_indices[qq]=js;
         qq++;
+      } 
+      else if (typT==CONVOLUTION){
+        int layer=pModel->GetStateVarLayer(iT);
+        int tmp=pModel->GetStateVarIndex(CONV_STOR,layer*MAX_CONVOL_STORES+0);
+
+        //issue: convolution is a recipient store, but no :Convolve process is enabled
+        if (tmp!=DOESNT_EXIST){
+          _iFromWater[qq]=iF;
+          _iToWater  [qq]=tmp;        
+          _js_indices[qq]=js;
+          qq++;
+        }
       }
       else {
         //cout<<"NOT A WATER CONNECTION:"<<endl;
-        //cout<<pProc->GetProcessType()<<"  from "<<CStateVariable::SVTypeToString(pModel->GetStateVarType(iF),0)<<" to "<<CStateVariable::SVTypeToString(pModel->GetStateVarType(iT),0)<<endl;
+        //cout<<pProc->GetProcessType()<<"  from "<<pModel->GetStateVarInfo()->SVTypeToString(pModel->GetStateVarType(iF),pModel->GetStateVarLayer(iF))<<" ("<<iF<<") to "<<pModel->GetStateVarInfo()->SVTypeToString(pModel->GetStateVarType(iT),pModel->GetStateVarLayer(iT))<<" ("<<iT<<")"<<endl;
       }
       js++;
     }

@@ -11,7 +11,7 @@
 #endif
 #include <iostream>
 #include <fstream>
-#include "D:\James\Software\Raven\src\BMI.h"
+#include "..\src\BMI.h"
 using namespace std;
 
 typedef void* (*model_create)();

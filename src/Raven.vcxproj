@@ -676,6 +676,7 @@
   <ItemGroup>
     <ClCompile Include="Abstraction.cpp" />
     <ClCompile Include="Advection.cpp" />
+    <ClCompile Include="AgeTracers.cpp" />
     <ClCompile Include="CapillaryRise.cpp" />
     <ClCompile Include="ChemEquilibrium.cpp" />
     <ClCompile Include="CommonFunctions.cpp">
@@ -962,6 +963,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Advection.h" />
+    <ClInclude Include="AgeTracers.h" />
     <ClInclude Include="Albedo.h" />
     <ClInclude Include="BMI.h" />
     <ClInclude Include="ChemEquilibrium.h" />

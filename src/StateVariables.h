@@ -1,12 +1,12 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef STATEVARIABLE_H
 #define STATEVARIABLE_H
 
 #include "RavenInclude.h"
-
+class CModel;
 class CTransportModel;
 
 ///////////////////////////////////////////////////////////////////
@@ -22,6 +22,8 @@ private:/*------------------------------------------------------*/
   string          *_aAliasReferences;  ///< Array of strings referenced by aliases [size: nAliases]
 
   string           CheckAliasList      (const string s);
+
+  CModel          *_pModel;            ///< pointer to model
   CTransportModel *_pTransportModel;   ///< Pointer to transport model
 
 public:/*-------------------------------------------------------*/
@@ -36,6 +38,7 @@ public:/*-------------------------------------------------------*/
 
   void                 AddAlias            (const string s1, const string s2);
 
+  void                 SetModel            (CModel *pModel);
   void                 SetTransportModel   (CTransportModel *pTransportModel);
 
   //static functions

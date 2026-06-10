@@ -9,6 +9,7 @@
 #include "ParseLib.h"
 #include "EnergyTransport.h"
 #include "IsotopeTransport.h"
+#include "AgeTracers.h"
 
 void SetInitialStateVar(CModel *&pModel,const int SVind,const sv_type typ,const int m,const int k,const double &val);
 //////////////////////////////////////////////////////////////////
@@ -23,12 +24,15 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
 {
   int         i,k;              //counters
   long long   SBID;             //subbasin ID
-  //CHydroUnit *pHRU;           //temporary pointers to HRUs, Subbasins
   CSubBasin  *pSB;
   bool        ended(false);
   bool        in_ifmode_statement=false;
 
   double      rvc_tstep=Options.timestep; //default 
+  double      time_diff=0;
+
+
+
 
   time_struct tt;
   JulianConvert(0.0,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
@@ -125,7 +129,8 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
 
     else if  (!strcmp(s[0],":TimeStamp"                   )){code=10; }
     else if  (!strcmp(s[0],":Nudge"                       )){code=11; }
-    else if  (!strcmp(s[0],":TimeStep"                    )){code=18; }
+    else if  (!strcmp(s[0],":TimeStep"                    )){code=18; } 
+    else if  (!strcmp(s[0],":StartTime"                   )){code=19; } 
 
     // management solution vars
     else if  (!strcmp(s[0],":WorkflowVar"                 )){code=13;}
@@ -133,11 +138,6 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":BasinInflowHist"             )){code=15;}
     else if  (!strcmp(s[0],":BasinStageHist"              )){code=16;}
     else if  (!strcmp(s[0],":BasinAreaHist"               )){code=17;}
-
-
-
-
-
 
     switch(code)
     {
@@ -721,9 +721,9 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       //:TimeStamp [yyyy-mm-dd] [00:00:00]
       //purely QA/QC check
       if (Len<3){break;}
-      time_struct tt;
-      tt=DateStringToTimeStruct(s[1],s[2],Options.calendar);
-      if ((Options.julian_start_day!=tt.julian_day) || (Options.julian_start_year!=tt.year)){
+      
+      time_struct tt_end=DateStringToTimeStruct(s[1],s[2],Options.calendar);
+      if ((Options.julian_start_day!=tt_end.julian_day) || (Options.julian_start_year!=tt_end.year)){
         WriteWarning(":Timestamp command in initial conditions (.rvc) file is not consistent with :StartDate command in model (.rvi) file",Options.noisy);
       }
       break;
@@ -982,6 +982,16 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       }
       break;
     }
+    case(19):  //----------------------------------------------
+    {
+      //:StartTime [yyyy-mm-dd] [00:00:00]
+      //needed for initialization of ages
+      if (Len<3){break;}
+      time_struct tt_start,tt_end;
+      tt_start =DateStringToTimeStruct(s[1],s[2],Options.calendar);
+      time_diff=TimeDifference(tt_end.julian_day,tt_end.year,tt_start.julian_day,tt_start.year,Options.calendar);
+      break;
+    }
     default://------------------------------------------------
     {
       char firstChar = *(s[0]);
@@ -1029,8 +1039,13 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
 
   // update initial conditions for transport models
   //======================================================================
+  CConstituentModel *pConstit;
   for (int c = 0; c < pModel->GetTransportModel()->GetNumConstituents(); c++) {
-    pModel->GetTransportModel()->GetConstituentModel(c)->UpdateInitialConditions(Options);
+    pConstit=pModel->GetTransportModel()->GetConstituentModel(c);
+    pConstit->UpdateInitialConditions(Options);
+    if (pConstit->GetType()==AGE_TRACER){
+      ((CAgeTracer*)(pConstit))->SetInitialTimeOffset(time_diff);
+    }
   }
 
   // check quality of initial state variables

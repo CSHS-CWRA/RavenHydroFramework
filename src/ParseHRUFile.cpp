@@ -438,11 +438,16 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
               }
               if(!aParamStrings[i].compare("REACH_HRU_ID")) {
                 if(pModel->GetHRUByID((long long int)in)!=NULL) {
+                  if(pModel->GetHRUByID((long long int)in)->GetHRUType()!=HRU_WATER) {
+                    string warn="ParseHRUPropsFile: non-WATER HRU (HRU="+to_string((long long int)in)+" specified for REACH_HRU_ID";
+                    WriteWarning(warn.c_str(),Options.noisy);
+                  }
                   in=pModel->GetHRUByID((long long int)in)->GetGlobalIndex(); //Convert ID to index
                 }
                 else {
                   ExitGracefully("ParseHRUPropsFile::invalid REACH_HRU_ID in :SubBasinProperties command",BAD_DATA_WARN);
                 }
+                
               }
               //end special handling
 
@@ -1542,8 +1547,13 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
     else if(!strcmp(s[0],":SeepageParameters"))
     {
       if(Options.noisy) { cout << ":SeepageParameters" << endl; }
-      seep_coeff=s_to_d(s[1]);
-      GW_stage  =s_to_d(s[2]);
+      if(Len >= 3) {
+        seep_coeff=s_to_d(s[1]);
+        GW_stage  =s_to_d(s[2]);
+      }
+      else{
+        ExitGracefully("ReservoirParse: incorrect number of terms in :SeepageParameters command",BAD_DATA_WARN);
+      }
     }
     else if(!strcmp(s[0],":MinStageConstraintDominant"))
     {

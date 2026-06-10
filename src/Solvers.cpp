@@ -6,6 +6,7 @@
 #include "RavenInclude.h"
 #include "Model.h"
 #include "GWRiverConnection.h"
+#include "AgeTracers.h"
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Solves system of energy and mass balance ODEs/PDEs for one timestep
@@ -223,7 +224,7 @@ void MassEnergyBalance( CModel            *pModel,
                 aPhinew[k][iFrom[q]]-=rates_of_change[q]*tstep;//mass/energy balance maintained
                 aPhinew[k][iTo  [q]]+=rates_of_change[q]*tstep;//change is an exchange of energy or mass, which must be preserved
               }
-              else if (CStateVariable::IsWaterStorage(typ) && (typ!=CONVOLUTION)){ //or IsWaterStorage(typ,false)
+              else if (CStateVariable::IsWaterStorage(typ) && (typ!=CONVOLUTION) && (typ!=CONV_STOR)){ //or IsWaterStorage(typ,false)
                 rates_of_change[q]=0.0;
                 aPhinew[k][iTo  [q]]+=0.0; //likely from redirect - water moves back to itself
               }
@@ -659,6 +660,9 @@ void MassEnergyBalance( CModel            *pModel,
       }
     }
 
+    if (pConstitModel->GetType()==AGE_TRACER){ //not the most elegant location
+      ((CAgeTracer*)(pConstitModel))->SetModelTime(tt.model_time+Options.timestep);
+    }
     //Route mass over timestep
     //calculations performed in order from upstream (pp=0) to downstream (pp=nSubBasins-1)
     for(pp=0;pp<NB;pp++)

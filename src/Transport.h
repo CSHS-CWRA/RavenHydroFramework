@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2025 the Raven Development Team
+Copyright (c) 2008-2026 the Raven Development Team
 ----------------------------------------------------------------*/
 
 #ifndef TRANSPORTMODEL_H
@@ -14,6 +14,7 @@ enum constit_type {
   SORBED,
   ENTHALPY,
   ISOTOPE,
+  AGE_TRACER,
   TRACER
 };
 

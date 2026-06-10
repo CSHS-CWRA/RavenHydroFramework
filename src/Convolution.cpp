@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ------------------------------------------------------------------
   Convolution (routing water through UH)
   ----------------------------------------------------------------*/
@@ -37,26 +37,30 @@ CmvConvolution::CmvConvolution(convolution_type type,
   _type = type;
   _iTarget = to_index;
 
-  if (!_smartmode){_nStores=MAX_CONVOL_STORES;}
+  _nStores=MAX_CONVOL_STORES;
 
   int N=_nStores; //shorthand
 
-  CHydroProcessABC::DynamicSpecifyConnections(2*N);
+  CHydroProcessABC::DynamicSpecifyConnections(2*N+1);
+  //for updating storage in unit 0 
+  iFrom[0] = pModel->GetStateVarIndex(CONV_STOR, 0  +conv_index*N);
+  iTo  [0] = pModel->GetStateVarIndex(CONV_STOR, 0  +conv_index*N);
+
   for (int i=0; i<N; i++)
   {
     //for applying convolution
-    iFrom[i] = pModel->GetStateVarIndex(CONV_STOR, i+conv_index*N);
-    iTo  [i] = _iTarget;
+    iFrom[i+1] = pModel->GetStateVarIndex(CONV_STOR, i+conv_index*N);
+    iTo  [i+1] = _iTarget;
 
     //for shifting storage history
     if (i < N-1){
-      iFrom[N+i] = pModel->GetStateVarIndex(CONV_STOR, i  +conv_index*N);
-      iTo  [N+i] = pModel->GetStateVarIndex(CONV_STOR, i+1+conv_index*N);
+      iFrom[N+i+1] = pModel->GetStateVarIndex(CONV_STOR, i  +conv_index*N);
+      iTo  [N+i+1] = pModel->GetStateVarIndex(CONV_STOR, i+1+conv_index*N);
     }
   }
   //updating total convolution storage
-  iFrom[2*N-1] = pModel->GetStateVarIndex(CONVOLUTION, conv_index);
-  iTo  [2*N-1] = pModel->GetStateVarIndex(CONVOLUTION, conv_index);
+  iFrom[2*N] = pModel->GetStateVarIndex(CONVOLUTION, conv_index);
+  iTo  [2*N] = pModel->GetStateVarIndex(CONVOLUTION, conv_index);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -131,60 +135,23 @@ void   CmvConvolution::GenerateUnitHydrograph(const CHydroUnit *pHRU, const optS
   int NN;
 
   double sum=0;;
-  if (!_smartmode)
+  
+  max_time=min(MAX_CONVOL_STORES*tstep,max_time); //must truncate
+  N =(int)(ceil(max_time/tstep));
+  if (N==0){N=1;}
+  NN=N;
+  for (int n=0;n<N;n++)
   {
-    max_time=min(MAX_CONVOL_STORES*tstep,max_time); //must truncate
-    N =(int)(ceil(max_time/tstep));
-    if (N==0){N=1;}
-    NN=N;
-    for (int n=0;n<N;n++)
-    {
-      aUnitHydro[n]=LocalCumulDist((n+1)*tstep,pHRU)-sum;
-      sum+=aUnitHydro[n];
+    aUnitHydro[n]=LocalCumulDist((n+1)*tstep,pHRU)-sum;
+    sum+=aUnitHydro[n];
 
-      aInterval[n]=1;
-    }
+    aInterval[n]=1;
   }
-  else /*smart allocation - simplifies history storage*/
-  {
-    N=_nStores;
-    NN=(int)(ceil(max_time/tstep));
-
-    int    i=0;
-    int    nlast=-1;
-    double Flast=0.0;
-    double Fn;
-
-    for (int n = 0; n < NN; n++)
-    {
-      Fn=LocalCumulDist((n+1)*tstep,pHRU);
-      if ((i == 0) && (n>0) && (Fn > 1.0 / _nStores / 4.0)) { //handles lag effect
-        aInterval [i]=( n-nlast-1);
-        aUnitHydro[i]=0;
-        i++;
-        aInterval[i]=1;
-        aUnitHydro[i]=Fn-Flast;
-        Flast=Fn;
-        nlast=n;
-        i++;
-      }
-      else if ((Fn >= Flast + 1.0 / _nStores) || (Fn>0.99)) { //CDF has increased enough to start new interval
-        aInterval [i]=( n-nlast);
-        aUnitHydro[i]=(Fn-Flast);
-        sum+=aUnitHydro[i];
-        Flast=Fn;
-        nlast=n;
-        i++;
-      }
-    }
-    for (int ii = i; ii < N; ii++) {
-      aUnitHydro[ii]=0.0;
-      aInterval [ii]=1;
-    }
-    N=i;
-  }
-
+  
   ExitGracefullyIf(sum==0.0,"CmvConvolution::GenerateUnitHydrograph: bad unit hydrograph constructed",RUNTIME_ERR);
+
+  //correct to ensure that sum _aUnitHydro[m]=1.0
+  for (int n=0;n<N;n++){aUnitHydro[n]/=sum;}
 
   /*static bool first=true;
   if (first) {
@@ -208,9 +175,7 @@ void   CmvConvolution::GenerateUnitHydrograph(const CHydroUnit *pHRU, const optS
     }
     CONV.close();
     first=false;
-  }*/
-  //correct to ensure that sum _aUnitHydro[m]=1.0
-  for (int n=0;n<N;n++){aUnitHydro[n]/=sum;}
+  }*/  
 
 }
 
@@ -289,70 +254,44 @@ void   CmvConvolution::GetRatesOfChange( const double      *state_vars,
   static double S         [MAX_CONVOL_STORES];
   static double aUnitHydro[MAX_CONVOL_STORES];
   static int    aInterval [MAX_CONVOL_STORES];
-
   int N =0;
   GenerateUnitHydrograph(pHRU,Options,&aUnitHydro[0],&aInterval[0],N); //THIS IS SLOW!! - create aUnitHydro as process array
 
   //Calculate S[0] as change in convolution total storage
-  TS_old=state_vars[iFrom[2*_nStores-1]]; //total storage after water added to convol stores earlier in process list
+  TS_old=state_vars[iFrom[2*_nStores]]; //total storage after water added to convol stores earlier in process list
   double sum(0.0);
-  int NN=0;
   for (i=0;i<N;i++){
-    S[i]=state_vars[iFrom[i]];
+    S[i]=state_vars[iFrom[i+1]];
     sum+=S[i];
-    NN+=aInterval[i];
   }
-  S[0]+=(TS_old-sum); //amount of water added this time step to convol stores
+  S[0]+=(TS_old-sum); 
+  rates[0]+=(TS_old-sum)/tstep;
+
+  //amount of water added this time step to convol stores (added to first CONV_STOR)
+  //sum is a proxy for the CONVOLUTION storage prior to addition
 
   //outflow from convolution storage
-  double orig_storage;
+  double orig_storage_i;
   double sumrem;
-  if (!_smartmode){
-    //usually, we just would do Q=sum UH(n)*R(t-n), but we store depleted R rather than original inputs
-    sumrem=1.0;
-    for (i=0; i<N; i++)
-    {
-      if (sumrem<REAL_SMALL){orig_storage=0.0;}
-      else                  {orig_storage=S[i]/sumrem;}
-      rates[i]=aUnitHydro[i]*orig_storage/tstep; //water released to target store from internal store
-      S[i]-=rates[i]*tstep;
-      sumrem-=aUnitHydro[i];
-    }//sumrem should ==0 at end, so should S[N-1]
-    //challengee here - original storage is not necessarily S/sum_0^i-1 UH because of partial shifts of mass
-  }
-  if (_smartmode){
-    int sumn=0;
-    sumrem=1.0;
-    i=0;
-    double rel;
-    for (int n = 0; n < NN; n++) {
-      if (i<_nStores){
-        if (sumrem<REAL_SMALL){orig_storage=0.0;}
-        else                  {orig_storage=S[i]/aInterval[i];}
-        rel=aUnitHydro[i]*orig_storage/tstep;
-        rates[i]+=rel;//water released to target store from internal store
-        S[i]-=rel*tstep;
-
-        sumrem-=aUnitHydro[i]/aInterval[i];
-        if ((n+1 - sumn)>=aInterval[i]) {
-          sumn=n+1;
-          i++;
-        }
-      }
-      else {
-        rates[i]=S[i]/tstep;
-        S[i]=0;
-      }
-    }
-  }
-  //cout<<"convend: "<<sumrem<<" "<<S[N-1]<<endl;
+  //usually, we just would do Q=sum UH(n)*R(t-n), but we store depleted R (actual storage) rather than original inputs
+  sumrem=1.0;
+  for (i=0; i<N; i++)
+  {
+    if (sumrem<REAL_SMALL){orig_storage_i=0.0;}
+    else                  {orig_storage_i=S[i]/sumrem;}
+    rates[i+1]=aUnitHydro[i]*orig_storage_i/tstep; //water released to target store from internal store
+      
+    S[i]-=rates[i+1]*tstep;
+      
+    sumrem-=aUnitHydro[i];
+  }//sumrem should ==0 at end, so should S[N-1]
 
   //time shift convolution history
   double move;
   for (i=N-2; i>=0; i--)
   {
-    move=S[i]/aInterval[i];
-    rates[_nStores+i]=move/tstep;
+    move=S[i];
+    rates[_nStores+i+1]=move/tstep;
     S[i  ]-=move;
     S[i+1]+=move;
   }
@@ -360,7 +299,7 @@ void   CmvConvolution::GetRatesOfChange( const double      *state_vars,
   //update total convolution storage:
   double TS_new=0;
   for (i=1; i<N; i++){TS_new+=S[i];}
-  rates[2*_nStores-1]=(TS_new-TS_old)/tstep;
+  rates[2*_nStores]=(TS_new-TS_old)/tstep;
 }
 
 //////////////////////////////////////////////////////////////////

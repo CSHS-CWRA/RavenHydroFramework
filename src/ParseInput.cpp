@@ -34,6 +34,7 @@
 #include "SurfaceEnergyExchange.h"
 #include "FrozenLake.h"
 #include "EnKF.h"
+#include "AgeTracers.h"
 
 bool ParseMainInputFile        (CModel *&pModel, optStruct &Options);
 bool ParseClassPropertiesFile  (CModel *&pModel, const optStruct &Options, bool &terrain_required);
@@ -3321,9 +3322,10 @@ bool ParseMainInputFile (CModel     *&pModel,
         if(!strcmp(s[2],"TRACER"))  { is_tracer =true; ctype=TRACER; }
       }
 
-      if(!strcmp(s[1],"TEMPERATURE")) { ctype=ENTHALPY; }
-      if(!strcmp(s[1],"18O")        ) { ctype=ISOTOPE;  }
-      if(!strcmp(s[1],"2H")         ) { ctype=ISOTOPE;  }
+      if(!strcmp(s[1],"TEMPERATURE")) { ctype=ENTHALPY;  }
+      if(!strcmp(s[1],"18O")        ) { ctype=ISOTOPE;   }
+      if(!strcmp(s[1],"2H")         ) { ctype=ISOTOPE;   }
+      if(!strcmp(s[1],"AGE")        ) { ctype=AGE_TRACER;}
       pModel->GetTransportModel()->AddConstituent(s[1],ctype,is_passive);
 
       if(!is_passive) {
@@ -3336,6 +3338,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pMover = new CmvMassLoading(s[1], pModel->GetTransportModel(), pModel);
       AddProcess(pModel,pMover,pProcGroup);
 
+      pStateVar->SetModel(pModel);//only needed if transport model exists
       pStateVar->SetTransportModel(pModel->GetTransportModel());
 
       if(ctype==ENTHALPY) {//add precipitation source condition, by default - Tprecip=Tair
