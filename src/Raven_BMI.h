@@ -4,7 +4,7 @@
   ----------------------------------------------------------------*/
 
 // The Basic Model Interface (BMI)  class for Raven.
-// 
+//
 // ================================================================
 // Currently exposes for both input and output:
 //   All state variables (nHRUs)
@@ -133,7 +133,7 @@ class CRavenBMI : public bmixx::Bmi
 
 
 #if defined(_WIN32)
-	  #define LIB_API __declspec(dllexport) 
+	  #define LIB_API __declspec(dllexport)
 #elif defined(__GNUC__)
     #define LIB_API __attribute__((visibility("default")))
 #else

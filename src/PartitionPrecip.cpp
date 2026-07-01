@@ -345,11 +345,11 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
   {
     if(pHRU->GetHRUType() == HRU_LAKE)
     {
-      rates[qPondToLake]=state_vars[iPond ]/Options.timestep; 
+      rates[qPondToLake]=state_vars[iPond ]/Options.timestep;
     }
     else if (pHRU->GetHRUType() == HRU_WETLAND)
     {
-      rates[qPondToDep ]=state_vars[iPond ]/Options.timestep; 
+      rates[qPondToDep ]=state_vars[iPond ]/Options.timestep;
     }
   }
 }

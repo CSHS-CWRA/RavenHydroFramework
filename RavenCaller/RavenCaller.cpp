@@ -33,22 +33,22 @@ int main()
 
   model_create  bmi_model_create  = (model_create )GetProcAddress(hRavenBMI, "bmi_model_create");
   model_destroy bmi_model_destroy = (model_destroy)GetProcAddress(hRavenBMI, "bmi_model_destroy");
-    
+
   if(bmi_model_create==NULL) {
     cerr<<"RAVENCALLER ERROR: NULL pointer to create function"<<endl;
     FreeLibrary(hRavenBMI);
     return 1;
   }
-  
+
   //Create instance of Raven model within BMI wrapper
   bmixx::Bmi* pRavenInstance=(bmixx::Bmi*)bmi_model_create();
   if (pRavenInstance!=NULL)
-  {   
+  {
     try {
       //Initialize model
       cout<<"Initializing..."<<endl;
       pRavenInstance->Initialize("config.txt");
-    
+
       //Query model configuration:
       vector<string> inputs =pRavenInstance->GetInputVarNames();
       cout<<"ACCESSIBLE INPUTS: "<<endl;
@@ -81,7 +81,7 @@ int main()
         //Run Raven for one time step
         pRavenInstance->Update();
 
-        //read outputs at end of time step: 
+        //read outputs at end of time step:
         pRavenInstance->GetValue("STREAMFLOW",SB_values);
         cout<<"streamflow: "<<SB_values[0]<<endl;
       }
@@ -90,7 +90,7 @@ int main()
 
       //Finalize model
       pRavenInstance->Finalize();
-    } 
+    }
 
     //Exception handling
     catch(const std::exception& e) {
@@ -103,7 +103,7 @@ int main()
       }
       return 0;
     }
-  } 
+  }
   else{
     cout<<" RAVENCALLER ERROR: Invalid Raven Instantiation :("<<endl;
   }
@@ -114,4 +114,3 @@ int main()
 #endif
   return 0;
 }
-

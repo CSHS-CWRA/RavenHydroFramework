@@ -39,4 +39,3 @@ public:/*-------------------------------------------------------*/
   void   WriteEnsimMinorOutput      (const optStruct &Options,const time_struct &tt);
 };
 #endif
-

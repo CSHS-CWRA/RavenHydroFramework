@@ -195,7 +195,7 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
       rates[q]=Q[q]*mass/vol*corr; //[mg/m2/d] or [MJ/m2/d]
       if(fabs(rates[q])>mass/tstep) { rates[q]=(Q[q]/fabs(Q[q]))*mass/tstep; }//emptying out compartment
 
-      if ((!isEnthalpy) && (!isAgeTracer)){ //negative enthalpy/temperature/age allowed  
+      if ((!isEnthalpy) && (!isAgeTracer)){ //negative enthalpy/temperature/age allowed
         if(mass<-1e-9) { ExitGracefully("CmvAdvection - negative mass",RUNTIME_ERR); }
       }
     }
@@ -211,7 +211,7 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
     {
       if (isEnthalpy) {
         Cs=pTransModel->GetEnthalpyModel()->GetDirichletEnthalpy(pHRU,Cs);
-      } 
+      }
       else if (isAgeTracer){
         Cs=tt.model_time+0.5*Options.timestep; //mean age over timestep
         //Cs=tt.model_time+Options.timestep; //end of time step
