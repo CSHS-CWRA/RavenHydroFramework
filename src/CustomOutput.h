@@ -45,8 +45,8 @@ enum time_agg
 };
 
 ///////////////////////////////////////////////////////////////////////
-/// the variables accessible for writing to CustomOutput and/or being accessed via BMI 
-/// 
+/// the variables accessible for writing to CustomOutput and/or being accessed via BMI
+///
 enum diagnostic
 {
   VAR_STATE_VAR,        ///< track any state variable

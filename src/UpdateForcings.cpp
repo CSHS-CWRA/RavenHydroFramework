@@ -529,8 +529,8 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
           // Gauge-less precip and snowfall correction
           gauge_corr         = (F.snow_frac * sc) + ((1.0-F.snow_frac)*rc);
           F.precip           = gauge_corr * _pHydroUnits[k]->GetForcingFunctions()->precip;
-          F.precip_daily_ave = gauge_corr * _pHydroUnits[k]->GetForcingFunctions()->precip;  
-          F.precip_5day      = gauge_corr * _pHydroUnits[k]->GetForcingFunctions()->precip;   
+          F.precip_daily_ave = gauge_corr * _pHydroUnits[k]->GetForcingFunctions()->precip;
+          F.precip_5day      = gauge_corr * _pHydroUnits[k]->GetForcingFunctions()->precip;
         }
       }
       else //Gridded Data
