@@ -9,6 +9,27 @@
 
 void ParseManagementFile       (CModel *&pModel, const optStruct &Options);
 
+extern "C"
+{
+  //////////////////////////////////////////////////////////////////
+  /// \brief Create a new instance of the model as expected by NextGen.
+  /// \return A pointer to the newly allocated instance.
+  //
+	LIB_API CRavenBMI *bmi_model_create()
+	{
+		return new CRavenBMI();
+	}
+
+  //////////////////////////////////////////////////////////////////
+  /// \brief Destroy/free an instance created with @see bmi_model_create
+  /// \param ptr A pointer to the instance to be destroyed.
+  //
+	LIB_API void bmi_model_destroy(CRavenBMI *ptr)
+	{
+		delete ptr;
+	}
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief RavenBMI class constructor and destructor
 //
@@ -252,7 +273,7 @@ void CRavenBMI::_CheckConfigVars(std::vector<rvn_var_data>  &vars)
       forcing_type ftype=GetForcingTypeFromString(vars[i].name);
       vars[i].f_type=ftype;
 
-      if(ftype==UNRECOGNIZED_SVTYPE) {
+      if(ftype==F_UNRECOGNIZED) {
         throw std::logic_error("WARNING: config variable '" + vars[i].name + "' has an invalid state variable type.");
         return;
       }
@@ -262,7 +283,7 @@ void CRavenBMI::_CheckConfigVars(std::vector<rvn_var_data>  &vars)
       int layer_ind;
       sv_type typ = pModel->GetStateVarInfo()->StringToSVType(vars[i].name,layer_ind,true);
       vars[i].sv_layer_ind=layer_ind;
-      vars[i].sv_type     =typ;
+      vars[i].state_var_type     =typ;
 
       if (typ==UNRECOGNIZED_SVTYPE){
         throw std::logic_error("WARNING: config variable '" + vars[i].name + "' has an invalid state variable type.");
@@ -512,7 +533,7 @@ std::string CRavenBMI::GetVarUnits(std::string name)
       if      (_output_vars[i].type==VAR_STREAMFLOW)      {return "m3 s-1";}
       else if (_output_vars[i].type==VAR_RESERVOIR_STAGE) {return "m";}
       else if (_output_vars[i].type==VAR_FORCING_FUNCTION){return GetForcingTypeUnits(_output_vars[i].f_type);}
-      else if (_output_vars[i].type==VAR_STATE_VAR)       {return CStateVariable::GetStateVarUnits(_output_vars[i].sv_type); }
+      else if (_output_vars[i].type==VAR_STATE_VAR)       {return CStateVariable::GetStateVarUnits(_output_vars[i].state_var_type); }
     }
   }
   for (int i = 0; i < _input_vars.size(); i++) {
@@ -521,7 +542,7 @@ std::string CRavenBMI::GetVarUnits(std::string name)
       if      (_input_vars[i].type==VAR_STREAMFLOW)      {return "m3 s-1";}
       else if (_input_vars[i].type==VAR_RESERVOIR_STAGE) {return "m";}
       else if (_input_vars[i].type==VAR_FORCING_FUNCTION){return GetForcingTypeUnits(_input_vars[i].f_type);}
-      else if (_input_vars[i].type==VAR_STATE_VAR)       {return CStateVariable::GetStateVarUnits(_input_vars[i].sv_type); }
+      else if (_input_vars[i].type==VAR_STATE_VAR)       {return CStateVariable::GetStateVarUnits(_input_vars[i].state_var_type); }
     }
   }
 
@@ -619,7 +640,7 @@ void CRavenBMI::GetValue(std::string name, void* dest)
         }
       }
       else if (_output_vars[i].type==VAR_STATE_VAR){
-        iSV = pModel->GetStateVarIndex(_output_vars[i].sv_type, _output_vars[i].sv_layer_ind);
+        iSV = pModel->GetStateVarIndex(_output_vars[i].state_var_type, _output_vars[i].sv_layer_ind);
         out=new double[pModel->GetNumHRUs()];
         for (k = 0; k < pModel->GetNumHRUs(); k++) {
           out[k]=pModel->GetHydroUnit(k)->GetStateVarArray()[iSV];
@@ -691,7 +712,7 @@ void CRavenBMI::GetValueAtIndices(std::string name, void* dest, int* inds, int c
       }
       else if (_output_vars[i].type== VAR_STATE_VAR) 
       {
-        iSV = pModel->GetStateVarIndex(_output_vars[i].sv_type, _output_vars[i].sv_layer_ind);
+        iSV = pModel->GetStateVarIndex(_output_vars[i].state_var_type, _output_vars[i].sv_layer_ind);
         for(i = 0; i <count; i++) {
           k=inds[i];
           out[k]=pModel->GetHydroUnit(k)->GetStateVarArray()[iSV];
@@ -761,7 +782,7 @@ void CRavenBMI::SetValue(std::string name, void* src)
       }
       else if (_input_vars[i].type==VAR_STATE_VAR)
       {
-        int iSV=pModel->GetStateVarIndex(_input_vars[i].sv_type,_input_vars[i].sv_layer_ind);
+        int iSV=pModel->GetStateVarIndex(_input_vars[i].state_var_type,_input_vars[i].sv_layer_ind);
 
         for (int k=0;k<pModel->GetNumHRUs();k++){
           pModel->GetHydroUnit(k)->SetStateVarValue(iSV, input[k]);
@@ -813,7 +834,7 @@ void CRavenBMI::SetValueAtIndices(std::string name, int* inds, int count, void* 
       }
       else if (_input_vars[i].type==VAR_STATE_VAR)
       {
-        int iSV=pModel->GetStateVarIndex(_input_vars[i].sv_type,_input_vars[i].sv_layer_ind);
+        int iSV=pModel->GetStateVarIndex(_input_vars[i].state_var_type,_input_vars[i].sv_layer_ind);
         for(int j=0;j<count;j++) {
           k=inds[j];
           pModel->GetHydroUnit(k)->SetStateVarValue(iSV, input[j]);
