@@ -609,7 +609,7 @@ void CTransportModel::Prepare(const optStruct &Options)
         _iToWater  [qq]=iT;
         _js_indices[qq]=js;
         qq++;
-      } 
+      }
       else if (typT==CONVOLUTION){
         int layer=pModel->GetStateVarLayer(iT);
         int tmp=pModel->GetStateVarIndex(CONV_STOR,layer*MAX_CONVOL_STORES+0);
@@ -617,7 +617,7 @@ void CTransportModel::Prepare(const optStruct &Options)
         //issue: convolution is a recipient store, but no :Convolve process is enabled
         if (tmp!=DOESNT_EXIST){
           _iFromWater[qq]=iF;
-          _iToWater  [qq]=tmp;        
+          _iToWater  [qq]=tmp;
           _js_indices[qq]=js;
           qq++;
         }

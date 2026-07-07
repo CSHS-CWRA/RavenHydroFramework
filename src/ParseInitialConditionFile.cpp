@@ -28,7 +28,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
   bool        ended(false);
   bool        in_ifmode_statement=false;
 
-  double      rvc_tstep=Options.timestep; //default 
+  double      rvc_tstep=Options.timestep; //default
   double      time_diff=0;
 
 
@@ -123,14 +123,14 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":InitialReservoirStage"       )){code=8;  }
 
     else if  (!strcmp(s[0],":InitialSurfaceWaterConcentration")){code=9;}
-    
+
     //else if  (!strcmp(s[0],":InitialReservoirConcentration"       )){code=9;  concname=s[1];  }
     //else if  (!strcmp(s[0],":InitialReservoirTemperature"         )){code=9;  concname="TEMPERATURE"; }
 
     else if  (!strcmp(s[0],":TimeStamp"                   )){code=10; }
     else if  (!strcmp(s[0],":Nudge"                       )){code=11; }
-    else if  (!strcmp(s[0],":TimeStep"                    )){code=18; } 
-    else if  (!strcmp(s[0],":StartTime"                   )){code=19; } 
+    else if  (!strcmp(s[0],":TimeStep"                    )){code=18; }
+    else if  (!strcmp(s[0],":StartTime"                   )){code=19; }
 
     // management solution vars
     else if  (!strcmp(s[0],":WorkflowVar"                 )){code=13;}
@@ -721,7 +721,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       //:TimeStamp [yyyy-mm-dd] [00:00:00]
       //purely QA/QC check
       if (Len<3){break;}
-      
+
       time_struct tt_end=DateStringToTimeStruct(s[1],s[2],Options.calendar);
       if ((Options.julian_start_day!=tt_end.julian_day) || (Options.julian_start_year!=tt_end.year)){
         WriteWarning(":Timestamp command in initial conditions (.rvc) file is not consistent with :StartDate command in model (.rvi) file",Options.noisy);

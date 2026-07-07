@@ -1046,25 +1046,25 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
     else if(_var==VAR_RESERVOIR_STORAGE) {
       if      (_spaceAgg==BY_HRU        ){val=RAV_BLANK_DATA;                                        }
       else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin      (k)->GetReservoirStorage();   }
-      else if (_spaceAgg==BY_DRAINAGE   ){val=aDrainageVals[k];                                      } 
+      else if (_spaceAgg==BY_DRAINAGE   ){val=aDrainageVals[k];                                      }
       else if (_spaceAgg==BY_WSHED      ){val=RAV_BLANK_DATA;} //todo [funct] - may wish to support later
       else if (_spaceAgg==BY_HRU_GROUP  ){val=RAV_BLANK_DATA;}
-      else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetTotalResStorage();    } 
+      else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetTotalResStorage();    }
       else if (_spaceAgg==BY_SELECT_HRUS){val=RAV_BLANK_DATA;}
     }
     else if(_var==VAR_CHANNEL_STORAGE) {
       if      (_spaceAgg==BY_HRU        ){val=RAV_BLANK_DATA;                                        }
       else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin      (k)->GetChannelStorage();     }
-      else if (_spaceAgg==BY_DRAINAGE   ){val=aDrainageVals[k];                                      } 
+      else if (_spaceAgg==BY_DRAINAGE   ){val=aDrainageVals[k];                                      }
       else if (_spaceAgg==BY_WSHED      ){val=RAV_BLANK_DATA;} //todo [funct] - may wish to support later
       else if (_spaceAgg==BY_HRU_GROUP  ){val=RAV_BLANK_DATA;}
-      else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetTotalChannelStor();   } 
+      else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetTotalChannelStor();   }
       else if (_spaceAgg==BY_SELECT_HRUS){val=RAV_BLANK_DATA;}
     }
     else if(_var==VAR_RIVULET_STORAGE) {
       if      (_spaceAgg==BY_HRU        ){val=RAV_BLANK_DATA;                                         }
       else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin      (k)->GetRivuletStorage();      }
-      else if (_spaceAgg==BY_DRAINAGE   ){val=aDrainageVals[k];                                       } 
+      else if (_spaceAgg==BY_DRAINAGE   ){val=aDrainageVals[k];                                       }
       else if (_spaceAgg==BY_WSHED      ){val=RAV_BLANK_DATA;} //todo [funct] - may wish to support later
       else if (_spaceAgg==BY_HRU_GROUP  ){val=RAV_BLANK_DATA;}
       else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetTotalRivuletStor();    }
@@ -1378,7 +1378,7 @@ CCustomOutput *CCustomOutput::ParseCustomOutputCommand(char *s[MAXINPUTITEMS], c
     diag=VAR_STREAMFLOW;
     sv_typ=UNRECOGNIZED_SVTYPE;
   }
-  else if (!strcmp(s[3],"RESERVOIR_STORAGE"))//Special handling 
+  else if (!strcmp(s[3],"RESERVOIR_STORAGE"))//Special handling
   {
     diag=VAR_RESERVOIR_STORAGE;
     sv_typ=UNRECOGNIZED_SVTYPE;
@@ -1388,7 +1388,7 @@ CCustomOutput *CCustomOutput::ParseCustomOutputCommand(char *s[MAXINPUTITEMS], c
     diag=VAR_CHANNEL_STORAGE;
     sv_typ=UNRECOGNIZED_SVTYPE;
   }
-  else if (!strcmp(s[3],"RIVULET_STORAGE"))//Special handling 
+  else if (!strcmp(s[3],"RIVULET_STORAGE"))//Special handling
   {
     diag=VAR_RIVULET_STORAGE;
     sv_typ=UNRECOGNIZED_SVTYPE;

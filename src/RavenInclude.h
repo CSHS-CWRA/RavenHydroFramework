@@ -99,7 +99,7 @@ extern string g_output_directory; ///< Had to be here to avoid passing Options s
 extern double g_debug_vars[10];   ///< can store any variables used during debugging; written to raven_debug.csv if debug_mode is on
 extern bool   g_suppress_warnings;///< Had to be here to avoid passing Options structure around willy-nilly
 extern string g_last_warning;     ///
-extern int    g_warn_count;       
+extern int    g_warn_count;
 extern bool   g_suppress_zeros;   ///< converts all output numbers less than REAL_SMALL to zero
 extern bool   g_disable_freezing; ///< disables freezing impacts in thermal wrapper code
 extern double g_min_storage;      ///< minimum soil storage
@@ -1206,7 +1206,7 @@ struct optStruct
   netcdfatt       *aNetCDFattribs;            ///< array of NetCDF attrributes {attribute/value pair}
   int              nNetCDFattribs;            ///< size of array of NetCDF attributes
   int              NetCDF_chunk_mem;          ///< [MB] size of memory chunk for each forcing grid
-  bool             in_bmi_mode;               ///< true if in BMI mode 
+  bool             in_bmi_mode;               ///< true if in BMI mode
   bool             use_bmi_weather;           ///< true if forcings provided by BMI connection (no rvt, gauges, grids required)
   double           sv_override_endtime;       ///< model time [d] after which state variable overrides are disabled (default: 1e99)
   bool             glacier_model_on;          ///< explicitly tracks GLACIER_ICE rather than treating as infinite reservoir (default: false)
