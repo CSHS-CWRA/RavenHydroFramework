@@ -23,7 +23,7 @@ bool   g_disable_freezing =false;
 double g_min_storage      =0.0;
 int    g_current_e        =DOESNT_EXIST;
 int    g_warn_count       =1;
-string g_last_warning     =""; 
+string g_last_warning     ="";
 
 static string RavenBuildDate(__DATE__);
 

@@ -619,7 +619,7 @@ const CSubBasin **CModel::GetUpstreamSubbasins(const long long SBID, int &nUpstr
   pSBs[nUpstream] = _pSubBasins[p_targ];
   nUpstream++;
 
-  while (top > 0) 
+  while (top > 0)
   {
     top--;
     CSubBasin *current = stack[top];

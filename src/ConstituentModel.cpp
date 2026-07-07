@@ -697,7 +697,7 @@ void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options)
   //Concentrations or Temperatures file
   //--------------------------------------------------------------------
   if(Options.write_constitmass) {
-    
+
     if      (_type==ENTHALPY)   { filename="Enthalpy.csv";  }
     else if (_type==AGE_TRACER) { filename="AgeMass.csv";  } //not a sensible request
     else                        { filename=_name+"Mass.csv";}
@@ -716,7 +716,7 @@ void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options)
 
   //    Header content ---------------------------
   if(_type==ENTHALPY) {
-    _OUTPUT<<"time[d],date,hour,air temp."<<mgL<<",influx"<<kgd<<",Channel Storage"<<kg<<",Rivulet Storage"<<kg; 
+    _OUTPUT<<"time[d],date,hour,air temp."<<mgL<<",influx"<<kgd<<",Channel Storage"<<kg<<",Rivulet Storage"<<kg;
   }
   else {
     _OUTPUT<<"time[d],date,hour,influx"<<kgd<<",Channel Storage"<<kg<<",Rivulet Storage"<<kg;

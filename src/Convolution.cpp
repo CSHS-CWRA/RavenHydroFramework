@@ -42,7 +42,7 @@ CmvConvolution::CmvConvolution(convolution_type type,
   int N=_nStores; //shorthand
 
   CHydroProcessABC::DynamicSpecifyConnections(2*N+1);
-  //for updating storage in unit 0 
+  //for updating storage in unit 0
   iFrom[0] = pModel->GetStateVarIndex(CONV_STOR, 0  +conv_index*N);
   iTo  [0] = pModel->GetStateVarIndex(CONV_STOR, 0  +conv_index*N);
 
@@ -135,7 +135,7 @@ void   CmvConvolution::GenerateUnitHydrograph(const CHydroUnit *pHRU, const optS
   int NN;
 
   double sum=0;;
-  
+
   max_time=min(MAX_CONVOL_STORES*tstep,max_time); //must truncate
   N =(int)(ceil(max_time/tstep));
   if (N==0){N=1;}
@@ -147,7 +147,7 @@ void   CmvConvolution::GenerateUnitHydrograph(const CHydroUnit *pHRU, const optS
 
     aInterval[n]=1;
   }
-  
+
   ExitGracefullyIf(sum==0.0,"CmvConvolution::GenerateUnitHydrograph: bad unit hydrograph constructed",RUNTIME_ERR);
 
   //correct to ensure that sum _aUnitHydro[m]=1.0
@@ -175,7 +175,7 @@ void   CmvConvolution::GenerateUnitHydrograph(const CHydroUnit *pHRU, const optS
     }
     CONV.close();
     first=false;
-  }*/  
+  }*/
 
 }
 
@@ -264,7 +264,7 @@ void   CmvConvolution::GetRatesOfChange( const double      *state_vars,
     S[i]=state_vars[iFrom[i+1]];
     sum+=S[i];
   }
-  S[0]+=(TS_old-sum); 
+  S[0]+=(TS_old-sum);
   rates[0]+=(TS_old-sum)/tstep;
 
   //amount of water added this time step to convol stores (added to first CONV_STOR)
@@ -280,9 +280,9 @@ void   CmvConvolution::GetRatesOfChange( const double      *state_vars,
     if (sumrem<REAL_SMALL){orig_storage_i=0.0;}
     else                  {orig_storage_i=S[i]/sumrem;}
     rates[i+1]=aUnitHydro[i]*orig_storage_i/tstep; //water released to target store from internal store
-      
+
     S[i]-=rates[i+1]*tstep;
-      
+
     sumrem-=aUnitHydro[i];
   }//sumrem should ==0 at end, so should S[N-1]
 
