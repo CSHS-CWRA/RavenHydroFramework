@@ -4,7 +4,7 @@
   ----------------------------------------------------------------*/
 
 // The Basic Model Interface (BMI)  class for Raven.
-// 
+//
 // ================================================================
 // Currently exposes for both input and output:
 //   All state variables (nHRUs)
@@ -27,7 +27,7 @@ struct rvn_var_data
   diagnostic   type;         //forcing vs state var, etc (from custom output)
   string       name;         //e.g., SOIL[0] or RAINFALL
 
-  sv_type      sv_type;      //e.g., SOIL
+  sv_type      state_var_type;      //e.g., SOIL
   int          sv_layer_ind; //
   forcing_type f_type;       //e.g., RAINFALL
 
@@ -35,7 +35,7 @@ struct rvn_var_data
   {
     type=typ;
     name=nam;
-    sv_type=UNRECOGNIZED_SVTYPE;
+    state_var_type=UNRECOGNIZED_SVTYPE;
     f_type=F_UNRECOGNIZED;
     sv_layer_ind=DOESNT_EXIST;
   }
@@ -133,7 +133,7 @@ class CRavenBMI : public bmixx::Bmi
 
 
 #if defined(_WIN32)
-	  #define LIB_API __declspec(dllexport) 
+	  #define LIB_API __declspec(dllexport)
 #elif defined(__GNUC__)
     #define LIB_API __attribute__((visibility("default")))
 #else
@@ -145,19 +145,13 @@ extern "C"
   /// \brief Create a new instance of the model as expected by NextGen.
   /// \return A pointer to the newly allocated instance.
   //
-	LIB_API CRavenBMI *bmi_model_create()
-	{
-		return new CRavenBMI();
-	}
+	LIB_API CRavenBMI *bmi_model_create();
 
   //////////////////////////////////////////////////////////////////
   /// \brief Destroy/free an instance created with @see bmi_model_create
   /// \param ptr A pointer to the instance to be destroyed.
   //
-	LIB_API void bmi_model_destroy(CRavenBMI *ptr)
-	{
-		delete ptr;
-	}
+	LIB_API void bmi_model_destroy(CRavenBMI *ptr);
 }
 
 

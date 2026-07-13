@@ -447,7 +447,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
                 else {
                   ExitGracefully("ParseHRUPropsFile::invalid REACH_HRU_ID in :SubBasinProperties command",BAD_DATA_WARN);
                 }
-                
+
               }
               //end special handling
 
@@ -1145,7 +1145,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
       if(Len < 2) { pp->ImproperFormat(s); break;}
       if      (!strcmp(s[1],"SNOW_REDISTRIBUTE")){proc_type=LAT_REDISTRIBUTE;}
       else if (!strcmp(s[1],"ICE_FLOW")         ){proc_type=LAT_ICE_FLOW;}
-      else 
+      else
       {
         WriteWarning("Unrecognized process name in :LateralConnections command in .rvh file", Options.noisy);
       }
@@ -1182,7 +1182,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
 
         //copy array of connections to appropriate process
         for (int j=0;j<pModel->GetNumProcesses();j++){
-          if (pModel->GetProcessType(j)==proc_type) 
+          if (pModel->GetProcessType(j)==proc_type)
           {
             if (proc_type==LAT_REDISTRIBUTE){
               CmvLatRedistribute *pProc=(CmvLatRedistribute*)(pModel->GetProcess(j));
@@ -1887,7 +1887,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,long long
       name=s[1];
       p->Tokenize(s,Len);
       int NQ2;
-      if(Len >= 1) { 
+      if(Len >= 1) {
         NQ2 = s_to_i(s[0]);
         double *aQQ    = new double[NQ2];
         double *aQQ_ht = new double[NQ2];

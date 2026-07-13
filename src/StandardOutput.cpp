@@ -784,7 +784,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
       //Write hydrographs for gauged watersheds to Hydrographs.csv (ALWAYS DONE)
       //----------------------------------------------------------------
-      
+
       if (Options.ave_hydrograph)
       {
         _HYDRO<<usetime<<","<<usedate<<","<<usehour;
@@ -860,7 +860,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
               _HYDRO<<","<<pSB->GetOutflowRate();
               /*FASTER OPTION
               if (pSB->GetFlowObsTS()!=NULL){
-                double val = pSB->GetFlowObsTS()->GetAvgValue(tt.model_time,Options.timestep); 
+                double val = pSB->GetFlowObsTS()->GetAvgValue(tt.model_time,Options.timestep);
                 if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
                 else                                             { _HYDRO << ",";       }
               }*/

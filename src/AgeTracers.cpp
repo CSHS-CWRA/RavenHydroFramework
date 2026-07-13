@@ -39,7 +39,7 @@ void CAgeTracer::Initialize(const optStruct& Options)
 //
 void CAgeTracer::UpdateInitialConditions(const optStruct& Options)
 {
-  //Reasonable estimates of mean lake age = V/Q 
+  //Reasonable estimates of mean lake age = V/Q
   CSubBasin *pBasin;
   CHydroUnit *pHRU;
   int nSB=_pModel->GetNumSubBasins();
@@ -83,7 +83,7 @@ void CAgeTracer::UpdateInitialConditions(const optStruct& Options)
       pHRU->SetStateVarValue(i,MassAge);
     }
   }
-  
+
   double Vres;
   for(int p=0;p<nSB;p++)
   {
@@ -136,7 +136,7 @@ double CAgeTracer::GetOutflowConcentration(const int p) const
   return _model_time-C;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Converts age units to days after entry 
+/// \brief Converts age units to days after entry
 /// \param age [in] - age of water, [d]
 /// \returns days after entry
 //

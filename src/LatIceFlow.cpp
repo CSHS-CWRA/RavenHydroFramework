@@ -203,7 +203,7 @@ void CmvLatIceFlow::GetLateralExchange(const double *const *state_vars,
   {
     stor[k] =state_vars[k][iGlacierIce];
   }
-  
+
   for(int q=0; q<_nLatConnections; q++)
   {
     stor_from =stor[_kFrom[q]];

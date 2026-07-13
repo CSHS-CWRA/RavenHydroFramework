@@ -1403,14 +1403,14 @@ void SubstringReplace(string &str,const string &from,const string &to)
 void WriteWarning(const string warn, bool noisy)
 {
   if (!g_suppress_warnings){
-    
+
     if (warn==g_last_warning){
       g_warn_count++;
     }
     else{
       ofstream WARNINGS;
       WARNINGS.open((g_output_directory+"Raven_errors.txt").c_str(),ios::app);
-    
+
       if (g_warn_count>1){
         WARNINGS<<"WARNING  : "<<g_last_warning<<endl;
         WARNINGS<<" **[PREVIOUS WARNING REPEATED "<<g_warn_count<<" TIMES]**"<<endl;
