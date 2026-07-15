@@ -47,7 +47,7 @@ void swapWildcards(const char **s,const int Len, string **aWildcards,const int &
 /// \param *&pModel [out] Reference to model object
 /// \param &Options [out] Global model options information
 //
-void ParseManagementFile(CModel *&pModel,const optStruct &Options)
+void ParseManagementFile(CModel *&pModel, optStruct &Options)
 {
 
   if(!Options.management_optimization) {return;}
@@ -193,6 +193,8 @@ void ParseManagementFile(CModel *&pModel,const optStruct &Options)
     else if(!strcmp(s[0],":MaxNLSolverIterations"))       { code=81; }
     else if(!strcmp(s[0],":NLSolverTolerance"))           { code=82; }
     else if(!strcmp(s[0],":NLRelaxationCoeff"))           { code=83; }
+
+    else if(!strcmp(s[0],":SoftConvergence"))             { code=90; }
 
     switch(code)
     {
@@ -1368,6 +1370,12 @@ void ParseManagementFile(CModel *&pModel,const optStruct &Options)
     {/*:NLRelaxationCoeff [#]*/
       if(Options.noisy) { cout <<"Non-linear solver relaxation coefficient"<<endl; }
       pModel->GetManagementOptimizer()->SetRelaxationCoeff(s_to_d(s[1]));
+      break;
+    }
+    case (90): //---------------------------------------------
+    {/*:SoftConvergence*/
+      if(Options.noisy) { cout <<"Soft convergence"<<endl; }
+      Options.soft_convergence=true;
       break;
     }
     default://------------------------------------------------

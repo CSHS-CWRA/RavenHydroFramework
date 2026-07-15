@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2025 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
 
   Uses lpsolve:
     https://lpsolve.sourceforge.net/5.5/
@@ -529,10 +529,6 @@ void CDemandOptimizer::Initialize(CModel* pModel, const optStruct& Options)
   string        name;
   CSubBasin    *pSB;
   decision_var *pDV;
-
-  //CDemand *pTestDemand;
-  //pTestDemand=_pModel->GetSubBasinByID(34)->GetWaterDemandObj(0);
-  //cout<<pTestDemand->GetName()<<endl;
 
   // Catalogue enabled basins/reservoirs - populate _aSBindices, _aResIndices
   //------------------------------------------------------------------
@@ -1442,8 +1438,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
   }*/
 
   double t=tt.model_time;
-  //int nn=tt.nn+1;//end of timestep
-  int nn=static_cast<int>((t+TIME_CORRECTION)/Options.timestep);//+1;//end-of timestep index
+  int nn=static_cast<int>((t+TIME_CORRECTION)/Options.timestep);//end-of timestep index
 
   int    *col_ind=new int    [_nDecisionVars]; //index of column to insert value in current row (1:nDV, not zero-indexed)
   double *row_val=new double [_nDecisionVars]; //values of row[col_ind]
@@ -1525,7 +1520,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
     if (pSB->IsEnabled() && (pSB->GetReservoir()!=NULL))
     {
        double minstage=pSB->GetReservoir()->GetDryStage(); // \todo[funct] - properly handle drying out of reservoir
-       retval=lp_lib::set_lowbo(pLinProg,GetDVColumnInd(DV_STAGE,res_count), minstage-2);
+       retval=lp_lib::set_lowbo(pLinProg,GetDVColumnInd(DV_STAGE,res_count), minstage-20);
        ExitGracefullyIf(retval!=1,"SolveManagementProblem::Error adding stage lower bound",RUNTIME_ERR);
        res_count++;
     }
@@ -1872,7 +1867,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
       h_dry = pRes->GetDryStage();
       upperswap(h_old,h_dry+0.001); //otherwise, instantaneous violation of system of equations
 
-      // Lake mass balance equation (or stage assimilation
+      // Lake mass balance equation (or stage assimilation)
       //----------------------------------------------------------------
       if (!assim_stage)
       {
@@ -1913,7 +1908,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
         row_val[i]=Adt;
         i++;
 
-        col_ind[i]=GetDVColumnInd(DV_DSTAGE2  ,_aResIndices[p]);
+        col_ind[i]=GetDVColumnInd(DV_DSTAGE2 ,_aResIndices[p]);
         row_val[i]=-Adt;
         i++;
 
@@ -2009,12 +2004,12 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
       }
       else /* if (aDisableSDCurve[p])*/ //keep same rows - make inert equations
       {
-        col_ind[0]=GetDVColumnInd(DV_RSLACK ,_aResIndices[p]); row_val[0]=1.0;  RHS=0;
-        retval = lp_lib::add_constraintex(pLinProg,1,row_val,col_ind,ROWTYPE_LE,RHS);
-        IncrementAndSetRowName(pLinProg,rowcount,"reserv_Q_F"+to_string(pSB->GetID()));
+        col_ind[0]=GetDVColumnInd(DV_RSLACK ,_aResIndices[p]); row_val[0]=1.0;  RHS=0.0;
+        retval = lp_lib::add_constraintex(pLinProg,1,row_val,col_ind,ROWTYPE_EQ,RHS);
+        IncrementAndSetRowName(pLinProg,rowcount,"reserv_Q_D"+to_string(pSB->GetID()));
 
         lprow[p]=lp_lib::get_Nrows(pLinProg);
-        h_iter[p]=-1;
+        h_iter[p]=h_old;
       }
     }
   }
@@ -2169,32 +2164,47 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
     lp_lib::get_variables  (pLinProg,soln  );
     lp_lib::get_constraints(pLinProg,constr); //constraint matrix * soln
 
-    for (int i=0;i<_nDecisionVars;i++){
-      dDV[i]=(soln[i]-_pDecisionVars[i]->value);
-      _pDecisionVars[i]->value=soln[i];
+
+    double sum=0;
+    for(int i = 0; i < _nDecisionVars; i++) {
+      sum+=soln[i];
     }
-
-    // Extract solver residuals-  should be near zero everywhere
-    // ----------------------------------------------------------------
-    for (int j=0;j<nrows;j++)
+    if(fabs(sum)<REAL_SMALL) {
+      retval=NUMFAILURE;
+    }
+    if (retval!=NUMFAILURE)
     {
-      _aSolverRowNames [j]=to_string(lp_lib::get_row_name(pLinProg,j+1));
-      _aSolverResiduals[j]=constr[j]-lp_lib::get_rh(pLinProg,j+1); // LHS-RHS for each goal/constraint
+      for (int i=0;i<_nDecisionVars;i++){
+        dDV[i]=(soln[i]-_pDecisionVars[i]->value);
+        _pDecisionVars[i]->value=soln[i];
+      }
 
-      ctyp=lp_lib::get_constr_type(pLinProg,j+1);
-      if (ctyp==LE){upperswap(_aSolverResiduals[j],0.0); }
-      if (ctyp==GE){lowerswap(_aSolverResiduals[j],0.0); _aSolverResiduals[j]*=-1; }
+      // Extract solver residuals-  should be near zero everywhere
+      // ----------------------------------------------------------------
+      for (int j=0;j<nrows;j++)
+      {
+        _aSolverRowNames [j]=to_string(lp_lib::get_row_name(pLinProg,j+1));
+        _aSolverResiduals[j]=constr[j]-lp_lib::get_rh(pLinProg,j+1); // LHS-RHS for each goal/constraint
+
+        ctyp=lp_lib::get_constr_type(pLinProg,j+1);
+        if (ctyp==LE){upperswap(_aSolverResiduals[j],0.0); }
+        if (ctyp==GE){lowerswap(_aSolverResiduals[j],0.0); _aSolverResiduals[j]*=-1; }
+      }
     }
 
     // handle solve error
     // ----------------------------------------------------------------
     if ((retval!=OPTIMAL) && (nInfeasibleIters>1)) //Only complain if we run into infeasibility more than once this tstep
     {
+      if ((Options.soft_convergence) && (retval==NUMFAILURE)) { return; } // THE 'DO NOTHING' STRATEGY
+      
+//solid 14-yr old discussion here on strategies for non-convergence https://lp-solve.yahoogroups.narkive.com/wdApmSVe/problems-with-infeasibility
       string code="";
       if      (retval==INFEASIBLE   ){code="INFEASIBLE"; }
       else if (retval==SUBOPTIMAL   ){code="SUBOPTIMAL"; }
       else if (retval==DEGENERATE   ){code="DEGENERATE"; }
-      else if (retval==ACCURACYERROR){code="ACCURACYERROR "; }
+      else if (retval==ACCURACYERROR){code="ACCURACY ERROR"; }
+      else if (retval==NUMFAILURE   ){code="NUMERICAL FAILURE"; }
 
       cout<<"=========================================="<<endl;
       cout<<"LP SOLVE CANNOT SOLVE OPTIMIZATION PROBLEM"<<endl;
@@ -2221,16 +2231,22 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
         if (pModel->GetSubBasin(p)->GetReservoir()!=NULL){
           long long SBID=pModel->GetSubBasin(p)->GetID();
           double sill_ht=pModel->GetSubBasin(p)->GetReservoir()->GetSillElevation(nn);
+          double lastflow=pModel->GetSubBasin(p)->GetReservoir()->GetOutflowRate();
+          double laststage=pModel->GetSubBasin(p)->GetReservoir()->GetResStage();
+          double minstage=pModel->GetSubBasin(p)->GetReservoir()->GetDryStage();
           ahiterHist[p][iter]=h_iter[p];
           aQiterHist[p][iter]=Q_iter[p];
           aBinHist  [p][iter]=-2;
-          cout << "   >Q " << SBID << ": "; for (int i = 0; i <= iter; i++) { cout << aQiterHist[p][i] << " "; }cout << endl;
-          cout << "   >h " << SBID << ": "; for (int i = 0; i <= iter; i++) { cout << setprecision(10)<<ahiterHist[p][i] << " "; }cout << endl;
-          cout << "   >B " << SBID << ": "; for (int i = 0; i <= iter; i++) { cout <<   aBinHist[p][i] << " "; }cout << endl;
+          cout << "   >Q " << SBID << ": "<<lastflow<<" (last) "; for (int i = 0; i <= iter; i++) { cout << aQiterHist[p][i] << " "; }cout << endl;
+          cout << "   >h " << SBID << ": "<<laststage<<" (last) "; for (int i = 0; i <= iter; i++) { cout << setprecision(10)<<ahiterHist[p][i] << " "; }cout << endl;
+          //cout << "   >B " << SBID << ": "; for (int i = 0; i <= iter; i++) { cout <<   aBinHist[p][i] << " "; }cout << endl;
           cout << "   >Sill ht "<< SBID<<": "<< sill_ht<< " diff: "<< h_iter[p]-sill_ht<<endl;
 
           if (fabs(h_iter[p] - sill_ht) < 0.001) {
-          cout << "   > VERY CLOSE TO SILL: PROBLEM LAKE IS "<<SBID<<endl;
+          cout << "   > DIAGNOSIS: VERY CLOSE TO SILL: PROBLEM LAKE IS "<<SBID<<endl;
+          }
+          if(laststage<=minstage){
+          cout<< "    > DIAGNOSIS: LAKE/RESERVOIR DRYING OUT: PROBLEM LAKE IS "<<SBID<<endl;
           }
         }
       }
@@ -2287,16 +2303,16 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
         //}
         if ((pSB->IsEnabled()) && (pRes!=NULL) && ((!_aDisableSDCurve[p]) ||  _aRevertToSDCurve[p]) && (!assimilating))
         {
-          if      (typ == DV_STAGE) {ahiterHist[p][iter]=h_iter[p]; h_iter[p]=(1.0-relax)*value+(relax)*h_iter[p];  }
-          else if (typ == DV_QOUT ) {aQiterHist[p][iter]=Q_iter[p]; Q_iter[p]=(1.0-relax)*value+(relax)*Q_iter[p];  }
-          if (typ ==DV_QOUTRES){Qsol[p]=value; }
-          if (typ ==DV_RSLACK){Rsol[p]=value; }
+          if      (typ == DV_STAGE)  {ahiterHist[p][iter]=h_iter[p]; h_iter[p]=(1.0-relax)*value+(relax)*h_iter[p];  }
+          else if (typ == DV_QOUT )  {aQiterHist[p][iter]=Q_iter[p]; Q_iter[p]=(1.0-relax)*value+(relax)*Q_iter[p];  }
+          else if (typ == DV_QOUTRES){Qsol[p]=value; }
+          else if (typ == DV_RSLACK ){Rsol[p]=value; }
         }
         else {
-          if      (typ == DV_STAGE) {ahiterHist[p][iter]=h_iter[p];   }
-          else if (typ == DV_QOUT ) {aQiterHist[p][iter]=Q_iter[p];   }
-          if (typ ==DV_QOUTRES){Qsol[p]=value; }
-          if (typ ==DV_RSLACK ){Rsol[p]=value; }
+          if      (typ == DV_STAGE)  {ahiterHist[p][iter]=h_iter[p];   }
+          else if (typ == DV_QOUT )  {aQiterHist[p][iter]=Q_iter[p];   }
+          else if (typ == DV_QOUTRES){Qsol[p]=value; }
+          else if (typ == DV_RSLACK ){Rsol[p]=value; }
         }
       }
 
@@ -2431,29 +2447,34 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
     // ----------------------------------------------------------------------------
     UpdateWorkflowVariables(tt,Options);
 
+    //lp_lib::reset_basis(pLinProg); //JRC: may have value here
+
     iter++;
   } while ((iter<_maxIterations));/*end iteration loop*/
 
   lp_lib::delete_lp(pLinProg);
+
   delete [] soln;
   delete [] constr;
-  delete [] col_ind;
-  delete [] row_val;
-  delete [] h_iter;
-  delete [] Q_iter;
-  delete [] dDV;
-  delete [] lprow;
-  delete [] lplakerow;
-  delete [] lpsbrow;
-  delete [] lpgoalrow;
   delete [] aDivert;
   delete [] aDivGuess;
+
+  delete [] col_ind;
+  delete [] row_val;
+  delete [] dDV;
+  delete [] h_iter;
+  delete [] Q_iter;
+  delete [] lprow;
+  delete [] lpsbrow;
+  delete [] lplakerow;
+  delete [] lpgoalrow;
   delete [] aInfeasHist;
   for (p = 0; p < _pModel->GetNumSubBasins(); p++) {
-    delete [] aQiterHist[p]; delete [] ahiterHist[p];
+    delete [] aQiterHist[p]; delete [] ahiterHist[p]; delete [] aBinHist[p];
   }
   delete [] aQiterHist;
   delete [] ahiterHist;
+  delete [] aBinHist;
 
   //RDEBUG.close();
   //set state variables corresponding to decision variables
@@ -2772,13 +2793,24 @@ void CDemandOptimizer::WriteLPSubMatrix(lp_lib::lprec* pLinProg,string file, con
     LPMAT<<comp<<",";
     LPMAT<<RHS<<",";
     LPMAT<<","<<sumprod<<",";
-    if (bo){LPMAT<<"TRUE";}else{LPMAT<<"FALSE"; }
+    if (bo){LPMAT<<"TRUE";}
+    else   {LPMAT<<"FALSE"; }
     LPMAT<< endl;
   }
   LPMAT<<endl;
   LPMAT<<"last_solution,";
   for (int i=0;i<_nDecisionVars;i++){
     LPMAT<<_pDecisionVars[i]->value<<",";
+  }
+  LPMAT<<endl;
+  LPMAT<<"lower_boundLP,";
+  for (int i=0; i<_nDecisionVars;i++) {
+    LPMAT<<lp_lib::get_lowbo(pLinProg,i+1)<<",";
+  }
+  LPMAT<<endl;
+  LPMAT<<"upper_boundLP,";
+  for (int i=0; i<_nDecisionVars;i++) {
+    LPMAT<<lp_lib::get_upbo(pLinProg,i+1)<<",";
   }
   LPMAT<<endl;
 

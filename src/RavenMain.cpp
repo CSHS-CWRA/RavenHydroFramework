@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2025 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 #include <time.h>
 #include "RavenInclude.h"
@@ -27,7 +27,7 @@ string g_last_warning     ="";
 
 static string RavenBuildDate(__DATE__);
 
-void ParseManagementFile       (CModel *&pModel, const optStruct &Options);
+void ParseManagementFile       (CModel *&pModel, optStruct &Options);
 
 //////////////////////////////////////////////////////////////////
 //

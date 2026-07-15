@@ -19,7 +19,7 @@
 #ifndef _LPSOLVE_
 //#define _LPSOLVE_       // uncomment if compiling lpsolve Demand Optimization version of Raven
 #endif
-#ifndef _BMI_LIBRARY_  //compiler or CMAke flag
+#ifndef _BMI_LIBRARY_  //compiler or CMake flag
 #define STANDALONE    // comment out if compiling as DLL
 #else
 #define BMI_LIBRARY
@@ -1203,6 +1203,7 @@ struct optStruct
   double           assimilation_start;        ///< assimilation start time (in model time [d])
   assimtype        assim_method;              ///< assimilation method
   bool             management_optimization;   ///< apply water management optimization (default: false)
+  bool             soft_convergence;          ///< softens requirements of management solver convergence (default: false)
   netcdfatt       *aNetCDFattribs;            ///< array of NetCDF attrributes {attribute/value pair}
   int              nNetCDFattribs;            ///< size of array of NetCDF attributes
   int              NetCDF_chunk_mem;          ///< [MB] size of memory chunk for each forcing grid

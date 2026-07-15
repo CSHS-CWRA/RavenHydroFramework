@@ -7,7 +7,7 @@
 #include "RavenMain.h"
 #include "Raven_BMI.h"
 
-void ParseManagementFile       (CModel *&pModel, const optStruct &Options);
+void ParseManagementFile       (CModel *&pModel, optStruct &Options);
 
 extern "C"
 {
