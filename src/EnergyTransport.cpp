@@ -325,6 +325,7 @@ void   CEnthalpyModel::RouteMassInReservoir   (const int          p,          //
                                                const double      *aMout_new,  // [MJ/d][size: nsegs ]
                                                      double      &Res_mass,   // [MJ]
                                                      double      &ResSedMass, // [MJ]
+                                                     double      &SourceTransfer, //[MJ]
                                                const optStruct   &Options,
                                                const time_struct &tt) const
 {

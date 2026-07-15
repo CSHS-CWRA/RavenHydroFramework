@@ -40,6 +40,7 @@ CConstituentModel::CConstituentModel(CModel *pMod,CTransportModel *pTMod, string
   _pMassLoadingTS=NULL;
 
   _aSourceIndices=NULL;
+  _aResSources=NULL;
 
   _aMinHist =NULL;
   _aMlatHist=NULL;
@@ -68,6 +69,7 @@ CConstituentModel::~CConstituentModel()
   delete[] _pMassLoadingTS; _pMassLoadingTS=NULL;
   for(int i=0;i<_nSources;i++) { delete _pSources[i]; } delete[] _pSources;
   for(int i=0;i<_nSources;i++) { delete _aSourceIndices[i]; } delete[] _aSourceIndices;
+  delete[] _aResSources;
   DeleteRoutingVars();
 }
 //////////////////////////////////////////////////////////////////
@@ -185,6 +187,29 @@ bool  CConstituentModel::IsDirichlet(const int i_stor,const int k,const time_str
   return true;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Test for whether a dirichlet condition applies to a certain reservoir and time
+/// \note called within solver to track mass balance
+/// \returns true if dirichlet source applies
+/// \returns Cs, source concentration [mg/L] or [C] for enthalpy
+/// \param i_stor [in] storage index of water compartment
+/// \param c [in] constituent index
+/// \param p [in] global SB index
+/// \param tt [in] current time structure
+/// \param Cs [out] Dirichlet source concentration
+//
+bool  CConstituentModel::IsReservoirDirichlet(const int p,const time_struct &tt,double &Cs) const
+{
+  Cs=0.0;
+  int i_source=_aResSources[p];
+  if(i_source==DOESNT_EXIST)          { return false; }
+  if(!_pSources[i_source]->dirichlet) { return false; }
+
+  Cs =_pSources[i_source]->concentration;  
+  if(Cs == DOESNT_EXIST) {Cs = _pSources[i_source]->pTS->GetValue(tt.model_time);}//time series
+
+  return true;
+}
+//////////////////////////////////////////////////////////////////
 /// \brief returns specified mass flux for given constitutent and water storage unit at time tt
 /// \returns source flux in mg/m2/d
 /// \param i_stor [in] storage index of water compartment
@@ -228,6 +253,7 @@ void   CConstituentModel::AddDirichletCompartment(const int i_stor,const int kk,
   pSource->i_stor        =i_stor;
   pSource->kk            =kk;
   pSource->pTS           =NULL;
+  pSource->is_reservoir  =false;
 
   ExitGracefullyIf(pSource->i_stor       ==DOESNT_EXIST,"AddDirichletCompartment: invalid storage compartment index",BAD_DATA_WARN);
 
@@ -236,6 +262,28 @@ void   CConstituentModel::AddDirichletCompartment(const int i_stor,const int kk,
   }
 
   pLast=pSource;//so source is not deleted upon leaving this routine
+}
+void CConstituentModel::AddDirichletReservoirs(const int kk, const double &Cs) 
+{
+  static constit_source *pLast;
+  constit_source *pSource=new constit_source();
+
+  pSource->constit_index=_constit_index; // REFACTOR - this is really no longer needed
+  pSource->concentration =Cs;
+  pSource->concentration2=Cs;
+  pSource->flux          =0.0;
+  pSource->dirichlet     =true;
+  pSource->i_stor        =DOESNT_EXIST;
+  pSource->kk            =kk;
+  pSource->pTS           =NULL;
+  pSource->is_reservoir  =true;
+
+  if(!DynArrayAppend((void**&)(_pSources),(void*)(pSource),_nSources)) {
+    ExitGracefully("CConstituentModel::AddDirichletReservoirs: adding NULL source",BAD_DATA);
+  }
+
+  pLast=pSource;//so source is not deleted upon leaving this routine
+
 }
 //////////////////////////////////////////////////////////////////
 /// \brief adds dirichlet source time series
@@ -497,7 +545,24 @@ void CConstituentModel::Initialize(const optStruct &Options)
       }
     }
   }
-
+  _aResSources = new int[_pModel->GetNumSubBasins()];
+  ExitGracefullyIf(_aResSources==NULL,"CTransport::Initialize(3)",OUT_OF_MEMORY);
+  for (int p = 0; p < _pModel->GetNumSubBasins(); p++) {
+    _aResSources[p]=DOESNT_EXIST;
+    for(i=0;i<_nSources;i++) {
+      if ((_pSources[i]->is_reservoir) && (_pModel->GetSubBasin(p)->GetReservoir()!=NULL))
+      {
+        if (_pSources[i]->kk!=DOESNT_EXIST){
+          if(_pModel->GetSubBasinGroup(_pSources[i]->kk)->IsInGroup(p)) {
+            _aResSources[p]=i;
+          }
+        } 
+        else{
+          _aResSources[p]=i;
+        }
+      }
+    }
+  }
   // Initialize routing variables
   //--------------------------------------------------------------------
   InitializeRoutingVars();

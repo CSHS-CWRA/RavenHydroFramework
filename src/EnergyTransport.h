@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2023 the Raven Development Team
+Copyright (c) 2008-2026 the Raven Development Team
 ----------------------------------------------------------------*/
 
 #ifndef ENERGY_TRANSPORT_H
@@ -91,7 +91,7 @@ public:/*-------------------------------------------------------*/
                                   const int     nMinHist,
                                   const double &tstep,double *aMout_new) const;
   void   RouteMassInReservoir    (const int    p ,
-                                  const double* aMoutnew, double& ResMass, double& ResSedMass,
+                                  const double* aMoutnew, double& ResMass, double& ResSedMass, double &SourceTransfer,
                                   const optStruct   &Options,
                                   const time_struct &tt) const;
 

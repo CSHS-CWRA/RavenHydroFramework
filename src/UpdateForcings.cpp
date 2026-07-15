@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 #include "Radiation.h"
@@ -599,6 +599,9 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         F.SW_radia_net  = F.SW_radia       *(1-_pHydroUnits[k]->GetTotalAlbedo(false));
         F.SW_subcan_net = F.SW_radia_subcan*(1-_pHydroUnits[k]->GetTotalAlbedo(true ));
       }//otherwise, uses data
+      else{
+        F.SW_subcan_net = F.SW_radia_net; //assumes net sw is from under canopy
+      }
 
       F.LW_radia_net = CRadiation::EstimateLongwaveRadiation(GetStateVarIndex(SNOW), this, &F, _pHydroUnits[k], F.LW_incoming);
 

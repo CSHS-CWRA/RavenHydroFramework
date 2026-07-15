@@ -611,6 +611,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":Advection"                 )){code=306;}
     else if  (!strcmp(s[0],":Transformation"            )){code=307;}
     else if  (!strcmp(s[0],":Equilibrium"               )){code=308;}
+    else if  (!strcmp(s[0],":FixedConcentrationReservoirs")){code=309;}
+
     //...
     //--------------------ENERGY PROCESSES -------------------
     else if  (!strcmp(s[0],":HeatConduction"            )){code=350;}
@@ -3549,6 +3551,46 @@ bool ParseMainInputFile (CModel     *&pModel,
       if(Len>=6) { iWat=ParseSVTypeIndex(s[5],pModel,pStateVar); }
       pMover = new CmvChemEquil(s[3], s[4], t_type, proc_ind, iWat, pModel->GetTransportModel(), pModel);
       AddProcess(pModel,pMover,pProcGroup);
+      break;
+    }
+    case(309)://----------------------------------------------
+    {/*:FixedReservoirConcentrations [string constit_name] [double concentration (mg/l) or .rvt file name] {optional SB Group name}
+       :FixedReservoirTemperatures  [double temperature (C) or .rvt file name] {optional SB Group name}
+       */
+      if (Options.noisy){cout <<"Fixed reservoir concentrations or temperatures"<<endl;}
+
+      if (!transprepared){
+        ExitGracefully(":FixedReservoirConcentrations and :FixedReservoirTemperatures commands must be after :Transport command in .rvi file", BAD_DATA_WARN);
+        break;
+      }
+
+      int c,add=0;
+      if (is_temp) {add=-1;}
+      if (is_temp) {c=pModel->GetTransportModel()->GetConstituentIndex("TEMPERATURE");}
+      else         {c=pModel->GetTransportModel()->GetConstituentIndex(s[1]);         }
+
+      if(c!=DOESNT_EXIST) 
+      {
+        int kk = DOESNT_EXIST;
+        if (Len > 3+add){ //read SB Group, if present
+          CSubbasinGroup *pSourceGrp;
+          pSourceGrp = pModel->GetSubBasinGroup(s[3+add]);
+          if (pSourceGrp == NULL){
+            ExitGracefully("Invalid Subbasin Group name supplied in :FixedReservoirConcentrations/:FixedReservoirTemperatures command in .rvi file", BAD_DATA_WARN);
+            break;
+          }
+          else{
+            kk = pSourceGrp->GetGlobalIndex();
+          }
+        }
+
+        double C1=s_to_d(s[2+add]);
+        pModel->GetTransportModel()->GetConstituentModel(c)->AddDirichletReservoirs(kk,C1);
+        //if time series is specified, s_to_d(time series file) returns zero
+      }
+      else {
+        ExitGracefully("ParseMainInputFile: invalid constiuent in :FixedConcentration/:FixedTemperature command in .rvi file",BAD_DATA_WARN);
+      }
       break;
     }
     case(350):  //----------------------------------------------

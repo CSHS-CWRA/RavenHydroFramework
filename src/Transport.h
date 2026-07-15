@@ -20,14 +20,15 @@ enum constit_type {
 
 struct constit_source
 {
-  bool   dirichlet;       ///< =true for dirichlet, false for neumann
-  int    constit_index;   ///< constituent index (c)
-  int    i_stor;          ///< index of water storage compartment
-  int    kk;              ///< index of HRU group to which source is applied (default is all for DOESNT_EXIST)
-  double concentration;   ///< fixed concentration [mg/m2] or enthalpy [MJ/m2] (or DOESNT_EXIST=-1 if time series should be used)
-  double concentration2;  ///< fixed concentration [mg/m2] or enthalpy [MJ/m2] for blend-type condition
-  double flux;            ///< fixed mass flux [mg/m2/d] or heat flux [MJ/m2/d] (or DOESNT_EXIST=-1 if time series should be used)
+  bool   dirichlet;        ///< =true for dirichlet, false for neumann
+  int    constit_index;    ///< constituent index (c)
+  int    i_stor;           ///< index of water storage compartment
+  int    kk;               ///< index of HRU group or SB Group (reservoirs) to which source is applied (default is all for DOESNT_EXIST)
+  double concentration;    ///< fixed concentration [mg/m2] or enthalpy [MJ/m2] (or DOESNT_EXIST=-1 if time series should be used)
+  double concentration2;   ///< fixed concentration [mg/m2] or enthalpy [MJ/m2] for blend-type condition
+  double flux;             ///< fixed mass flux [mg/m2/d] or heat flux [MJ/m2/d] (or DOESNT_EXIST=-1 if time series should be used)
   const  CTimeSeries *pTS; ///< time series of fixed concentration or mass/heat flux (or NULL if fixed should be used)
+  bool   is_reservoir;     ///< true if source is reservoir rather than storage compartment
 };
 
 enum gparam_type
@@ -231,6 +232,7 @@ protected:
   int                    _nSources;  ///< number of constituent sources
 
   int            **_aSourceIndices;  ///< lookup table to convert (global) water storage index to corresponding source, if any [size: nStateVariables][size: nHRUs]
+  int                *_aResSources;  ///< lookup table to convert SB index to corresponding source, if any [size: nSubBasins]
 
   int              _nSpecFlowConcs;  ///< number of specified flow concentration/temperature time series [mg/L]
   CTimeSeries    **_pSpecFlowConcs;  ///< array of pointers to time series of specified flow concentration/temperatures - TS tag corresponds to SBID
@@ -270,6 +272,7 @@ public:/*-------------------------------------------------------*/
 
   bool   IsDirichlet             (const int i_stor,const int k,const time_struct &tt,double &Cs, const double blend=1.0) const;
   double GetSpecifiedMassFlux    (const int i_stor,const int k,const time_struct &tt) const;
+  bool   IsReservoirDirichlet    (const int p,const time_struct &tt,double &Cs) const;
 
   virtual double GetAdvectionCorrection(const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double& mass, const double &vol, const double &Q) const;
 
@@ -279,6 +282,7 @@ public:/*-------------------------------------------------------*/
   // Manipulators
   void   AddDirichletCompartment (const int i_stor,const int kk,const double Cs, const double Cs2);
   void   AddDirichletTimeSeries  (const int i_stor,const int kk,const CTimeSeries *pTS);
+  void   AddDirichletReservoirs  (const int kk,const double &Cs);
   void   AddInfluxSource         (const int i_stor,const int kk,const double flux);
   void   AddInfluxTimeSeries     (const int i_stor,const int kk,const CTimeSeries *pTS);
   void   AddInflowConcTimeSeries (const CTimeSeries *pTS);
@@ -313,8 +317,8 @@ public:/*-------------------------------------------------------*/
   virtual void   InCatchmentRoute         (const int p,double &Mlat_new, const optStruct &Options);
   virtual void   PrepareForInCatchmentRouting(const int p);
   virtual void   PrepareForRouting        (const int p);
-          void   RouteMass                (const int p,      double *aMoutnew,double &Mlat_new,double &ResMass,double &ResSedMass, const optStruct &Options,const time_struct &tt) const;
-  virtual void   RouteMassInReservoir     (const int p,const double *aMoutnew,                 double &ResMass,double &ResSedMass, const optStruct &Options,const time_struct &tt) const;
+          void   RouteMass                (const int p,      double *aMoutnew,double &Mlat_new,double &ResMass,double &ResSedMass, double &SourceTransfer, const optStruct &Options,const time_struct &tt) const;
+  virtual void   RouteMassInReservoir     (const int p,const double *aMoutnew,                 double &ResMass,double &ResSedMass, double &SourceTransfer, const optStruct &Options,const time_struct &tt) const;
           void   UpdateMassOutflows       (const int p,const double *aMoutnew,const double &Mlat_new,const double &ResMass,const double &ResSedMass, double &MassOutflow,
                                            const optStruct &Options,const time_struct &tt,const bool initialize);
 

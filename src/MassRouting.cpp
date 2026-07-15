@@ -250,6 +250,7 @@ void   CConstituentModel::RouteMass(const int          p,          // SB index
                                     double            &Mlat_new,   // [mg/d]
                                     double            &Res_mass,   // [mg]
                                     double            &ResSedMass, // [mg]
+                                    double            &SourceTransfer, // [mg]
                                     const optStruct   &Options,
                                     const time_struct &tt) const
 {
@@ -294,16 +295,17 @@ void   CConstituentModel::RouteMass(const int          p,          // SB index
   CReservoir *pRes=_pModel->GetSubBasin(p)->GetReservoir();
   if(pRes!=NULL)
   {
-    RouteMassInReservoir(p,aMout_new,Res_mass,ResSedMass,Options,tt);
+    RouteMassInReservoir(p,aMout_new,Res_mass,ResSedMass,SourceTransfer,Options,tt);
   }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates Res_mass and ResSedMass in basin with reservoir at end of time step
 ///
 /// \param p           [in]  subbasin index
-/// \param aMout_new[] [in] Array of mass outflows at downstream end of each segment at end of current timestep [mg/d] [size: nsegs]
+/// \param aMout_new[] [in]  Array of mass outflows at downstream end of each segment at end of current timestep [mg/d] [size: nsegs]
 /// \param Res_mass    [out] calculated reservoir mass at end of time step
-/// \param ResSedMass [out] calculated reservoir mass in sediment at end of time step
+/// \param ResSedMass  [out] calculated reservoir mass in sediment at end of time step
+/// \param SourceTransfer [out] amount of mass added/removed to satisfy Dirichlet condition, usually zero
 /// \param &Options    [in]  Global model options information
 /// \param tt          [in]  Time structure
 //
@@ -311,6 +313,7 @@ void   CConstituentModel::RouteMassInReservoir(const int          p,          //
                                                const double      *aMout_new,  // [mg/d][size: nsegs ]
                                                      double      &Res_mass,   // [mg]
                                                      double      &ResSedMass, // [mg]
+                                                     double      &SourceTransfer, // [mg]
                                                const optStruct   &Options,
                                                const time_struct &tt) const
 {
@@ -320,27 +323,45 @@ void   CConstituentModel::RouteMassInReservoir(const int          p,          //
   double V_new=pRes->GetStorage       ();
   double V_old=pRes->GetOldStorage    ();
   double Q_new=pRes->GetOutflowRate   ()*SEC_PER_DAY;
-  double Q_old=pRes->GetOldOutflowRate()*SEC_PER_DAY;
+  double Q_old=pRes->GetOldOutflowRate()*SEC_PER_DAY; //[m3/d]
+  double AET(0.0); //[m/s]
+  double ET_corr=1.0; //not yet used - should be =0 for constituents not carried by evaporation
+
+  double A_old=pRes->GetOldSurfaceArea();
+  double A_new=pRes->GetSurfaceArea();
 
   double decay_coeff=0.0;
   CHydroUnit*   pHRU=_pModel->GetHydroUnit(pRes->GetHRUIndex());
   if(pHRU!=NULL) {
+    AET=pHRU->GetForcingFunctions()->OW_PET/MM_PER_METER; //average for timestep, in m/d
+    AET*=pHRU->GetSurfaceProps()->lake_PET_corr;
     int     iSW = _pModel->GetStateVarIndex(SURFACE_WATER);
     int     ii  = _pTransModel->GetWaterStorIndexFromSVIndex(iSW);
     decay_coeff = _pTransModel->GetGeochemParam(PAR_DECAY_COEFF,_constit_index,ii,DOESNT_EXIST,pHRU);
     if(decay_coeff==NOT_SPECIFIED) { decay_coeff=0; }
   }
 
+  double AET_old=ET_corr*AET*A_old; //[m3/d]
+  double AET_new=ET_corr*AET*A_new;
+
   //Explicit solution of Crank-nicolson problem
-  //dM/dt=QC_in-QC_out-lambda*M
-  //dM/dt=0.5(QC_in^(n+1)-QC_in^(n))-0.5(Q_outC^(n+1)-Q_outC^(n))+M_rain-0.5*lambda*(C^(n+1)+C^n)/V
+  //dM/dt=QC_in-QC_out+M_rain-lambda*M-ET*A*C_out
+  //dM/dt=0.5(QC_in^(n+1)+QC_in^(n))-0.5(Q_outC^(n+1)+Q_outC^(n))+M_rain-0.5*lambda*(C^(n+1)+C^n)*V-ET*A*0.5*(C^(n+1)+C^(n))
   double Min= 0.5 * Options.timestep * (aMout_new[nSegments - 1] + _aMout[p][nSegments - 1]);
   double tmp;
-  tmp=_aMres[p]*(1.0-0.5*Options.timestep*(Q_old/V_old+decay_coeff*Res_mass));
+  tmp=_aMres[p]*(1.0-0.5*Options.timestep*(Q_old/V_old+decay_coeff*Res_mass+AET_old/V_old));
   tmp+=Min;
   tmp+=_aMresRain[p]*Options.timestep;
-  tmp/=(1.0+0.5*Options.timestep*(Q_new/V_new+decay_coeff));
+  tmp/=(1.0+0.5*Options.timestep*(Q_new/V_new+decay_coeff+AET_new/V_new));
   Res_mass=tmp;
+
+  // handle fixed Dirichlet conditions 
+  double Cs;
+  SourceTransfer=0.0;
+  if (IsReservoirDirichlet(p, tt, Cs)) {
+    SourceTransfer=Cs*V_new-Res_mass; //amount of mass added (or removed, if negative) to satisfy Dirichlet
+    Res_mass=Cs*V_new;
+  }
 
   if((V_old< REAL_SMALL) || (V_new< REAL_SMALL)) { Res_mass= ResSedMass = 0.0; } //handles dried out reservoir/lake
 }

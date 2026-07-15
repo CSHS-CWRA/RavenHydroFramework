@@ -628,6 +628,7 @@ void MassEnergyBalance( CModel            *pModel,
    //determine total mass/energy loading from HRUs into respective basins (aRoutedMass[p])
   double ResMass    =0;
   double ResSedMass =0;
+  double SourceTrans=0;
   double MassOutflow=0;
   double Mlat_new   =0;
   double Ploading;
@@ -679,9 +680,10 @@ void MassEnergyBalance( CModel            *pModel,
 
         pConstitModel->InCatchmentRoute  (p,Mlat_new,Options);//prepares, calculates, and updates Mlat_new
         pConstitModel->PrepareForRouting (p);
-        pConstitModel->RouteMass         (p,aMoutnew,Mlat_new,ResMass,ResSedMass,Options,tt);  //Where everything happens!
+        pConstitModel->RouteMass         (p,aMoutnew,Mlat_new,ResMass,ResSedMass,SourceTrans,Options,tt);  //Where everything happens!
         pConstitModel->UpdateMassOutflows(p,aMoutnew,Mlat_new,ResMass,ResSedMass,MassOutflow,Options,tt,false); //actually updates mass flow values here
 
+        // todo[funct] - handle source transfer to CONSTITUENT_SRC
         pTo   =pModel->GetDownstreamBasin(p);
         if(pTo!=DOESNT_EXIST)
         {
