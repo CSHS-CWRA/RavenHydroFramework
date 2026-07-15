@@ -80,7 +80,7 @@ CmvSoilEvap::CmvSoilEvap(soilevap_type se_type,
     for(int m=0;m<nSoilLayers;m++) {
       iFrom[m]=pModel->GetStateVarIndex(SOIL,m);     iTo[m]=iAtmos;
     }
-    iFrom[nSoilLayers]=pModel->GetStateVarIndex(AET);   iTo[nSoilLayers]=iFrom[nSoilLayers];
+    iFrom[nSoilLayers]=pModel->GetStateVarIndex(AET);iTo[nSoilLayers]=iFrom[nSoilLayers];
   }
   else if(type==SOILEVAP_SACSMA)
   {
@@ -92,14 +92,14 @@ CmvSoilEvap::CmvSoilEvap(soilevap_type se_type,
     iFrom[4]=pModel->GetStateVarIndex(SOIL,4);     iTo[4]=pModel->GetStateVarIndex(SOIL,2);
     iFrom[5]=pModel->GetStateVarIndex(SOIL,5);     iTo[5]=iAtmos;
 
-    iFrom[6]=pModel->GetStateVarIndex(AET);   iTo[6]=iFrom[6];
+    iFrom[6]=pModel->GetStateVarIndex(AET);        iTo[6]=iFrom[6];
   }
   else if(type==SOILEVAP_AWBM) {
     CHydroProcessABC::DynamicSpecifyConnections(4);
     iFrom[0]=pModel->GetStateVarIndex(SOIL,0);     iTo[0]=iAtmos;
     iFrom[1]=pModel->GetStateVarIndex(SOIL,1);     iTo[1]=iAtmos;
     iFrom[2]=pModel->GetStateVarIndex(SOIL,2);     iTo[2]=iAtmos;
-    iFrom[3]=pModel->GetStateVarIndex(AET);   iTo[3]=iFrom[3];
+    iFrom[3]=pModel->GetStateVarIndex(AET);        iTo[3]=iFrom[3];
   }
 }
 

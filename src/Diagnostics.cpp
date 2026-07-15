@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2024 the Raven Development Team, Ayman Khedr, Konhee Lee
+  Copyright (c) 2008-2026 the Raven Development Team, Ayman Khedr, Konhee Lee
   ----------------------------------------------------------------*/
 
 #include "TimeSeriesABC.h"
@@ -61,6 +61,7 @@ string CDiagnostic::GetName() const
   case(DIAG_KLING_GUPTA):       {return "DIAG_KLING_GUPTA";}
   case(DIAG_KGE_PRIME):         {return "DIAG_KGE_PRIME";}
   case(DIAG_DAILY_KGE):         {return "DIAG_DAILY_KGE";}
+  case(DIAG_KLING_GUPTA_ANNBIAS): {return "DIAG_KLING_GUPTA_ANNBIAS";}
   case(DIAG_NASH_SUTCLIFFE_DER):{return "DIAG_NASH_SUTCLIFFE_DER"; }
   case(DIAG_RMSE_DER):          {return "DIAG_RMSE_DER"; }
   case(DIAG_KLING_GUPTA_DER):   {return "DIAG_KLING_GUPTA_DER"; }
@@ -109,7 +110,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
   double dt = Options.timestep;
 
   int nnstart=pTSObs->GetTimeIndexFromModelTime(starttime)+skip; //works for avg. hydrographs
-  int nnend  =pTSObs->GetTimeIndexFromModelTime(endtime  )+1; //+1 is just because below loops expressed w.r.t N, not N-1
+  int nnend  =pTSObs->GetTimeIndexFromModelTime(endtime  )+1;    //+1 is just because below loops expressed w.r.t N, not N-1
 
   threshold=max(min(threshold,1.0),0.0);
 
@@ -1066,6 +1067,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
   }
   case(DIAG_KLING_GUPTA)://-----------------------------------------
   case(DIAG_KGE_PRIME)://-------------------------------------------
+  case(DIAG_KLING_GUPTA_ANNBIAS)://---------------------------------
   case(DIAG_KLING_GUPTA_DEVIATION)://-------------------------------
   {
     double ObsAvg = 0;
@@ -1107,6 +1109,37 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     double r     = Cov / ObsStd / ModStd; // pearson product-moment correlation coefficient
     double Beta  = ModAvg / ObsAvg;
     double Alpha = ModStd / ObsStd;
+
+    if (_type==DIAG_KLING_GUPTA_ANNBIAS)
+    {
+      double AvgAnnDiff=0;
+      double ObsYrSum=0;
+      time_struct tt;
+      for (nn = nnstart; nn < nnend; nn++) //mean
+      {
+        weight =baseweight[nn];
+        obsval = pTSObs->GetSampledValue(nn);
+        modval = pTSMod->GetSampledValue(nn);
+
+        ObsSum += obsval*weight;
+        ModSum += modval*weight;
+        ObsYrSum+=obsval*weight;
+        N += weight;
+
+        JulianConvert(nn*Options.timestep,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
+        
+        string date_str=to_string(Options.wateryr_mo)+to_string(tt.year);
+        if (Options.wateryr_mo<10) { date_str="0"+date_str; }
+        int julianWD=GetJulianDayFromMonthYear(date_str,Options.calendar);
+        if (julianWD==tt.julian_day)
+        {
+          AvgAnnDiff+=fabs(ModSum-ObsYrSum);
+          ObsYrSum=0.0;
+          ModSum=0.0;
+        } 
+      }
+      Beta = 1.0 - AvgAnnDiff / ObsSum; //use the average annual difference
+    }
 
     if (_type==DIAG_KLING_GUPTA_DEVIATION){Beta=1.0;} //remove penalty for difference in means
 
@@ -1548,6 +1581,7 @@ double     CDiagPeriod::GetThreshold() const { return _thresh; }
 diag_type StringToDiagnostic(string distring)
 {
   if      (!distring.compare("NASH_SUTCLIFFE"       )){return DIAG_NASH_SUTCLIFFE;}
+  else if (!distring.compare("NSE"                  )){return DIAG_NASH_SUTCLIFFE;}//Alias
   else if (!distring.compare("DAILY_NSE"            )){return DIAG_DAILY_NSE; }
   else if (!distring.compare("RMSE"                 )){return DIAG_RMSE;}
   else if (!distring.compare("PCT_BIAS"             )){return DIAG_PCT_BIAS;}
@@ -1565,6 +1599,7 @@ diag_type StringToDiagnostic(string distring)
   else if (!distring.compare("RSR"                  )){return DIAG_RSR;}
   else if (!distring.compare("R2"                   )){return DIAG_R2;}
   else if (!distring.compare("LOG_NASH"             )){return DIAG_LOG_NASH;}
+  else if (!distring.compare("KGE"                  )){return DIAG_KLING_GUPTA;} //Alias
   else if (!distring.compare("KLING_GUPTA"          )){return DIAG_KLING_GUPTA;}
   else if (!distring.compare("KGE_PRIME"            )){return DIAG_KGE_PRIME;}
   else if (!distring.compare("DAILY_KGE"            )){return DIAG_DAILY_KGE;}
