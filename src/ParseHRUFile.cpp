@@ -1136,6 +1136,9 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
         :LateralConnections [SNOW_REDISTRIBUTE or ICE_FLOW]
           {HRU1} {HRU2} {value} x nConnections
         :EndLateralConnections
+
+        for SNOW_REDISTRIBUTE, value is weights
+        for ICE_FLOW, value is flow length between HRUs
       */
       if (Options.noisy) { cout << "   LateralConnections..." << endl; }
       int nLat=0;
@@ -1176,7 +1179,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
       {
 
         // Check if weights sum to 1.0
-        if (!CLatConnect::CheckConnectionWeights(pLat, nLat, pModel)) {
+        if ((proc_type==LAT_REDISTRIBUTE) && (!CLatConnect::CheckConnectionWeights(pLat, nLat, pModel))) {
           WriteWarning("Some HRUs have lateral connection weights that do not sum to 1.0. This may lead to mass balance errors.", Options.noisy);
         }
 
@@ -1197,40 +1200,6 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
 
         // Clean up the temporary array
         for(int n=0; n<nLat;n++) { delete pLat[n]; }  delete[] pLat;
-      }
-      break;
-    }
-    case(22):  //----------------------------------------------
-    {/* :HRUFlowLengths
-          {HRUID} {value} x nHRUs (or less)
-        :EndHRUFlowLengths
-      */
-      if (Options.noisy) { cout << "   HRU Flow Lengths..." << endl; }
-
-      while (((Len==0) || (strcmp(s[0],":EndHRUFlowLengths"))) && (!end_of_file))
-      {
-        end_of_file = pp->Tokenize(s, Len);
-        if      (IsComment(s[0], Len)) {} // comment line
-        else if (!strcmp(s[0], ":EndHRUFlowLengths")) {} // done
-        else
-        {
-          if (Len < 2) { pp->ImproperFormat(s); }
-
-          if (StringIsLong(s[0]))
-          {
-            long long HRUID=s_to_ll(s[0]);
-            CHydroUnit *pHRU=pModel->GetHRUByID(HRUID);
-            if (pHRU==NULL){
-              WriteWarning("Parsing RVH file: Bad HRU index in :HRUFlowLengths command. Will be ignored",Options.noisy);
-            }
-            else{
-              pHRU->SetFlowLength(s_to_d(s[1]));
-            }
-          }
-          else          {
-            ExitGracefully("Parsing RVH file: Bad HRU index in :HRUFlowLengths command",BAD_DATA);
-          }
-        }
       }
       break;
     }

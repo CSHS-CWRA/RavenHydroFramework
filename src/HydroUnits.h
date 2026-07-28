@@ -43,7 +43,6 @@ private:/*------------------------------------------------------*/
   double                _AvgElevation;  ///< average elevation of HRU [masl]
   double                   _AvgAspect;  ///< average terrain aspect [rad counterclockwise from north]
   double                    _AvgSlope;  ///< average terrain slope [rad]
-  double                 _flow_length;  ///> approximate HRU length in flow direction [m] (default=sqrt(area))
 
   double                      _LatRad;  ///< latitude of centroid [rad]
   double                       _LatEq;  ///< equivalent latitude for slope/aspect  [rad]
@@ -95,7 +94,6 @@ public:/*-------------------------------------------------------*/
   inline double          GetArea         () const { return _Area;        }
   inline int             GetSubBasinIndex() const { return _SubbasinInd; }
   inline HRU_type        GetHRUType      () const { return _HRUType;     } //(standard, lake, rock, or glacier)
-  inline double          GetFlowLength   () const { return _flow_length; }
   inline bool            IsLake          () const { return (_HRUType==HRU_LAKE);}
   bool                   IsLinkedToReservoir() const;
 
@@ -152,7 +150,6 @@ public:/*-------------------------------------------------------*/
 
   //Manipulator functions (used in initialization)
   void          Initialize              (const int UTM_zone);
-  void          SetFlowLength           (const double &len);
 
   //Manipulator functions (used in solution method)
   void          SetStateVarValue        (const int           i,

@@ -93,8 +93,6 @@ CHydroUnit::CHydroUnit(const CModelABC        *pMod,
   _AvgAspect    =aspect; //counterclockwise from north
   _AvgSlope     =slope;
 
-  _flow_length  =AUTO_COMPUTE;
-
   _LatRad       = latit*DEGREES_TO_RADIANS;
   _LatEq        = CRadiation::CalculateEquivLatitude(_LatRad,slope,aspect);
 
@@ -380,22 +378,6 @@ void    CHydroUnit::Initialize      (const int UTM_zone)
   LatLonToUTMXY(_Centroid.latitude,_Centroid.longitude,
                 UTM_zone,
                 _Centroid.UTM_x,   _Centroid.UTM_y);
-
-  if (_flow_length==AUTO_COMPUTE){ //not user-specified
-    _flow_length=sqrt(_Area*M2_PER_KM2);
-  }
-}
-//////////////////////////////////////////////////////////////////
-/// \brief Sets HRU flow length
-/// \param len [in] - flow length, in meters
-//
-void  CHydroUnit::SetFlowLength           (const double &len)
-{
-  if (len<0){
-    string warn="Negative or zero flow length set for HRU "+to_string(_ID);
-    ExitGracefully(warn.c_str(),BAD_DATA_WARN); return;
-  }
-  _flow_length=len;
 }
 
 //////////////////////////////////////////////////////////////////

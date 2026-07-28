@@ -189,7 +189,6 @@ void CmvLatIceFlow::GetLateralExchange(const double *const *state_vars,
   double stor_from,stor_to,Afrom,Ato;
   double elev_from,elev_to;   //elevation is actually *initial* elevation, including glacier cover, as consistent with most DEMs
   double gelev_from,gelev_to; //ground elevation, [masl]
-  double len_from, len_to;    //HRU lengths in flow direction, [m]
   double Hfrom,Hto;           //Glacier ice thickness [m]
 
   const double A=2.4e-24;     //Pa^-3/s^-1, from Cuffey and Paterson (2010)
@@ -213,14 +212,12 @@ void CmvLatIceFlow::GetLateralExchange(const double *const *state_vars,
     Ato       =pHRUs[_kTo  [q]]->GetArea();
     elev_from =pHRUs[_kFrom[q]]->GetElevation();
     elev_to   =pHRUs[_kTo  [q]]->GetElevation();
-    len_from  =pHRUs[_kFrom[q]]->GetFlowLength();
-    len_to    =pHRUs[_kTo  [q]]->GetFlowLength();
     gelev_from=elev_from-_aInitGlacierHeight[_kFrom[q]]/MM_PER_METER;
     gelev_to  =elev_to  -_aInitGlacierHeight[_kTo  [q]]/MM_PER_METER;
     Hfrom     =stor_from/MM_PER_METER*(DENSITY_WATER/DENSITY_ICE);
     Hto       =stor_to  /MM_PER_METER*(DENSITY_WATER/DENSITY_ICE);
 
-    distance=0.5*(len_from+len_to);
+    distance=_pLatConnect[q]->GetWeight();
 
     surf_grad=((Hto+gelev_to)-(Hfrom+gelev_from))/distance;
 
@@ -231,7 +228,7 @@ void CmvLatIceFlow::GetLateralExchange(const double *const *state_vars,
     else            {H=Hto;  }
     //H=0.5*(Hfrom+Hto); //alternative option
 
-    width=0.5*(Afrom/len_from+Ato/len_to);
+    width=0.5*(Afrom+Ato)/distance;
 
     velocity = ((2*A)/(n+2))*pow(DENSITY_ICE*GRAVITY*fabs(slope),n)*pow(H,n+1); //[m/s]
     velocity*=SEC_PER_DAY; //[m/d]
