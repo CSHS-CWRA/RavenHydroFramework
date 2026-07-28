@@ -617,11 +617,19 @@ void IncGammaLimit() {
   ExitGracefully("UnitTesting:: IncGammaLimit",SIMULATION_DONE);
 }
 double GaussRandom();
+double SampleFromGamma(const double& shape,const double& scale);
 void TestRandomSampling() {
   ofstream TEST;
   TEST.open("GaussSample.csv");
   for(int m=0; m<10000;m++) {
     TEST<<GaussRandom()<<endl;
   }
+  TEST.close();
+
+  TEST.open("GammaSample.csv");
+  for(int m=0; m<10000;m++) {
+    TEST<<SampleFromGamma(3.0,1.0)<<endl;
+  }
+  TEST.close();
   ExitGracefully("UnitTesting:: TestRandomSampling",SIMULATION_DONE);
 }

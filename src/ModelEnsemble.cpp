@@ -262,31 +262,35 @@ void CMonteCarloEnsemble::UpdateModel(CModel *pModel,optStruct &Options, const i
 
   MCOUT.close();
 }
-double SampleFromGamma(const double& shape,const double& scale)
-{
-  //From Cheng 1977 as documented in Devroye, L. Non-uniform random variate generation, Springer-Verlag, New York, 1986 (chap 9)
-  double a=shape;
-  double b=a-log(4);
-  double c=a+sqrt(2*a-1.0);
-  double U,V,X,Y,Z,R;
-  int iter=0;
-  bool accept=false;
-  do {
-    iter++;
-     U=UniformRandom();
-     V=UniformRandom();
-     X=a*exp(V);
-     Y=a*log(V/(1-V));
-     Z=U*V*V;
-     R=b+c*Y-X;
-     if(iter>1000) {
-       cout<<"Bad sampling! "<<shape<<" "<<scale<<endl;
-     }
-     accept=(R>=9/2*Z-(1.0+log(9/2)));
-     if (!accept){accept=(R>=log(Z)); }
-  } while (!accept);
-  return scale*X;
+double SampleFromGamma(const double &shape, const double &scale)
+{ //From Marsaglia, G., & Tsang, W. W. (2000). A Simple Method for Generating Gamma Variables. ACM Transactions on Mathematical Software, 26(3), 363-372. https://doi.org/10.1145/358407.358414
+    // Use boosting trick for shape < 1
+    if (shape < 1.0)
+    {
+      double u = UniformRandom();
+      return SampleFromGamma(shape + 1.0, scale) *pow(u, 1.0 / shape);
+    }
+
+    const double d = shape - 1.0 / 3.0;
+    const double c = 1.0 / std::sqrt(9.0 * d);
+
+    double x,v;
+    while (true)
+    {
+      do
+      {
+        x = GaussRandom();
+        v = 1.0 + c * x;
+      } while (v <= 0.0);
+
+      v = v * v * v;
+
+      double u = UniformRandom();
+      if (u < 1.0 - 0.0331 * x * x * x * x){return scale * d * v;}        // Squeeze test
+      if (log(u) < 0.5 * x * x + d * (1.0 - v + std::log(v))){return scale * d * v;}// Full acceptance test
+    }
 }
+
 void TestGammaSampling()
 {
   ofstream GOUT;
@@ -325,6 +329,11 @@ double SampleFromDistribution(disttype distribution, double distpar[3])
     double mu =distpar[0];
     double std=distpar[1];
     value=exp(mu+std*GaussRandom());
+  }
+  else if (distribution == DIST_GAMMA) {
+    double a =distpar[0];
+    double b =distpar[1];
+    value=SampleFromGamma(a,b);
   }
   return value;
 }

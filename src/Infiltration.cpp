@@ -512,6 +512,7 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
     rates[2]=runoff;    //PONDED->CONVOL[0]
     rates[3]=delayed;   //PONDED->CONVOL[1]
   }
+  //----------------------------------------------------------------------------
   else if (type==INF_XINANXIANG)
   { //from Xinanxiang model
     double stor       =state_vars[iTopSoil];
