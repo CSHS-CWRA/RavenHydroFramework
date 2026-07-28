@@ -585,6 +585,7 @@ public:/*-------------------------------------------------------*/
   void        CloseOutputStreams      ();
   void        SummarizeToScreen       (const optStruct &Options) const;
   void        RunDiagnostics          (const optStruct &Options);
+  void        CalcUncertainty         (const optStruct &Options);
 };
 
 #endif

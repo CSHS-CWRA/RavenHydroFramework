@@ -9,11 +9,13 @@
     CModel::WriteMajorOutput()
     CModel::SummarizeToScreen()
     CModel::RunDiagnostics()
+    CModel::CalcUncertainty()
     Ensim output routines
     NetCDF output routines
   ----------------------------------------------------------------*/
 #include "Model.h"
 #include "StateVariables.h"
+#include "ResidualErrorModel.h"
 
 #if defined(_WIN32)
 #include <direct.h>
@@ -1879,7 +1881,37 @@ double CModel::CalculateAggDiagnostic(const int ii, const int j, const double &s
   delete [] data;
   return stat;
 }
+void CModel::CalcUncertainty(const optStruct &Options)
+{
+  if (_nObservedTS==0) { return; }
 
+  for(int i=0;i<_nObservedTS;i++)
+  {
+    //only for hydrographs
+    if(!strcmp(_pObservedTS[i]->GetName().c_str(),"HYDROGRAPH"))
+    {
+      CResidualErrorModel *pREM=new CResidualErrorModel();
+
+      pREM->CalculateREM(_pModeledTS[i],_pObservedTS[i],_pObsWeightTS[i],0,Options.duration,Options);
+      //DynArrayAppend((void *pREM))
+    }
+  }
+  ofstream UNCERTHYD;
+  string tmpFilename;
+  tmpFilename=FilenamePrepare("UncertHydrographs.csv",Options);
+  UNCERTHYD.open(tmpFilename.c_str());
+  if(UNCERTHYD.fail()) {
+    ExitGracefully(("CModel::CalcUncertainty: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
+  }
+  //header
+  UNCERTHYD<<"observed_data_series,filename,";
+  for(int j=0; j<_nDiagnostics;j++) {
+    UNCERTHYD<<_pDiagnostics[j]->GetName()<<",";
+  }
+  UNCERTHYD<<endl;
+
+  UNCERTHYD.close();
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Writes output headers for WatershedStorage.tb0 and Hydrographs.tb0
 ///

@@ -857,6 +857,11 @@ enum assimtype
 {
   DA_ECCC           ///< additive assimilation upstream propagation
 };
+enum uncerttype  
+{
+  UNCERTAINTY_NONE,
+  UNCERTAINTY_REM
+};
 ////////////////////////////////////////////////////////////////////
 /// \brief Types of state variable
 /// \note If an additional state variable type is added, the following routines must be revised:
@@ -1203,6 +1208,7 @@ struct optStruct
   bool             assimilate_stage;          ///< turn on lake stage assimilation
   double           assimilation_start;        ///< assimilation start time (in model time [d])
   assimtype        assim_method;              ///< assimilation method
+  uncerttype       uncert_method;             ///< uncertainty estimation method
   bool             management_optimization;   ///< apply water management optimization (default: false)
   bool             soft_convergence;          ///< softens requirements of management solver convergence (default: false)
   netcdfatt       *aNetCDFattribs;            ///< array of NetCDF attrributes {attribute/value pair}

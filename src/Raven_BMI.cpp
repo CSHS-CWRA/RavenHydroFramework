@@ -419,6 +419,7 @@ void CRavenBMI::Finalize()
 {
   pModel->UpdateDiagnostics (Options,tt);
   pModel->RunDiagnostics    (Options);
+  pModel->CalcUncertainty   (Options);
   pModel->WriteMajorOutput  (Options,tt,"solution",true);
   pModel->CloseOutputStreams();
 

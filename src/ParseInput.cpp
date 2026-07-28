@@ -334,6 +334,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.assimilate_flow         =false;
   Options.assimilate_stage        =false;
   Options.assim_method            =DA_ECCC;
+  Options.uncert_method           =UNCERTAINTY_NONE;
   Options.assimilation_start      =-1.0; //start before simulation
   Options.sv_override_endtime     =ALMOST_INF;
   Options.time_zone               =0;
@@ -498,6 +499,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":TimeOfConcentrationMethod" )){code=113;}
     else if  (!strcmp(s[0],":StateOverrideEndTime"      )){code=114;}//AFTER :StartDate,:Calendar commands
     else if  (!strcmp(s[0],":NetCDFUseBasinFullname"    )){code=115;}
+    else if  (!strcmp(s[0],":UncertaintyAnalysis"       )){code=116;}
 
     else if  (!strcmp(s[0],":WriteGroundwaterHeads"     )){code=510;}//GWMIGRATE -TO REMOVE
     else if  (!strcmp(s[0],":WriteGroundwaterFlows"     )){code=511;}//GWMIGRATE -TO REMOVE
@@ -2007,6 +2009,12 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:NetCDFUseBasinFullname */
       if(Options.noisy) { cout << "NetCDFUseBasinFullname" << endl; }
       Options.use_fullname_cf_role=true;
+      break;
+    }
+    case(116):  //--------------------------------------------
+    {/*:UncertaintyAnalysis [METHOD] */
+      if(Options.noisy) { cout << "UncertaintyAnalysis" << endl; }
+      Options.uncert_method=UNCERTAINTY_REM;
       break;
     }
     case(160):  //--------------------------------------------

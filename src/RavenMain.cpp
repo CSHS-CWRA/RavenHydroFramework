@@ -171,6 +171,7 @@ int main(int argc, char* argv[])
 
     //Finished Solving----------------------------------------------------
     pModel->UpdateDiagnostics (Options,tt);
+    pModel->CalcUncertainty   (Options);
     pModel->RunDiagnostics    (Options);
     pModel->WriteMajorOutput  (Options,tt,"solution",true);
     pModel->CloseOutputStreams();

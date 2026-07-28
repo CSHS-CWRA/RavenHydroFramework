@@ -116,7 +116,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
 
   // Modify weights for thresholds/blank observation data
   //----------------------------------------------------------
-  double *allvals=new double [nnend];
+  double *allvals=new double [nnend-nnstart];
   double thresh_obsval=0;
   int Nobs=0;
   for(nn=nnstart;nn<nnend;nn++)
@@ -132,7 +132,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
   }
   delete[] allvals;
 
-  double *baseweight=new double [nnend]; //array stores base weights for each observation point
+  double *baseweight=new double [nnend-nnstart]; //array stores base weights for each observation point
   for(nn=nnstart;nn<nnend;nn++)
   {
     baseweight[nn]=1.0;
@@ -151,10 +151,10 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     if(!EvaluateCondition(compare,obsval,thresh_obsval,junk)) {
       baseweight[nn]=0.0;
     }*/
-    if(compare==COMPARE_GREATERTHAN) {
+    if      (compare==COMPARE_GREATERTHAN) {
       if(obsval<thresh_obsval) {baseweight[nn]=0.0;}
     }
-    else if(compare==COMPARE_LESSTHAN) {
+    else if (compare==COMPARE_LESSTHAN   ) {
       if(obsval>thresh_obsval) {baseweight[nn]=0.0;}
     }
   }
