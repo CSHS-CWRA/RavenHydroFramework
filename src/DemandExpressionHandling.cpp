@@ -1384,13 +1384,19 @@ void CDemandOptimizer::AddConstraintToLP(const int ii, const int kk, lp_lib::lpr
     pE= pC->pOperRegimes[kk]->pExpression; //active expression
 
     if (pE->nGroups == 0) {
-      // special case - revert to SD curve - blank row
+      // special case - :RevertToSDCurve - blank row
       row_val[0]=0.0;
       col_ind[0]=0;
       RHS=0.0;
-      retval = lp_lib::set_rowex(pLinProg,lpgoalrow,1,row_val,col_ind);
-      ExitGracefullyIf(retval==0,"AddConstraintToLP::Error updating user-specified constraint/goal",RUNTIME_ERR);
-      retval = lp_lib::set_rh(pLinProg,lpgoalrow,RHS);
+      if (!update){
+        retval = lp_lib::add_constraintex(pLinProg,i,row_val,col_ind,ROWTYPE_EQ,RHS);
+        ExitGracefullyIf(retval==0,"AddConstraintToLP::Error implementing SD reversion",RUNTIME_ERR);
+      }
+      else{
+        retval = lp_lib::set_rowex(pLinProg,lpgoalrow,1,row_val,col_ind);
+        ExitGracefullyIf(retval==0,"AddConstraintToLP::Error updating SD Reversion",RUNTIME_ERR);
+        retval = lp_lib::set_rh(pLinProg,lpgoalrow,RHS);
+      }
       return;
     }
 
