@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ------------------------------------------------------------------
   Abstraction (partitioning of ponded water/snowmelt to depression
   storage)
@@ -60,8 +60,8 @@ CmvAbstraction::CmvAbstraction(abstraction_type absttype, CModelABC *pModel)
     iTo  [1]=pModel->GetStateVarIndex(DEPRESSION,1);
     iFrom[2]=pModel->GetStateVarIndex(PONDED_WATER);
     iTo  [2]=pModel->GetStateVarIndex(SURFACE_WATER);
-    /*iFrom[3]=pModel->GetStateVarIndex(CONTRIB_FRAC);
-    iTo  [3]=pModel->GetStateVarIndex(CONTRIB_FRAC);*/
+    iFrom[3]=pModel->GetStateVarIndex(CONTRIB_FRAC);
+    iTo  [3]=pModel->GetStateVarIndex(CONTRIB_FRAC);
   }
 }
 
@@ -118,13 +118,15 @@ void CmvAbstraction::GetParticipatingParamList(string  *aP , class_type *aPC , i
   }
   else if(_type==ABST_HGDM)
   {
-    nP=5;
-    aP[0]="UPLAND_TO_SMALL";        aPC[0]=CLASS_LANDUSE;
-    aP[1]="UPLAND_TO_LARGE";        aPC[1]=CLASS_LANDUSE;
-    aP[2]="SMALL_TO_LARGE";         aPC[2]=CLASS_LANDUSE;
-    aP[3]="HGDM_P";                 aPC[3]=CLASS_LANDUSE;
-    aP[4]="HGDM_LP";                aPC[4]=CLASS_LANDUSE;
-    aP[5]="DEP_MAX";                aPC[5]=CLASS_LANDUSE;
+    nP=7;
+    aP[0]="HGDM_FRAC_LR_DEP";       aPC[0]=CLASS_LANDUSE;
+    aP[1]="HGDM_SMALL_TO_LARGE";    aPC[1]=CLASS_LANDUSE;
+    aP[2]="HGDM_P";                 aPC[2]=CLASS_LANDUSE;
+    aP[3]="HGDM_P_LARGE";           aPC[3]=CLASS_LANDUSE;
+    aP[4]="DEP_MAX";                aPC[4]=CLASS_LANDUSE;
+    aP[5]="DEP_MAX_LARGE";          aPC[5]=CLASS_LANDUSE;
+    aP[6]="HDM_FRAC_LR_AREA";       aPC[6]=CLASS_LANDUSE;
+
   }
   else
   {
@@ -189,7 +191,6 @@ double HGDMcontrib_fraction(const double &current_storage,
   {
     if (delta_storage < threshold)
     {
-      //vf2 = (current_storage + delta_storage) / max_storage; //never used
       return 0.0;
     }
     else
@@ -363,7 +364,7 @@ void   CmvAbstraction::GetRatesOfChange( const double        *state_vars,
   else if(_type==ABST_HGDM)
   {
     //runoff from uplands and direct precip/melt on wetlands handled here; Evap handled in OWEVAP_HGDM
-    /*int iPond=pModel->GetStateVarIndex(PONDED_WATER);
+    int iPond=pModel->GetStateVarIndex(PONDED_WATER);
     int iDepS=pModel->GetStateVarIndex(DEPRESSION,0);
     int iDepL=pModel->GetStateVarIndex(DEPRESSION,1);
     int iSW  =pModel->GetStateVarIndex(SURFACE_WATER);
@@ -371,25 +372,28 @@ void   CmvAbstraction::GetRatesOfChange( const double        *state_vars,
 
     double tstep=Options.timestep;
 
-    double Vs_max  =pHRU->GetSurfaceProps()->dep_max;
-    double Vl_max  =pHRU->GetSurfaceProps()->dep_max_large;     //[0..1] maximum depression storage of large gatekeeper
-    double f_s_to_l=pHRU->GetSurfaceProps()->small_to_large;    //[0..1] fraction of depression landscape draining to large gatekeeper
-    double f_s_to_o=(1-f_s_to_l);                               //[0..1] fraction of depression landscape draining to outlet
-    double fsu     =pHRU->GetSurfaceProps()->HGDM_frac_sm_dep;  //[0..1] fraction of HRU covered in small depressions + contrib areas of depressions
-    double flu     =pHRU->GetSurfaceProps()->HGDM_frac_lr_dep;  //[0..1] fraction of HRU covered in large depression + contrib areas of depression
-    double fl      =pHRU->GetSurfaceProps()->HGDM_frac_lr_are;  //[0..1] fraction of HRU covered by maximum area of large depression
-    double p       =pHRU->GetSurfaceProps()->HGDM_P;
-    double p_large =pHRU->GetSurfaceProps()->HGDM_P_LARGE;
+    double Vs_max  =pHRU->GetSurfaceProps()->dep_max;             //[mm] maximum depression storage of small depressions [V/A_HRU]
+    double Vl_max  =pHRU->GetSurfaceProps()->dep_max_large;       //[mm] maximum depression storage of large gatekeeper  [V/A_HRU]
+
+    double fsu_to_l=pHRU->GetSurfaceProps()->HGDM_frac_up_large;  //[0..1] fraction of depression landscape draining to large gatekeeper
+    double flu     =pHRU->GetSurfaceProps()->HGDM_frac_large;     //[0..1] fraction of HRU covered in large depression + contrib areas of large depression
+    double fsu     =(1.0-flu);                                    //[0..1] fraction of depression landscape contributing to small depressions
+    double fsu_to_o=(1.0-fsu_to_l-flu);                           //[0..1] fraction of depression landscape draining to outlet
+
+    double fl      =pHRU->GetSurfaceProps()->HGDM_large_areafrac; //[0..1] fraction of HRU covered by maximum area of large depression
+    double p       =pHRU->GetSurfaceProps()->HGDM_p;
+    double p_large =pHRU->GetSurfaceProps()->HGDM_p_large;
+
+    if (p_large<0){p_large=p;}
 
     //rules:
-    // flu+fsu+fo=1.0
     // fl < flu
 
     double Atot  =pHRU->GetArea()*M2_PER_KM2;
     double Al_max=fl *Atot; //[km2] - maximum area of gatekeeper
     double Asu   =fsu*Atot; //[km2] - total contributing area + surface area of small depressions
     double Alu   =flu*Atot; //[km2] - total contributing area to large depression + surface area of large
-    double As;              //[km2] - total water surface area of small and large depressions (As=A_w in Shook paper)
+    //double As;              //[km2] - total water surface area of small and large depressions (As=A_w in Shook paper)
     double Al;              //[km2] - surface area of large gatekeeper depression (<Al_max)
 
     double ponded  =state_vars[iPond];//[mm]
@@ -397,28 +401,30 @@ void   CmvAbstraction::GetRatesOfChange( const double        *state_vars,
     double Vlarge  =state_vars[iDepL];//[mm]
     double fsc_last=state_vars[iCFac];//[0..1] contributing fraction from previous time step
 
-    double overflow, to_large(0.0), to_outlet(0.0), to_dep_s(0.0), to_dep_l,excess;
+    double overflow(0.0), to_large(0.0), to_outlet(0.0), to_dep_s(0.0), to_dep_l(0.0),excess(0.0);
 
     //Small depressions ----------------------------------------------
     //As=pow(Vsmall/Vs_max,2/(p+2)); //from volfrac2areafrac_Clark
-    //double dVs = runoff * (Asu - As) / Atot + ponded * (As/Atot);
-    double dVs=ponded*(Asu/Atot);   //[mm]
+    //double dVs = runoff * (Asu - As) / Atot + ponded * (As/Atot); //Not yet ported from HGDM - doesn't preserve mass balance?
+
+    double dVs=ponded*(Asu/Atot);   //[mm] //JRC - Simpler interpretation 
+
+    //update contributing fraction-----------------------------------
+    double fsc=HGDMcontrib_fraction(Vsmall,dVs,Vs_max,fsc_last); //fsc is only used in next timestep (updated here using intial Vsmall)
 
     //As=pow(Vsmall/Vs_max,2/(p+2));
     //double AET=(As/Atot)*PET;
     //AET=min(AET,Vsmall);
     //Vsmall-=AET;
-    //double fsc=HGDMcontrib_fraction(Vsmall,dVs,Vs_max,fsc_last); //fsc is only used in next timestep
-
-    double fsc=HGDMcontrib_fraction(Vsmall,dVs,Vs_max,fsc_last); //fsc is only used in next timestep
+    
     if (dVs>0)
     {
       Vsmall+=dVs*(1.0-fsc_last);
       overflow=max(Vsmall-Vs_max,0.0);
       Vsmall  =min(Vsmall,Vs_max);
       to_dep_s  =dVs*(1.0-fsc_last)-overflow;        //total ponded->small dep
-      to_large  =(overflow+dVs*(fsc_last))*f_s_to_l; //total ponded->large
-      to_outlet =(overflow+dVs*(fsc_last))*f_s_to_o; //total ponded->outflow
+      to_large  =(overflow+dVs*(fsc_last))*fsu_to_l; //total ponded->large
+      to_outlet =(overflow+dVs*(fsc_last))*fsu_to_o; //total ponded->outflow
     }
 
     //Large depression-----------------------------------------------
@@ -426,7 +432,8 @@ void   CmvAbstraction::GetRatesOfChange( const double        *state_vars,
     else if (Vlarge >= Vl_max){Al=Al_max;}
     else                      {Al=Al_max*pow((Vlarge / Vl_max),2.0/(p_large + 2.0));}
 
-    //double dVl=ponded*Al/Atot+to_large+runoff*(Alu-Al)/Atot+to_large;
+    //double contrib_area_l=0.0; 
+    //double dVl=ponded*Al/Atot+to_large+runoff*(Alu-Al)/Atot; //Not yet ported from HGDM - doesn't preserve mass balance?
     double dVl=ponded*(Alu/Atot)+to_large; //any water in local contributing area, which includes Al_max (i.e., Alu>=Al_max, always)
     Vlarge+=dVl;
     excess=0.0;
@@ -434,11 +441,14 @@ void   CmvAbstraction::GetRatesOfChange( const double        *state_vars,
       excess= (Vlarge-Vl_max);
       to_outlet+=excess;
       Vlarge=Vl_max;
+      //contrib_area_l =Alu + (fsu_to_l * fs_last * Asu);
     }
     to_dep_l=dVl-excess;
 
     //No depression--------------------------------------------------
     to_outlet += ponded *(Atot-Asu-Alu)/Atot;
+
+
 
     rates[0]=to_dep_s/tstep;       //PONDED->SMALL DEPRESSIONS
     rates[1]=to_dep_l/tstep;       //PONDED->LARGE DEPRESSIONS
@@ -449,7 +459,6 @@ void   CmvAbstraction::GetRatesOfChange( const double        *state_vars,
     //rates[5]=Al_max+fsc_last*Asmax*f_s_to_l;        //if outflow from large
 
     //NOTES: to get runoff right, should correct infiltration algorithm to reduce infil by fs*(Aus/Atot)+(Al/Atot)
-*/
   }
 }
 

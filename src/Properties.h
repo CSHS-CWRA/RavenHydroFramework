@@ -275,9 +275,10 @@ struct surface_struct
   //surface storage variables
   double max_sat_area_frac; ///< [-]       PRMS maximum saturated area (pct)- user defined between 0.050 - 0.950
 
-  double dep_max;           ///< [mm]      maximum amount of water that can be stored in depressions
+  double dep_max;           ///< [mm]      maximum amount of water that can be stored in depressions (averaged over HRU area)
   double abst_percent;      ///< [0..1]    percentage of rainfall/melt which is abstracted to depression storage
   double dep_max_flow;      ///< [mm/d]    outflow rate with full depression storage (dep_stor=dep_max)
+  double dep_max_large;     ///< [mm]      maximum amount of water that can be stored in large HGDM depression (averaged over HRU area)
   double dep_n;             ///< [-]       power law coefficient for depression outflow
   double dep_threshold;     ///< [mm]      threshold storage at which flow commences
   double dep_k;             ///< [1/d]     linear overflow coefficient Q=k*(h-dep_threshold)
@@ -297,6 +298,12 @@ struct surface_struct
   double AWBM_areafrac2;    ///< [0..1]    fraction of infiltration to medium landscape store in AWBM model (nonzero)
   double AWBM_bflow_index;  ///< [0..1]    fraction of excess going to groundwater in AWBM model
   double divert_fract;      ///< [0..1]    fraction of available water diverted in :LateralDivert run (default=0.0)
+
+  double HGDM_frac_up_large;  ///< [0..1]  fraction of depression landscape draining to large gatekeeper
+  double HGDM_frac_large;     ///< [0..1]  fraction of HRU covered in large depression + contrib areas of large depression
+  double HGDM_large_areafrac; ///< [0..1]  fraction of HRU covered by maximum area of large depression
+  double HGDM_p;              ///< [-]     shape parameter for equivalent depression
+  double HGDM_p_large;        ///< [-]     shape parameter for large depression
 
   double ow_PET_corr;       ///< [-]       fraction of PET to apply to open water evaporation
   double lake_PET_corr;     ///< [-]       fraction of PET to apply to lake evaporation

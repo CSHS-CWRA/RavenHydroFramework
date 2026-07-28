@@ -900,6 +900,7 @@ enum sv_type
 
   // Distribution tracking variables
   MIN_DEP_DEFICIT,         ///< [mm or -1..0] Minimum depression deficit (describes deficit distribution), =-percent full if negative
+  CONTRIB_FRAC,            ///< [0..1] fraction contributing area of landscape to runoff
 
   // Memory/diagnostic  variables
   CUM_INFIL,               ///< [mm] Cumulative infiltration to topsoil

@@ -289,6 +289,7 @@ void CLandUseClass::AutoCalculateLandUseProps(surface_struct &Stmp,
   SetSpecifiedValue(S.SCS_CN,Stmp.SCS_CN,Sdefault.SCS_CN,needed,"SCS_CN");
   SetSpecifiedValue(S.dep_max,Stmp.dep_max,Sdefault.dep_max,needed,"DEP_MAX");
   SetSpecifiedValue(S.dep_max_flow,Stmp.dep_max_flow,Sdefault.dep_max_flow,needed,"DEP_MAX_FLOW");
+  SetSpecifiedValue(S.dep_max_large,Stmp.dep_max_large,Sdefault.dep_max_large,needed,"DEP_MAX_LARGE");
   SetSpecifiedValue(S.dep_n,Stmp.dep_n,Sdefault.dep_n,needed,"DEP_N");
   SetSpecifiedValue(S.dep_threshold,Stmp.dep_threshold,Sdefault.dep_threshold,needed,"DEP_THRESHOLD");
   SetSpecifiedValue(S.dep_k,Stmp.dep_k,Sdefault.dep_k,needed,"DEP_K");
@@ -307,6 +308,11 @@ void CLandUseClass::AutoCalculateLandUseProps(surface_struct &Stmp,
   SetSpecifiedValue(S.AWBM_areafrac1,Stmp.AWBM_areafrac1,Sdefault.AWBM_areafrac1,needed,"AWBM_AREAFRAC1");
   SetSpecifiedValue(S.AWBM_areafrac2,Stmp.AWBM_areafrac2,Sdefault.AWBM_areafrac2,needed,"AWBM_AREAFRAC2");
   SetSpecifiedValue(S.AWBM_bflow_index,Stmp.AWBM_bflow_index,Sdefault.AWBM_bflow_index,needed,"AWBM_BFLOW_INDEX");
+  SetSpecifiedValue(S.HGDM_frac_up_large,Stmp.HGDM_frac_up_large,Sdefault.HGDM_frac_up_large,needed,"HGDM_FRAC_UP_LARGE");
+  SetSpecifiedValue(S.HGDM_frac_large,Stmp.HGDM_frac_large,Sdefault.HGDM_frac_large,needed,"HGDM_FRAC_LARGE");
+  SetSpecifiedValue(S.HGDM_large_areafrac,Stmp.HGDM_large_areafrac,Sdefault.HGDM_large_areafrac,needed,"HGDM_LARGE_AREAFRAC");
+  SetSpecifiedValue(S.HGDM_p,Stmp.HGDM_p,Sdefault.HGDM_p,needed,"HGDM_P");
+  SetSpecifiedValue(S.HGDM_p_large,Stmp.HGDM_p_large,Sdefault.HGDM_p_large,needed,"HGDM_P_LARGE");
 
   SetSpecifiedValue(S.lake_rel_coeff,Stmp.lake_rel_coeff,Sdefault.lake_rel_coeff,needed,"LAKE_REL_COEFF");
   SetSpecifiedValue(S.abst_percent,Stmp.abst_percent,Sdefault.abst_percent,needed,"ABST_PERCENT");
@@ -400,6 +406,7 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
   S.SCS_CN            =DefaultParameterValue(is_template,false);//50
   S.dep_max           =DefaultParameterValue(is_template,false);//6.29;     //[mm]
   S.dep_max_flow      =DefaultParameterValue(is_template,false);            //[mm/d]
+  S.dep_max_large     =DefaultParameterValue(is_template,false);            //[mm]
   S.dep_n             =DefaultParameterValue(is_template,false);//1.0;      //[-]
   S.dep_crestratio    =DefaultParameterValue(is_template,false);//1.5;      //[mm]
   S.PDMROF_b          =DefaultParameterValue(is_template,false);//4;        //[-]
@@ -415,6 +422,11 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
   S.AWBM_areafrac1    =DefaultParameterValue(is_template,false);//0.134     //[0..1]
   S.AWBM_areafrac2    =DefaultParameterValue(is_template,false);//0.433     //[0..1]
   S.AWBM_bflow_index  =DefaultParameterValue(is_template,false);//0.3       //[0..1]
+  S.HGDM_frac_up_large=DefaultParameterValue(is_template,false);//0.5       //[0..1]
+  S.HGDM_frac_large   =DefaultParameterValue(is_template,false);            //[0..1]
+  S.HGDM_large_areafrac=DefaultParameterValue(is_template,false);           //[0..1]
+  S.HGDM_p            =DefaultParameterValue(is_template,false);//1.2
+  S.HGDM_p_large      =DefaultParameterValue(is_template,false);//2     
 
   S.dep_threshold     =DefaultParameterValue(is_template,false);//1.5;      //[mm]
   S.lake_rel_coeff    =DefaultParameterValue(is_template,false);//0.3;      //[1/d]
@@ -503,6 +515,7 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
   else if (!name.compare("SCS_IA_FRACTION"        )){S.SCS_Ia_fraction=value;}
   else if (!name.compare("DEP_MAX"                )){S.dep_max =value;}
   else if (!name.compare("DEP_MAX_FLOW"           )){S.dep_max_flow =value;}
+  else if (!name.compare("DEP_MAX_LARGE"          )){S.dep_max_large=value;}
   else if (!name.compare("DEP_N"                  )){S.dep_n =value;}
   else if (!name.compare("DEP_THRESHOLD"          )){S.dep_threshold =value;}
   else if (!name.compare("DEP_CRESTRATIO"         )){S.dep_crestratio =value;}
@@ -519,6 +532,11 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
   else if (!name.compare("AWBM_AREAFRAC1"         )){S.AWBM_areafrac1 =value; }
   else if (!name.compare("AWBM_AREAFRAC2"         )){S.AWBM_areafrac2 =value; }
   else if (!name.compare("AWBM_BFLOW_INDEX"       )){S.AWBM_bflow_index =value; }
+  else if (!name.compare("HGDM_FRAC_UP_LARGE"     )){S.HGDM_frac_up_large =value; }
+  else if (!name.compare("HGDM_FRAC_LARGE"        )){S.HGDM_frac_large =value; }
+  else if (!name.compare("HGDM_LARGE_AREAFRAC"    )){S.HGDM_large_areafrac =value; }
+  else if (!name.compare("HGDM_P"                 )){S.HGDM_p =value; }
+  else if (!name.compare("HGDM_P_LARGE"           )){S.HGDM_p_large =value; }
   else if (!name.compare("DIVERT_FRACT"           )){S.divert_fract =value; }
   else if (!name.compare("LAKE_REL_COEFF"         )){S.lake_rel_coeff =value;}
   else if (!name.compare("DEP_K"                  )){S.dep_k =value;}
@@ -612,6 +630,7 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("SCS_CN"                 )){return S.SCS_CN;}
   else if (!name.compare("DEP_MAX"                )){return S.dep_max ;}
   else if (!name.compare("DEP_MAX_FLOW"           )){return S.dep_max_flow;}
+  else if (!name.compare("DEP_MAX_LARGE"          )){return S.dep_max_large;}
   else if (!name.compare("DEP_N"                  )){return S.dep_n;}
   else if (!name.compare("DEP_THRESHOLD"          )){return S.dep_threshold;}
   else if (!name.compare("DEP_K"                  )){return S.dep_k;}
@@ -630,6 +649,11 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("AWBM_AREAFRAC1"         )){return S.AWBM_areafrac1; }
   else if (!name.compare("AWBM_AREAFRAC2"         )){return S.AWBM_areafrac2; }
   else if (!name.compare("AWBM_BFLOW_INDEX"       )){return S.AWBM_bflow_index; }
+  else if (!name.compare("HGDM_FRAC_UP_LARGE"     )){return S.HGDM_frac_up_large; }
+  else if (!name.compare("HGDM_FRAC_LARGE"        )){return S.HGDM_frac_large; }
+  else if (!name.compare("HGDM_LARGE_AREAFRAC"    )){return S.HGDM_large_areafrac; }
+  else if (!name.compare("HGDM_P"                 )){return S.HGDM_p; }
+  else if (!name.compare("HGDM_P_LARGE"           )){return S.HGDM_p_large; }
   else if (!name.compare("DIVERT_FRACT"           )){return S.divert_fract; }
   else if (!name.compare("LAKE_REL_COEFF"         )){return S.lake_rel_coeff;}
   else if (!name.compare("ABST_PERCENT"           )){return S.abst_percent;}
