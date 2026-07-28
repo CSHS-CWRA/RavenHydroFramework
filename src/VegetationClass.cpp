@@ -256,7 +256,6 @@ void CVegetationClass::AutoCalculateVegetationProps(const veg_struct &Vtmp, cons
   bad=SetSpecifiedValue(V.xylem_frac,Vtmp.xylem_frac,Vdefault.xylem_frac,needed,"XYLEM_FRAC");
   bad=SetSpecifiedValue(V.veg_dens,Vtmp.veg_dens,Vdefault.veg_dens,needed,"VEG_DENS");
   bad=SetSpecifiedValue(V.veg_diam,Vtmp.veg_diam,Vdefault.veg_diam,needed,"VEG_DIAM");
-  bad=SetSpecifiedValue(V.veg_mBeta,Vtmp.veg_mBeta,Vdefault.veg_mBeta,needed,"VEG_MBETA");
   bad=SetSpecifiedValue(V.veg_conv_coeff,Vtmp.veg_conv_coeff,Vdefault.veg_conv_coeff,needed,"VEG_CONV_COEFF");
   if(bad) {
     //do something.
@@ -323,7 +322,6 @@ void CVegetationClass::InitializeVegetationProps(string name, veg_struct &V, boo
   V.root_extinct      =DefaultParameterValue(is_template,false);        //[-]
   V.veg_dens          =DefaultParameterValue(is_template,false);        //[/m2]
   V.veg_diam          =DefaultParameterValue(is_template,false);        //[m]
-  V.veg_mBeta         =DefaultParameterValue(is_template,false);        //[-]
   V.veg_conv_coeff    =DefaultParameterValue(is_template,false);//2.0   //[MJ/m2/d/K]
 }
 ////////////////////////////////////////////////////////////////////
@@ -374,7 +372,6 @@ void  CVegetationClass::SetVegetationProperty(veg_struct  &V,
   else if (!name.compare("MAX_INTERCEPT_RATE"   )){V.max_intercept_rate=value;}
   else if (!name.compare("CHU_MATURITY"         )){V.CHU_maturity=value;}
   else if (!name.compare("VEG_DIAM"             )){V.veg_diam=value;}
-  else if (!name.compare("VEG_MBETA"            )){V.veg_mBeta=value;}
   else if (!name.compare("VEG_DENS"             )){V.veg_dens=value;}
   else if (!name.compare("PET_VEG_CORR"         )){V.PET_veg_corr=value;}
   else if (!name.compare("CAP_LAI_RATIO"        )){V.Cap_LAI_ratio=value;}
@@ -480,7 +477,6 @@ double CVegetationClass::GetVegetationProperty(const veg_struct &V, string param
   else if (!name.compare("MAX_INTERCEPT_RATE"   )){return V.max_intercept_rate;}
   else if (!name.compare("CHU_MATURITY"         )){return V.CHU_maturity;}
   else if (!name.compare("VEG_DENS"             )){return V.veg_dens;}
-  else if (!name.compare("VEG_MBETA"            )){return V.veg_mBeta;}
   else if (!name.compare("VEG_DIAM"             )){return V.veg_diam;}
   else if (!name.compare("PET_VEG_CORR"         )){return V.PET_veg_corr;}
   else if (!name.compare("CAP_LAI_RATIO"        )){return V.Cap_LAI_ratio;}

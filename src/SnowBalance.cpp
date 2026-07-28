@@ -1235,7 +1235,7 @@ void CmvSnowBalance::CRHMSnowBalance(const double *state_vars,
   pot_melt*=LH_FUSION*DENSITY_WATER/MM_PER_METER*Options.timestep;  //[mm/d]->[MJ/m2]
   double snoliq_max = CalculateSnowLiquidCapacity(SWE, SWE/MAX_SNOW_DENS, pModel);
   double t_minus    = min(T_min,0.0);
-  double Umin       = SWE*(2.115+0.00779*t_minus)*t_minus;//1000.0; //[MJ/m2] minimum snow energy (negative), documentation?? JRC- 1000 factor from CRHM unknown and leading to unreasonably small values of Umin.
+  double Umin       = SWE*(2.115+0.00779*t_minus)*t_minus; //[MJ/m2] minimum snow energy (negative), documentation??
   double refreeze   = 0.0;
   double snowmelt0(0.0),snowmelt1(0.0),snowmelt2(0.0);
 

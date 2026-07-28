@@ -154,7 +154,6 @@ struct veg_struct
 
   double veg_dens;          ///< [1/m2]    vegetation count per meter squared (range: 1.0-500.0; recommended 300.0 for crops and grass, 1.0 for forests and shrubs)
   double veg_diam;          ///< [m]       vegetation diameter (range 0.0-2.0; recommended 0.003 for crops and grass, 0.5-1.0 for forests and shrubs [m]
-  double veg_mBeta;         ///< [-]       mBeta parameter
 
   double veg_conv_coeff;    ///< [MJ/m2/d/K] vegetation convection coefficient (multiplied by LAI) =~2.0
 

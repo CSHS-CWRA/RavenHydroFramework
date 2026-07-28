@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------
   class definitions:
   CmvPrairieBlowingSnow
@@ -54,7 +54,6 @@ private:/*------------------------------------------------------*/
                               const double Fetch,    // [m] (param)
                               const double veg_dens, // [count/m2] Vegetation density
                               const double veg_diam, // [m] Vegetation diameter
-                              const double mBeta,    // [-] unitless parameter
                                     double &DriftH,  //[kg/m/s]
                                     double &SublH) const;  //[kg/m2/s] //per half hour?
 
