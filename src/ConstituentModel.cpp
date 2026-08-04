@@ -1072,7 +1072,7 @@ void CConstituentModel::WriteNetCDFOutputFileHeaders(const optStruct& Options)
   time_struct tt;                       // start time structure
   int         time_dimid,varid_time;    // dimension ID (holds number of time steps) and variable ID (holds time values) for time
   const int   ndims1 = 1;
-  const int   ndims2 = 2;
+  //const int   ndims2 = 2;
   int         dimids1[ndims1];          // array which will contain all dimension ids for a variable
   int         retval,ncid;
 

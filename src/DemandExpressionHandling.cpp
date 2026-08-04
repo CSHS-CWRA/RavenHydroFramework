@@ -221,7 +221,6 @@ workflowVar* CDemandOptimizer::GetWorkflowVarStruct(string s) {
 //
 int CDemandOptimizer::GetUserDVIndex(const string s) const
 {
-  int ct=0;
   for (int i = 0; i < _nUserDecisionVars; i++) {
     if (_pUserDecisionVars[i]->name==s){return i;}
   }
@@ -694,7 +693,6 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     }
     if ((is != NPOS) && (ie != NPOS))
     {
-      bool found=false;
       sv_name = s.substr(is+9,ie-(is+9));
       HRUID   = s_to_i(s.substr(ie+1,ip-(ie+1)).c_str());
 
@@ -734,7 +732,6 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
     }
     if ((is != NPOS) && (ie != NPOS))
     {
-      bool found=false;
       sv_name = s.substr(is+8,ie-(is+8));
       SBID    = s_to_ll(s.substr(ie+1,ip-(ie+1)).c_str());
 
@@ -1155,7 +1152,6 @@ exp_condition* CDemandOptimizer::ParseCondition(const char** s, const int Len, c
     }
 
     if (pCond->dv_name[0] == '!') { //decision variable
-      char   tmp =pCond->dv_name[1];
       string tmp2=pCond->dv_name.substr(2);
       char code=pCond->dv_name[1];
       if ((code=='Q') || (code=='h') || (code=='I')) //subbasin state decision variable
@@ -1512,7 +1508,6 @@ double CDemandOptimizer::EvaluateExpression(const expressionStruct* pE,const dou
   double coeff;
   double term;
   double RHS=0.0;
-  bool constraint_valid=true;
   for (int j = 0; j < pE->nGroups; j++)
   {
     coeff=1.0;
@@ -1615,8 +1610,8 @@ double CDemandOptimizer::EvaluateTerm(expressionTerm **pTerms,const int k, const
   else if (pT->type == TERM_HRU)
   {
     int i=pT->SV_index;
-    int k=pT->HRU_index;
-    return _pModel->GetHydroUnit(k)->GetStateVarValue(i); //This will be start of timestep value
+    int this_k=pT->HRU_index;
+    return _pModel->GetHydroUnit(this_k)->GetStateVarValue(i); //This will be start of timestep value
   }
   else if (pT->type == TERM_SB)
   {

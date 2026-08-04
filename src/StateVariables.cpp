@@ -152,7 +152,7 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
   case(LAKE_STORAGE):       {name="Net Lake Storage";           break;}
   case(MIN_DEP_DEFICIT):    {name="Minimum depression deficit"; break;}
   case(CONTRIB_FRAC):       {name="Contributing area fraction"; break;}
-
+  case(INFIL_CORR):         {name="Infiltration correction";    break;}
 
   //Temperature/Energy storage
   case(ENERGY_LOSSES):      {name="Energy Losses";              break;}
@@ -267,7 +267,8 @@ string CStateVariable::GetStateVarUnits(const sv_type typ)
   case(SNOW_DRIFT):       {units="mm"; break;}
   case(LAKE_STORAGE):     {units="mm"; break;}
   case(MIN_DEP_DEFICIT):  {units="mm"; break;}
-  case(CONTRIB_FRAC):     {units="0-1"; break;}
+  case(CONTRIB_FRAC):     {units="0-1";break;}
+  case(INFIL_CORR):       {units="0-1";break;}
 
     //Temperature/Energy storage [C] or [MJ/m^2]
   case(ENERGY_LOSSES):    {units="MJ/m2"; break;}
@@ -373,6 +374,7 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
   else if (!tmp.compare("LAKE_STORAGE"    )){typ=LAKE_STORAGE;}
   else if (!tmp.compare("MIN_DEP_DEFICIT" )){typ=MIN_DEP_DEFICIT;}
   else if (!tmp.compare("CONTRIB_FRAC"    )){typ=CONTRIB_FRAC;}
+  else if (!tmp.compare("INFIL_CORR"      )){typ=INFIL_CORR;}
   else if (!tmp.compare("ENERGY_LOSSES"   )){typ=ENERGY_LOSSES;}
   else if (!tmp.compare("SNOW_COVER"      )){typ=SNOW_COVER;}
   else if (!tmp.compare("SNOW_DEFICIT"    )){typ=SNOW_DEFICIT;}
@@ -462,6 +464,7 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
     case(LAKE_STORAGE):       {name="LAKE_STORAGE";             break;}
     case(MIN_DEP_DEFICIT):    {name="MIN_DEP_DEFICIT";          break;}
     case(CONTRIB_FRAC):       {name="CONTRIB_FRAC";             break;}
+    case(INFIL_CORR):         {name="INFIL_CORR";               break;}
 
     //Temperature/Energy storage
     case(ENERGY_LOSSES):      {name="ENERGY_LOSSES";            break;}

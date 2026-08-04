@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2025 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Gauge.h"
 
@@ -189,9 +189,35 @@ void CGauge::Initialize(const optStruct   &Options,
       }
     }
   }
+  //if OW_PET requests data, but only PET is provided, use PET
+  index=_aTSindex[(int)(F_PET)];
+  int index2=_aTSindex[(int)(F_OW_PET)];
+  if ((index!=DOESNT_EXIST) && (index2==DOESNT_EXIST) && (Options.ow_evaporation==PET_DATA)){
+    _aTSindex[(int)(F_OW_PET)]=index;
+    WriteWarning("CGauge::Initialize: OW_PET not provided; PET provided at gauge will be used to estimate over water PET.",Options.noisy);
+  }
+
   //PET unreasonable
   bool blank_in_PET=false;
   index=_aTSindex[(int)(F_PET)];
+  if (index!=DOESNT_EXIST){
+    for (int nn=0;nn<nSamples; nn++)
+    {
+      val=_pTimeSeries[index]->GetSampledValue (nn);
+      if(val==RAV_BLANK_DATA) {
+        blank_in_PET=true;
+      }
+      else if (val<-REAL_SMALL){
+        ExitGracefully("CGauge::Initialize: negative PET reported at gauge",BAD_DATA);
+      }
+    }
+    if(blank_in_PET) {
+      WriteWarning("CGauge::Initialize: blank PET data in PET time series; will infill via infill ET estimation method",Options.noisy);
+    }
+  }
+  //OW_PET unreasonable
+  blank_in_PET=false;
+  index=_aTSindex[(int)(F_OW_PET)];
   if (index!=DOESNT_EXIST){
     for (int nn=0;nn<nSamples; nn++)
     {

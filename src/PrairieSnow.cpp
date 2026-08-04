@@ -239,7 +239,7 @@ double CmvPrairieBlowingSnow::ProbabilityThreshold( const double &snow_depth, //
 /// JRC: Verified via comparison to CRHM code- consistent.
 //
 void CmvPrairieBlowingSnow::PBSMrates(const double stubble_ht, // stubble height [m]
-                                      const double Uthr,       // threshold wind speed [m/s]
+                                      const double u_thresh,   // threshold wind speed [m/s]
                                       const double T,          // air temperature [deg C]
                                       const double u,          // wind speed [m/s]
                                       const double rel_hum,    // relative humidity [0..1]
@@ -252,10 +252,10 @@ void CmvPrairieBlowingSnow::PBSMrates(const double stubble_ht, // stubble height
 {
   const double VEGETATION_BETA=170; 
   const double REF_FETCH=300; //XD [m]
-  const double ZD=0.3; //[m]
+  const double z_d=0.3; //[m]
 
   const double C1=2.8;
-  const double C2=1.6;
+  const double C2=1.6; //unitless, from Owen (1980, unpublished) h~c_2*u^2/2g
   const double C3=4.2;
 
   //Compute stubble coefficients
@@ -269,10 +269,10 @@ void CmvPrairieBlowingSnow::PBSMrates(const double stubble_ht, // stubble height
 
   DriftH=0.0;
   SublH=0.0;
-  if(u>Uthr)
+  if(u>u_thresh)
   {
-    double Usthr=0.03697*Uthr;           //{Eq. 6.3    }
-    double Ustar=0.02264*pow(u,1.295);   //{Eq. 6.2 rev}
+    double u_star_th=0.03697*u_thresh;       //{Eq. 6.3     Pomeroy1988}
+    double u_star   =0.02264*pow(u,1.295);   //{Eq. 6.2 rev Pomeroy1988}
 
     //Raupach
     double RaupachTerm=1.0; //from Raupach1993
@@ -282,24 +282,26 @@ void CmvPrairieBlowingSnow::PBSMrates(const double stubble_ht, // stubble height
       RaupachTerm=1.0/((1.0-Sigma*Lambda)*(1.0+VEGETATION_BETA*Lambda));
     }
 
-    double Nsalt=2.0*DENSITY_AIR/(C2*C3*Ustar)*(RaupachTerm-(Usthr*Usthr)/(Ustar*Ustar));// [kg/m3] Pomeroy1988 Eq. 4.14 updated
+    double Nsalt; //drift density of snow in saltation [kg/m3]
+    Nsalt=2.0*DENSITY_AIR/(C2*C3*u_star)*(RaupachTerm-(u_star_th*u_star_th)/(u_star*u_star));// (should be [kg/m3]; is [kg-s/m4]) Pomeroy1988 Eq. 4.14 updated
     if(Nsalt<=0.0) {SublH=DriftH=0.0;return;}
 
     //-------------------------------------------------------------------------
     // calculate sublimation & drift rate in the saltation layer
     //-------------------------------------------------------------------------
 
-    Qsalt  =C1*DENSITY_AIR*Usthr/(GRAVITY*C3*Ustar)*(Ustar*Ustar*RaupachTerm-Usthr*Usthr);// (should be [kg/m/s]; is [kg/m2]) Pomeroy1988 Eq. 4.20 (Eqn 2 MacDonaldEtAl2009)
-    //UNITS DONT WORK OUT IN MESH CODE - DIVISION BY C3*Ustar not in Pomeroy1988
+    Qsalt  =C1*DENSITY_AIR*u_star_th/(GRAVITY*C3*u_star)*(u_star*u_star*RaupachTerm-u_star_th*u_star_th);// (should be [kg/m/s]; is [kg/m2]) Pomeroy1988 Eq. 4.20 (Eqn 2 MacDonaldEtAl2009)
+    //UNITS DONT WORK OUT FOR EITHER Nsalt or Qsalt IN MESH CODE - DIVISION BY C3*Ustar not in Pomeroy1988
+    //Above would work out if C3 implicitly has units of s/m  
     //Confirmed - this is the same as CRHM
 
     double Mpr, alpha, rel_hum_z, Vsalt,Hsalt;
     Mpr=0.0001;                                       // mean particle radius [m]
     alpha=5.0;                                        // particle size distribution shape parameter
-    Hsalt=C2/(2.0*GRAVITY)*Ustar*Ustar;               // [m] maximum saltation height {Pomeroy 1988 Eq. 4.13}
+    Hsalt=C2/(2.0*GRAVITY)*u_star*u_star;             // [m] maximum saltation height {Pomeroy 1988 Eq. 4.13}
     rel_hum_z=(rel_hum-1.0)*(1.019+0.027*log(Hsalt)); // Pomeroy1988 Eq. 6.20
     upperswap(rel_hum_z,-0.01);
-    Vsalt=0.6325*Ustar+2.3*Usthr;                     // Pomeroy1988 Eq. 6.25
+    Vsalt=0.6325*u_star+2.3*u_star_th;                // Pomeroy1988 Eq. 6.25
 
     SBsalt=SublimRateCoefficient(Mpr,alpha,Vsalt,rel_hum_z,T)*Nsalt*Hsalt;  // [kg/m2/s] Pomeroy1988 Eq. 6.11,6.13
 
@@ -308,10 +310,11 @@ void CmvPrairieBlowingSnow::PBSMrates(const double stubble_ht, // stubble height
     //-------------------------------------------------------------------------
 
     // Loop to find the first suspended drift density level, z from the reference level z_ref
+    // expensive root-finding routine to find z at which Nz(z)=Nsalt
     //-------------------------------------------------------------------------
     double Nz,z,z_ref;
     double dz=0.0001;
-    z=z_ref=(0.05628*Ustar); //reference height [m] // Pomeroy1988 Eq. 5.27;
+    z=z_ref=0.05628*u_star; //reference height [m] // Pomeroy1988 Eq. 5.27;
     while(z<=0.15)
     {
       Nz=0.8*exp(-1.55*(pow(z_ref,-0.544)-pow(z,-0.544))); // [kg/m3] Suspended level drift density (Pomeroy1988 Eq. 5.26)
@@ -319,19 +322,24 @@ void CmvPrairieBlowingSnow::PBSMrates(const double stubble_ht, // stubble height
       if(Nz<=Nsalt){ break; }  //drift density is less than or equal to Nsalt.
     }
 
-    // find height of fully-developed boundary layer for turbulent diffusion
-    //-------------------------------------------------------------------------
-    double Bound; //[m]
-    double Bd=1.0;//initial guess [m]
-    double term=162.926/(Ustar*Ustar);
+    //should replace with below:
+    //z=pow(1/1.55*log(Nsalt/0.8)-pow(0.05628*u_star,0.554),-1.0/0.554);
 
-    Bound=ZD+VON_KARMAN*VON_KARMAN*(Fetch-REF_FETCH)*pow(log(Bd*term)*log(ZD*term),-0.5);// Pomeroy1988 Eq. 6.6
-    while(fabs(Bound-Bd)>0.001)
+
+    // find height of fully-developed boundary layer for turbulent diffusion, z_p
+    //-------------------------------------------------------------------------
+    double z_p=z_d; //[m] (default for small fetch)
+    
+    if  (Fetch>REF_FETCH) 
     {
-      Bd=Bound;
-      Bound=ZD+VON_KARMAN*VON_KARMAN*(Fetch-REF_FETCH)*pow(log(Bd*term)*log(ZD*term),-0.5);// Pomeroy1988 Eq. 6.9
+      double z_p_last;
+      double term=162.926/(u_star*u_star);  
+      z_p=1.0;//initial guess [m]
+      do {
+        z_p_last=z_p;
+        z_p=z_d+VON_KARMAN*VON_KARMAN*(Fetch-REF_FETCH)*pow(log(z_p_last*term)*log(z_d*term),-0.5);// Pomeroy1988 Eq. 6.9
+      } while(fabs(z_p-z_p_last)>0.001);
     }
-    if(Fetch<REF_FETCH){ Bound=ZD; }
 
     // Calculate the suspended mass flux up to 5 metres
     // and the total sublimation rate to the top of the boundary layer
@@ -340,10 +348,10 @@ void CmvPrairieBlowingSnow::PBSMrates(const double stubble_ht, // stubble height
     dz=0.001;
     z+=dz;
     double Uz,Vsusp;
-    while(z<=Bound)
+    while(z<=z_p)
     {
       Nz    =0.8*exp(-1.55*pow(z_ref,-0.544)-pow(z,-0.544));
-      Uz    =(Ustar*pow(1.2/(1.2+Nz),0.5)/VON_KARMAN)*log(z/((0.00613*(Ustar*Ustar))+z_stb));// Pomeroy1988 Eq. 4.17r,  Eq. 5.17a
+      Uz    =(u_star*pow(1.2/(1.2+Nz),0.5)/VON_KARMAN)*log(z/((0.00613*(u_star*u_star))+z_stb));// Pomeroy1988 Eq. 4.17r,  Eq. 5.17a
 
       if(Uz>0.0)
       {
@@ -589,8 +597,8 @@ double CmvPrairieBlowingSnow::SublimRateCoefficient(const double &Mpr,
 
   double Es          =PA_PER_KPA*GetSaturatedVaporPressure(T); //[Pa]
   double sat_vap_dens=(Es*MMM)/(RR*TK);                 // [g/m3]?
-  double Diff        =2.06e-5*pow(TK/ZERO_CELSIUS,1.75);// diffus. of w.vap. atmos. (m^2/s)
-  double Lamb        =0.00063*(TK+0.0673);              // therm. cond. of atm. (J/(msK))
+  double Diff        =2.06e-5*pow(TK/ZERO_CELSIUS,1.75);// diffus. of w.vap. atmos. [m2/s[)]
+  double Lamb        =0.00063*(TK+0.0673);              // therm. cond. of atm. [W/m/K]
   //double Lamb      =0.000076843*(TK) + 0.003130762;   //from CRHM
 
   double Htran, Reyn,Nuss, A,B,C,DmDt,Mpm;

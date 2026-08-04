@@ -300,6 +300,7 @@ struct surface_struct
 
   double HGDM_frac_up_large;  ///< [0..1]  fraction of depression landscape draining to large gatekeeper
   double HGDM_frac_large;     ///< [0..1]  fraction of HRU covered in large depression + contrib areas of large depression
+  double HGDM_small_areafrac; ///< [0..1]  fraction of HRU covered by maximum area of small depression
   double HGDM_large_areafrac; ///< [0..1]  fraction of HRU covered by maximum area of large depression
   double HGDM_p;              ///< [-]     shape parameter for equivalent depression
   double HGDM_p_large;        ///< [-]     shape parameter for large depression

@@ -2808,6 +2808,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"ABST_FILL"        )){abst_type=ABST_FILL;}
       else if (!strcmp(s[1],"ABST_PDMROF"      )){abst_type=ABST_PDMROF; }
       else if (!strcmp(s[1],"ABST_UWFS"        )){abst_type=ABST_UWFS; }
+      else if (!strcmp(s[1],"ABST_HGDM"        )){abst_type=ABST_HGDM; }
       else
       {
         ExitGracefully("ParseMainInputFile: Unrecognized abstraction algorithm",BAD_DATA_WARN); break;

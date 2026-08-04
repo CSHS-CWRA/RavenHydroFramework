@@ -25,7 +25,7 @@ CmvAdvection::CmvAdvection(string constit_name,
   _constit_ind=pTransModel->GetConstituentIndex(constit_name);
 
   int nAdvConnections    =pTransModel->GetNumAdvConnections();
-  int nWaterStores       =pTransModel->GetNumWaterCompartments();
+  //int nWaterStores       =pTransModel->GetNumWaterCompartments();
   CHydroProcessABC::DynamicSpecifyConnections(3*nAdvConnections+1);//+2 once GW added
   //CHydroProcessABC::DynamicSpecifyConnections(nAdvConnections+nWaterStores+1);//+2 once GW added
 

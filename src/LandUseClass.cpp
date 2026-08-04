@@ -311,6 +311,7 @@ void CLandUseClass::AutoCalculateLandUseProps(surface_struct &Stmp,
   SetSpecifiedValue(S.HGDM_frac_up_large,Stmp.HGDM_frac_up_large,Sdefault.HGDM_frac_up_large,needed,"HGDM_FRAC_UP_LARGE");
   SetSpecifiedValue(S.HGDM_frac_large,Stmp.HGDM_frac_large,Sdefault.HGDM_frac_large,needed,"HGDM_FRAC_LARGE");
   SetSpecifiedValue(S.HGDM_large_areafrac,Stmp.HGDM_large_areafrac,Sdefault.HGDM_large_areafrac,needed,"HGDM_LARGE_AREAFRAC");
+  SetSpecifiedValue(S.HGDM_small_areafrac,Stmp.HGDM_small_areafrac,Sdefault.HGDM_small_areafrac,needed,"HGDM_SMALL_AREAFRAC");
   SetSpecifiedValue(S.HGDM_p,Stmp.HGDM_p,Sdefault.HGDM_p,needed,"HGDM_P");
   SetSpecifiedValue(S.HGDM_p_large,Stmp.HGDM_p_large,Sdefault.HGDM_p_large,needed,"HGDM_P_LARGE");
 
@@ -425,6 +426,7 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
   S.HGDM_frac_up_large=DefaultParameterValue(is_template,false);//0.5       //[0..1]
   S.HGDM_frac_large   =DefaultParameterValue(is_template,false);            //[0..1]
   S.HGDM_large_areafrac=DefaultParameterValue(is_template,false);           //[0..1]
+  S.HGDM_small_areafrac=DefaultParameterValue(is_template,false);           //[0..1]
   S.HGDM_p            =DefaultParameterValue(is_template,false);//1.2
   S.HGDM_p_large      =DefaultParameterValue(is_template,false);//2     
 
@@ -535,6 +537,7 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
   else if (!name.compare("HGDM_FRAC_UP_LARGE"     )){S.HGDM_frac_up_large =value; }
   else if (!name.compare("HGDM_FRAC_LARGE"        )){S.HGDM_frac_large =value; }
   else if (!name.compare("HGDM_LARGE_AREAFRAC"    )){S.HGDM_large_areafrac =value; }
+  else if (!name.compare("HGDM_SMALL_AREAFRAC"    )){S.HGDM_small_areafrac =value; }
   else if (!name.compare("HGDM_P"                 )){S.HGDM_p =value; }
   else if (!name.compare("HGDM_P_LARGE"           )){S.HGDM_p_large =value; }
   else if (!name.compare("DIVERT_FRACT"           )){S.divert_fract =value; }
@@ -652,6 +655,7 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("HGDM_FRAC_UP_LARGE"     )){return S.HGDM_frac_up_large; }
   else if (!name.compare("HGDM_FRAC_LARGE"        )){return S.HGDM_frac_large; }
   else if (!name.compare("HGDM_LARGE_AREAFRAC"    )){return S.HGDM_large_areafrac; }
+  else if (!name.compare("HGDM_SMALL_AREAFRAC"    )){return S.HGDM_small_areafrac; }
   else if (!name.compare("HGDM_P"                 )){return S.HGDM_p; }
   else if (!name.compare("HGDM_P_LARGE"           )){return S.HGDM_p_large; }
   else if (!name.compare("DIVERT_FRACT"           )){return S.divert_fract; }

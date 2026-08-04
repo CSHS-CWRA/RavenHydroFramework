@@ -1630,8 +1630,9 @@ void CSubBasin::SetDownstreamID(const long long down_SBID)
 void CSubBasin::SetDownstreamBasin(const CSubBasin* pSB)
 {
   _pDownSB=pSB;
-  if (_pReservoir!=NULL){_pReservoir->SetDownstreamBasin(pSB); }
-  _downstream_p=_pDownSB->GetGlobalIndex();
+  if (_pReservoir!=NULL){_pReservoir->SetDownstreamBasin(pSB);    }
+  if (_pDownSB!=NULL)   {_downstream_p=_pDownSB->GetGlobalIndex();}
+  else                  {_downstream_p=DOESNT_EXIST;              }
 }
 
 /////////////////////////////////////////////////////////////////

@@ -105,12 +105,18 @@ double CRPS(const double *obs, double **sim, const int N, const int M)
 CResidualErrorModel::CResidualErrorModel()
 {
   _meanType=MEAN_CONSTANT;
+  _pQ95=NULL;
+  _pQ05=NULL; 
+  _pError=NULL;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Residual error model destructor
 //
 CResidualErrorModel::~CResidualErrorModel()
 {
+  delete _pQ95;
+  delete _pQ05; 
+  delete _pError;
 }
 
 
@@ -268,12 +274,12 @@ void  CResidualErrorModel::CalculateREM(CTimeSeriesABC  *pTSmod,
   double *aQobs=new double [Ntotal];
   double *predvec=new double [nEnsembleMems];
   for (int n=0; n<Ntotal; n++){
-    for(int r=0;r<nEnsembleMems;r++) {predvec[r]=predictions[r][n];}
-    quickSort(predvec,0,Ntotal-1);
+    for(int r=0;r<nEnsembleMems;r++) {predvec[r]=predictions[r][n];} //vector of all ensemble values at time n
+    quickSort(predvec,0,nEnsembleMems-1);
     aQobs[n]=pTSObs->GetSampledValue(nnstart+n);
-    aQ05[n]=getPercentileVal(predictions[n],Ntotal,0.05);
-    aQ50[n]=getPercentileVal(predictions[n],Ntotal,0.50);
-    aQ95[n]=getPercentileVal(predictions[n],Ntotal,0.95);
+    aQ05[n]=getPercentileVal(predvec,nEnsembleMems,0.05);
+    aQ50[n]=getPercentileVal(predvec,nEnsembleMems,0.50);
+    aQ95[n]=getPercentileVal(predvec,nEnsembleMems,0.95);
   }
   delete [] predvec;
 
@@ -292,7 +298,6 @@ void  CResidualErrorModel::CalculateREM(CTimeSeriesABC  *pTSmod,
   delete [] aQmod;
   delete [] mu;
   delete [] etastar;
-  delete [] mu_gapped;
   for(int r=0;r<nEnsembleMems;r++) { delete [] predictions[r];} delete [] predictions;
   delete [] aQ05;
   delete [] aQ50;

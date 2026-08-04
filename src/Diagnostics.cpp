@@ -116,7 +116,9 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
 
   // Modify weights for thresholds/blank observation data
   //----------------------------------------------------------
-  double *allvals=new double [nnend-nnstart];
+  double *allvals=NULL;
+  allvals=new double[nnend];
+  ExitGracefullyIf(allvals==NULL,"CalculateDiagnostic: out of memory",OUT_OF_MEMORY);
   double thresh_obsval=0;
   int Nobs=0;
   for(nn=nnstart;nn<nnend;nn++)
@@ -132,7 +134,9 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
   }
   delete[] allvals;
 
-  double *baseweight=new double [nnend-nnstart]; //array stores base weights for each observation point
+  double *baseweight=NULL;
+  baseweight=new double [nnend]; //array stores base weights for each observation point
+  ExitGracefullyIf(baseweight==NULL,"CalculateDiagnostic: out of memory(2)",OUT_OF_MEMORY);
   for(nn=nnstart;nn<nnend;nn++)
   {
     baseweight[nn]=1.0;
