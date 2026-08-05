@@ -922,6 +922,7 @@ enum sv_type
   COLD_CONTENT,            ///< [C] Cold content of snowpack
   SOIL_TEMP,               ///< [C] Temperature of soil
   CANOPY_TEMP,             ///< [C] Temperature fo canopy
+  SOIL_PCT_FROZ,           ///< [0..1] % of SOIL[0] which is frozen (used for adjustment of all soil fluxes to/from soil)
 
   // Snow/Glacier variables
   SNOW_DEPTH,              ///< [mm] Snow depth - surrogate for density
