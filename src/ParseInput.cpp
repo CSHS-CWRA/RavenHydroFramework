@@ -300,6 +300,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     Options.silent                =false;
   }
   Options.output_format           =OUTPUT_STANDARD;
+  Options.suppress_output         =false;
   Options.write_forcings          =false;
   Options.write_mass_bal          =false;
   Options.write_exhaustiveMB      =false;
@@ -1603,7 +1604,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     case(69):  //--------------------------------------------
     {/*:SuppressOutput */
       if(Options.noisy) { cout <<"Suppressing output"<<endl; }
-      Options.output_format=OUTPUT_NONE;
+      Options.suppress_output=true;
       break;
     }
     case(70):  //--------------------------------------------

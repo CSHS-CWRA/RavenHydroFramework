@@ -501,6 +501,12 @@
     <ClCompile Include="AgeTracers.cpp">
       <Filter>Source Files\Transport Processes</Filter>
     </ClCompile>
+    <ClCompile Include="ResidualErrorModel.cpp">
+      <Filter>Source Files\_Driver\Output</Filter>
+    </ClCompile>
+    <ClCompile Include="FrozenGround.cpp">
+      <Filter>Source Files\Hydrological Processes\Energy Processes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Properties.h">
@@ -724,6 +730,9 @@
     </ClInclude>
     <ClInclude Include="AgeTracers.h">
       <Filter>Header Files\Transport</Filter>
+    </ClInclude>
+    <ClInclude Include="ResidualErrorModel.h">
+      <Filter>Header Files\Input/Output</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -214,8 +214,8 @@
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug netCDF|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);c:/Program Files/netCDF 4.7.0/include/;</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);c:/Program Files/netCDF 4.7.0/bin/;</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);c:/Program Files/netCDF 4.9.3/include/;</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);c:/Program Files/netCDF 4.9.3/bin/;</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Midl>
@@ -378,7 +378,7 @@
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>%(AdditionalDependencies);c:/Program Files/netCDF 4.7.0/lib/netcdf.lib;</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies);c:/Program Files/netCDF 4.9.3/lib/netcdf.lib;</AdditionalDependencies>
       <OutputFile>.\DebugNetCDF/Raven.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -387,7 +387,7 @@
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
-      <AdditionalLibraryDirectories>c:/Program Files/netCDF 4.7.0/bin/;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>c:/Program Files/netCDF 4.9.3/bin/;</AdditionalLibraryDirectories>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -710,6 +710,7 @@
     <ClCompile Include="EnergyTransport.cpp" />
     <ClCompile Include="EnKF.cpp" />
     <ClCompile Include="FirnEvolution.cpp" />
+    <ClCompile Include="FrozenGround.cpp" />
     <ClCompile Include="FrozenLake.cpp" />
     <ClCompile Include="GWRecharge.cpp" />
     <ClCompile Include="GWRiverConnection.cpp" />
@@ -728,6 +729,7 @@
     <ClCompile Include="ParseGWFile.cpp" />
     <ClCompile Include="ParseManagementFile.cpp" />
     <ClCompile Include="Raven_BMI.cpp" />
+    <ClCompile Include="ResidualErrorModel.cpp" />
     <ClCompile Include="RiverReach.cpp" />
     <ClCompile Include="SnowRedistribute.cpp" />
     <ClCompile Include="SoilBalance.cpp" />
@@ -993,6 +995,7 @@
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="MFUSGpp.h" />
     <ClInclude Include="Raven_BMI.h" />
+    <ClInclude Include="ResidualErrorModel.h" />
     <ClInclude Include="RiverReach.h" />
     <ClInclude Include="StageDischargeRelations.h" />
     <ClInclude Include="SurfaceEnergyExchange.h" />

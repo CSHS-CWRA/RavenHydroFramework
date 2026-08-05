@@ -381,7 +381,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
   //Demands.csv
   //--------------------------------------------------------------
   CSubBasin *pSB;
-  if((Options.write_demandfile) && (Options.output_format!=OUTPUT_NONE))
+  if((Options.write_demandfile) && (!Options.suppress_output))
   {
     tmpFilename=FilenamePrepare("Demands.csv",Options);
     _DEMANDS.open(tmpFilename.c_str());
@@ -1045,7 +1045,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
     //----------------------------------------------------------------
     double irr,Qd,Qr,Q,eF;
     double demsum,delsum,retsum;
-    if((Options.write_demandfile) && (Options.output_format!=OUTPUT_NONE))
+    if((Options.write_demandfile) && (!Options.suppress_output))
     {
       if((Options.period_starting) && (t==0)) {}//don't write anything at time zero
       else {
@@ -1391,7 +1391,7 @@ void CModel::WriteMajorOutput(const time_struct &tt, string solfile, bool final)
   string tmpFilename;
   const optStruct* Options = this->_pOptStruct;  // just to make the code more readable
 
-  if (Options->output_format==OUTPUT_NONE){return;} //:SuppressOutput is on
+  if (Options->suppress_output==true){return;} //:SuppressOutput is on
 
   // WRITE {RunName}_solution.rvc - final state variables file
   ofstream RVC;
