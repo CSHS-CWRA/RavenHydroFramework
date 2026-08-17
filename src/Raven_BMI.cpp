@@ -7,6 +7,8 @@
 #include "RavenMain.h"
 #include "Raven_BMI.h"
 
+int  ParseSVTypeIndex(string s,CModel *pModel, CStateVariable *pStateVar);  // defined in ParseInput.cpp
+
 void ParseManagementFile       (CModel *&pModel, optStruct &Options);
 
 extern "C"
@@ -70,17 +72,17 @@ std::vector<char *> CRavenBMI::_SplitLineByWhitespace(std::string line)
 
 
 //////////////////////////////////////////////////////////////////
-/// \brief Splits a string by colon into a vector of char*
+/// \brief Splits a string by the rightmost colon into a vector of char*
 ///
 /// \param line [in] string to be split
 /// \return vector of char* containing the split string
-std::vector<std::string> CRavenBMI::_SplitLineByColon(std::string line)
+std::vector<std::string> CRavenBMI::_SplitLineByLastColon(std::string line)
 {
   int config_str_ini, config_str_mid;
   std::vector<std::string> args;
 
   config_str_ini = 0;
-  config_str_mid = (int)line.find(":", config_str_ini);
+  config_str_mid = (int)line.substr(config_str_ini).rfind(":");
 
   // simple case: no colon found - return a list of one element (the whole string)
   if (config_str_mid == -1) {
@@ -156,8 +158,8 @@ void CRavenBMI::_ReadConfigFile(std::string config_file)
       continue;
     }
 
-    // all lines of the config file must have one colon
-    line_split_by_colon = _SplitLineByColon(line);
+    // all lines of the config file must have atleast one colon
+    line_split_by_colon = _SplitLineByLastColon(line);
     if (line_split_by_colon.size() != 2) {
       throw std::logic_error("WARNING: Invalid line in Raven config file: '" + line + "'");
     }
@@ -230,10 +232,17 @@ void CRavenBMI::_ReadConfigFile(std::string config_file)
       }
       else if(config_value=="flux")
       {
-        // case: model interfacing
-        // TODO: implement
-        throw std::logic_error("WARNING: flux variables as input are not supported in the BMI interface yet.");
-        continue;
+        if (listing_inp_vars) {
+          throw std::logic_error("WARNING: Currently flux type variables are only supported for output. (remove '"+ line +"' under 'input_vars:')");
+          continue;
+        }
+        if      (config_key.substr(0, 3) == "To:")       {var_type=VAR_TO_FLUX; }
+        else if (config_key.substr(0, 5) == "From:")     {var_type=VAR_FROM_FLUX; }
+        else if (config_key.substr(0, 8) == "Between:")  {var_type=VAR_BETWEEN_FLUX; }
+        else {
+          throw std::logic_error("WARNING: Invalid flux variable name in Raven config file: " + config_key);
+          continue;
+        }
       }
       else{
         throw std::logic_error("WARNING: Invalid input var line in Raven config file: " + line);
@@ -290,7 +299,58 @@ void CRavenBMI::_CheckConfigVars(std::vector<rvn_var_data>  &vars)
         return;
       }
     }
-    else{
+    else if (vars[i].type == VAR_TO_FLUX || vars[i].type == VAR_FROM_FLUX)
+    {
+      string right;
+      if (vars[i].name.substr(0, 3) == "To:") {
+        right = vars[i].name.substr(3, string::npos);
+      }
+      else if (vars[i].name.substr(0, 5) == "From:") {
+        right = vars[i].name.substr(5, string::npos);
+      }
+      int sv_ind = ParseSVTypeIndex(right, pModel, pModel->GetStateVarInfo());
+      if (sv_ind == DOESNT_EXIST){
+        throw std::logic_error("WARNING: config variable '" + vars[i].name + "' contains state variable that does not exist in model.");
+        return;
+      };
+      sv_type typ = pModel->GetStateVarType(sv_ind);
+      if (typ == UNRECOGNIZED_SVTYPE){
+        throw std::logic_error("WARNING: config variable '" + vars[i].name + "' references an invalid state variable type.");
+        return;
+      }
+      int layer_ind = pModel->GetStateVarLayer(sv_ind);
+
+      vars[i].state_var_type = typ;
+      vars[i].sv_layer_ind = layer_ind;
+    }
+    else if (vars[i].type == VAR_BETWEEN_FLUX)
+    {
+      string right = vars[i].name.substr(8, string::npos);
+      string first_sv = right.substr(0, right.find(".And."));
+      string last_sv = right.substr(right.find(".And.") + 5, string::npos);
+
+      int sv_ind =ParseSVTypeIndex(first_sv, pModel, pModel->GetStateVarInfo());
+      int sv_ind2 =ParseSVTypeIndex(last_sv,  pModel, pModel->GetStateVarInfo());
+
+      if (sv_ind == DOESNT_EXIST || sv_ind2 == DOESNT_EXIST){
+        throw std::logic_error("WARNING: config variable '" + vars[i].name + "' contains state variable that does not exist in model.");
+        return;
+      };
+      sv_type typ = pModel->GetStateVarType(sv_ind);
+      sv_type typ2 = pModel->GetStateVarType(sv_ind2);
+      int layer_ind = pModel->GetStateVarLayer(sv_ind);
+      int layer_ind2 = pModel->GetStateVarLayer(sv_ind2);
+
+      if (typ == UNRECOGNIZED_SVTYPE || typ2 == UNRECOGNIZED_SVTYPE){
+        throw std::logic_error("WARNING: config variable '" + vars[i].name + "' references an invalid state variable type.");
+        return;
+      }
+      vars[i].state_var_type = typ;
+      vars[i].state_var_type2 = typ2;
+      vars[i].sv_layer_ind = layer_ind;
+      vars[i].sv_layer_ind2 = layer_ind2;
+    }
+    else {
       throw std::logic_error("WARNING: config variable '" + vars[i].name + "' has an invalid or unsupported type '" + to_string(vars[i].type) + "'.");
     }
   }
@@ -503,6 +563,7 @@ int CRavenBMI::GetVarGrid(std::string name)
       else if (_output_vars[i].type==VAR_RESERVOIR_STAGE) {return GRID_SUBBASIN;}
       else if (_output_vars[i].type==VAR_FORCING_FUNCTION){return GRID_HRU;}
       else if (_output_vars[i].type==VAR_STATE_VAR)       {return GRID_HRU; }
+      else if (_output_vars[i].type==VAR_TO_FLUX || _output_vars[i].type==VAR_FROM_FLUX || _output_vars[i].type==VAR_BETWEEN_FLUX) {return GRID_HRU; }
     }
   }
   for (int i = 0; i < _input_vars.size(); i++) {
@@ -512,6 +573,7 @@ int CRavenBMI::GetVarGrid(std::string name)
       else if (_input_vars[i].type==VAR_RESERVOIR_STAGE) {return GRID_SUBBASIN;}
       else if (_input_vars[i].type==VAR_FORCING_FUNCTION){return GRID_HRU;}
       else if (_input_vars[i].type==VAR_STATE_VAR)       {return GRID_HRU; }
+      else if (_input_vars[i].type==VAR_TO_FLUX || _input_vars[i].type==VAR_FROM_FLUX || _input_vars[i].type==VAR_BETWEEN_FLUX) {return GRID_HRU; }
     }
   }
 
@@ -535,6 +597,8 @@ std::string CRavenBMI::GetVarUnits(std::string name)
       else if (_output_vars[i].type==VAR_RESERVOIR_STAGE) {return "m";}
       else if (_output_vars[i].type==VAR_FORCING_FUNCTION){return GetForcingTypeUnits(_output_vars[i].f_type);}
       else if (_output_vars[i].type==VAR_STATE_VAR)       {return CStateVariable::GetStateVarUnits(_output_vars[i].state_var_type); }
+      else if (_output_vars[i].type==VAR_TO_FLUX || _output_vars[i].type==VAR_FROM_FLUX) {return CStateVariable::GetStateVarUnits(_output_vars[i].state_var_type); }
+      else if (_output_vars[i].type==VAR_BETWEEN_FLUX)    {return CStateVariable::GetStateVarUnits(_output_vars[i].state_var_type) + "/d"; }
     }
   }
   for (int i = 0; i < _input_vars.size(); i++) {
@@ -544,6 +608,8 @@ std::string CRavenBMI::GetVarUnits(std::string name)
       else if (_input_vars[i].type==VAR_RESERVOIR_STAGE) {return "m";}
       else if (_input_vars[i].type==VAR_FORCING_FUNCTION){return GetForcingTypeUnits(_input_vars[i].f_type);}
       else if (_input_vars[i].type==VAR_STATE_VAR)       {return CStateVariable::GetStateVarUnits(_input_vars[i].state_var_type); }
+      else if (_input_vars[i].type==VAR_TO_FLUX || _input_vars[i].type==VAR_FROM_FLUX) {return CStateVariable::GetStateVarUnits(_input_vars[i].state_var_type); } // TODO: should be per time too? (+ "/d"); same in CustomOutput
+      else if (_input_vars[i].type==VAR_BETWEEN_FLUX)    {return CStateVariable::GetStateVarUnits(_input_vars[i].state_var_type) + "/d"; }
     }
   }
 
@@ -612,7 +678,7 @@ std::string CRavenBMI::GetTimeUnits(){  return "d";              }
 void CRavenBMI::GetValue(std::string name, void* dest)
 {
   double *out=NULL;
-  int k,p,iSV;
+  int k,p,iSV,iSV2;
 
   for (int i = 0; i < _output_vars.size(); i++) {
     if (_output_vars[i].name == name)
@@ -655,6 +721,28 @@ void CRavenBMI::GetValue(std::string name, void* dest)
           out[k]=pModel->GetHydroUnit(k)->GetForcing(_output_vars[i].f_type);
         }
       }
+      else if (_output_vars[i].type==VAR_TO_FLUX){
+        iSV = pModel->GetStateVarIndex(_output_vars[i].state_var_type, _output_vars[i].sv_layer_ind);
+        out = new double[pModel->GetNumHRUs()];
+        for (k = 0; k < pModel->GetNumHRUs(); k++) {
+          out[k] = pModel->GetHydroUnit(k)->GetCumulFlux(iSV, true);
+        }
+      }
+      else if (_output_vars[i].type==VAR_FROM_FLUX){
+        iSV = pModel->GetStateVarIndex(_output_vars[i].state_var_type, _output_vars[i].sv_layer_ind);
+        out = new double[pModel->GetNumHRUs()];
+        for (k = 0; k < pModel->GetNumHRUs(); k++) {
+          out[k] = pModel->GetHydroUnit(k)->GetCumulFlux(iSV, false);
+        }
+      }
+      else if (_output_vars[i].type==VAR_BETWEEN_FLUX){
+        iSV = pModel->GetStateVarIndex(_output_vars[i].state_var_type, _output_vars[i].sv_layer_ind);
+        iSV2 = pModel->GetStateVarIndex(_output_vars[i].state_var_type2, _output_vars[i].sv_layer_ind2);
+        out = new double[pModel->GetNumHRUs()];
+        for (k = 0; k < pModel->GetNumHRUs(); k++) {
+          out[k] = pModel->GetHydroUnit(k)->GetCumulFluxBet(iSV, iSV2);
+        }
+      }
     }
   }
   if (out!=NULL){
@@ -677,7 +765,7 @@ void CRavenBMI::GetValue(std::string name, void* dest)
 //
 void CRavenBMI::GetValueAtIndices(std::string name, void* dest, int* inds, int count)
 {
-  int iSV,k,p;
+  int iSV,iSV2,k,p;
 
   // search in the output variable names
   for (int i = 0; i < _output_vars.size(); i++) {
@@ -718,6 +806,31 @@ void CRavenBMI::GetValueAtIndices(std::string name, void* dest, int* inds, int c
         for(i = 0; i <count; i++) {
           k=inds[i];
           out[k]=pModel->GetHydroUnit(k)->GetStateVarArray()[iSV];
+        }
+      }
+      else if (_output_vars[i].type== VAR_TO_FLUX)
+      {
+        iSV = pModel->GetStateVarIndex(_output_vars[i].state_var_type, _output_vars[i].sv_layer_ind);
+        for(i = 0; i <count; i++) {
+          k=inds[i];
+          out[k]=pModel->GetHydroUnit(k)->GetCumulFlux(iSV,true);
+        }
+      }
+      else if (_output_vars[i].type== VAR_FROM_FLUX)
+      {
+        iSV = pModel->GetStateVarIndex(_output_vars[i].state_var_type, _output_vars[i].sv_layer_ind);
+        for(i = 0; i <count; i++) {
+          k=inds[i];
+          out[k]=pModel->GetHydroUnit(k)->GetCumulFlux(iSV,false);
+        }
+      }
+      else if (_output_vars[i].type== VAR_BETWEEN_FLUX)
+      {
+        iSV = pModel->GetStateVarIndex(_output_vars[i].state_var_type, _output_vars[i].sv_layer_ind);
+        iSV2 = pModel->GetStateVarIndex(_output_vars[i].state_var_type2, _output_vars[i].sv_layer_ind2);
+        for(i = 0; i <count; i++) {
+          k=inds[i];
+          out[k]=pModel->GetHydroUnit(k)->GetCumulFluxBet(iSV, iSV2);
         }
       }
       memcpy(dest,out,count*sizeof(double));
