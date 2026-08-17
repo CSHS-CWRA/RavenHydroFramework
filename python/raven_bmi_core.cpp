@@ -57,11 +57,22 @@ PYBIND11_MODULE(ravenbmi_pycore, m) {
         r.GetValue(var_name, var_values.data());
         return var_values;
       },
-    "C++: CRavenBMI::GetValue(std::string) --> std::vector<double>",
-    pybind11::arg("var_name")
+      "C++: CRavenBMI::GetValue(std::string) --> std::vector<double>",
+      pybind11::arg("var_name")
     );
     cl.def("GetValuePtr", (void * (CRavenBMI::*)(std::string)) &CRavenBMI::GetValuePtr, "C++: CRavenBMI::GetValuePtr(std::string) --> void *", pybind11::return_value_policy::automatic, pybind11::arg("name"));
-    cl.def("GetValueAtIndices", (void (CRavenBMI::*)(std::string, void *, int *, int)) &CRavenBMI::GetValueAtIndices, "C++: CRavenBMI::GetValueAtIndices(std::string, void *, int *, int) --> void", pybind11::arg("name"), pybind11::arg("dest"), pybind11::arg("inds"), pybind11::arg("count"));
+    //cl.def("GetValueAtIndices", (void (CRavenBMI::*)(std::string, void *, int *, int)) &CRavenBMI::GetValueAtIndices, "C++: CRavenBMI::GetValueAtIndices(std::string, void *, int *, int) --> void", pybind11::arg("name"), pybind11::arg("dest"), pybind11::arg("inds"), pybind11::arg("count"));
+    cl.def("GetValueAtIndices",
+      [](CRavenBMI &r, std::string var_name, std::vector<int>& var_indices) {
+        size_t num_elements = var_indices.size();
+        std::vector<double> var_values(num_elements);
+        r.GetValueAtIndices(var_name, var_values.data(), var_indices.data(), num_elements);
+        return var_values;
+      },
+      "C++: CRavenBMI::GetValueAtIndices(std::string, std::vector<int>) --> std::vector<double>",
+      pybind11::arg("name"),
+      pybind11::arg("indices")
+    );
     //cl.def("SetValue", (void (CRavenBMI::*)(std::string, void *)) &CRavenBMI::SetValue, "C++: CRavenBMI::SetValue(std::string, void *) --> void", pybind11::arg("name"), pybind11::arg("src"));
     cl.def("SetValue",
       [](CRavenBMI &r, std::string var_name, std::vector<double>& var_values) {
@@ -71,7 +82,17 @@ PYBIND11_MODULE(ravenbmi_pycore, m) {
       pybind11::arg("var_name"),
       pybind11::arg("var_values")
     );
-    cl.def("SetValueAtIndices", (void (CRavenBMI::*)(std::string, int *, int, void *)) &CRavenBMI::SetValueAtIndices, "C++: CRavenBMI::SetValueAtIndices(std::string, int *, int, void *) --> void", pybind11::arg("name"), pybind11::arg("inds"), pybind11::arg("count"), pybind11::arg("src"));
+    //cl.def("SetValueAtIndices", (void (CRavenBMI::*)(std::string, int *, int, void *)) &CRavenBMI::SetValueAtIndices, "C++: CRavenBMI::SetValueAtIndices(std::string, int *, int, void *) --> void", pybind11::arg("name"), pybind11::arg("inds"), pybind11::arg("count"), pybind11::arg("src"));
+    cl.def("SetValueAtIndices",
+      [](CRavenBMI &r, std::string var_name, std::vector<int>& var_indices, std::vector<double>& var_values) {
+        size_t num_elements = var_indices.size();
+        r.SetValueAtIndices(var_name, var_indices.data(), num_elements, var_values.data());
+      },
+      "C++: CRavenBMI::SetValueAtIndices(std::string, std::vector<int>, std::vector<double>) --> void",
+      pybind11::arg("var_name"),
+      pybind11::arg("var_indices"),
+      pybind11::arg("var_values")
+    );
     cl.def("GetGridRank", (int (CRavenBMI::*)(const int)) &CRavenBMI::GetGridRank, "C++: CRavenBMI::GetGridRank(const int) --> int", pybind11::arg("grid"));
     cl.def("GetGridSize", (int (CRavenBMI::*)(const int)) &CRavenBMI::GetGridSize, "C++: CRavenBMI::GetGridSize(const int) --> int", pybind11::arg("grid"));
     cl.def("GetGridType", (std::string (CRavenBMI::*)(const int)) &CRavenBMI::GetGridType, "C++: CRavenBMI::GetGridType(const int) --> std::string", pybind11::arg("grid"));
