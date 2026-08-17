@@ -33,3 +33,20 @@ So that the ```cmake``` command to build Raven as solely a dynamic library becom
 cmake -DCOMPILE_LIB=ON -DCOMPILE_EXE=OFF ../
 ```
 Raven can alternately be bullt in unix/MacOS using the makefile provided with the source code (g++ must be installed on the machine). Lastly, it may be compiled within Visual Studio Community Edition 2022.
+
+## Raven BMI python module
+
+A thin Python wrapper around the Raven C++ Basic Model Interface (BMI) can be build via `scikit-build-core`.
+
+To build a Python wheel using `pip`:
+```bash
+pip install build
+python -m build
+```
+
+The module can also be installed directly from source without building the Python wheel explicitly:
+```bash
+pip install ./
+```
+
+The resulting module `raven_bmi_sys` contains a single class `CRavenBMI` mapping the Raven C++ BMI.
