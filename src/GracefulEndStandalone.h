@@ -63,7 +63,7 @@ inline void FinalizeGracefully(const char *statement, exitcode code)
   cerr <<"Exiting Gracefully: "<<statement                              <<endl;
   cerr << typeline                                                      <<endl;
   cerr <<"============================================================="<<endl;
-         
+
   delete pModel; pModel=NULL; //deletes EVERYTHING!
 
   if(Options->pause) {

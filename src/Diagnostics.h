@@ -45,6 +45,7 @@ enum diag_type {
   DIAG_PERSINDEX,
   DIAG_YEARS_OF_RECORD,
   DIAG_SPEARMAN,
+  DIAG_RIA,
   DIAG_UNRECOGNIZED
 };
 struct agg_diag

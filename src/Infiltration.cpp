@@ -264,7 +264,7 @@ void CmvInfiltration::GetParticipatingStateVarList(infil_type  itype,sv_type *aS
     aSV[3]=CONVOLUTION;    aLev[3]=1;
   }
   else if ((itype==INF_SCS) || (itype==INF_SCS_NOABSTRACTION))
-  { 
+  {
     nSV=3;
     aSV[2]=CUM_INFIL;    aLev[2]=0;
   }
@@ -695,7 +695,7 @@ double CmvInfiltration::GetSCSRunoff(const CHydroUnit *pHRU,
     //Note: when tied to an SCS Abstraction algorithm which explicitly tracks depression storage
     //"rainthru" is what remains after abstraction, i.e., W=W-Ia, or SCS_Ia_fraction=0.0
   }
-  
+
   Ia-=min(cum_infil,Ia); //remove abstraction from previous timesteps in event
 
   Weff=pow(max(W-Ia,0.0),2)/(W+(S-Ia));//[mm]

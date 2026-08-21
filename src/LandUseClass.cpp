@@ -277,7 +277,7 @@ void CLandUseClass::AutoCalculateLandUseProps(surface_struct &Stmp,
   if(autocalc) {
     S.sublim_corr = 1.0;
   }
-  
+
   /*for(i=0;i<N_LU_PARAMETERS;i++) {
   if (!S.params[i].iscomputable){
     SetSpecifiedValue(S.params[i].value,Stmp.params[i].value,Sdefault.params[i].value,params[i].name);//(needed_params.partition_coeff>0.0)

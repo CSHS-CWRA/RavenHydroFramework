@@ -75,6 +75,7 @@ string CDiagnostic::GetName() const
   case(DIAG_NSE4):              {return "DIAG_NSE4"; }
   case(DIAG_YEARS_OF_RECORD):   {return "DIAG_YEARS_OF_RECORD";}
   case(DIAG_SPEARMAN):          {return "DIAG_SPEARMAN";}
+  case(DIAG_RIA):               {return "DIAG_RIA";}
   default:                      {return "";}
   }
 }
@@ -1524,6 +1525,47 @@ case(DIAG_DAILY_KGE)://----------------------------------------------------
       return -ALMOST_INF;
     }
   }
+  case (DIAG_RIA)://----------------------------------------
+  {
+    double avgobs=0.0;
+    N=0;
+    double c = 2.0;
+
+    for(nn=nnstart;nn<nnend;nn++)
+    {
+      weight=baseweight[nn];
+      obsval =pTSObs->GetSampledValue(nn);
+      avgobs+=weight*obsval;
+      N     +=weight;
+    }
+    if(N>0.0) { avgobs/=N; }
+
+    double sum1(0.0),sum2(0.0);
+    for(nn=nnstart;nn<nnend;nn++)
+    {
+      weight=baseweight[nn];
+      obsval = pTSObs->GetSampledValue(nn);
+      modval = pTSMod->GetSampledValue(nn);
+
+      sum1 += weight*std::abs(obsval - modval);    // sum A
+      sum2 += c*weight*std::abs(obsval - avgobs);  // sum B
+    }
+
+    if(N>0)
+    {
+      if (sum1 <= sum2) {
+        return 1 - (sum1 / sum2);
+      } else {
+        return 1 - (sum2 / sum1);
+      }
+    }
+    else
+    {
+      string warn = "DIAG_RIA not calculated. Missing non-zero weighted observations during simulation duration.";
+      WriteWarning(warn,Options.noisy);
+      return -ALMOST_INF;
+    }
+  }
   default:
   {
     return 0.0;
@@ -1621,5 +1663,6 @@ diag_type StringToDiagnostic(string distring)
   else if (!distring.compare("SPEARMAN"             )){return DIAG_SPEARMAN; }
   else if (!distring.compare("NASH_SUTCLIFFE_RUN"   )){return DIAG_NASH_SUTCLIFFE_RUN; }
   else if (!distring.compare("FUZZY_NASH"           )){return DIAG_FUZZY_NASH; }
+  else if (!distring.compare("RIA"                  )){return DIAG_RIA; }
   else                                                {return DIAG_UNRECOGNIZED;}
 }
