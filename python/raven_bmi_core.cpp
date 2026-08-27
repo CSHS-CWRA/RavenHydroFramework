@@ -1,4 +1,5 @@
 #include <pybind11/pybind11.h>
+#include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 //#include "RavenInclude.h"
 //#include "BMI.h"
@@ -16,6 +17,9 @@ const bool    __HAS_NETCDF__ = false;
 
 namespace py = pybind11;
 
+template <typename T>
+using py_array_cont = py::array_t<T, py::array::c_style | py::array::forcecast>;
+
 //PYBIND11_MODULE(libraven, m) {
 PYBIND11_MODULE(ravenbmi_pycore, m) {
     m.doc() =
@@ -24,9 +28,9 @@ PYBIND11_MODULE(ravenbmi_pycore, m) {
     m.attr("__raven_version__") = __RAVEN_VERSION__;
     m.attr("__netcdf__") = __HAS_NETCDF__;
 
-    py::class_<bmixx::Bmi>(m, "_BMI");
+    py::class_<bmixx::Bmi, py::smart_holder> abc(m, "_BMI");
 
-    pybind11::class_<CRavenBMI, bmixx::Bmi> cl(m, "CRavenBMI", "");
+    pybind11::class_<CRavenBMI, bmixx::Bmi, py::smart_holder> cl(m, "CRavenBMI", "");
     cl.def(pybind11::init( [](CRavenBMI const &o){ return new CRavenBMI(o); } ) );
     cl.def(py::init<>());
     cl.def("Initialize", (void (CRavenBMI::*)(std::string)) &CRavenBMI::Initialize, "C++: CRavenBMI::Initialize(std::string) --> void", pybind11::arg("config_file"));
@@ -51,47 +55,107 @@ PYBIND11_MODULE(ravenbmi_pycore, m) {
     cl.def("GetTimeStep", (double (CRavenBMI::*)()) &CRavenBMI::GetTimeStep, "C++: CRavenBMI::GetTimeStep() --> double");
     //cl.def("GetValue", (void (CRavenBMI::*)(std::string, void *)) &CRavenBMI::GetValue, "C++: CRavenBMI::GetValue(std::string, void *) --> void", pybind11::arg("name"), pybind11::arg("dest"));
     cl.def("GetValue",
-      [](CRavenBMI &r, std::string var_name) {
-        int num_elements = r.GetVarNbytes(var_name) / r.GetVarItemsize(var_name);
-        std::vector<double> var_values(num_elements);
-        r.GetValue(var_name, var_values.data());
-        return var_values;
+      [](CRavenBMI &r, std::string name, py_array_cont<double> dest) -> py_array_cont<double> {
+        int grid_size = r.GetGridSize(r.GetVarGrid(name));
+        if (dest.size() != grid_size) {
+          throw std::runtime_error("Size of output array (" + std::to_string(dest.size()) + ") does not match"
+            +" size of variable '" + name +"' (" + std::to_string(grid_size) + ")."
+          );
+        }
+        r.GetValue(name, dest.mutable_data());
+        return dest;
       },
-      "C++: CRavenBMI::GetValue(std::string) --> std::vector<double>",
-      pybind11::arg("var_name")
+      "C++: CRavenBMI::GetValue(std::string, py::array_t<double>) --> py::array_t<double>",
+      pybind11::arg("name"),
+      pybind11::arg("dest")
     );
-    cl.def("GetValuePtr", (void * (CRavenBMI::*)(std::string)) &CRavenBMI::GetValuePtr, "C++: CRavenBMI::GetValuePtr(std::string) --> void *", pybind11::return_value_policy::automatic, pybind11::arg("name"));
+    //cl.def("GetValuePtr", (void * (CRavenBMI::*)(std::string)) &CRavenBMI::GetValuePtr, "C++: CRavenBMI::GetValuePtr(std::string) --> void *", pybind11::return_value_policy::automatic, pybind11::arg("name"));
+    //
+    cl.def("GetValuePtr",
+      [](CRavenBMI &r, std::string name) -> py::array_t<double> {
+        int num_elements = r.GetGridSize(r.GetVarGrid(name));
+        double *data = static_cast<double *>(r.GetValuePtr(name));
+        // CRavenBMI::GetValuePtr does not return a pointer to internal storage,
+        // instead it allocates new memory on the heap and returns a pointer to that.
+        // Python needs to take ownership and free the memory.
+        return py::array_t<double>(
+          { static_cast<size_t>(num_elements) },  // shape
+          { sizeof(double) },                      // strides
+          data,                                    // data pointer
+          py::capsule(data, [](void *p) { delete[] static_cast<double *>(p); }));
+      },
+      "C++: CRavenBMI::GetValuePtr(std::string) --> py::array_t<double>",
+      pybind11::arg("name")
+    );
     //cl.def("GetValueAtIndices", (void (CRavenBMI::*)(std::string, void *, int *, int)) &CRavenBMI::GetValueAtIndices, "C++: CRavenBMI::GetValueAtIndices(std::string, void *, int *, int) --> void", pybind11::arg("name"), pybind11::arg("dest"), pybind11::arg("inds"), pybind11::arg("count"));
     cl.def("GetValueAtIndices",
-      [](CRavenBMI &r, std::string var_name, std::vector<int>& var_indices) {
-        size_t num_elements = var_indices.size();
-        std::vector<double> var_values(num_elements);
-        r.GetValueAtIndices(var_name, var_values.data(), var_indices.data(), num_elements);
-        return var_values;
+      [](CRavenBMI &r, std::string name, py_array_cont<double> dest, py_array_cont<int> inds) -> py_array_cont<double> {
+        int grid_size = r.GetGridSize(r.GetVarGrid(name));
+        size_t num_elements = inds.size();
+        if (num_elements != dest.size()) {
+          throw std::runtime_error("Size of output array (" + std::to_string(dest.size()) + ") does not match"
+            +" size of index array (" + std::to_string(num_elements) + ")."
+          );
+        }
+        const int *const ind_data = inds.data();
+        // bound check supplied index values
+        for (size_t i = 0; i < num_elements; i++) {
+          int p = ind_data[i];
+          if (p < 0 || p >= grid_size) {
+            throw std::out_of_range("Index " + std::to_string(i) + " has value " + std::to_string(p)
+              + ", which is outside the valid range [0, " + std::to_string(grid_size - 1) + "] for variable '" + name + "'."
+            );
+          }
+        }
+        r.GetValueAtIndices(name, dest.mutable_data(), inds.mutable_data(), static_cast<int>(num_elements));
+        return dest;
       },
-      "C++: CRavenBMI::GetValueAtIndices(std::string, std::vector<int>) --> std::vector<double>",
+      "C++: CRavenBMI::GetValueAtIndices(std::string, py::array_t<double>, py::array_t<int>) --> py::array_t<double>",
       pybind11::arg("name"),
-      pybind11::arg("indices")
+      pybind11::arg("dest"),
+      pybind11::arg("inds")
     );
     //cl.def("SetValue", (void (CRavenBMI::*)(std::string, void *)) &CRavenBMI::SetValue, "C++: CRavenBMI::SetValue(std::string, void *) --> void", pybind11::arg("name"), pybind11::arg("src"));
     cl.def("SetValue",
-      [](CRavenBMI &r, std::string var_name, std::vector<double>& var_values) {
-        r.SetValue(var_name, var_values.data());
+      [](CRavenBMI &r, std::string name, py_array_cont<double> src) {
+        int grid_size = r.GetGridSize(r.GetVarGrid(name));
+        if (src.size() != grid_size) {
+          throw std::runtime_error("Source array has wrong size with size " + std::to_string(src.size()) + "."
+            + " Variable '" + name + "' needs to set exactly " + std::to_string(grid_size) + " values."
+          );
+        }
+        r.SetValue(name, src.mutable_data());
       },
-      "C++: CRavenBMI::SetValue(std::string, std::vector<double>) --> void",
-      pybind11::arg("var_name"),
-      pybind11::arg("var_values")
+      "C++: CRavenBMI::SetValue(std::string, py::array_t<double>) --> void",
+      pybind11::arg("name"),
+      pybind11::arg("src")
     );
     //cl.def("SetValueAtIndices", (void (CRavenBMI::*)(std::string, int *, int, void *)) &CRavenBMI::SetValueAtIndices, "C++: CRavenBMI::SetValueAtIndices(std::string, int *, int, void *) --> void", pybind11::arg("name"), pybind11::arg("inds"), pybind11::arg("count"), pybind11::arg("src"));
     cl.def("SetValueAtIndices",
-      [](CRavenBMI &r, std::string var_name, std::vector<int>& var_indices, std::vector<double>& var_values) {
-        size_t num_elements = var_indices.size();
-        r.SetValueAtIndices(var_name, var_indices.data(), num_elements, var_values.data());
+      [](CRavenBMI &r, std::string name, py_array_cont<int> inds, py_array_cont<double> src) {
+        int grid_size = r.GetGridSize(r.GetVarGrid(name));
+        size_t num_elements = inds.size();
+        if (num_elements != src.size()) {
+          throw std::runtime_error("Size of source array (" + std::to_string(src.size()) + ") does not match"
+            +" size of index array (" + std::to_string(num_elements) + ")."
+          );
+        }
+        const int *const ind_data = inds.data();
+        // bound check supplied index values
+        for (size_t i = 0; i < num_elements; i++) {
+          int p = ind_data[i];
+          if (p < 0 || p >= grid_size) {
+            throw std::out_of_range("Index " + std::to_string(i) + " has value " + std::to_string(p)
+              + ", which is outside the valid range [0, " + std::to_string(grid_size - 1) + "] for variable '" + name + "'."
+            );
+          }
+        }
+        r.SetValueAtIndices(name, inds.mutable_data(), static_cast<int>(num_elements), src.mutable_data());
       },
-      "C++: CRavenBMI::SetValueAtIndices(std::string, std::vector<int>, std::vector<double>) --> void",
-      pybind11::arg("var_name"),
-      pybind11::arg("var_indices"),
-      pybind11::arg("var_values")
+      "C++: CRavenBMI::SetValueAtIndices(std::string, py::array_t<int>, py::array_t<double>) --> void",
+      pybind11::arg("name"),
+      pybind11::arg("inds"),
+      pybind11::arg("src")
     );
     cl.def("GetGridRank", (int (CRavenBMI::*)(const int)) &CRavenBMI::GetGridRank, "C++: CRavenBMI::GetGridRank(const int) --> int", pybind11::arg("grid"));
     cl.def("GetGridSize", (int (CRavenBMI::*)(const int)) &CRavenBMI::GetGridSize, "C++: CRavenBMI::GetGridSize(const int) --> int", pybind11::arg("grid"));
