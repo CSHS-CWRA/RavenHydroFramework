@@ -206,7 +206,7 @@ const double  SPH_VEGETATION          =2.700e-3;                                
 const double  SPH_AIR                 =1.012e-3;                                ///< [MJ/kg/K] Specific heat capacity of air
 
 const double  LH_FUSION               =0.334;                                   ///< [MJ/kg]  Latent heat of fusion
-const double  LH_VAPOR                =2.501;                                   ///< [MJ/kg]  Latent heat of vaporization
+const double  LH_VAPOR                =2.501;                                   ///< [MJ/kg]  Latent heat of vaporization (at zero degrees)
 const double  LH_SUBLIM               =2.845;                                   ///< [MJ/kg]  Latent heat of sublimation
 
 const double  EMISS_ATM               =0.985;                                   ///< [-] emissivity of the atmosphere and snowpack

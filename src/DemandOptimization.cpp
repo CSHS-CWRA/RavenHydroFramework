@@ -1283,7 +1283,7 @@ void CDemandOptimizer::AddReservoirConstraints(const optStruct &Options)
 /// \brief Updates workflow variables
 /// called every time step by SolveManagementProblem() prior to solve
 //
-void CDemandOptimizer::UpdateWorkflowVariables(const time_struct &tt,const optStruct &Options)
+void CDemandOptimizer::UpdateWorkflowVariables(const time_struct &tt,const optStruct &Options, int iter)
 {
   double t=tt.model_time;
   bool op_is_active;
@@ -1299,7 +1299,9 @@ void CDemandOptimizer::UpdateWorkflowVariables(const time_struct &tt,const optSt
       }
     }
     if (active_regime!=DOESNT_EXIST){
-      _pWorkflowVars[i]->current_val=EvaluateExpression(_pWorkflowVars[i]->pOperRegimes[active_regime]->pExpression, t, true);
+      if ((_pWorkflowVars[i]->iterate) || (iter==0)){
+        _pWorkflowVars[i]->current_val=EvaluateExpression(_pWorkflowVars[i]->pOperRegimes[active_regime]->pExpression,t,true);
+      }
     }
   }
 }
@@ -1391,7 +1393,7 @@ void CDemandOptimizer::PrepDemandProblem(CModel *pModel, const optStruct &Option
 
   // evaluates value of all workflow variables for this time step
   // ----------------------------------------------------------------
-  UpdateWorkflowVariables(tt,Options);
+  UpdateWorkflowVariables(tt,Options,0);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Solves demand optimization problem
@@ -2445,7 +2447,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
     }
     // adjust workflow variables to respond to non-linear DVs
     // ----------------------------------------------------------------------------
-    UpdateWorkflowVariables(tt,Options);
+    UpdateWorkflowVariables(tt,Options,1);
 
     //lp_lib::reset_basis(pLinProg); //JRC: may have value here
 

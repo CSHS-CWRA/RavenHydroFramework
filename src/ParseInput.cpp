@@ -3313,6 +3313,17 @@ bool ParseMainInputFile (CModel     *&pModel,
       //Dynamically generate connections used in precipitation - requires specification of all other processes (and corresponding water SVs)
       if (pPrecip!=NULL){pPrecip->Initialize();}
 
+      // Add TOTAL_SWE state variable if any snow is simulated
+      if (pModel->GetStateVarIndex(SNOW) != DOESNT_EXIST) {
+        tmpS[0] = TOTAL_SWE; tmpLev[0]=0; tmpN=1;
+        pModel->AddStateVariables(tmpS,tmpLev,tmpN);
+      }
+      // Add GLACIER_MB state variable if any glacier is simulated
+      if (pModel->GetStateVarIndex(GLACIER_ICE) != DOESNT_EXIST){
+        tmpS[0] = GLACIER_MB; tmpLev[0]=0; tmpN=1;
+        pModel->AddStateVariables(tmpS,tmpLev,tmpN);
+      }
+
       //must be done after processes are initialized (partition precip, in particular), but before constituents are added
       if (Options.noisy){ cout<<"Preparing Transport Model..."<<endl;}
       pModel->GetTransportModel()->Prepare(Options);
@@ -3772,16 +3783,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   } //end while (!end_of_file)
   INPUT.close();
 
-  // Add TOTAL_SWE state variable if any snow is simulated
-  if (pModel->GetStateVarIndex(SNOW) != DOESNT_EXIST) {
-    tmpS[0] = TOTAL_SWE; tmpLev[0]=0; tmpN=1;
-    pModel->AddStateVariables(tmpS,tmpLev,tmpN);
-  }
-  // Add GLACIER_MB state variable if any glacier is simulated
-  if (pModel->GetStateVarIndex(GLACIER_ICE) != DOESNT_EXIST){
-    tmpS[0] = GLACIER_MB; tmpLev[0]=0; tmpN=1;
-    pModel->AddStateVariables(tmpS,tmpLev,tmpN);
-  }
+
 
 
   //===============================================================================================

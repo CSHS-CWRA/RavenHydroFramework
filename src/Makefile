@@ -35,16 +35,16 @@ CXXFLAGS += -std=c++11 -fPIC
 #CXXFLAGS += -I/opt/homebrew/include
 #LDLIBS   += -L/opt/homebrew/lib
 
-# OPTION 2) include lp_solve for  water management optimization
+# OPTION 2a) Enable water-management optimization with lp_solve
 #           assumes lp_solve installed via 'brew install lp_solve' on MacOS or linux (requires homebrew)
 #LPSOLVE_PREFIX := $(shell brew --prefix lp_solve)
 #CXXFLAGS += -D_LPSOLVE_ -I$(LPSOLVE_PREFIX)/include
 #LDLIBS += -L$(LPSOLVE_PREFIX)/lib -llpsolve55
 
 # OPTION 2b) include lp_solve for water management optimization- uncomment following two commands only 
-#            assumes compiled liblpsolve55.a in ../lib/lp_solve_unix/ folder
+#            assumes compiled liblpsolve55.a in ../lib/lp_solve_unix/ folder as provided with source code
 #CXXFLAGS += -D_LPSOLVE_ -I../lib/lp_solve_unix
-#LDLIBS   += -L../lib/lp_solve_unix -llpsolve55
+#LDLIBS   += ../lib/lp_solve_unix/liblpsolve55.a
 
 # OPTION 3) if you use a OSX/BSD system, uncomment the LDFLAGS line below
 # this is to allow for use a 1Gb stack, see http://linuxtoosx.blogspot.ca/2010/10/stack-overflow-increasing-stack-limit.html

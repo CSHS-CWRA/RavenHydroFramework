@@ -119,7 +119,7 @@ workflowVar::workflowVar()
 {
   name="";
   current_val=0.0;
-
+  iterate=false;
   nOperRegimes=1;
   pOperRegimes=new op_regime* [1];
   pOperRegimes[0] = new op_regime("[DEFAULT]");
@@ -154,7 +154,10 @@ void workflowVar::AddExpression(expressionStruct* pExp)
 {
   pOperRegimes[nOperRegimes-1]->pExpression=pExp;
   ExitGracefullyIf(pExp==NULL,"workflowVar::AddExpression: NULL Expression",RUNTIME_ERR);
+
+  if (pExp->has_nonlin){iterate=true;} //if ANY expression is non-linear, we iterate on WV var 
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief retrieves value of named constant from list of user constants
 /// \params s [in] - string
