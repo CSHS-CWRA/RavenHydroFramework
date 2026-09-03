@@ -781,65 +781,65 @@ void CRavenBMI::GetValueAtIndices(std::string name, void* dest, int* inds, int c
     if (_output_vars[i].name == name) {
       double *out=new double[count];
       if      (_output_vars[i].type== VAR_STREAMFLOW){
-        for (i = 0; i <count; i++) {
-          p=inds[i];
+        for (int j = 0; j <count; j++) {
+          p=inds[j];
           if (Options.ave_hydrograph){
-            out[p]=pModel->GetSubBasin(p)->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
+            out[j]=pModel->GetSubBasin(p)->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
           }
           else{
-            out[p]=pModel->GetSubBasin(p)->GetOutflowRate();
+            out[j]=pModel->GetSubBasin(p)->GetOutflowRate();
           }
         }
       }
       else if (_output_vars[i].type== VAR_RESERVOIR_STAGE)
       {
-        for (i = 0; i <count; i++) {
-          p=inds[i];
+        for (int j = 0; j <count; j++) {
+          p=inds[j];
           CSubBasin* pBasin = pModel->GetSubBasin(p);
-          out[p] = 0.0;
+          out[j] = 0.0;
           if (pBasin->GetReservoir() != NULL) {
-            out[p] = pBasin->GetReservoir()->GetResStage();
+            out[j] = pBasin->GetReservoir()->GetResStage();
           }
         }
       }
       else if (_output_vars[i].type== VAR_FORCING_FUNCTION)
       {
-        for(i = 0; i <count; i++) {
+        for(int j = 0; j <count; j++) {
           k=inds[i];
-          out[k]=pModel->GetHydroUnit(k)->GetForcing(_output_vars[i].f_type);
+          out[j]=pModel->GetHydroUnit(k)->GetForcing(_output_vars[i].f_type);
         }
       }
       else if (_output_vars[i].type== VAR_STATE_VAR)
       {
         iSV = pModel->GetStateVarIndex(_output_vars[i].state_var_type, _output_vars[i].sv_layer_ind);
-        for(i = 0; i <count; i++) {
-          k=inds[i];
-          out[k]=pModel->GetHydroUnit(k)->GetStateVarArray()[iSV];
+        for(int j = 0; j <count; j++) {
+          k=inds[j];
+          out[j]=pModel->GetHydroUnit(k)->GetStateVarArray()[iSV];
         }
       }
       else if (_output_vars[i].type== VAR_TO_FLUX)
       {
         iSV = pModel->GetStateVarIndex(_output_vars[i].state_var_type, _output_vars[i].sv_layer_ind);
-        for(i = 0; i <count; i++) {
-          k=inds[i];
-          out[k]=pModel->GetHydroUnit(k)->GetCumulFlux(iSV,true);
+        for(int j = 0; j <count; j++) {
+          k=inds[j];
+          out[j]=pModel->GetHydroUnit(k)->GetCumulFlux(iSV,true);
         }
       }
       else if (_output_vars[i].type== VAR_FROM_FLUX)
       {
         iSV = pModel->GetStateVarIndex(_output_vars[i].state_var_type, _output_vars[i].sv_layer_ind);
-        for(i = 0; i <count; i++) {
-          k=inds[i];
-          out[k]=pModel->GetHydroUnit(k)->GetCumulFlux(iSV,false);
+        for(int j = 0; j <count; j++) {
+          k=inds[j];
+          out[j]=pModel->GetHydroUnit(k)->GetCumulFlux(iSV,false);
         }
       }
       else if (_output_vars[i].type== VAR_BETWEEN_FLUX)
       {
         iSV = pModel->GetStateVarIndex(_output_vars[i].state_var_type, _output_vars[i].sv_layer_ind);
         iSV2 = pModel->GetStateVarIndex(_output_vars[i].state_var_type2, _output_vars[i].sv_layer_ind2);
-        for(i = 0; i <count; i++) {
-          k=inds[i];
-          out[k]=pModel->GetHydroUnit(k)->GetCumulFluxBet(iSV, iSV2);
+        for(int j = 0; j <count; j++) {
+          k=inds[j];
+          out[j]=pModel->GetHydroUnit(k)->GetCumulFluxBet(iSV, iSV2);
         }
       }
       memcpy(dest,out,count*sizeof(double));
