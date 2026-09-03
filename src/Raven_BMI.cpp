@@ -298,6 +298,10 @@ void CRavenBMI::_CheckConfigVars(std::vector<rvn_var_data>  &vars)
         throw std::logic_error("WARNING: config variable '" + vars[i].name + "' has an invalid state variable type.");
         return;
       }
+      if (pModel->GetStateVarIndex(typ, layer_ind) == DOESNT_EXIST) {
+        throw std::logic_error("WARNING: config variable '" + vars[i].name + "' contains state variable that does not exist in model.");
+        return;
+      }
     }
     else if (vars[i].type == VAR_TO_FLUX || vars[i].type == VAR_FROM_FLUX)
     {
@@ -477,13 +481,18 @@ void CRavenBMI::UpdateUntil(double time)
 //
 void CRavenBMI::Finalize()
 {
-  pModel->UpdateDiagnostics (Options,tt);
-  pModel->RunDiagnostics    (Options);
-  pModel->CalcUncertainty   (Options);
-  pModel->WriteMajorOutput  (Options,tt,"solution",true);
-  pModel->CloseOutputStreams();
+  if (pModel != NULL) {
+    pModel->UpdateDiagnostics (Options,tt);
+    pModel->RunDiagnostics    (Options);
+    pModel->CalcUncertainty   (Options);
+    pModel->WriteMajorOutput  (Options,tt,"solution",true);
+    pModel->CloseOutputStreams();
 
-  FinalizeGracefully("Successful Simulation", SIMULATION_DONE);
+    FinalizeGracefully("Successful Simulation", SIMULATION_DONE);
+  }
+  else {
+    FinalizeGracefully("Model not initialized", BAD_DATA);
+  }
 }
 
 //------------------------------------------------------------------
