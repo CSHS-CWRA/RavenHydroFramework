@@ -656,6 +656,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
         }
       }
       string advice = "HRUGroup " + pHRUGrp->GetName() + " was populated with " + to_string(pHRUGrp->GetNumHRUs()) + " HRUs(s).";
+      if (pHRUGrp->GetNumHRUs()==0){advice+=" [EMPTY GROUP]";}
       WriteAdvisory(advice, Options.noisy);
       break;
     }
@@ -1017,6 +1018,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             ExitGracefully(":IntersectSubBasinGroups: invalid condition used in IntersectSubBasinGroups command. Command ignored.", BAD_DATA_WARN);
         }
         // string advice = "SubBasinGroup " + to_string(s[1]) + " was populated with " + to_string(pSBGroup->GetNumSubbasins()) + " basin(s).";
+        // if (pSBGroup->GetNumSubbasins()==0){advice+=" [EMPTY GROUP]"}
         // WriteAdvisory(advice, Options.noisy);
         break;
     }
@@ -1055,6 +1057,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
         }
       }
       string advice = "HRUGroup " + pHRUGrp->GetName() + " was populated with " + to_string(pHRUGrp->GetNumHRUs()) + " HRUs(s).";
+      if (pHRUGrp->GetNumHRUs()==0){advice+=" [EMPTY GROUP]";}
       WriteAdvisory(advice, Options.noisy);
       break;
     }
@@ -1094,6 +1097,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             }
         }
         // string advice = "SubBasinGroup " + to_string(s[1]) + " was populated with " + to_string(pSBGroup->GetNumSubbasins()) + " basin(s).";
+        // if (pSBGroup->GetNumSubbasins()==0){advice+=" [EMPTY GROUP]";}
         // WriteAdvisory(advice, Options.noisy);
         break;
     }

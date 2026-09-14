@@ -2315,7 +2315,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"INF_SCS_NOABSTRACTION")){itype=INF_SCS_NOABSTRACTION;  }
       else if (!strcmp(s[1],"INF_HMETS"            )){itype=INF_HMETS;     }
       else if (!strcmp(s[1],"INF_ALL_INFILTRATES"  )){itype=INF_ALL_INFILTRATES; }
-      else if (!strcmp(s[1],"INF_XINANXIANG"       )){itype=INF_XINANXIANG; }
+      else if (!strcmp(s[1],"INF_XAJ"              )){itype=INF_XAJ; }
       else if (!strcmp(s[1],"INF_PDM"              )){itype=INF_PDM; }
       else if (!strcmp(s[1],"INF_AWBM"             )){itype=INF_AWBM; }
       else {

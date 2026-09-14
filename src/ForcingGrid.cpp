@@ -796,7 +796,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     // -------------------------------
     if ( _is_3D )
     {
-      int       start_point = _ChunkSize * _iChunk+(int)(_t_corr/_interval);;//JRC_TIME_FIX:
+      int       start_point = _ChunkSize * _iChunk+(int)((_t_corr+TIME_CORRECTION)/_interval);
       size_t    nc_start [3];
       size_t    nc_length[3];
       ptrdiff_t nc_stride[3];
@@ -840,7 +840,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     }
     else //2D
     {
-      int       start_point = _ChunkSize * _iChunk+(int)(_t_corr/_interval);//JRC_TIME_FIX:
+      int       start_point = _ChunkSize * _iChunk+(int)((_t_corr+TIME_CORRECTION)/_interval);
       size_t    nc_start[2];
       size_t    nc_length[2];
       ptrdiff_t nc_stride[2];

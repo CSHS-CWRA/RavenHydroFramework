@@ -51,7 +51,7 @@ CmvInfiltration::CmvInfiltration(infil_type itype,
     iFrom[2]=pModel->GetStateVarIndex(PONDED_WATER);    iTo[2]=pModel->GetStateVarIndex(CONVOLUTION,0);
     iFrom[3]=pModel->GetStateVarIndex(PONDED_WATER);    iTo[3]=pModel->GetStateVarIndex(CONVOLUTION,1);
   }
-  else if(type==INF_XINANXIANG) {
+  else if(type==INF_XAJ) {
     CHydroProcessABC::DynamicSpecifyConnections(5);
     iFrom[0]=pModel->GetStateVarIndex(PONDED_WATER);    iTo[0]=pModel->GetStateVarIndex(SOIL,0);
     iFrom[1]=pModel->GetStateVarIndex(PONDED_WATER);    iTo[1]=pModel->GetStateVarIndex(SURFACE_WATER);
@@ -197,16 +197,16 @@ void CmvInfiltration::GetParticipatingParamList(string *aP, class_type *aPC, int
     aP[0]="POROSITY";              aPC[0]=CLASS_SOIL;
     aP[1]="IMPERMEABLE_FRAC";      aPC[1]=CLASS_LANDUSE;
   }
-  else if(type==INF_XINANXIANG)
+  else if(type==INF_XAJ)
   {
     nP=6;
     aP[0]="IMPERMEABLE_FRAC";      aPC[0]=CLASS_LANDUSE;
-    aP[1]="XINANXIANG_A";          aPC[1]=CLASS_SOIL;
-    aP[2]="XINANXIANG_B";          aPC[2]=CLASS_SOIL;
+    aP[1]="XAJ_A";                 aPC[1]=CLASS_SOIL;
+    aP[2]="XAJ_B";                 aPC[2]=CLASS_SOIL;
     aP[3]="SAT_WILT";              aPC[3]=CLASS_SOIL;
     aP[4]="POROSITY";              aPC[4]=CLASS_SOIL;
     aP[5]="FIELD_CAPACITY";        aPC[5]=CLASS_SOIL;
-    aP[6]="XINANXIANG_SHP";        aPC[6]=CLASS_SOIL;
+    aP[6]="XAJ_SHP";               aPC[6]=CLASS_SOIL;
   }
   else if(type==INF_PDM)
   {
@@ -530,11 +530,11 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
     rates[3]=delayed;   //PONDED->CONVOL[1]
   }
   //----------------------------------------------------------------------------
-  else if (type==INF_XINANXIANG)
-  { //from Xinanxiang model
+  else if (type==INF_XAJ)
+  { //from Xin'anjiang model
     double stor       =state_vars[iTopSoil];
     double max_stor   =pHRU->GetSoilCapacity(0);
-    double b=0.0;//pHRU->GetSoilProps(0)->xinanxiang_b;
+    double b=0.0;//pHRU->GetSoilProps(0)->XAJ_b;
     double runoff,infil;//[mm]
 
     double direct=(1.0-Fimp)*(rainthru*Options.timestep);//mm

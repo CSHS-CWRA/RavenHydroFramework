@@ -89,22 +89,6 @@ void CModel::GenerateGriddedPrecipVars(const optStruct &Options)
   {
     WriteWarning("CModel::GenerateGriddedPrecipVars: both snowfall and rainfall data are provided at a gauge, but :RainSnowFraction method is something other than RAINSNOW_DATA. Snow fraction will be recalculated.",Options.noisy);
   }
-  //deaccumulate if necessary [NOW HANDLED IN ReadData by Deaccumulate routine)
-  /*double rainfall_rate;
-  if((pre_gridded) && (pGrid_pre->ShouldDeaccumulate()))
-  {
-    for(int it=0; it<pGrid_pre->GetChunkSize()-1; it++) {                   // loop over time points in buffer
-      for(int ic=0; ic<pGrid_pre->GetNumberNonZeroGridCells(); ic++) {       // loop over non-zero grid cell indexes
-        rainfall_rate=(pGrid_pre->GetValue(ic,it+1)-pGrid_pre->GetValue(ic,it))/pGrid_pre->GetInterval();
-        pGrid_pre->SetValue(ic,it,rainfall_rate);   // copies precipitation values
-      }
-    }
-    for(int ic=0; ic<pGrid_pre->GetNumberNonZeroGridCells(); ic++) {       // loop over non-zero grid cell indexes
-      rainfall_rate=0;
-      pGrid_pre->SetValue(ic,pGrid_pre->GetChunkSize()-1,rainfall_rate);
-    }
-    //pGrid_pre->SetChunkSize(pGrid_pre->GetChunkSize()-1);
-  }*/
   if(snow_gridded && rain_gridded && !pre_gridded) {
     if(Options.noisy) { cout<<"Generating precip grid from snow and rain"<<endl; }
     GeneratePrecipFromSnowRain(Options);

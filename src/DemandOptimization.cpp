@@ -2198,7 +2198,7 @@ void CDemandOptimizer::SolveManagementProblem(CModel *pModel, const optStruct &O
     // ----------------------------------------------------------------
     if ((retval!=OPTIMAL) && (nInfeasibleIters>1)) //Only complain if we run into infeasibility more than once this tstep
     {
-      if ((Options.soft_convergence) && (retval==NUMFAILURE)) { return; } // THE 'DO NOTHING' STRATEGY
+      if ((Options.soft_convergence) && (retval==NUMFAILURE)) { return; } // THE 'DO NOTHING' STRATEGY (WORKS PRETTY WELL :))
 
 //solid 14-yr old discussion here on strategies for non-convergence https://lp-solve.yahoogroups.narkive.com/wdApmSVe/problems-with-infeasibility
       string code="";

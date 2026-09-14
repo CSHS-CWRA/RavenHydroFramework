@@ -34,7 +34,7 @@ enum infil_type{
   INF_UBC,                      ///< UBC Watershed model infiltration algorithm
   INF_GR4J,                     ///< GR4J Watershed model infiltration algorithm
   INF_HMETS,                    ///< HMETS model infiltration algorithm
-  INF_XINANXIANG,               ///< Xinanxiang model infiltration algorithm
+  INF_XAJ,                      ///< Xin'anjiang (XAJ) model infiltration algorithm
   INF_PDM,                      ///< Probability Distributed Model (PDM) of Moore (1985) [HYMOD]
   INF_AWBM                      ///< Austrailian Water Balance Model of Boughton (1993)
 };

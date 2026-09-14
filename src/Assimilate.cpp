@@ -153,6 +153,12 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
     {
       for(int i=0; i<_nObservedTS; i++) //determine whether flow observation is available
       {
+        if (ObsExists){
+          long long SBID=_pSubBasins[p]->GetID();
+          string warn="CModel::PrepareAssimilation: duplicate observations provided in subbasin "+to_string(SBID)+" used in assimilation. Only the first time series declared in .rvt will be used.";
+          WriteWarning(warn.c_str(),Options.noisy);
+          break;
+        }
         if(IsContinuousFlowObs2(_pObservedTS[i],_pSubBasins[p]->GetID()))//flow observation is available and linked to this subbasin
         {
           Qobs  = _pObservedTS[i]->GetSampledValue(nn);   //mean timestep flow
@@ -177,7 +183,6 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
           }
 
           ObsExists=true;
-          break; //avoids duplicate observations
         }
       }
     }
