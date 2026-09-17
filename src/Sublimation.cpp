@@ -63,20 +63,16 @@ void CmvSublimation::Initialize(){}
 void CmvSublimation::GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const
 {
   nP=0;
-  aP[nP]="SNOW_TEMPERATURE";  aPC[nP]=CLASS_GLOBAL;nP++;
+  aP[nP]="SNOW_TEMPERATURE";  aPC[nP]=CLASS_GLOBAL; nP++;
   aP[nP]="SUBLIM_CORR";       aPC[nP]=CLASS_LANDUSE;nP++;
+
   if (type==SUBLIM_SVERDRUP)
   {
     aP[nP]="SNOW_ROUGHNESS";  aPC[nP]=CLASS_GLOBAL;nP++;
   }
   else if (type==SUBLIM_PBSM)
   {
-    nP=0;
     //algorithm not complete
-  }
-  else
-  {
-    nP=0; //most have no params
   }
 }
 //////////////////////////////////////////////////////////////////
