@@ -155,7 +155,7 @@ void workflowVar::AddExpression(expressionStruct* pExp)
   pOperRegimes[nOperRegimes-1]->pExpression=pExp;
   ExitGracefullyIf(pExp==NULL,"workflowVar::AddExpression: NULL Expression",RUNTIME_ERR);
 
-  if (pExp->has_nonlin){iterate=true;} //if ANY expression is non-linear, we iterate on WV var 
+  if (pExp->has_nonlin){iterate=true;} //if ANY expression is non-linear, we iterate on WV var
 }
 
 //////////////////////////////////////////////////////////////////
