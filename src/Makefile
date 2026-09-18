@@ -41,7 +41,7 @@ CXXFLAGS += -std=c++11 -fPIC
 #CXXFLAGS += -D_LPSOLVE_ -I$(LPSOLVE_PREFIX)/include
 #LDLIBS += -L$(LPSOLVE_PREFIX)/lib -llpsolve55
 
-# OPTION 2b) include lp_solve for water management optimization- uncomment following two commands only 
+# OPTION 2b) include lp_solve for water management optimization- uncomment following two commands only
 #            assumes compiled liblpsolve55.a in ../lib/lp_solve_unix/ folder as provided with source code
 #CXXFLAGS += -D_LPSOLVE_ -I../lib/lp_solve_unix
 #LDLIBS   += ../lib/lp_solve_unix/liblpsolve55.a

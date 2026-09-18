@@ -246,7 +246,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 
       //-------------------------------------------------------------------
       //  Gridded data support
-      //  Override forcing functions with gridded data, if present	  
+      //  Override forcing functions with gridded data, if present
       //-------------------------------------------------------------------
       bool   new_chunk1;                                // true if new chunk was read, otherwise false
       bool   new_chunk2;                                // true if new chunk was read, otherwise false
