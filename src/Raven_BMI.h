@@ -11,6 +11,8 @@
 //   All forcing functions (nHRUs)
 //   Streamflow/outflow (nSubBasins)
 //   Reservoir stage (nSubBasins)
+// Currently exposes for output only:
+//   Cumulative fluxes (nHRUs) - To, From, Between
 // ================================================================
 
 #ifndef BMI_RAVEN
@@ -30,6 +32,8 @@ struct rvn_var_data
   sv_type      state_var_type;      //e.g., SOIL
   int          sv_layer_ind; //
   forcing_type f_type;       //e.g., RAINFALL
+  sv_type      state_var_type2;     // used only for BETWEEN fluxes
+  int          sv_layer_ind2;       // used only for BETWEEN fluxes
 
   rvn_var_data(diagnostic typ, string nam)
   {
@@ -38,6 +42,7 @@ struct rvn_var_data
     state_var_type=UNRECOGNIZED_SVTYPE;
     f_type=F_UNRECOGNIZED;
     sv_layer_ind=DOESNT_EXIST;
+    sv_layer_ind2=DOESNT_EXIST;     // used only for BETWEEN fluxes
   }
 };
 
@@ -58,7 +63,7 @@ class CRavenBMI : public bmixx::Bmi
     void _CheckConfigVars(std::vector<rvn_var_data>  &vars);
 
     std::vector<char *> _SplitLineByWhitespace(std::string line);
-    std::vector<std::string> _SplitLineByColon(std::string line);
+    std::vector<std::string> _SplitLineByLastColon(std::string line);
 
     bool _IsValidSubBasinStateVariable(std::string var_name);
 
