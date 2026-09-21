@@ -722,10 +722,11 @@ double CHydroUnit::GetSurfaceTemperature() const
 //////////////////////////////////////////////////////////////////
 /// \brief returns total land surface albedo
 /// \note lagged - information specific to start of time step only
-///
+/// \param subcanopy [in] - true if albedo is below canopy
+/// \param pct_froz [in] - for WATER HRUs, percent of stream water which is frozen
 /// \return current total land surface albedo in HRU [dimensionless]
 //
-double  CHydroUnit::GetTotalAlbedo(const bool subcanopy) const
+double  CHydroUnit::GetTotalAlbedo(const bool subcanopy, const double &pct_froz) const
 {
   double veg_albedo,land_albedo(0.0);
 
@@ -733,6 +734,7 @@ double  CHydroUnit::GetTotalAlbedo(const bool subcanopy) const
   double snow_cover =GetSnowCover();
   double svf=_VegVar.skyview_fact;
   double Fc=_pSurface->forest_coverage;
+
 
   // if (Options.albedo_type==ALBEDO_DEFAULT)
   {
@@ -749,6 +751,7 @@ double  CHydroUnit::GetTotalAlbedo(const bool subcanopy) const
     }
     else if (_HRUType==HRU_WATER){
       land_albedo=0.1;//WATER_ALBEDO;
+      if (pct_froz>0.01){land_albedo=0.6;} //RIVERICE_ALBEDO
     }
     else if (_HRUType==HRU_ROCK){
       land_albedo=0.35;//ROCK_ALBEDO;

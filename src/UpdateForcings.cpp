@@ -7,6 +7,7 @@
 #include "Properties.h"
 #include "Forcings.h"
 #include <limits.h>
+#include "EnergyTransport.h"
 
 double EstimateRelativeHumidity(const relhum_method method,
                                 const force_struct &F,
@@ -53,6 +54,14 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   time_shift= Options.julian_start_day-floor(Options.julian_start_day);
   model_day = floor(tt.model_time+time_shift+TIME_CORRECTION); //model time of 00:00 of current day
   mid_day   = floor(tt.julian_day+TIME_CORRECTION)+0.5;//mid day
+
+  //Get Enthalpy model, for albedo calculations
+  CEnthalpyModel *pThermalModel=NULL;
+  for (int c=0;c<_pTransModel->GetNumConstituents();c++){
+    if (_pTransModel->GetConstituentModel(c)->GetType()==ENTHALPY){
+      pThermalModel=(CEnthalpyModel *)(_pTransModel->GetConstituentModel(c));
+    }
+  }
 
   CForcingGrid *pGrid_pre        = NULL;            // forcing grids
   CForcingGrid *pGrid_rain       = NULL;
@@ -581,8 +590,21 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 
       if(Options.SW_radia_net == NETSWRAD_CALC) //(default)
       {
-        F.SW_radia_net  = F.SW_radia       *(1-_pHydroUnits[k]->GetTotalAlbedo(false));
-        F.SW_subcan_net = F.SW_radia_subcan*(1-_pHydroUnits[k]->GetTotalAlbedo(true ));
+        double pct_froz=0.0;
+        if (_pHydroUnits[k]->GetHRUType()==HRU_WATER)
+        {
+          if (pThermalModel!=NULL){
+            int pWater=_pHydroUnits[k]->GetSubBasinIndex();
+            pct_froz=pThermalModel->GetOutflowIceFraction(pWater);
+          }
+          else {
+            if (F.temp_ave<0){pct_froz=1.0;}
+            else             {pct_froz=0.0;}
+          }
+        }
+
+        F.SW_radia_net  = F.SW_radia       *(1-_pHydroUnits[k]->GetTotalAlbedo(false,pct_froz));
+        F.SW_subcan_net = F.SW_radia_subcan*(1-_pHydroUnits[k]->GetTotalAlbedo(true ,pct_froz));
       }//otherwise, uses data
       else{
         F.SW_subcan_net = F.SW_radia_net; //assumes net sw is from under canopy

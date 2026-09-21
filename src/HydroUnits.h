@@ -140,7 +140,7 @@ public:/*-------------------------------------------------------*/
   double                 GetSnowSWE           () const;
   double                 GetSnowCover         () const;
   double                 GetSurfaceTemperature() const;
-  double                 GetTotalAlbedo       (const bool subcanopy) const;
+  double                 GetTotalAlbedo       (const bool subcanopy, const double &pct_froz) const;
   double                 GetSnowDepth         () const;
 
   //Manipulator functions (used in parser)
