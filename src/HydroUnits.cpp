@@ -437,16 +437,16 @@ void     CHydroUnit::SetSpecifiedGaugeIndex(const int g)
 //////////////////////////////////////////////////////////////////
 /// \brief Changes the land use class mid-simulation
 //
-void CHydroUnit::ChangeLandUse(const CLandUseClass    *lult_class)
+void CHydroUnit::ChangeLandUse(const surface_struct *pSurface)
 {
-  _pSurface=lult_class->GetSurfaceStruct();
+  _pSurface=pSurface;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Changes the vegetation class mid-simulation
 //
-void CHydroUnit::ChangeVegetation(const CVegetationClass *veg_class)
+void CHydroUnit::ChangeVegetation(const veg_struct *pVeg)
 {
-  _pVeg = veg_class->GetVegetationStruct();
+  _pVeg = pVeg;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Changes the HRU Type mid-simulation

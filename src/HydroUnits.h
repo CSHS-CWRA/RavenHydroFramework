@@ -158,8 +158,8 @@ public:/*-------------------------------------------------------*/
   void          CopyDailyForcings       (force_struct &F);
   void          SetPrecipMultiplier     (const double factor);
   void          SetSpecifiedGaugeIndex  (const int g);
-  void          ChangeLandUse           (const CLandUseClass    *lult_class);
-  void          ChangeVegetation        (const CVegetationClass *veg_class);
+  void          ChangeLandUse           (const surface_struct *pSurface);
+  void          ChangeVegetation        (const veg_struct *pVeg);
   void          ChangeHRUType           (const HRU_type typ);
   void          SetHRUForcing           (const forcing_type Ftyp, const double &val);
   void          AdjustHRUForcing        (const forcing_type Ftyp,force_struct &F,const double& epsilon, const adjustment adj);

@@ -22,24 +22,25 @@ CModel::CModel(const int        nsoillayers,
                const optStruct &Options)
 {
   int i;
-  _nSubBasins=0;      _pSubBasins=NULL;
-  _nHydroUnits=0;     _pHydroUnits=NULL;
-  _nHRUGroups=0;      _pHRUGroups=NULL;
-  _nSBGroups=0;       _pSBGroups=NULL;
-  _nGauges=0;         _pGauges=NULL;
-  _nForcingGrids=0;   _pForcingGrids=NULL;
-  _nProcesses=0;      _pProcesses=NULL;
-  _nCustomOutputs=0;  _pCustomOutputs=NULL;
-  _nTransParams=0;    _pTransParams=NULL;
-  _nClassChanges=0;   _pClassChanges=NULL;
-  _nParamOverrides=0; _pParamOverrides=NULL;
+  _nSubBasins=0;        _pSubBasins=NULL;
+  _nHydroUnits=0;       _pHydroUnits=NULL;
+  _nHRUGroups=0;        _pHRUGroups=NULL;
+  _nSBGroups=0;         _pSBGroups=NULL;
+  _nGauges=0;           _pGauges=NULL;
+  _nForcingGrids=0;     _pForcingGrids=NULL;
+  _nProcesses=0;        _pProcesses=NULL;
+  _nCustomOutputs=0;    _pCustomOutputs=NULL;
+  _nTransParams=0;      _pTransParams=NULL;
+  _nClassChanges=0;     _pClassChanges=NULL;
+  _nClassTransitions=0; _pClassTransitions=NULL;
+  _nParamOverrides=0;   _pParamOverrides=NULL;
   _nStateVarOverrides=0;_pStateVarOverrides=NULL;
-  _nObservedTS=0;     _pObservedTS=NULL; _pModeledTS=NULL; _aObsIndex=NULL;
-  _nObsWeightTS =0;   _pObsWeightTS=NULL;
-  _nDiagnostics=0;    _pDiagnostics=NULL;
-  _nDiagPeriods=0;    _pDiagPeriods=NULL;
-  _nAggDiagnostics=0; _pAggDiagnostics=NULL;
-  _nPerturbations=0;  _pPerturbations=NULL;
+  _nObservedTS=0;       _pObservedTS=NULL; _pModeledTS=NULL; _aObsIndex=NULL;
+  _nObsWeightTS =0;     _pObsWeightTS=NULL;
+  _nDiagnostics=0;      _pDiagnostics=NULL;
+  _nDiagPeriods=0;      _pDiagPeriods=NULL;
+  _nAggDiagnostics=0;   _pAggDiagnostics=NULL;
+  _nPerturbations=0;    _pPerturbations=NULL;
 
   _nLandUseClasses=0;       _pLandUseClasses=NULL;
   _nAllSoilClasses = 0;     _pAllSoilClasses = NULL;
@@ -193,11 +194,12 @@ CModel::~CModel()
   if (_aShouldApplyProcess!=NULL){
     for (k=0;k<_nProcesses;   k++){delete [] _aShouldApplyProcess[k]; } delete [] _aShouldApplyProcess;  _aShouldApplyProcess=NULL;
   }
-  for (kk=0;kk<_nHRUGroups;kk++)     {delete _pHRUGroups[kk];       } delete [] _pHRUGroups;      _pHRUGroups  =NULL;
-  for (kk=0;kk<_nSBGroups;kk++ )     {delete _pSBGroups[kk];        } delete [] _pSBGroups;       _pSBGroups  =NULL;
-  for (j=0;j<_nTransParams;j++)      {delete _pTransParams[j];      } delete [] _pTransParams;    _pTransParams=NULL;
-  for (j=0;j<_nClassChanges;j++)     {delete _pClassChanges[j];     } delete [] _pClassChanges;   _pClassChanges=NULL;
-  for (j=0;j<_nParamOverrides;j++)   {delete _pParamOverrides[j];   } delete [] _pParamOverrides; _pParamOverrides=NULL;
+  for (kk=0;kk<_nHRUGroups;kk++)     {delete _pHRUGroups[kk];       } delete [] _pHRUGroups;         _pHRUGroups  =NULL;
+  for (kk=0;kk<_nSBGroups;kk++ )     {delete _pSBGroups[kk];        } delete [] _pSBGroups;          _pSBGroups  =NULL;
+  for (j=0;j<_nTransParams;j++)      {delete _pTransParams[j];      } delete [] _pTransParams;       _pTransParams=NULL;
+  for (j=0;j<_nClassChanges;j++)     {delete _pClassChanges[j];     } delete [] _pClassChanges;      _pClassChanges=NULL;
+  for (j=0;j<_nClassTransitions;j++) {delete _pClassTransitions[j]; } delete [] _pClassTransitions;  _pClassTransitions=NULL;
+  for (j=0;j<_nParamOverrides;j++)   {delete _pParamOverrides[j];   } delete [] _pParamOverrides;    _pParamOverrides=NULL;
   for (j=0;j<_nStateVarOverrides;j++){delete _pStateVarOverrides[j];} delete [] _pStateVarOverrides; _pStateVarOverrides=NULL;
   for (i=0;i<_nPerturbations;   i++)
   {
@@ -1441,6 +1443,96 @@ void CModel::AddPropertyClassChange(const string      HRUgroup,
     ExitGracefully("CModel::AddPropertyClassChange: adding NULL property class change",BAD_DATA);}
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Adds class change to model
+///
+/// \param *pTP [in] (valid) pointer to transient parameter to be added to model
+//
+void    CModel::AddPropertyClassTransition( const string             HRUgroup,
+                                            const class_type         tclass,
+                                            const string             new_class,
+                                            const time_struct       &tt,
+                                            const time_struct       &tt2,
+                                            const transition_function &func,
+                                            const double*           params,
+                                            const optStruct         &Options           )
+{
+  class_transition *pCC=NULL;
+  pCC=new class_transition();
+  pCC->HRU_groupID=DOESNT_EXIST;
+  for (int kk = 0; kk < _nHRUGroups; kk++){
+    if (!strcmp(_pHRUGroups[kk]->GetName().c_str(), HRUgroup.c_str()))
+    {
+      pCC->HRU_groupID=kk;
+    }
+  }
+  if (pCC->HRU_groupID == DOESNT_EXIST){
+    string warning = "CModel::AddPropertyClassTransition: invalid HRU Group name: " + HRUgroup+ ". HRU group names should be defined in .rvi file using :DefineHRUGroups command. ";
+    ExitGracefullyIf(pCC->HRU_groupID == DOESNT_EXIST,warning.c_str(),BAD_DATA_WARN); return;
+  }
+
+  pCC->funct=func;
+  pCC->params[0]=params[0];
+  pCC->params[1]=params[1];
+  pCC->params[2]=params[2];
+
+  pCC->newclass=new_class;
+  if ((tclass == CLASS_LANDUSE) && (StringToLUClass(new_class) == NULL)){
+    ExitGracefully("CModel::AddPropertyClassTransition: invalid land use class specified",BAD_DATA_WARN);return;
+  }
+  if ((tclass == CLASS_VEGETATION) && (StringToVegClass(new_class) == NULL)){
+    ExitGracefully("CModel::AddPropertyClassTransition: invalid vegetation class specified",BAD_DATA_WARN);return;
+  }
+  if ((tclass == CLASS_HRUTYPE) && (StringToHRUType(new_class) == HRU_INVALID_TYPE)){
+    ExitGracefully("CModel::AddPropertyClassTransition: invalid HRU type specified",BAD_DATA_WARN);return;
+  }
+
+  pCC->tclass=tclass;
+  if ((tclass != CLASS_VEGETATION) && (tclass != CLASS_LANDUSE) && (tclass!=CLASS_HRUTYPE)){
+    ExitGracefully("CModel::AddPropertyClassTransition: only vegetation, land use, and HRU type classes may be changed during the course of simulation",BAD_DATA_WARN);return;
+  }
+
+  //convert time to model time
+  pCC->starttime= TimeDifference(Options.julian_start_day,Options.julian_start_year, tt.julian_day, tt.year,Options.calendar);
+  pCC->endtime  = TimeDifference(Options.julian_start_day,Options.julian_start_year,tt2.julian_day,tt2.year,Options.calendar);
+
+  if (pCC->starttime>Options.duration){
+    string warn;
+    warn="Property Class transition dated "+tt.date_string+" occurs after model simulation is done; it will not effect results.";
+    WriteWarning(warn,Options.noisy);
+  }
+  if(pCC->endtime<0) {
+    string warn;
+    warn="Property Class transition dated "+tt.date_string+" occurs before model simulation. All such transition will be processed before time zero, and these transition MUST be input in chronological order.";
+    WriteAdvisory(warn,Options.noisy);
+  }
+
+  int firstk=DOESNT_EXIST;
+  CHRUGroup *pGrp=_pHRUGroups[pCC->HRU_groupID];
+  if (pGrp->GetNumHRUs()>0){
+    firstk=pGrp->GetHRU(0)->GetGlobalIndex();
+  }
+  for (int k_loc=1;k_loc<pGrp->GetNumHRUs();k_loc++){
+    int k=pGrp->GetHRU(k_loc)->GetGlobalIndex();
+    if(tclass == CLASS_LANDUSE){
+      if(_pHydroUnits[k]->GetSurfaceProps()->landuse_name!=_pHydroUnits[firstk]->GetSurfaceProps()->landuse_name){
+        string warning = "CModel::AddPropertyClassTransition: HRU Group "+pGrp->GetName() +" in ClassTransition command should all have the same initial land use";
+        WriteWarning(warning.c_str(),Options.noisy); break;
+      }
+    }
+    else if(tclass==CLASS_VEGETATION) {
+      if(_pHydroUnits[k]->GetVegetationProps()->vegetation_name!=_pHydroUnits[firstk]->GetVegetationProps()->vegetation_name) {
+        string warning = "CModel::AddPropertyClassTransition: HRU Group "+pGrp->GetName() +" in ClassTransition command should all have the same initial vegetation class";
+        WriteWarning(warning.c_str(),Options.noisy); break;
+      }
+    }
+  }
+
+  //cout << "PROPERTY CLASS CHANGE " << pCC->HRU_groupID << " " << pCC->tclass << " "<<pCC->modeltime<<endl;
+  if (!DynArrayAppend((void**&)(_pClassTransitions),(void*)(pCC),_nClassTransitions)){
+    ExitGracefully("CModel::AddPropertyClassChange: adding NULL property class change",BAD_DATA);}
+}
+
+//////////////////////////////////////////////////////////////////
 /// \brief Adds observed time series to model
 ///
 /// \param *pTS [in] (valid) pointer to observed time series to be added to model
@@ -2537,7 +2629,25 @@ void CModel::IncrementCumOutflow(const optStruct &Options, const time_struct &tt
   }
   _pTransModel->IncrementCumulOutput(Options);
 }
+double TransitionFunc(const double &tscale,const transition_function fun, const double params[3])
+{
+  if (tscale<=0.0){return 0.0;}
+  if (tscale>=1.0){return 1.0;}
 
+  if (fun==SHP_LINEAR){
+    return tscale;
+  }
+  else if (fun==SHP_POWER){
+    return pow(tscale,params[0]);
+  }
+  else {
+    ExitGracefully("unknown transition function",RUNTIME_ERR);
+    return 0.0;
+  }
+  //else if (fun==SHP_LOGISTIC){
+  //  return 1.0/(1.0+exp(-params[0]*(tscale-0.5))
+  // }
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Updates values of user-specified transient parameters, updates changes to land use class
 ///
@@ -2577,12 +2687,12 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
         if      (_pClassChanges[j]->tclass == CLASS_LANDUSE)
         {
           CLandUseClass *lult_class = StringToLUClass(_pClassChanges[j]->newclass);
-          _pHydroUnits[k]->ChangeLandUse(lult_class);
+          _pHydroUnits[k]->ChangeLandUse(lult_class->GetSurfaceStruct());
         }
         else if (_pClassChanges[j]->tclass == CLASS_VEGETATION)
         {
           CVegetationClass *veg_class = StringToVegClass(_pClassChanges[j]->newclass);
-          _pHydroUnits[k]->ChangeVegetation(veg_class);
+          _pHydroUnits[k]->ChangeVegetation(veg_class->GetVegetationStruct());
         }
         else if (_pClassChanges[j]->tclass == CLASS_HRUTYPE)
         {
@@ -2598,6 +2708,109 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
     }
   }
 
+  //--update land use parameters undergoing continuous transition--------------------------
+  for (int j = 0; j<_nClassTransitions; j++)
+  {
+    class_transition *pCT=_pClassTransitions[j];
+    // if actively transitioning or transition happened/started prior to simulation
+    if( ((pCT->starttime <= tt.model_time ) && (pCT->endtime >= tt.model_time)) ||
+	      ((tt.model_time == 0.0) && (pCT->endtime   < 0.0)) ||
+        ((tt.model_time == 0.0) && (pCT->starttime < 0.0)) )
+    {
+      double tsince=tt.model_time-pCT->starttime;
+      double trange=pCT->endtime -pCT->starttime;
+      double ft =TransitionFunc((tsince                 )/trange,pCT->funct,pCT->params);
+      double ftp=TransitionFunc((tsince+Options.timestep)/trange,pCT->funct,pCT->params);
+
+      int kk   =pCT->HRU_groupID;
+      for(int k_loc = 0; k_loc <_pHRUGroups[kk]->GetNumHRUs();k_loc++)
+      {
+        k=_pHRUGroups[kk]->GetHRU(k_loc)->GetGlobalIndex();
+
+        if      (pCT->tclass == CLASS_LANDUSE)//================================================================
+        {
+          // at start time, copy structure 
+          if ((pCT->starttime > tt.model_time - TIME_CORRECTION) && (pCT->starttime < tt.model_time + Options.timestep))
+          {
+            if (k_loc==0){
+              pCT->surf_params=*(_pHydroUnits[k]->GetSurfaceProps()); //deep copy parameter vector
+            }
+            _pHydroUnits[k]->ChangeLandUse(&(pCT->surf_params)); 
+          }
+
+          CLandUseClass *end_lult_class = StringToLUClass(pCT->newclass);
+
+          //intermediate times - calculate intermediate parameter vector
+          //only needs to be done once for entire HRU Group
+          if (k_loc==0)
+          {  
+            const double* Pend = &(end_lult_class->GetSurfaceStruct()->impermeable_frac);//first double member of struct, allowing us to iterate through as array
+            double*       Pnew = &(pCT->surf_params.impermeable_frac);
+
+            for (size_t i = 0; i < NUM_LULT_PARAMETERS; ++i) 
+            { 
+              if (ft!=1.0){ //else no change to parameters
+                Pnew[i]=Pnew[i]+(Pend[i]-Pnew[i])/(1.0-ft)*(ftp-ft); //trick to get change in parameters without storing original parameter set
+              }
+            }
+            pCT->surf_params.landuse_name=end_lult_class->GetSurfaceStruct()->landuse_name; 
+            if (k==0){
+              //cout<<"Changing Parameter "<<tt.date_string<<" "<<Tmpprev<<" "<<pCT->surf_params->impermeable_frac<<" "<<Tmpend<<" "<<ft<<" "<<ftp<<" "<<tsince/trange<<endl; 
+              /*g_debug_vars[0]=pCT->surf_params.impermeable_frac;
+              g_debug_vars[1]=ft;
+              g_debug_vars[2]=tsince/trange;*/
+            }
+          }
+
+          // at end time, fully migrate structure 
+          if ((pCT->endtime > tt.model_time - TIME_CORRECTION) && (pCT->endtime < tt.model_time + Options.timestep))
+          {
+            _pHydroUnits[k]->ChangeLandUse(end_lult_class->GetSurfaceStruct()); 
+          }
+        }
+        else if (pCT->tclass == CLASS_VEGETATION)//================================================================
+        {
+          // at start time, copy structure 
+          if ((pCT->starttime > tt.model_time - TIME_CORRECTION) && (pCT->starttime < tt.model_time + Options.timestep))
+          {
+            if (k_loc==0){
+              pCT->veg_params=*(_pHydroUnits[k]->GetVegetationProps()); //deep copy parameter vector
+            }
+            _pHydroUnits[k]->ChangeVegetation(&(pCT->veg_params)); 
+          }
+
+          CVegetationClass *end_veg_class = StringToVegClass(pCT->newclass);
+
+          //intermediate times - calculate intermediate parameter vector
+          //only needs to be done once for entire HRU Group
+          if (k_loc==0)
+          {  
+            const double* Pend = &(end_veg_class->GetVegetationStruct()->max_height);//first double member of struct, allowing us to iterate through as array
+            double*       Pnew = &(pCT->veg_params.max_height);
+
+            for (size_t i = 0; i < NUM_VEG_PARAMETERS; ++i) 
+            { 
+              if (ft!=1.0){ //else no change to parameters
+                Pnew[i]=Pnew[i]+(Pend[i]-Pnew[i])/(1.0-ft)*(ftp-ft); //trick to get change in parameters without storing original parameter set
+              }
+            }
+            pCT->veg_params.vegetation_name=end_veg_class->GetVegetationStruct()->vegetation_name; 
+          }
+
+          // at end time, fully migrate structure 
+          if ((pCT->endtime > tt.model_time - TIME_CORRECTION) && (pCT->endtime < tt.model_time + Options.timestep))
+          {
+            _pHydroUnits[k]->ChangeVegetation(end_veg_class->GetVegetationStruct()); 
+          }
+        }
+
+        for(int jj=0; jj<_nProcesses;jj++)
+        {
+          _aShouldApplyProcess[jj][k] = _pProcesses[jj]->ShouldApply(_pHydroUnits[k]);
+        }
+      }
+    }
+  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Determines parameter class (e.g., CLASS_GLOBAL or CLASS_SOIL) from parameter name and class name through slow search

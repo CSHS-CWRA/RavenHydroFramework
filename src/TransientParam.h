@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------
   struct class_change
   class  CTransientParam
@@ -15,7 +15,7 @@
 #include "Model.h"
 
 ///////////////////////////////////////////////////////////////////
-/// \brief Data abstraction for global model parameters
+/// \brief Data abstraction for abrupt class changes
 //
 struct class_change
 {
@@ -23,6 +23,22 @@ struct class_change
   class_type tclass;      // type of class (e.g., CLASS_LANDUSE)
   string     newclass;    // new class tag
   double     modeltime;   // modeltime of shift
+};
+///////////////////////////////////////////////////////////////////
+/// \brief Data abstraction for continuous class transitions
+//
+struct class_transition
+{
+  int        HRU_groupID;    // HRU group id (kk)
+  class_type tclass;         // type of class (e.g., CLASS_LANDUSE)
+  string     newclass;       // new class tag
+  double     starttime;      // modeltime of transition start
+  double     endtime;        // modeltime of transititon end
+  transition_function funct; // transition function
+  double     params[3];      // parameters of transition function
+
+  surface_struct surf_params; //HRUs point to these, not class structures, during transition
+  veg_struct     veg_params;
 };
 ///////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for global model parameters

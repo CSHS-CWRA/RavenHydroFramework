@@ -179,7 +179,8 @@ struct veg_struct
   //Transport parameters
   double uptake_moderator   [MAX_CONSTITUENTS]; ///< [-] vegetation-specific uptake factor
 };
-
+const int NUM_VEG_PARAMETERS=65; //NEEDS TO BE UPDATED WHEN PARAMETER ADDED OR WHEN MAX_CONSTIUENTS CHANGES
+static_assert(offsetof(veg_struct, max_height) + NUM_VEG_PARAMETERS * sizeof(double) <= sizeof(veg_struct),"NUM_VEG_PARAMETERS is incorrect");
 ///////////////////////////////////////////////////////////////////
 /// \brief Contains derived vegetation / canopy / root properties - unique for each HRU
 //
@@ -331,7 +332,8 @@ struct surface_struct
   double convection_coeff;  ///< [MJ/m2/d/K] thermal convection coefficieint q=h(T_a-T)
   double geothermal_grad;   ///< [C/m]     local geothermal gradient (positive upward)
 };
-
+const int NUM_LULT_PARAMETERS=87; //NEEDS TO BE UPDATED WHEN PARAMETER ADDED
+static_assert(offsetof(surface_struct, impermeable_frac) + NUM_LULT_PARAMETERS * sizeof(double) <= sizeof(surface_struct),"NUM_LULT_PARAMETERS is incorrect");
 //////////////////////////////////////////////////////////////////
 /// \brief Structure that, when instantiated, contains defining information that reflects the qualities of the terrain
 /// \note Calculated from topography, all are fixed with time

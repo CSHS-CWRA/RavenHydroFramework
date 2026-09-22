@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2024 the Raven Development Team
+Copyright (c) 2008-2026 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -91,7 +91,7 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
       if(pHRU!=NULL) {
         CVegetationClass *veg_class = pModel->StringToVegClass(s[2]);
         if(veg_class!=NULL) {
-          pHRU->ChangeVegetation(veg_class);
+          pHRU->ChangeVegetation(veg_class->GetVegetationStruct());
         }
         else {
           WriteWarning("ParseLiveFile: invalid vegetation tag provided in :LandUseChange command",Options.noisy);
@@ -108,7 +108,7 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
       if(pHRU!=NULL) {
         CLandUseClass *lult_class= pModel->StringToLUClass(s[2]);
         if(lult_class!=NULL) {
-          pHRU->ChangeLandUse(lult_class);
+          pHRU->ChangeLandUse(lult_class->GetSurfaceStruct());
         }
         else {
           WriteWarning("ParseLiveFile: invalid Land use tag provided in :LandUseChange command",Options.noisy);
@@ -126,7 +126,7 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
         CLandUseClass *lult_class= pModel->StringToLUClass(s[2]);
         if(lult_class!=NULL) {
           for(int k=0;k<pHRUGroup->GetNumHRUs();k++) {
-            pHRUGroup->GetHRU(k)->ChangeLandUse(lult_class);
+            pHRUGroup->GetHRU(k)->ChangeLandUse(lult_class->GetSurfaceStruct());
           }
         }
         else {
@@ -145,7 +145,7 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
         CVegetationClass *veg_class = pModel->StringToVegClass(s[2]);
         if(veg_class != NULL) {
           for(int k=0; k<pHRUGroup->GetNumHRUs(); k++) {
-            pHRUGroup->GetHRU(k)->ChangeVegetation(veg_class);
+            pHRUGroup->GetHRU(k)->ChangeVegetation(veg_class->GetVegetationStruct());
           }
         }
         else {

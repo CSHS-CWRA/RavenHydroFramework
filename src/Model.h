@@ -45,6 +45,7 @@ class CSubbasinGroup; // defined in 'SubBasin.h'
 class CChannelXSect;  // defined in 'ChannelXSect.h'
 class CSubBasin;      // defined in 'SubBasin.h'
 struct class_change;
+struct class_transition;
 class CTransientParam;
 class CDemandOptimizer;
 
@@ -112,14 +113,16 @@ private:/*------------------------------------------------------*/
 
   int                 _lake_sv;   ///< index of storage variable for lakes/wetlands (TMP?)
 
-  CGlobalParams     *_pGlobalParams;  ///< pointer to global parameters  (used to be global, static)
+  CGlobalParams         *_pGlobalParams;  ///< pointer to global parameters  (used to be global, static)
 
-  int                 _nTransParams;  ///< number of transient parameters
-  CTransientParam   **_pTransParams;  ///< array of pointers to transient parameters with time series
-  int                _nClassChanges;  ///< number of HRU Group class changes
-  class_change     **_pClassChanges;  ///< array of pointers to class_changes
-  int              _nParamOverrides;  ///< number of local parameter overrides
-  param_override **_pParamOverrides;  ///< array of pointers to local parameter overrides
+  int                     _nTransParams;  ///< number of transient parameters
+  CTransientParam       **_pTransParams;  ///< array of pointers to transient parameters with time series
+  int                    _nClassChanges;  ///< number of HRU Group class changes
+  class_change         **_pClassChanges;  ///< array of pointers to class changes
+  int                _nClassTransitions;  ///< number of HRU Group class transitions
+  class_transition **_pClassTransitions;  ///< array of pointers to class transitions
+  int                  _nParamOverrides;  ///< number of local parameter overrides
+  param_override     **_pParamOverrides;  ///< array of pointers to local parameter overrides
 
   CGroundwaterModel  *_pGWModel;  ///< pointer to corresponding groundwater model
   CTransportModel *_pTransModel;  ///< pointer to corresponding transport model
@@ -482,6 +485,14 @@ public:/*-------------------------------------------------------*/
                                      const class_type         tclass,
                                      const string             new_class,
                                      const time_struct       &tt,
+                                     const optStruct         &Options           );
+  void    AddPropertyClassTransition(const string             HRUgroup,
+                                     const class_type         tclass,
+                                     const string             new_class,
+                                     const time_struct       &tt,
+                                     const time_struct       &tt2,
+                                     const transition_function &func,
+                                     const double*           params,
                                      const optStruct         &Options           );
   void    AddObservedTimeSeries     (        CTimeSeriesABC    *pTS             );
   void    AddObservedWeightsTS      (        CTimeSeriesABC    *pTS             );

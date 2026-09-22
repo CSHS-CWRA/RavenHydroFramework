@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2025 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Properties.h"
@@ -277,6 +277,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     else if  (!strcmp(s[0],":LandUseParameterList"   )){code=101;}
     else if  (!strcmp(s[0],":SnowParameterList"      )){code=101;}// \todo TO BECOME OBSOLETE
     else if  (!strcmp(s[0],":LandUseChange"          )){code=102;}
+    else if  (!strcmp(s[0],":LandUseTransition"      )){code=103;}
     //--------------------VEGETATION PARAMS --------------------
     else if  (!strcmp(s[0],":VegetationClasses"      )){code=200;}//REQUIRED
     else if  (!strcmp(s[0],":SeasonalCanopyLAI"      )){code=201;}
@@ -285,6 +286,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     else if  (!strcmp(s[0],":SeasonalRelativeHeight" )){code=202;}
     else if  (!strcmp(s[0],":VegetationParameterList")){code=206;}
     else if  (!strcmp(s[0],":VegetationChange"       )){code=207;}
+    else if  (!strcmp(s[0],":VegetationTransition"   )){code=208; }
     //--------------------AQUIFER PARAMS -----------------------'
     else if  (!strcmp(s[0],":AquiferClasses"         )){code=300;}
     //--------------------RIVER CHANNEL PARAMS -------------------
@@ -646,7 +648,21 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       pModel->AddPropertyClassChange(s[1],CLASS_LANDUSE,s[2], tt, Options);
       break;
     }
+    case(103):  //----------------------------------------------
+    {/*:LandUseTransition [HRU group] [new LULT tag] [YYYY-mm-dd] [YYYY-mm-dd] [ShapeFunction] {shape params} */
+      if (Options.noisy) {cout <<"Gradual Transition in Land Use Class"<<endl;}
+      if (Len<6){ ImproperFormatWarning(":LandUseTransition",p,Options.noisy); break;}
+      time_struct tt,tt2;
+      double params[3]={0,0,0};
+      transition_function shape=SHP_LINEAR;
+      if      (!strcmp(s[5],"SHP_LINEAR")){shape=SHP_LINEAR;}
+      else if (!strcmp(s[5],"SHP_POWER" )){shape=SHP_POWER; params[0]=s_to_d(s[6]);}
+      tt =DateStringToTimeStruct(string(s[3]),string("00:00:00"),Options.calendar);
+      tt2=DateStringToTimeStruct(string(s[4]),string("00:00:00"),Options.calendar);
 
+      pModel->AddPropertyClassTransition(s[1],CLASS_LANDUSE,s[2], tt,tt2,shape,params, Options);
+      break;
+    }
     //==========================================================
     //==========================================================
     case(200):  //----------------------------------------------
@@ -788,6 +804,21 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       time_struct tt;
       tt=DateStringToTimeStruct(string(s[3]),string("00:00:00"),Options.calendar);
       pModel->AddPropertyClassChange(s[1],CLASS_VEGETATION,s[2], tt, Options);
+      break;
+    }
+    case(208):  //----------------------------------------------
+    {/*:VegetationTransition [HRU group] [new veg tag] [YYYY-mm-dd] [YYYY-mm-dd] [ShapeFunction] {shape params} */
+      if (Options.noisy) {cout <<"Gradual Transition in Vegetation"<<endl;}
+      if (Len<6){ ImproperFormatWarning(":VegetationTransition",p,Options.noisy); break;}
+      time_struct tt,tt2;
+      double params[3]={0,0,0};
+      transition_function shape=SHP_LINEAR;
+      if      (!strcmp(s[5],"SHP_LINEAR")){shape=SHP_LINEAR;}
+      else if (!strcmp(s[5],"SHP_POWER" )){shape=SHP_POWER; params[0]=s_to_d(s[6]);}
+      tt =DateStringToTimeStruct(string(s[3]),string("00:00:00"),Options.calendar);
+      tt2=DateStringToTimeStruct(string(s[4]),string("00:00:00"),Options.calendar);
+
+      pModel->AddPropertyClassTransition(s[1],CLASS_VEGETATION,s[2], tt,tt2,shape,params, Options);
       break;
     }
     //==========================================================
@@ -1778,7 +1809,6 @@ void AddNewSoilClass(CSoilClass **&pSoilClasses,
                       bool isdefault,
                       CModel *pModel)
 {
-  //cout<<"ADDING NEW SOIL CLASS ! "<<num_parsed_soils<<" : "<<name<<endl;
   //create new soil class, dynamically add to array
   CSoilClass *pSC;
   pSC = new CSoilClass(name, nConstits, pModel);

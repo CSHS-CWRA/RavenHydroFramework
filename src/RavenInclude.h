@@ -805,6 +805,13 @@ enum adjustment {
   ADJ_REPLACE
 };
 ////////////////////////////////////////////////////////////////////
+/// \brief transition function for land use/veg transitions
+//
+enum transition_function{
+  SHP_LINEAR,
+  SHP_POWER
+};
+////////////////////////////////////////////////////////////////////
 /// \brief Desired output format
 //
 enum out_format
