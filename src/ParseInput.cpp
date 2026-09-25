@@ -347,6 +347,8 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.paraminfo_filename      ="";
   Options.flowinfo_filename       ="";
   Options.glacier_model_on        =false;
+  Options.forcing_slider          =false;
+  Options.slider_weight           =1.0; //gridded
 
   Options.NetCDF_chunk_mem        =10; //MB
 
@@ -444,7 +446,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":SuppressCompetitiveET"     )){code=48; }
     else if  (!strcmp(s[0],":SnowSuppressesPET"         )){code=49; }
     else if  (!strcmp(s[0],":AllowSoilOverfill"         )){code=491;}
-
+    else if  (!strcmp(s[0],":ForcingSlider"             )){code=492;}
 	//---I/O------------------------------------------------------
     else if  (!strcmp(s[0],":DebugMode"                 )){code=50; }
     else if  (!strcmp(s[0],":BenchmarkingMode"          )){code=51; }
@@ -1431,6 +1433,16 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:AllowSoilOverfill */
       if(Options.noisy) { cout <<"Allow soil compartments to overfill"<<endl; }
       Options.allow_soil_overfill =true;
+      break;
+    }
+    case(492): //--------------------------------------------
+    {/*:ForcingSlider [double slider_val] */
+      if(Options.noisy) { cout <<"Allow soil compartments to overfill"<<endl; }
+      Options.forcing_slider =true;
+      Options.slider_weight  =s_to_d(s[1]);
+      if ((Options.slider_weight<0) || (Options.slider_weight>1.0)){
+        ExitGracefully("ParseMainInputFile: :ForcingSlider value muse be between 0 and 1",BAD_DATA_WARN);
+      }
       break;
     }
     case(50):  //--------------------------------------------

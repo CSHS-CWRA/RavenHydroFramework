@@ -11,9 +11,6 @@ double UBCPreciptiationByElev(const double temp,
 
 //////////////////////////////////////////////////////////////////
 /// \brief Corrects gauge temperature for elevation effects
-/// \remark UBCWM Orographic Corrections adapted from UBC Watershed model
-///  code,
-/// \copyright (c) Michael Quick
 ///
 /// \param &Options [in] Global model options information
 /// \param &F [out] Forcing functions for HRU
@@ -72,7 +69,7 @@ void   CModel::CorrectTemp(const optStruct   &Options,
   //---------------------------------------------------------------------------
   else if (Options.orocorr_temp==OROCORR_UBCWM)
   {
-
+    //  UBCWM Orographic Corrections adapted from UBC Watershed model code, (c) Michael Quick
     double V=0.0, wt;
     double adiabatic;
     double lo_lapse_max,hi_lapse_max,lo_lapse_min,hi_lapse_min,lo_lapse_ave,hi_lapse_ave,hi_lapse_sub,lo_lapse_sub;

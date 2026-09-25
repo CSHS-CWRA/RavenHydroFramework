@@ -133,6 +133,13 @@ void CModel::Initialize(const optStruct &Options)
 
   // Forcing grids are not "Initialized" here because the derived data have to be populated everytime a new chunk is read
 
+  // Check for gridded and gauge data if slider is on
+  //---------------------------------------------------------------
+  if (Options.forcing_slider){
+    ExitGracefullyIf(_nGauges==0,"CModel::Initialize: Forcing slider enabled but no gauge met data is available.",BAD_DATA_WARN);
+    ExitGracefullyIf(_nForcingGrids==0,"CModel::Initialize: Forcing slider enabled but no gridded met data is available.",BAD_DATA_WARN);
+  }
+
   // QA/QC Check for partial or full disabling of basin HRUs (after HRU group initialize, must be before area calculation)
   //---------------------------------------------------------------
   string disbasins="\n     ";
@@ -857,11 +864,12 @@ void CModel::GenerateGaugeWeights(double **&aWts, const forcing_type forcing, co
 
   //handle the case that weights are allowed to sum to zero -netCDF is available
   //still need to allocate all zeros
-  if (ForcingGridIsAvailable(forcing)){ return; }
-  if ((forcing==F_TEMP_AVE) && (ForcingGridIsAvailable(F_TEMP_DAILY_MIN))){return;} //this is also acceptable
-  if ((forcing==F_TEMP_AVE) && (ForcingGridIsAvailable(F_TEMP_DAILY_AVE))){return;} //this is also acceptable
-  if ((forcing==F_PRECIP  ) && (ForcingGridIsAvailable(F_RAINFALL      ))){return;} //this is also acceptable
-
+  if (!Options.forcing_slider){
+    if (ForcingGridIsAvailable(forcing)){ return; }
+    if ((forcing==F_TEMP_AVE) && (ForcingGridIsAvailable(F_TEMP_DAILY_MIN))){return;} //this is also acceptable
+    if ((forcing==F_TEMP_AVE) && (ForcingGridIsAvailable(F_TEMP_DAILY_AVE))){return;} //this is also acceptable
+    if ((forcing==F_PRECIP  ) && (ForcingGridIsAvailable(F_RAINFALL      ))){return;} //this is also acceptable
+  }
   string warn="GenerateGaugeWeights: no gauges present with the following data: "+ForcingToString(forcing);
   ExitGracefullyIf(nGaugesWithData==0,warn.c_str(),BAD_DATA_WARN);
 

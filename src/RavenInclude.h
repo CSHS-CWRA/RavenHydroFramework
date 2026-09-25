@@ -17,10 +17,10 @@
 //#define _MODFLOW_USG_ // uncomment if compiling MODFLOW-USG coupled version of Raven
 //#define _STRICTCHECK_ // uncomment if strict checking should be enabled (slows down model)
 #ifndef _LPSOLVE_
-//#define _LPSOLVE_       // uncomment if compiling lpsolve Demand Optimization version of Raven
+//#define _LPSOLVE_     // uncomment if compiling lpsolve Demand Optimization version of Raven
 #endif
-#ifndef _BMI_LIBRARY_  //compiler or CMake flag
-#define STANDALONE    // comment out if compiling as DLL
+#ifndef _BMI_LIBRARY_   // compiler or CMake flag
+#define STANDALONE      // comment out if compiling as DLL
 #else
 #define BMI_LIBRARY
 #endif
@@ -1227,6 +1227,9 @@ struct optStruct
   bool             use_bmi_weather;           ///< true if forcings provided by BMI connection (no rvt, gauges, grids required)
   double           sv_override_endtime;       ///< model time [d] after which state variable overrides are disabled (default: 1e99)
   bool             glacier_model_on;          ///< explicitly tracks GLACIER_ICE rather than treating as infinite reservoir (default: false)
+
+  bool             forcing_slider;            ///< true to control slider between gridded and gauged data
+  double           slider_weight;             ///< [0..1] toggle between gauged (0) and gridded (1) data
 };
 
 ///////////////////////////////////////////////////////////////////

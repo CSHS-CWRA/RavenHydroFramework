@@ -159,10 +159,10 @@ void CGauge::Initialize(const optStruct   &Options,
       for(int nn=0;nn<nSamples; nn++)
       {
         val=_pTimeSeries[index]->GetSampledValue(nn);
-        if(val==RAV_BLANK_DATA){
+        if((val==RAV_BLANK_DATA) && (!Options.forcing_slider)){
           ExitGracefully("CGauge::Initialize: Raven cannot have blank data in precipitation time series",BAD_DATA);
         }
-        if((val<-1e-6) || (val>50000)){
+        else if((val!=RAV_BLANK_DATA) && ((val<-1e-6) || (val>50000))){
           cout<<GetName()<<" "<<nn<<" "<<val<<endl;
           ExitGracefully("CGauge::Initialize: negative or excessively large (>50000mm/d) precipitation intensity reported at gauge",BAD_DATA);
         }
@@ -178,7 +178,7 @@ void CGauge::Initialize(const optStruct   &Options,
       for(int nn=0;nn<nSamples; nn++)
       {
         val=_pTimeSeries[index]->GetSampledValue(nn);
-	      if (val==RAV_BLANK_DATA && !(derivedAveTemp)){
+	      if ((val==RAV_BLANK_DATA) && !(derivedAveTemp) && (!Options.forcing_slider)){
           string warning;
           warning ="CGauge::Initialize: Raven cannot have blank data in daily temperature time series (Gauge: "+_name+", n="+to_string(nn)+")";
           ExitGracefully(warning.c_str(),BAD_DATA);
@@ -349,7 +349,7 @@ bool     CGauge::SetGaugeProperty          (const string prop_tag, const double 
   string label_n = StringToUppercase(prop_tag);
   if      (!label_n.compare("RAINFALL_CORR"   ))  {_rainfall_corr=value;}
   else if (!label_n.compare("SNOWFALL_CORR"   ))  {_snowfall_corr=value;}
-  else if (!label_n.compare("TEMP_CORR"       ))  { _temperature_corr=value; }
+  else if (!label_n.compare("TEMP_CORR"       ))  {_temperature_corr=value; }
   else if (!label_n.compare("ELEVATION"       ))  {_elevation=value;}
   else if (!label_n.compare("CLOUD_MIN_RANGE" ))  {_cloud_min_temp=value;}
   else if (!label_n.compare("CLOUD_MAX_RANGE" ))  {_cloud_max_temp=value;}
@@ -376,8 +376,7 @@ void CGauge::AddTimeSeries      (CTimeSeries *pTS, forcing_type ftype)
   int index=_aTSindex[(int)(ftype)];
   if (index!=DOESNT_EXIST)//overwriting existing time series
   {
-    cout <<"ftype : "<<ftype<<" Forcing: "<<ForcingToString(ftype)<<endl;
-    string warn="CGauge::AddTimeSeries: a time series of data has been overwritten at gauge "+_name;
+    string warn="CGauge::AddTimeSeries: a time series of data of type "+ForcingToString(ftype)+ "has been overwritten at gauge "+_name;
     WriteWarning(warn,true);
     delete _pTimeSeries[index]; _pTimeSeries[index]=pTS;
   }
