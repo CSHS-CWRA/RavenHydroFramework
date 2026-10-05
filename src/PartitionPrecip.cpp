@@ -188,7 +188,9 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
   snowfall=(    Fsnow)*total_precip;
   rainfall=(1.0-Fsnow)*total_precip;//[mm/day]
 
-  rainfall+=pHRU->GetForcingFunctions()->irrigation;//[mm/day]
+  if(!pModel->StateVarExists(IRRIGATION_SRC)){ //otherwise handled by :IrrigationInput process
+    rainfall+=pHRU->GetForcingFunctions()->irrigation;//[mm/day]
+  }
 
   double SWE=0.0;
   if(pModel->StateVarExists(SNOW)) {

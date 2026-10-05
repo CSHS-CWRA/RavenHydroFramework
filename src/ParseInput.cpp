@@ -13,6 +13,7 @@
 #include "SnowMovers.h"
 #include "VegetationMovers.h"
 #include "GlacierProcesses.h"
+#include "Irrigation.h"
 #include "IceFlow.h"
 #include "Albedo.h"
 #include "CropGrowth.h"
@@ -596,6 +597,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":SnowRedistribute"          )){code=241;}
     else if  (!strcmp(s[0],":GlacierIceFlow"            )){code=242;}
     else if  (!strcmp(s[0],":FirnEvolution"             )){code=243;}
+    else if  (!strcmp(s[0],":IrrigationInput"           )){code=244;}
     //...
     else if  (!strcmp(s[0],":-->RedirectFlow"           )){code=294;}
     else if  (!strcmp(s[0],":ProcessGroup"              )){code=295;}
@@ -3228,6 +3230,28 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
       pMover = new CmvFirnEvolution(fe_type, pModel);
+      AddProcess(pModel, pMover, pProcGroup);
+      break;
+    }
+    case(244):  //----------------------------------------------
+    {/*Irrigation Input
+       :IrrigationInput RAVEN_DEFAULT IRRIGATION_SRC [to SV]*/
+      if (Options.noisy){cout <<"Irrigation Input Process"<<endl;}
+      if (Len<4){ImproperFormatWarning(":IrrigationInput",p,Options.noisy); break;}
+      irrigation_type itype=IRRIG_FROMFILE;
+      if      (!strcmp(s[1],"RAVEN_DEFAULT"      )){itype=IRRIG_FROMFILE;}
+      else {
+        ExitGracefully("ParseMainInputFile: Unrecognized irrigation input process representation",BAD_DATA_WARN); break;
+      }
+      FromToErrorCheck(":IrrigationInput",s[2],s[3],IRRIGATION_SRC,USERSPEC_SVTYPE,pModel,pStateVar);
+
+      CmvIrrigation::GetParticipatingStateVarList(itype,tmpS,tmpLev,tmpN);
+      pModel->AddStateVariables(tmpS,tmpLev,tmpN);
+
+      tmpS[0] = pStateVar->StringToSVType(s[3],tmpLev[0],true);
+      pModel->AddStateVariables(tmpS,tmpLev,1);
+
+      pMover = new CmvIrrigation(itype, ParseSVTypeIndex(s[3], pModel, pStateVar), pModel);
       AddProcess(pModel, pMover, pProcGroup);
       break;
     }

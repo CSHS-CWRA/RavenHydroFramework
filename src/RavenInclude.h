@@ -905,6 +905,7 @@ enum sv_type
   FIRN,                    ///< [mm] Firn atop glacier
   LAKE_STORAGE,            ///< [mm] Net lake storage - relative to equilibrium datum - can go negative
   GLACIER_MB,              ///< [mm] equivalent to GLACIER_ICE+GLACIER+FIRN+SNOW (diagnostic variable)
+  IRRIGATION_SRC,          ///< [mm] irrigation water in transit to destination compartment (empty at end of time step)
 
   CONVOLUTION,             ///< [mm] Convolution storage - for conceptual models with intermediate convolution steps
   CONV_STOR,               ///< [mm] Convolution sub-storage - tracks internal water mass for convolution
@@ -1000,6 +1001,9 @@ enum process_type
 
   //in GlacerProcesses.h
   GLACIER_MELT,GLACIER_RELEASE,GLACIER_INFIL,FIRN_EVOLUTION,
+
+  //in Irrigation.h
+  IRRIGATION_INPUT,
 
   //in HydroProcessABC.h
   FLUSH, SPLIT, OVERFLOW_PROC,CONVOLVE,EXCHANGE_FLOW,
