@@ -580,7 +580,8 @@ enum subdaily_method
 {
   SUBDAILY_NONE,            ///< no correction for daily average values used
   SUBDAILY_SIMPLE,          ///< Use half-sine wave pulse from dawn to dusk
-  SUBDAILY_UBC              ///< from UBCWM - based upon cumulative temperature hours above zero Celsius
+  SUBDAILY_UBC,             ///< from UBCWM - based upon cumulative temperature hours above zero Celsius
+  SUBDAILY_HOURLY_MELT      ///< daily melt as average of 24 hourly melt rates from cosine-disaggregated Tmin/Tmax
 };
 ////////////////////////////////////////////////////////////////////
 /// \brief Representations of soil characteristic curves

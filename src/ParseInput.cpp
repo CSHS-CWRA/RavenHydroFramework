@@ -1191,6 +1191,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"SUBDAILY_NONE"        )){Options.subdaily=SUBDAILY_NONE;}
       else if (!strcmp(s[1],"SUBDAILY_SIMPLE"      )){Options.subdaily=SUBDAILY_SIMPLE;}
       else if (!strcmp(s[1],"SUBDAILY_UBC"         )){Options.subdaily=SUBDAILY_UBC;}
+      else if (!strcmp(s[1],"SUBDAILY_HOURLY_MELT" )){Options.subdaily=SUBDAILY_HOURLY_MELT;}
       else {ExitGracefully("ParseInput:SubdailyMethod: Unrecognized method",BAD_DATA_WARN);}
       break;
     }

@@ -520,7 +520,7 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
 
   // Sub Daily Method
   //----------------------------------------------------------------------
-  if((Options.subdaily==SUBDAILY_NONE) || (Options.subdaily==SUBDAILY_SIMPLE) || (Options.subdaily==SUBDAILY_UBC))
+  if((Options.subdaily==SUBDAILY_NONE) || (Options.subdaily==SUBDAILY_SIMPLE) || (Options.subdaily==SUBDAILY_UBC) || (Options.subdaily==SUBDAILY_HOURLY_MELT))
   {
     // no parameter required
   }
