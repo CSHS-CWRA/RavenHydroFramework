@@ -30,9 +30,9 @@ static inline void ApplySliderWeighting(const double &gauge_val,double &val,cons
 }
 //////////////////////////////////////////////////////////////////
 /// this routine Linearly interpolates all temperature/precip forcings in F when both F and Fgauge have data
-///  When Fgauge is blank, it uses gridded data 
+///  When Fgauge is blank, it uses gridded data
 ///  at this point, F stores gridded forcings
-/// 
+///
 static void SliderWeighting(force_struct &F,const force_struct &Fgauge,const double &wt,bool temp_grid_exists, bool precip_grid_exists)
 {
   double loc_wt=wt;
@@ -240,7 +240,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
           if ((!(pre_gridded || snow_gridded || rain_gridded)) || (Options.forcing_slider))
           {
             if(!Options.forcing_slider) { //faster -assumes no blanks
-              F.precip           += wt * Fg[g].precip;              
+              F.precip           += wt * Fg[g].precip;
               F.precip_daily_ave += wt * Fg[g].precip_daily_ave;
               F.precip_5day      += wt * Fg[g].precip_5day;
               F.snow_frac        += wt * Fg[g].snow_frac;
@@ -547,14 +547,14 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       double temp_is_gridded=(temp_ave_gridded || (temp_daily_min_gridded && temp_daily_max_gridded) || temp_daily_ave_gridded);
       wtsum=0.0;
       // Gauge Data or bmi_provided temperature corrections ---------------
-      if ((!temp_is_gridded) || (Options.forcing_slider)) 
+      if ((!temp_is_gridded) || (Options.forcing_slider))
       {
         temp_adj_gauged=tc;
         for (g = 0; g < _nGauges; g++)
         {
           wt = _aGaugeWtTemp[k][g];
           if (Fgauge.temp_ave!=RAV_BLANK_DATA){
-            temp_adj_gauged+=wt * _pGauges[g]->GetTemperatureCorr(); 
+            temp_adj_gauged+=wt * _pGauges[g]->GetTemperatureCorr();
             wtsum+=wt;
           }
         }
@@ -578,14 +578,14 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       if (Options.forcing_slider){
         wt=Options.slider_weight;
         if (wtsum==0){wt=1.0;}
-        temp_adj=(wt)*temp_adj_gridded+(1.0-wt)*temp_adj_gauged; 
+        temp_adj=(wt)*temp_adj_gridded+(1.0-wt)*temp_adj_gauged;
       }
 
       F.temp_ave       += temp_adj;
       F.temp_daily_ave += temp_adj;
       F.temp_daily_max += temp_adj;
       F.temp_daily_min += temp_adj;
-      
+
       F.temp_ave_unc = F.temp_daily_ave;
       F.temp_min_unc = F.temp_daily_min;
       F.temp_max_unc = F.temp_daily_max;
@@ -627,7 +627,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //-------------------------------------------------------------------
       //  Precip Corrections
 	    //    complicated by fact that snow_frac needs to have been calculated
-      //    it would be nice to have this in a local sub but it would need 20 args 
+      //    it would be nice to have this in a local sub but it would need 20 args
       //-------------------------------------------------------------------
       double rc,sc;
       rc=_pSubBasins[p]->GetRainCorrection();
@@ -637,17 +637,17 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       double gauge_corr;
       double adj_precip(0.0),adj_daily_ave(1.0),adj_precip_5day(1.0);
       double adj_precip_gauged(1.0),adj_daily_ave_gauged(1.0),adj_precip_5day_gauged(1.0);
-	  
+
       if ((!precip_is_gridded) || (Options.forcing_slider)) //Gauge or BMI-injected Data
       {
         // Gauge-based precip and snowfall correction --------------------------
-        if (!Options.use_bmi_weather)  
+        if (!Options.use_bmi_weather)
         {
           double corr_precip(0.0),corr_daily_ave(0.0),corr_precip_5day(0.0);
           wtsum=0.0;
           for(g=0; g<_nGauges; g++)
           {
-            gauge_corr= (    F.snow_frac)*sc*_pGauges[g]->GetSnowfallCorr() + 
+            gauge_corr= (    F.snow_frac)*sc*_pGauges[g]->GetSnowfallCorr() +
                         (1.0-F.snow_frac)*rc*_pGauges[g]->GetRainfallCorr();
             wt=_aGaugeWtPrecip[k][g];
             if (Fg[g].precip!=RAV_BLANK_DATA){
@@ -664,13 +664,13 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
               corr_precip_5day/=wtsum;
             }
           }
-          adj_precip     =corr_precip     -Fgauge.precip; 
+          adj_precip     =corr_precip     -Fgauge.precip;
           adj_daily_ave  =corr_daily_ave  -Fgauge.precip_daily_ave;
           adj_precip_5day=corr_precip_5day-Fgauge.precip_daily_ave;
         }
         // Gauge-free precip and snowfall correction ---------------------------
-        else 
-        {  
+        else
+        {
           gauge_corr      = (F.snow_frac * sc) + ((1.0-F.snow_frac)*rc);
           adj_precip      = (gauge_corr-1.0)*F.precip;
           adj_daily_ave   = (gauge_corr-1.0)*F.precip_daily_ave;
@@ -681,16 +681,16 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         adj_daily_ave_gauged  =adj_daily_ave;
         adj_precip_5day_gauged=adj_precip_5day;
       }
-      
+
       // Gridded Data corrections ----------------------------------------------
-      if ((precip_is_gridded) || (Options.forcing_slider)) 
-      { 
+      if ((precip_is_gridded) || (Options.forcing_slider))
+      {
         double grid_corr;
         double rain_corr=pGrid_pre->GetRainfallCorr();
         double snow_corr=pGrid_pre->GetSnowfallCorr();
         grid_corr= F.snow_frac*sc*snow_corr + (1.0-F.snow_frac)*rc*rain_corr;
 
-        adj_precip      = (grid_corr-1.0)*Fgrid.precip; 
+        adj_precip      = (grid_corr-1.0)*Fgrid.precip;
         adj_daily_ave   = (grid_corr-1.0)*Fgrid.precip_daily_ave;
         adj_precip_5day = (grid_corr-1.0)*Fgrid.precip_5day;
       }
@@ -700,12 +700,12 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       {
         wt=Options.slider_weight;
         if (wtsum==0){wt=1.0;} //all gauges missing data - no corresponding adjustment
-        adj_precip     =(wt)*adj_precip     +(1.0-wt)*adj_precip_gauged; 
+        adj_precip     =(wt)*adj_precip     +(1.0-wt)*adj_precip_gauged;
         adj_daily_ave  =(wt)*adj_daily_ave  +(1.0-wt)*adj_daily_ave_gauged;
         adj_precip_5day=(wt)*adj_precip_5day+(1.0-wt)*adj_precip_5day_gauged;
       }
 
-      //additive adjustment 
+      //additive adjustment
       F.precip          +=adj_precip;
       F.precip_daily_ave+=adj_daily_ave;
       F.precip_5day     +=adj_precip_5day;
