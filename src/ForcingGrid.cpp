@@ -558,13 +558,24 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
 ///////////////////////////////////////////////////////////////////
 /// \brief  Reallocate all arrays in class to (potentially updated) time grid dimensions
 //          mainly used when sub-daily grids have to be added to model using ForcingCopyCreate
+/// \param nVals number of records required by the derived-grid generating loop
 //
-void CForcingGrid::ReallocateArraysInForcingGrid( )
+void CForcingGrid::ReallocateArraysInForcingGrid(const int nVals)
 {
+  ExitGracefullyIf(nVals<=0,"CForcingGrid: invalid derived chunk size",RUNTIME_ERR);
+
+  // The copy constructor allocated this buffer. Delete its rows using the
+  // old chunk size before changing it; otherwise rows leak or deletion overruns.
+  if(_aVal!=NULL) {
+    for(int it=0; it<_ChunkSize; it++) { delete[] _aVal[it]; }
+    delete[] _aVal;
+  }
+
   // -------------------------------
   // Initialize data array and set all entries to NODATA value
   // -------------------------------
   _aVal = NULL;
+  SetChunkSize(nVals);
   _aVal =  new double *[_ChunkSize];
   ExitGracefullyIf(_aVal==NULL,"CForcingGrid::ReallocateArraysInForcingGrid (1)",OUT_OF_MEMORY);
   for (int it=0; it<_ChunkSize; it++) {                       // loop over time points in buffer
@@ -1392,7 +1403,17 @@ void CForcingGrid::CalculateChunkSize(const optStruct& Options)
   tmpChunkSize = (int)(max(min(CHUNK_MEMORY  / BytesPerTimestep,ntime),1));      // number of timesteps per chunk - 10MB chunks
 
   if(!Options.deltaresFEWS) {
-    tmpChunkSize = (int)((int)(tmpChunkSize*_interval)/_interval);               // make sure chunks are complete days (have to relax for FEWS)
+    // Timestamp subtraction perturbs the interval. For data that divide a
+    // day, align in integer records: floating-point truncation can lose a
+    // record, then another whole day if the calculation is repeated.
+    if((_interval<=1.0) && (_steps_per_day>0) &&
+       (fabs(_steps_per_day*_interval-1.0)<=TIME_CORRECTION)) {
+      tmpChunkSize = (tmpChunkSize/_steps_per_day)*_steps_per_day;
+    }
+    else {
+      // Integer steps-per-day alignment is not valid for every interval.
+      tmpChunkSize = (int)((int)(tmpChunkSize*_interval)/_interval);
+    }
   }
 
   tmpChunkSize = max(int(rvn_round(1.0/_interval)),tmpChunkSize);                // make sure  at least one day is read
@@ -1545,12 +1566,14 @@ void CForcingGrid::SetaAvePET(const double aAvePET [12]){
 /// \param aVal  [in] value to be set
 //
 void CForcingGrid::SetValue( const int ic, const int it, const double aVal) {
-#ifdef _STRICTCHECK_
-  if(it>=_ChunkSize) {
-    ExitGracefully("CForcingGrid::SetValue:invalid time index",RUNTIME_ERR);}
-  if(ic>=_nNonZeroWeightedGridCells) {
-    ExitGracefully("CForcingGrid::SetValue:invalid cell index",RUNTIME_ERR);}
-#endif
+  // Keep these checks in release builds: a derived-grid sizing mismatch
+  // must report an error rather than dereference outside the allocated buffer.
+  if((it<0) || (it>=_ChunkSize)) {
+    ExitGracefully("CForcingGrid::SetValue:invalid time index",RUNTIME_ERR);
+  }
+  if((ic<0) || (ic>=_nNonZeroWeightedGridCells)) {
+    ExitGracefully("CForcingGrid::SetValue:invalid cell index",RUNTIME_ERR);
+  }
   _aVal[it][ic] = aVal;
 }
 

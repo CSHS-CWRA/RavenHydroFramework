@@ -140,7 +140,7 @@ public:/*------------------------------------------------------*/
 
   // Reallocate all arrays in class to (potentially updated) grid dimensions
   // mainly used when sub-daily grids have to be added to model
-  void ReallocateArraysInForcingGrid( );
+  void ReallocateArraysInForcingGrid(const int nVals);
 
   // ReadData populates _aVal or does nothing if no new chunk need to be read (= current modeling time step is within current chunk)
   bool   ReadData(const optStruct   &Options,

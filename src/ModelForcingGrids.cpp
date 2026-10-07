@@ -48,13 +48,18 @@ CForcingGrid *CModel::ForcingCopyCreate(const CForcingGrid *pGrid,
     pTout->SetInterval(interval);
     pTout->SetGridDims(GridDims);
 
-    pTout->CalculateChunkSize(Options);
-    pTout->ReallocateArraysInForcingGrid();
+    // nVals is the generating loop's required capacity, not a memory-budget
+    // estimate. Recalculating it can shrink the destination below the source
+    // chunk and cause out-of-bounds writes or inconsistent time coverage.
+    pTout->ReallocateArraysInForcingGrid(nVals);
   }
   else
   {
     // for all latter chunks the the grid already exists and values will be just overwritten
     pTout=GetForcingGrid(typ);
+    // Do not silently truncate a generating loop when reusing a derived grid.
+    ExitGracefullyIf(pTout->GetChunkSize()!=nVals,
+                    "CModel::ForcingCopyCreate: derived chunk size mismatch",RUNTIME_ERR);
   }
 
   return pTout;
