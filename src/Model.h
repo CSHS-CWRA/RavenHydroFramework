@@ -288,6 +288,11 @@ private:/*------------------------------------------------------*/
                                       const optStruct    &Options,
                                       const CHydroUnit   *pHRU,
                                       const time_struct  &tt);
+  double EstimatePotentialMeltFromSubdaily(const force_struct *F,
+                                      const potmelt_method method,
+                                      const optStruct    &Options,
+                                      const CHydroUnit   *pHRU,
+                                      const time_struct  &tt);
   double         EstimateSnowFraction(const rainsnow_method  method,
                                       const CHydroUnit* pHRU,
                                       const force_struct* F,

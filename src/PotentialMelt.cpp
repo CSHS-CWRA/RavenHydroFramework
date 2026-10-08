@@ -23,6 +23,14 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
                                      const CHydroUnit *pHRU,
                                      const time_struct &tt)
 {
+  //----------------------------------------------------------
+  // Subdaily integration: disaggregate daily Tmin and Tmax to 24h, accumulate positive melt
+  //----------------------------------------------------------
+  if((Options.subdaily==SUBDAILY_HOURLY_MELT) && (Options.timestep>=1.0) &&
+     (method!=POTMELT_DATA) && (method!=POTMELT_NONE))
+  {
+    return EstimatePotentialMeltFromSubdaily(F,method,Options,pHRU,tt);
+  }
 
   //----------------------------------------------------------
   if (method==POTMELT_DATA)
@@ -318,4 +326,40 @@ double UBC_DailyPotentialMelt(CModel* pModel,
   potential_melt= SHORM + ONGWMO + CONVM + CONDM + RAINMELT;             //[mm/d]
 
   return potential_melt;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns daily potential melt rate [mm/d] as average of positive hourly melt rates
+///
+/// \param *F [in] Forcing functions for a particular HRU over current time step
+/// \param method [in] potential melt method applied each hour
+/// \param Options [in] global options structure
+/// \param *pHRU [in] pointer to HRU
+/// \param tt [in] current time structure
+/// \return double potential melt rate [mm/d]
+//
+double CModel::EstimatePotentialMeltFromSubdaily(const force_struct *F,
+                                                 const potmelt_method method,
+                                                 const optStruct    &Options,
+                                                 const CHydroUnit   *pHRU,
+                                                 const time_struct  &tt)
+{
+  force_struct F_hourly=*F;
+  optStruct    Options_hourly=Options;
+  Options_hourly.subdaily=SUBDAILY_NONE; //prevents recursion
+
+  double Tavg=0.5*(F->temp_daily_max+F->temp_daily_min);
+  double Tamp=0.5*(F->temp_daily_max-F->temp_daily_min);
+
+  double melt=0.0;
+  for(int h=0;h<24;h++)
+  {
+    double t=(h+0.5)/HR_PER_DAY;
+    double T=Tavg+Tamp*(-cos(2.0*PI*(t-PEAK_TEMP_HR/HR_PER_DAY)));
+    F_hourly.temp_ave      =T;
+    F_hourly.temp_daily_ave=T;
+    F_hourly.subdaily_corr =1.0;
+    melt+=max(EstimatePotentialMelt(&F_hourly,method,Options_hourly,pHRU,tt),0.0);
+  }
+  return melt/HR_PER_DAY;
 }
