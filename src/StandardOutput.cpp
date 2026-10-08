@@ -744,7 +744,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       else     {cout <<" | P: ------";}
     }
 
-    
+
     if(Options.suppress_output)
     {
       //do nothing
