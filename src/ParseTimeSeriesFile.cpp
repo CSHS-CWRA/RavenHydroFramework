@@ -966,7 +966,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       else
       {
-        warn=":IrrigationDemand: Subbasin "+to_string(SBID)+" not in model, cannot set irrigation/water demand time series";
+        warn=":WaterDemand: Subbasin "+to_string(SBID)+" not in model, cannot set irrigation/water demand time series";
         WriteWarning(warn,Options.noisy);
       }
       break;

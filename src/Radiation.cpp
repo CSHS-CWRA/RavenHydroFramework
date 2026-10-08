@@ -619,7 +619,7 @@ double CRadiation::CalcETRadiation( const double latrad,     //latitude in radia
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates extraterrestrial radiation on an inclined or horizontal plane
 /// \details Returns total incoming solar radation, K_{ET}, in [MJ/m2/d], corrected for slope and aspect
-/// \ref from Allen, Trezza & Tasumi (2006)
+/// \ref from Allen, Trezza & Tasumi (2006), Analytical integrated functions for daily solar radiation on slopes
 ///
 /// \param latrad [in] Latitude in radians
 /// \param lateq [in] Equivalent latitude for slope (Dingman E-23)

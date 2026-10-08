@@ -1027,7 +1027,7 @@ double CSubBasin::GetDiffusivity() const
   }
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Returns channel depth, in meters
+/// \brief Returns channel depth from thalweg, in meters
 /// \return  channel depth [m], with minimum depth of 1cm
 //
 double CSubBasin::GetRiverDepth() const

@@ -667,8 +667,8 @@ void   CEnthalpyModel::UpdateReachEnergySourceTerms(const int p)
   double hstar    =pBasin->GetConvectionCoeff(); //[MJ/m2/d/K]
   double qmix     =pBasin->GetHyporheicFlux();   //[m/d]
   double bed_ratio=pBasin->GetTopWidth()/max(pBasin->GetWettedPerimeter(),0.001);
-  double dbar     =pBasin->GetRiverDepth(); //ensured to be >0
   double Ax       =pBasin->GetXSectArea();  //ensured to be >0
+  double dbar     =Ax/max(pBasin->GetTopWidth(),0.001);  //averaged depth [m]
   double L        =max(pBasin->GetReachLength(),1.0);
   double qlat     =pBasin->GetIntegratedLocalOutflow(tstep)/L/tstep; //total [m3/d/m]
   double qhlat     =0.5*(_aMlocal[p] + _aMlocLast[p]) / L; //q_lat*h_lat [MJ/d/m]
@@ -782,8 +782,8 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
   double hstar    =pBasin->GetConvectionCoeff();   //[MJ/m2/d/K]
   double qmix     =pBasin->GetHyporheicFlux();     //[m/d]
   double bed_ratio=pBasin->GetTopWidth()/max(pBasin->GetWettedPerimeter(),0.001);
-  double dbar     =pBasin->GetRiverDepth();        //averaged depth [m]
   double Ax       =pBasin->GetXSectArea();         //[m2]
+  double dbar     =Ax/max(pBasin->GetTopWidth(),0.001);  //averaged depth [m]
   double As       =pBasin->GetTopWidth()*max(pBasin->GetReachLength(),1.0); //[m2]
   double L        =max(pBasin->GetReachLength(),1.0);
   double qlat     =pBasin->GetIntegratedLocalOutflow(tstep)/L; //total

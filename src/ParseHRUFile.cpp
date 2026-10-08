@@ -79,7 +79,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     else if  (!strcmp(s[0],":End"                      )){code=-4; }//stop reading
     else if  (!strcmp(s[0],":IfModeEquals"             )){code=-5; }
     else if  (in_ifmode_statement)                       {code=-6; }
-    else if  (!strcmp(s[0],":EndIfModeEquals"           )){code=-2; }//treat as comment - unused mode
+    else if  (!strcmp(s[0],":EndIfModeEquals"          )){code=-2; }//treat as comment - unused mode
     else if  (!strcmp(s[0],":RedirectToFile"           )){code=-3; }//redirect to secondary file
     //--------------------MODEL OPTIONS ------------------------
     else if  (!strcmp(s[0],":SubBasins"                )){code=1;  is_conduit=false;}
@@ -212,9 +212,10 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
 
             double length;
             length=AutoOrDouble(s[4]);
-            ExitGracefullyIf((length>2000) && (!is_conduit),
-              "ParseHRUPropsFile: length of river greater than 2000km in :SubBasins command block. Units issue? Reach length should be provided in km.",BAD_DATA_WARN);
-            ExitGracefullyIf((length>2000) && (!is_conduit),
+            if ((length>2000) && (!is_conduit)){
+              WriteWarning("ParseHRUPropsFile: length of river greater than 2000km in :SubBasins command block. Units issue? Reach length should be provided in km.",Options.noisy);
+            }
+            ExitGracefullyIf((length>2000) && (is_conduit),
               "ParseHRUPropsFile: length of conduit greater than 2000km in :Conduits command block. Units issue? Conduit length should be provided in km.",BAD_DATA_WARN);
             if (length!=AUTO_COMPUTE){length*=M_PER_KM;}//convert to m from km
 

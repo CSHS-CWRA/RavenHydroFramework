@@ -173,7 +173,11 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
 
   if(Options.noisy) { cout<<"  Writing Output File Headers..."<<endl; }
 
-  if (Options.output_format==OUTPUT_STANDARD)
+  if     (Options.suppress_output)
+  {
+    //do nothing
+  }
+  else if(Options.output_format==OUTPUT_STANDARD)
   {
 
     //WatershedStorage.csv
@@ -607,7 +611,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
 
   // Assimilation adjustments
   //--------------------------------------------------------------
-  if (Options.assimilate_flow){
+  if ((Options.assimilate_flow) && (!Options.suppress_output)) {
     ofstream ASSIM;
     tmpFilename=FilenamePrepare("AssimilationAdjustments_BySubbasin.csv",Options);
     ASSIM.open(tmpFilename.c_str());
@@ -634,11 +638,13 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
 
   // Transport output files
   //--------------------------------------------------------------
-  _pTransModel->WriteOutputFileHeaders(Options);
+  if (!Options.suppress_output){
+    _pTransModel->WriteOutputFileHeaders(Options);
+  }
 
   // Management output files
   //--------------------------------------------------------------
-  if (Options.management_optimization) {
+  if ((Options.management_optimization) && (!Options.suppress_output)) {
     _pDO->WriteOutputFileHeaders(Options);
   }
 
@@ -738,10 +744,15 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       else     {cout <<" | P: ------";}
     }
 
-    //Write current state of water storage in system to WatershedStorage.csv (ALWAYS DONE if not switched OFF)
-    //----------------------------------------------------------------
-    if (Options.output_format==OUTPUT_STANDARD)
+    
+    if(Options.suppress_output)
     {
+      //do nothing
+    }
+    else if (Options.output_format==OUTPUT_STANDARD)
+    {
+      //Write current state of water storage in system to WatershedStorage.csv (ALWAYS DONE if not switched OFF)
+      //----------------------------------------------------------------
       if (Options.write_watershed_storage)
       {
         double snowfall      =GetAverageSnowfall();
@@ -1009,11 +1020,9 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       }
     }
 
-
-
     //ReservoirStages.csv
     //--------------------------------------------------------------
-    if ((Options.write_reservoir) && (Options.output_format==OUTPUT_STANDARD))
+    if ((Options.write_reservoir) && (Options.output_format==OUTPUT_STANDARD) && (!Options.suppress_output))
     {
       int nn=(int)((tt.model_time+TIME_CORRECTION)/Options.timestep);//current timestep index
 
@@ -1155,7 +1164,6 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       }
     }
 
-
     // ExhaustiveMassBalance.csv
     //--------------------------------------------------------------
     if (Options.write_exhaustiveMB)
@@ -1285,9 +1293,11 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
     // Transport output files
     //--------------------------------------------------------------
+    if(!Options.suppress_output){
     _pTransModel->WriteMinorOutput(Options,tt);
+    }
 
-    if (Options.management_optimization) {
+    if ((Options.management_optimization) && (!Options.suppress_output)){
       _pDO->WriteMinorOutput(Options,tt);
     }
 
@@ -1340,7 +1350,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
     // Assimilation adjustments
     //--------------------------------------------------------------
-    if (Options.assimilate_flow){
+    if ((Options.assimilate_flow) && (!Options.suppress_output)){
       ofstream ASSIM;
       tmpFilename=FilenamePrepare("AssimilationAdjustments_BySubbasin.csv",Options);
       ASSIM.open(tmpFilename.c_str(),ios::app);
