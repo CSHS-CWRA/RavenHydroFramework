@@ -2729,13 +2729,13 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
 
         if      (pCT->tclass == CLASS_LANDUSE)//================================================================
         {
-          // at start time, copy structure 
+          // at start time, copy structure
           if ((pCT->starttime > tt.model_time - TIME_CORRECTION) && (pCT->starttime < tt.model_time + Options.timestep))
           {
             if (k_loc==0){
               pCT->surf_params=*(_pHydroUnits[k]->GetSurfaceProps()); //deep copy parameter vector
             }
-            _pHydroUnits[k]->ChangeLandUse(&(pCT->surf_params)); 
+            _pHydroUnits[k]->ChangeLandUse(&(pCT->surf_params));
           }
 
           CLandUseClass *end_lult_class = StringToLUClass(pCT->newclass);
@@ -2743,40 +2743,40 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
           //intermediate times - calculate intermediate parameter vector
           //only needs to be done once for entire HRU Group
           if (k_loc==0)
-          {  
+          {
             const double* Pend = &(end_lult_class->GetSurfaceStruct()->impermeable_frac);//first double member of struct, allowing us to iterate through as array
             double*       Pnew = &(pCT->surf_params.impermeable_frac);
 
-            for (size_t i = 0; i < NUM_LULT_PARAMETERS; ++i) 
-            { 
+            for (size_t i = 0; i < NUM_LULT_PARAMETERS; ++i)
+            {
               if (ft!=1.0){ //else no change to parameters
                 Pnew[i]=Pnew[i]+(Pend[i]-Pnew[i])/(1.0-ft)*(ftp-ft); //trick to get change in parameters without storing original parameter set
               }
             }
-            pCT->surf_params.landuse_name=end_lult_class->GetSurfaceStruct()->landuse_name; 
+            pCT->surf_params.landuse_name=end_lult_class->GetSurfaceStruct()->landuse_name;
             if (k==0){
-              //cout<<"Changing Parameter "<<tt.date_string<<" "<<Tmpprev<<" "<<pCT->surf_params->impermeable_frac<<" "<<Tmpend<<" "<<ft<<" "<<ftp<<" "<<tsince/trange<<endl; 
+              //cout<<"Changing Parameter "<<tt.date_string<<" "<<Tmpprev<<" "<<pCT->surf_params->impermeable_frac<<" "<<Tmpend<<" "<<ft<<" "<<ftp<<" "<<tsince/trange<<endl;
               /*g_debug_vars[0]=pCT->surf_params.impermeable_frac;
               g_debug_vars[1]=ft;
               g_debug_vars[2]=tsince/trange;*/
             }
           }
 
-          // at end time, fully migrate structure 
+          // at end time, fully migrate structure
           if ((pCT->endtime > tt.model_time - TIME_CORRECTION) && (pCT->endtime < tt.model_time + Options.timestep))
           {
-            _pHydroUnits[k]->ChangeLandUse(end_lult_class->GetSurfaceStruct()); 
+            _pHydroUnits[k]->ChangeLandUse(end_lult_class->GetSurfaceStruct());
           }
         }
         else if (pCT->tclass == CLASS_VEGETATION)//================================================================
         {
-          // at start time, copy structure 
+          // at start time, copy structure
           if ((pCT->starttime > tt.model_time - TIME_CORRECTION) && (pCT->starttime < tt.model_time + Options.timestep))
           {
             if (k_loc==0){
               pCT->veg_params=*(_pHydroUnits[k]->GetVegetationProps()); //deep copy parameter vector
             }
-            _pHydroUnits[k]->ChangeVegetation(&(pCT->veg_params)); 
+            _pHydroUnits[k]->ChangeVegetation(&(pCT->veg_params));
           }
 
           CVegetationClass *end_veg_class = StringToVegClass(pCT->newclass);
@@ -2784,23 +2784,23 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
           //intermediate times - calculate intermediate parameter vector
           //only needs to be done once for entire HRU Group
           if (k_loc==0)
-          {  
+          {
             const double* Pend = &(end_veg_class->GetVegetationStruct()->max_height);//first double member of struct, allowing us to iterate through as array
             double*       Pnew = &(pCT->veg_params.max_height);
 
-            for (size_t i = 0; i < NUM_VEG_PARAMETERS; ++i) 
-            { 
+            for (size_t i = 0; i < NUM_VEG_PARAMETERS; ++i)
+            {
               if (ft!=1.0){ //else no change to parameters
                 Pnew[i]=Pnew[i]+(Pend[i]-Pnew[i])/(1.0-ft)*(ftp-ft); //trick to get change in parameters without storing original parameter set
               }
             }
-            pCT->veg_params.vegetation_name=end_veg_class->GetVegetationStruct()->vegetation_name; 
+            pCT->veg_params.vegetation_name=end_veg_class->GetVegetationStruct()->vegetation_name;
           }
 
-          // at end time, fully migrate structure 
+          // at end time, fully migrate structure
           if ((pCT->endtime > tt.model_time - TIME_CORRECTION) && (pCT->endtime < tt.model_time + Options.timestep))
           {
-            _pHydroUnits[k]->ChangeVegetation(end_veg_class->GetVegetationStruct()); 
+            _pHydroUnits[k]->ChangeVegetation(end_veg_class->GetVegetationStruct());
           }
         }
 
