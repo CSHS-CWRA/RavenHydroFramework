@@ -150,6 +150,7 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
   case(LATERAL_EXCHANGE):   {name="Lateral exchange storage";   break;}
   case(SNOW_DRIFT):         {name="Blowing Snow";               break;}
   case(LAKE_STORAGE):       {name="Net Lake Storage";           break;}
+  case(IRRIGATION_SRC):     {name="Irrigation Source";          break;}
   case(MIN_DEP_DEFICIT):    {name="Minimum depression deficit"; break;}
   case(CONTRIB_FRAC):       {name="Contributing area fraction"; break;}
   case(INFIL_CORR):         {name="Infiltration correction";    break;}
@@ -267,6 +268,7 @@ string CStateVariable::GetStateVarUnits(const sv_type typ)
   case(LATERAL_EXCHANGE): {units="mm"; break;}
   case(SNOW_DRIFT):       {units="mm"; break;}
   case(LAKE_STORAGE):     {units="mm"; break;}
+  case(IRRIGATION_SRC):   {units="mm"; break;}
   case(MIN_DEP_DEFICIT):  {units="mm"; break;}
   case(CONTRIB_FRAC):     {units="0-1";break;}
   case(INFIL_CORR):       {units="0-1";break;}
@@ -375,6 +377,7 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
   else if (!tmp.compare("WETLAND"         )){typ=WETLAND;}
   else if (!tmp.compare("DEPRESSION"      )){typ=DEPRESSION;}
   else if (!tmp.compare("LAKE_STORAGE"    )){typ=LAKE_STORAGE;}
+  else if (!tmp.compare("IRRIGATION_SRC"  )){typ=IRRIGATION_SRC;}
   else if (!tmp.compare("MIN_DEP_DEFICIT" )){typ=MIN_DEP_DEFICIT;}
   else if (!tmp.compare("CONTRIB_FRAC"    )){typ=CONTRIB_FRAC;}
   else if (!tmp.compare("INFIL_CORR"      )){typ=INFIL_CORR;}
@@ -466,6 +469,7 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
     case(GA_MOISTURE_INIT):   {name="GA_MOISTURE_INIT";         break;}
     case(SNOW_DRIFT):         {name="SNOW_DRIFT";               break;}
     case(LAKE_STORAGE):       {name="LAKE_STORAGE";             break;}
+    case(IRRIGATION_SRC):     {name="IRRIGATION_SRC";           break;}
     case(MIN_DEP_DEFICIT):    {name="MIN_DEP_DEFICIT";          break;}
     case(CONTRIB_FRAC):       {name="CONTRIB_FRAC";             break;}
     case(INFIL_CORR):         {name="INFIL_CORR";               break;}
@@ -637,6 +641,7 @@ bool  CStateVariable::IsWaterStorage (sv_type      typ, bool conv_coverup)
   case(LATERAL_EXCHANGE):{return true;}
   case(SNOW_DRIFT):      {return true;}
   case(LAKE_STORAGE):    {return true;}
+  case(IRRIGATION_SRC):  {return true;}
   //..
   default:
   {
