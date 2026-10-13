@@ -597,7 +597,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":SnowRedistribute"          )){code=241;}
     else if  (!strcmp(s[0],":GlacierIceFlow"            )){code=242;}
     else if  (!strcmp(s[0],":FirnEvolution"             )){code=243;}
-    else if  (!strcmp(s[0],":IrrigationInput"           )){code=244;}
+    else if  (!strcmp(s[0],":DivertIrrigation"          )){code=244;}
     //...
     else if  (!strcmp(s[0],":-->RedirectFlow"           )){code=294;}
     else if  (!strcmp(s[0],":ProcessGroup"              )){code=295;}
@@ -3234,16 +3234,16 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(244):  //----------------------------------------------
-    {/*Irrigation Input
-       :IrrigationInput RAVEN_DEFAULT IRRIGATION_SRC [to SV]*/
-      if (Options.noisy){cout <<"Irrigation Input Process"<<endl;}
-      if (Len<4){ImproperFormatWarning(":IrrigationInput",p,Options.noisy); break;}
+    {/*Divert Irrigation
+       :DivertIrrigation RAVEN_DEFAULT IRRIGATION_SRC [to SV]*/
+      if (Options.noisy){cout <<"Divert Irrigation Process"<<endl;}
+      if (Len<4){ImproperFormatWarning(":DivertIrrigation",p,Options.noisy); break;}
       irrigation_type itype=IRRIG_FROMFILE;
       if      (!strcmp(s[1],"RAVEN_DEFAULT"      )){itype=IRRIG_FROMFILE;}
       else {
-        ExitGracefully("ParseMainInputFile: Unrecognized irrigation input process representation",BAD_DATA_WARN); break;
+        ExitGracefully("ParseMainInputFile: Unrecognized irrigation diversion process representation",BAD_DATA_WARN); break;
       }
-      FromToErrorCheck(":IrrigationInput",s[2],s[3],IRRIGATION_SRC,USERSPEC_SVTYPE,pModel,pStateVar);
+      FromToErrorCheck(":DivertIrrigation",s[2],s[3],IRRIGATION_SRC,USERSPEC_SVTYPE,pModel,pStateVar);
 
       CmvIrrigation::GetParticipatingStateVarList(itype,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);

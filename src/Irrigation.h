@@ -2,7 +2,7 @@
 Raven Library Source Code
 Copyright (c) 2008-2026 the Raven Development Team
 ----------------------------------------------------------------
-Irrigation input process
+Divert irrigation process
 ----------------------------------------------------------------*/
 #ifndef IRRIGATION_H
 #define IRRIGATION_H

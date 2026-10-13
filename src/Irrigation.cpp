@@ -13,7 +13,7 @@ Copyright (c) 2008-2026 the Raven Development Team
 CmvIrrigation::CmvIrrigation(irrigation_type itype,
                              int             to_index,
                              CModelABC      *pModel)
-  :CHydroProcessABC(IRRIGATION_INPUT, pModel)
+  :CHydroProcessABC(DIVERT_IRRIGATION, pModel)
 {
   ExitGracefullyIf(to_index==DOESNT_EXIST,
                    "CmvIrrigation Constructor: invalid 'to' compartment specified",BAD_DATA);
