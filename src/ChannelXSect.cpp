@@ -383,12 +383,12 @@ double  CChannelXSect::GetCelerity(const double &Q, const double &SB_slope,const
 /// \brief Returns diffusivity of channel [m/s]
 /// \param Q [in] Channel flowrate [m3/s]
 /// \param bedslope [in] Slope of riverbed [m/m]
-/// \return Diffusivity of channel at specified flowrate and slope [m3/s]
+/// \return Diffusivity of channel at specified flowrate and slope [m2/s]
 //
 double CChannelXSect::GetDiffusivity(const double &Q, const double &SB_slope, const double &SB_n) const
 {
-  ExitGracefullyIf(Q<=0,"CChannelXSect::GetDiffusivity: Invalid channel flowrate",BAD_DATA);
-
+  ExitGracefullyIf(Q<0,"CChannelXSect::GetDiffusivity: Invalid channel flowrate",BAD_DATA);
+  if (Q==0){return 1.0;}
   ///< diffusivity from Roberson et al. 1995, Hydraulic Engineering
   double slope_mult=1.0;
   double Q_mult    =1.0;

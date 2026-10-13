@@ -84,6 +84,9 @@ void CProcessGroup::GetRatesOfChange(const double      *state_vars,
   for(int j=0;j<_nSubProcesses;j++)
   {
     nConn=_pSubProcesses[j]->GetNumConnections();
+    for(int qq=0;qq<nConn;qq++){
+      loc_rates[qq]=0.0;
+    }
     _pSubProcesses[j]->GetRatesOfChange(state_vars,pHRU,Options,tt,loc_rates);
     _pSubProcesses[j]->ApplyConstraints(state_vars,pHRU,Options,tt,loc_rates);
     for(int qq=0;qq<nConn;qq++){

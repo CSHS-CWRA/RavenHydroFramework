@@ -18,7 +18,7 @@
 string g_output_directory ="";
 bool   g_suppress_warnings=false;
 bool   g_suppress_zeros   =false;
-double g_debug_vars[10];
+double g_debug_vars[MAX_DEBUG_VARS];
 bool   g_disable_freezing =false;
 double g_min_storage      =0.0;
 int    g_current_e        =DOESNT_EXIST;
@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
 
   PrepareOutputdirectory(Options);
 
-  for (int i=0;i<10;i++){g_debug_vars[i]=0;}
+  for (int i=0;i<MAX_DEBUG_VARS;i++){g_debug_vars[i]=0;}
 
   RavenUnitTesting(Options);
 

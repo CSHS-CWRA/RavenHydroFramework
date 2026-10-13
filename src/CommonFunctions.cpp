@@ -1521,6 +1521,112 @@ double rvn_erf(const double &x)
 {
   return 1-rvn_erfc(x);
 }
+
+//function used in rvn_erfcx
+inline double d_int(const double x){ return( (x>0) ? rvn_floor(x) : -rvn_floor(-x) ); }
+//////////////////////////////////////////////////////////////////
+/// this code evaluates  exp(x^2)*erfc(x) for a real argument  x
+/// based upon the algorithm from "Rational Chebyshev approximations for the error function" by W. J. Cody, Math. Comp., 1969, PP. 631-638. 
+/// as implemented in https://github.com/simonbyrne/LetsBeRational/blob/master/erf_cody.cpp
+/// 
+double rvn_erfcx(double x) 
+{
+   static const double a[5] = { 3.1611237438705656,113.864154151050156,377.485237685302021,3209.37758913846947,.185777706184603153 };
+   static const double b[4] = { 23.6012909523441209,244.024637934444173,1282.61652607737228,2844.23683343917062 };
+   static const double c[9] = { 0.564188496988670089,8.88314979438837594,66.1191906371416295,298.635138197400131,881.95222124176909,1712.04761263407058,2051.07837782607147,1230.33935479799725,2.15311535474403846e-8 };
+   static const double d[8] = { 15.7449261107098347,117.693950891312499,537.181101862009858,1621.38957456669019,3290.79923573345963,4362.61909014324716,3439.36767414372164,1230.33935480374942 };
+   static const double p[6] = { 0.305326634961232344,0.360344899949804439,0.125781726111229246,0.0160837851487422766,6.58749161529837803e-4,0.0163153871373020978 };
+   static const double q[5] = { 2.56852019228982242,1.87295284992346047,0.527905102951428412,0.0605183413124413191,0.00233520497626869185 };
+
+   static const double zero = 0.0;
+   static const double half = 0.5;
+   static const double one = 1.0;
+   static const double two = 2.0;
+   static const double four = 4.0;
+   static const double sqrpi = 0.56418958354775628695;
+   static const double thresh = 0.46875;
+
+   double y, del, ysq, xden, xnum, result;
+
+   // xinf   = the largest positive finite floating-point number. 
+   // xneg   = the largest negative argument acceptable to ERFCX; the negative of the solution to the equation 2*exp(x*x) = XINF. 
+   // xsmall = argument below which erf(x) may be represented by 2*x/sqrt(pi)  and above which  x*x  will not underflow. 
+   //            A conservative value is the largest machine number X such that   1.0 + X = 1.0   to machine precision. 
+   // xbig   = largest argument acceptable to ERFC;  solution to  the equation:  W(x) * (1-0.5/x**2) = XMIN,  where W(x) = exp(-x*x)/[x*sqrt(pi)]. 
+   // xhuge  = argument above which  1.0 - 1/(2*x*x) = 1.0  to machine precision.  A conservative value is  1/[2*sqrt(XSMALL)] 
+   // xmax   = largest acceptable argument to ERFCX; the minimum  of XINF and 1/[sqrt(pi)*XMIN]. 
+   // The numbers below were preselected for IEEE .
+   static const double xinf = 1.79e308;
+   static const double xneg = -26.628;
+   static const double xsmall = 1.11e-16;
+   static const double xbig = 26.543;
+   static const double xhuge = 6.71e7;
+   static const double xmax = 2.53e307;
+
+   y = fabs(x);
+
+  if (y <= thresh) {// Evaluate  erf  for  |X| <= 0.46875 */
+    ysq = zero;
+    if (y > xsmall) {
+        ysq = y * y;
+    }
+    xnum = a[4] * ysq;
+    xden = ysq;
+    for (int i = 0; i < 3; ++i) {
+        xnum = (xnum + a[i]) * ysq;
+        xden = (xden + b[i]) * ysq;
+    }
+    result = x * (xnum + a[3]) / (xden + b[3]);
+    result = one - result;
+    result = exp(ysq) * result;
+
+    return result;
+  } 
+  else if (y <= four) // 0.46875 < |X| < 4  
+  {
+    xnum = c[8] * y;
+    xden = y;
+    for (int i = 0; i < 7; ++i) {
+        xnum = (xnum + c[i]) * y;
+        xden = (xden + d[i]) * y;
+    }
+    result = (xnum + c[7]) / (xden + d[7]);
+  } 
+  else   // |X| > 4.0 
+  {
+    result = zero;
+    if      ((y >= xbig) && (y >= xmax )){}
+    else if ((y >= xbig) && (y >= xhuge)){
+      result = sqrpi / y;
+    }
+    else{
+      ysq = one / (y * y);
+      xnum = p[5] * ysq;
+      xden = ysq;
+      for (int i = 0; i < 4; ++i) {
+        xnum = (xnum + p[i]) * ysq;
+        xden = (xden + q[i]) * ysq;
+      }
+      result = ysq * (xnum + p[4]) / (xden + q[4]);
+      result = (sqrpi - result) / y;
+    }
+  }
+
+  // Fix up for negative argument, erf, etc. 
+  if (x < zero) {
+    if (x < xneg) {
+      return xinf;
+    } 
+    else {
+      double d__1 = x * 16.0;
+      ysq = d_int(d__1) / 16.0;
+      del = (x - ysq) * (x + ysq);
+      y = exp(ysq * ysq) * exp(del);
+      return y + y - result;
+    }
+  }
+  return result;
+} 
 //////////////////////////////////////////////////////////////////
 /// local versions of math functiosn trunc, floor, round, and isnan
 /// - not available for standard BORLAND C compiler
@@ -1760,6 +1866,21 @@ double ADRCumDist(const double &t, const double &L, const double &v, const doubl
     F=0.5*(exp((v*L)/D)*rvn_erfc((L+v*t)/sqrt(4.0*D*t)));
   }
   F+=0.5*(rvn_erfc((L-v*t)/sqrt(4.0*D*t)));
+
+  return F;
+}
+double ADRCumDist2(const double &t, const double &L, const double &v, const double &D)
+{
+  //stable implementation using erfcx
+  ExitGracefullyIf(D<=0,"ADRCumDist2: Invalid diffusivity",RUNTIME_ERR);
+
+  double F=0;
+  if (t<=0){return 0.0;}
+  double alpha=-(pow(L-v*t,2)/(4.0*D*t));
+  double beta =(L-v*t)/sqrt(4.0*D*t);
+  double gamma=(L+v*t)/sqrt(4.0*D*t);
+
+  F=0.5*exp(alpha)*rvn_erfcx(gamma)+0.5*rvn_erfc(beta);
   return F;
 }
 //////////////////////////////////////////////////////////////////
@@ -1773,7 +1894,7 @@ double ADRCumDist(const double &t, const double &L, const double &v, const doubl
 //
 //int_0^time L/2/t^(1/2)/sqrt(pi*D)*exp(-(v*t-L)^2/(4*D*t)) dt
 // extreme case (D->0): =1 for v*t<L, 0 otherwise
-double G_integral(const double& t, const double& L, const double& v, const double& D)
+double G_integral(const double &t, const double &L, const double& v, const double& D)
 {
   double G=0;
   if (t<=0){return 0.0;}
@@ -1781,6 +1902,18 @@ double G_integral(const double& t, const double& L, const double& v, const doubl
     G=-0.5*(exp((v*L)/D)*rvn_erfc((L+v*t)/sqrt(4.0*D*t)));
   }
   G+=0.5*(rvn_erfc((L-v*t)/sqrt(4.0*D*t)));
+  return L/v*G;
+}
+double G_integral2(const double &t, const double &L, const double& v, const double& D)
+{ //stable implementation using erfcx
+  double G=0;
+  if (t<=0){return 0.0;}
+  double alpha=-(pow(L-v*t,2)/(4.0*D*t));
+  double beta =(L-v*t)/sqrt(4.0*D*t);
+  double gamma=(L+v*t)/sqrt(4.0*D*t);
+
+  G=0.5*rvn_erfc(beta)-0.5*exp(alpha)*rvn_erfcx(gamma);
+
   return L/v*G;
 }
 //////////////////////////////////////////////////////////////////
@@ -1791,16 +1924,17 @@ double G_integral(const double& t, const double& L, const double& v, const doubl
 /// \param &L reach length [m]
 /// \param &v celerity [m/d]
 /// \param &D diffusivity [m2/d]
+/// 
 /// \return Returns Unit hydrograph - sums to one
 //
 double DiffusiveWaveUH(const int n, const double& L, const double& v, const double& D, const double& dt)
 {
   if (n == 0) {
-    return 1.0/dt*(G_integral(0.0,L,v,D)-G_integral(dt,L,v,D))+ADRCumDist(dt,L,v,D)-ADRCumDist(0.0,L,v,D);
+    return 1.0/dt*(G_integral2(0.0,L,v,D)-G_integral2(dt,L,v,D))+ADRCumDist2(dt,L,v,D)-ADRCumDist2(0.0,L,v,D);
   }
   else {
-    double UH=1.0/dt*(2*G_integral(n*dt,L,v,D)-      G_integral((n-1)*dt,L,v,D)-      G_integral((n+1)*dt,L,v,D));
-    UH+=         -(2*n)*ADRCumDist(n*dt,L,v,D)+(n-1)*ADRCumDist((n-1)*dt,L,v,D)+(n+1)*ADRCumDist((n+1)*dt,L,v,D);
+    double UH=1.0/dt*(2*G_integral2(n*dt,L,v,D)-      G_integral2((n-1)*dt,L,v,D)-      G_integral2((n+1)*dt,L,v,D));
+    UH+=         -(2*n)*ADRCumDist2(n*dt,L,v,D)+(n-1)*ADRCumDist2((n-1)*dt,L,v,D)+(n+1)*ADRCumDist2((n+1)*dt,L,v,D);
     return UH;
   }
 }

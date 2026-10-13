@@ -232,9 +232,9 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
   // ----------------------------------------------------
   if (Options.timestep<(1.0-TIME_CORRECTION)) //tstep < 1 day
   {
-    int    nVals     = (int)ceil(pTave_daily->GetChunkSize()/Options.timestep);
+    int    nVals     = (int)ceil(pTave_daily->GetChunkSize()/Options.timestep); //target chunk size
 
-    pTave = ForcingCopyCreate(pTmin,F_TEMP_AVE,Options.timestep,nVals,Options);
+    pTave = ForcingCopyCreate(pTmin,F_TEMP_AVE,Options.timestep,nVals,Options); //recalculates actual allowable chunk size
 
     // set forcing values
     // Tmax       is with input time resolution
@@ -246,7 +246,7 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     int time_idx_chunk;
     int nNonZero  =pTave->GetNumberNonZeroGridCells();
     double time_shift=Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
-    for (int it=0; it<nVals; it++) {                   // loop over all time points (nVals)
+    for (int it=0; it<pTave->GetChunkSize(); it++) {   // loop over all time points (nVals)
       for (int ic=0; ic<nNonZero; ic++){               // loop over non-zero grid cell indexes
         time_idx_chunk = int(floor(t+TIME_CORRECTION));
         Tmin   = pTmin->GetValue_avg(ic, (int)floor(t-time_shift+TIME_CORRECTION)*nValsPerDay, nValsPerDay);

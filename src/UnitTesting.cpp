@@ -271,6 +271,7 @@ void ADRCumDistTest()
     for(double D=0.03; D<0.3;D+=0.03) {
       //TEST<<ADRCumDist(t,5,1.0,D)<<",";
       TEST<<ADRCumDist(t+0.125,0.2,1.0,D)-ADRCumDist(t,0.2,1.0,D)<<",";
+      TEST<<ADRCumDist2(t+0.125,0.2,1.0,D)-ADRCumDist2(t,0.2,1.0,D)<<",";
       TEST<<DiffusiveWaveUH(n,0.2,1.0,D,0.125)<<",";
     }
     TEST<<endl;

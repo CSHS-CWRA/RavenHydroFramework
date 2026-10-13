@@ -95,8 +95,9 @@ Other comments:
 //*****************************************************************
 // Global Variables (necessary, but minimized, evils)
 //*****************************************************************
+const int MAX_DEBUG_VARS=10;
 extern string g_output_directory; ///< Had to be here to avoid passing Options structure around willy-nilly
-extern double g_debug_vars[10];   ///< can store any variables used during debugging; written to raven_debug.csv if debug_mode is on
+extern double g_debug_vars[MAX_DEBUG_VARS];   ///< can store any variables used during debugging; written to raven_debug.csv if debug_mode is on
 extern bool   g_suppress_warnings;///< Had to be here to avoid passing Options structure around willy-nilly
 extern string g_last_warning;     ///
 extern int    g_warn_count;
@@ -404,7 +405,6 @@ enum routing_method
   ROUTE_DIFFUSIVE_WAVE,  ///< diffusive wave approximation
   ROUTE_DIFFUSIVE_VARY,  ///< variable celerity/diffusivity diffusive wave approach
   ROUTE_HYDROLOGIC,      ///< simple iterative mass balance approach dS/dt=I-O
-  ROUTE_TVD,             ///< Total variation diminishing approach of Schwanenberg and Montero, 2016
   ROUTE_EXTERNAL         ///< routing handled via external script/live file support
 };
 
@@ -1747,6 +1747,7 @@ double IncompleteGamma  (const double &betat, const double &a);
 double TriCumDist       (const double &t, const double &tc, const double &tp);
 double NashCumDist      (const double &t, const double &k, const int &NR);
 double ADRCumDist       (const double &t, const double &L, const double &v, const double &D);
+double ADRCumDist2      (const double &t, const double &L, const double &v, const double &D);
 double DiffusiveWaveUH  (const int n, const double& L, const double& v, const double& D, const double& dt);
 double TimeVaryingADRCumDist(const double &t,const double &L,const double *v,int nv,const double &D,const double &dt);
 void   CalcWeightsFromUniformNums(const double* aVals, double* aWeights, const int N);

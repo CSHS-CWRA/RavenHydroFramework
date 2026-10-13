@@ -135,7 +135,7 @@ CSubBasin::CSubBasin( const long long      Identifier,
   _aQinHist      =NULL;  _nQinHist      =0;
   _aUnitHydro    =NULL;
   _aRouteHydro   =NULL;
-  _c_hist        =NULL;
+  _aCelHist      =NULL; _aDiffHist=NULL;
 
   //Below are modified using AddDiversion()
   _nDiversions   =0;
@@ -174,7 +174,8 @@ CSubBasin::~CSubBasin()
   delete [] _aQinHist;   _aQinHist   =NULL;
   delete [] _aUnitHydro; _aUnitHydro =NULL;
   delete [] _aRouteHydro;_aRouteHydro=NULL;
-  delete [] _c_hist;     _c_hist     =NULL;
+  delete [] _aCelHist;   _aCelHist   =NULL;
+  delete [] _aDiffHist;  _aDiffHist  =NULL;
   delete [] _pDiversions;_pDiversions=NULL; _nDiversions=0;
   delete _pInflowHydro;  _pInflowHydro=NULL;
   delete _pInflowHydro2; _pInflowHydro2=NULL;
@@ -2073,13 +2074,15 @@ void CSubBasin::GenerateRoutingHydrograph(const double &Qin_avg,
   }
   else if (Options.routing==ROUTE_DIFFUSIVE_WAVE)
   {
-    _nQinHist=(int)(ceil(2*travel_time/tstep))+2;//really a function of reach length and diffusivity
+    _nQinHist=(int)(ceil(2*travel_time/tstep))+2;//really also a function of diffusivity
   }
   else if(Options.routing==ROUTE_DIFFUSIVE_VARY)
   {
-    _nQinHist=(int)(ceil(2.5*travel_time/tstep))+2;//really a function of reach length and diffusivity
+    double c_min=_pChannel->GetCelerity(_Q_ref/20,_slope,_mannings_n); //JRC: check if Q/20 is good enough
+    travel_time=_reach_length/c_min/SEC_PER_DAY; //[day]
+    _nQinHist=(int)(ceil(2.5*travel_time/tstep))+2;//really also a function of diffusivity
   }
-  else if ((Options.routing==ROUTE_HYDROLOGIC) || (Options.routing==ROUTE_TVD))
+  else if (Options.routing==ROUTE_HYDROLOGIC)
   {
     _nQinHist=2;
   }
@@ -2121,18 +2124,8 @@ void CSubBasin::GenerateRoutingHydrograph(const double &Qin_avg,
 
     for (n=0;n<_nQinHist;n++)
     {
-      //_aRouteHydro[n  ]=max(ADRCumDist(n*tstep,_reach_length,cc,diffusivity)-sum,0.0);
-      //_aRouteHydro[n  ]=max(ADRCumDist((n+1)*tstep,_reach_length,cc,diffusivity)-sum,0.0); //upstream weighting approach (as done with in-catchment routing)
       _aRouteHydro[n  ]=DiffusiveWaveUH(n,_reach_length,cc,diffusivity,tstep);
-      //sum+=_aRouteHydro[n];
     }
-    /*_aRouteHydro[_nQinHist - 1] = 0.0;//must truncate infinite distrib.
-
-    if (travel_time<tstep) { //very sharp ADR CDF or reach length==0 -override
-      _aRouteHydro[0]=1.0-travel_time/tstep;
-      _aRouteHydro[1]=travel_time/tstep;
-      for (n=2;n<_nQinHist;n++){_aRouteHydro[n]=0.0;}
-    }*/
   }
   //---------------------------------------------------------------
   else if(Options.routing==ROUTE_DIFFUSIVE_VARY)
@@ -2141,10 +2134,12 @@ void CSubBasin::GenerateRoutingHydrograph(const double &Qin_avg,
     for(n=0;n<_nQinHist;n++) { _aRouteHydro[n]=0.0; } //should not be used
     _aRouteHydro[0]=1.0;
 
-    double cc=_c_ref*SEC_PER_DAY; //[m/day]
-    //double diffusivity=_pChannel->GetDiffusivity(_Q_ref,_slope,_mannings_n)*SEC_PER_DAY;// m2/d
-    _c_hist=new double [_nQinHist];
-    for(n=0;n<_nQinHist;n++) {_c_hist[n]=cc; }
+    _aCelHist =new double [_nQinHist];  //just initialized here
+    _aDiffHist=new double [_nQinHist];
+    for(n=0;n<_nQinHist;n++) {
+      _aCelHist [n]=_c_ref      *SEC_PER_DAY;
+      _aDiffHist[n]=_diffusivity*SEC_PER_DAY; //[m2/d]
+    }
   }
   //---------------------------------------------------------------
   else
@@ -2451,124 +2446,41 @@ double  CSubBasin::GetMuskingumX(const double &dx) const
   }
 }
 
-//This routine only used in TVD scheme
-double CSubBasin::GetReachSegVolume(const double &Qin,  // [m3/s]
-                                    const double &Qout, //[m3/s]
-                                    const double &dx) const  //[m]
-{
-  //muskingum-type storage
-  double bedslope=_slope;
-  if(_slope==AUTO_COMPUTE){bedslope=_pChannel->GetBedslope(); }//overridden by channel
-
-  /*
-	// Old version
-  double c_avg=_pChannel->GetCelerity(0.5*(Qin+Qout),_slope,_mannings_n);//[m/s]
-  double w_avg=_pChannel->GetTopWidth(0.5*(Qin+Qout),_slope,_mannings_n);//[m]
-
-  double K=dx/(c_avg*SEC_PER_DAY); //[d]
-  double X =max(0.0,0.5*(1.0-Qin /bedslope/w_avg /c_avg /dx));//[-]
-  return (K*X*Qin+K*(1-X)*Qout)*SEC_PER_DAY; //[m3]
-  */
-
-	double c_in =_pChannel->GetCelerity(Qin, _slope,_mannings_n);//[m/s]
-  double w_in =_pChannel->GetTopWidth(Qin, _slope,_mannings_n);//[m]
-  double c_out=_pChannel->GetCelerity(Qout,_slope,_mannings_n);//[m/s]
-  double w_out=_pChannel->GetTopWidth(Qout,_slope,_mannings_n);//[m]
-
-  double Kin =dx/(c_in *SEC_PER_DAY); //[d]
-  double Kout=dx/(c_out*SEC_PER_DAY); //[d]
-  double Xin =max(0.0,0.5*(1.0-Qin /bedslope/w_in /c_in /dx));//[-]
-  double Xout=max(0.0,0.5*(1.0-Qout/bedslope/w_out/c_out/dx));//[-]
-
-  //cout<<"K,X: "<<Kin<<" "<<Kout<<" "<<Xin<<" "<<Xout<<" "<<Qin<<" "<<Qout<<" "<<dx<<endl;
-  return (Kin*Xin*Qin+Kout*(1-Xout)*Qout)*SEC_PER_DAY; //[m3]
-
-  //level pool-type storage - works great
-  //return dx*_pChannel->GetArea(Qout);
-  //return dx*0.5*(_pChannel->GetArea(Qin)+_pChannel->GetArea(Qout));  //oscillatory
-}
-
-
-double CSubBasin::thQ(double In_old,double In_new,double Out_old,double Out_new,double th_in,double dx,double tstep) const
-{
-  //Schwanenberge and Montero, eqn 21
-  if(fabs(Out_old-Out_new)<REAL_SMALL){return 0.5;}
-  double thQ;
-  thQ=(GetReachSegVolume(In_new,Out_new,dx)-GetReachSegVolume(In_old,Out_old,dx))/tstep/SEC_PER_DAY/(Out_old-Out_new);
-  thQ+=(-(1.0-th_in)*In_old-(th_in)*In_new+Out_old)/(Out_old-Out_new);
-  return thQ;
-}
-
-double CSubBasin::TVDTheta(double In_old,double In_new,double Out_old,double Out_new,double th_in, double dx, double tstep) const
-{//Schwanenberge and Montero, eqn 22
-  double th;
-  if     (In_new> Out_old){
-    th=thQ(In_old,In_new,Out_old,min(In_new,In_old),th_in,dx,tstep);
-    //cout<<"TH!  "<<th<<" "<<min(1.0,max(0.5,th))<<endl;
-    //return 1.0;
-    return min(1.0,max(0.5,th));
-  }
-  else if(In_new< Out_old){
-    th=thQ(In_old,In_new,Out_old,max(In_new,In_old),th_in,dx,tstep);
-    return min(1.0,max(0.5,th));
-  }
-  return 0.5;
-}
-
 //////////////////////////////////////////////////////////////////
 /// \brief updates c history, _aRouteHydro for ROUTE_DIFFUSIVE_VARY method
 //
 void CSubBasin::UpdateRoutingHydro(const double &tstep)
 {
   int n;
-  double Q=_aQinHist[0]; //Initial guess -we may have to revise this
-  //could also be flow-weighted avg flow
-  //amount outflowed = aQin[0]*_aRouteHydro[0]+a_Qin[1]*(_aRouteHydro[0]+_aRouteHydro[1])
-  //amount still in channel= aQin[0]*(1-A[0])+aQin[1]*(1-A[0]-A[1])...
-  double sum=0,sumwt=0,sum2=0;
-  for(n=0; n<_nQinHist;n++) {
-    sumwt+=_aRouteHydro[n];
-    sum+=_aQinHist[n]*(1.0-sumwt);
-    sum2+=(1.0-sumwt);
-  }
-  //Q=sum/sum2; //alternate weighted channel flowrate (ideally would be using current _aRouteHydro, not possible)
+  double Q=_aQinHist[0];
 
-  double cc   =_pChannel->GetCelerity   (     Q,_slope,_mannings_n)*SEC_PER_DAY;// [m/day]
-  double D_ref=_pChannel->GetDiffusivity(_Q_ref,_slope,_mannings_n)*SEC_PER_DAY;// [m2/d]
+  for(n=_nQinHist-1; n>0; n--) {
+    _aCelHist [n]=_aCelHist [n-1];
+    _aDiffHist[n]=_aDiffHist[n-1];
+  }
+  _aCelHist [0]=_pChannel->GetCelerity   (Q,_slope,_mannings_n)*SEC_PER_DAY;// [m/day]
+  _aDiffHist[0]=_pChannel->GetDiffusivity(Q,_slope,_mannings_n)*SEC_PER_DAY;// [m2/d]
 
-  if(_ID==1) {
-    cout<<setprecision(3);
-    cout<<"Q:  "<<Q<<endl;
-    cout<<"c hist: [m/s]";
-    for(n=0;n<_nQinHist;n++) {
-      cout<<_c_hist[n]/SEC_PER_DAY<<" ";
-    }
-    cout<<" c_ref: "<<_c_ref<<" "<<_Q_ref<<endl;
-  }
-  for(n=_nQinHist; n>0; n--) {
-    _c_hist[n]=_c_hist[n-1];
-  }
-  _c_hist[0]=cc;
-
-  sum=0;
-  double alpha=D_ref/2;
-  for(n=0;n<_nQinHist;n++) {
-    //may have to shift _c_hist
-    _aRouteHydro[n]=max(TimeVaryingADRCumDist((n)*tstep,_reach_length,_c_hist,_nQinHist,alpha,tstep)-sum,0.0);
-    sum+=_aRouteHydro[n];
-  }
-  for(n=0;n<_nQinHist;n++) {
-    _aRouteHydro[n]/=sum;
+  _aCelHist[0]=sqrt(GRAVITY*_pChannel->GetDepth(Q,_slope,_mannings_n))*SEC_PER_DAY;
+  _aCelHist[0]=5/3*Q/_pChannel->GetArea(Q,_slope,_mannings_n)*SEC_PER_DAY;
+  double sum=0;
+  for (n=0;n<_nQinHist;n++)
+  {
+    _aRouteHydro[n  ]=DiffusiveWaveUH(n,_reach_length,_aCelHist[n],_aDiffHist[n],tstep);
+    sum+=_aRouteHydro[n  ];
   }
 
-  //cout<<" SUM: "<<sum<<endl;
-  //if reference flow is too fast, fancy stuff goes out the window?
-  double travel_time=_reach_length/_c_ref;
-  if(travel_time<tstep) { //very sharp ADR CDF or reach length==0 -override
-    _aRouteHydro[0]=1.0-travel_time/tstep;
-    _aRouteHydro[1]=travel_time/tstep;
-    for(int n=2;n<_nQinHist;n++) { _aRouteHydro[n]=0.0; }
+  for(n=0;n<_nQinHist;n++) { 
+  //  _aRouteHydro[n]/=sum; // THIS IS NOT VALID - NEEDS TO BE DONE FOR EACH COMPONENT SEPARATELY
+
   }
+
+
+  /*if (_global_p==0){
+    for(n=0;n<min(MAX_DEBUG_VARS-1,_nQinHist);n++) { g_debug_vars[n]=_aRouteHydro[n]; }
+    for(n=0;n<min(MAX_DEBUG_VARS-1,_nQinHist);n++) { g_debug_vars[n]=_aCelHist[n]; }
+  }
+  g_debug_vars[MAX_DEBUG_VARS-1]=Q;*/
 }
 
 //////////////////////////////////////////////////////////////////
@@ -2738,77 +2650,6 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
         WriteWarning(warn,false);
         }*/
     }
-  }
-  //==============================================================
-  else if(route_method==ROUTE_TVD)
-  { //Total variation diminishing method of Schwanenberg and Montero, 2016 -Journal of Hydrology 539 p188-195
-    ///< basic hydrologic routing using Newton's algorithm
-    ///<  ONE SEGMENT ONLY FOR NOW
-
-    ///dV(Q)/dt=(1-th_I)Q_in(n)+(th_I)Q_in(n+1)-(1-th_Q)Q_out(n)+(th_Q)Q_out(n+1)(h) -> solve for >Qout_new
-    /// rewritten as f(Q)-gamma=0 for Newton's method solution
-
-    const double ROUTE_MAXITER=20;
-    const double ROUTE_TOLERANCE=0.0001;//[m3/s]
-
-    double Qout_old =_aQout   [_nSegments-1]-_Qlocal;
-    double Qin_new  =_aQinHist[0];
-		double Qin_old  =_aQinHist[1];
-
-    int    iter=0;
-    double change=0;
-
-    double f,df;
-    double Q_guess=Qin_new;
-    double relax=1.0;//0.99;
-    double th_in(0.5); //default for single reach
-    double th_out;
-    double dx=_reach_length;
-    double dQ=0.0001;
-    do //Newton's method
-    {
-      th_out=TVDTheta(Qin_old,Qin_new,Qout_old,Q_guess   ,th_in,dx,tstep);
-      cout<<"th_out: "<<th_out<<" "<<Qin_old<<" "<<Qin_new<<" "<<Qout_old<<" "<<Q_guess<<" "<<endl;
-      f   =(GetReachSegVolume(Qin_new,Q_guess,dx)-GetReachSegVolume(Qin_old,Qout_old,dx))/(tstep*SEC_PER_DAY);
-      f-=(1.0-th_in )*Qin_old +(th_in )*Qin_new;
-      f+=(1.0-th_out)*Qout_old+(th_out)*Q_guess;
-
-      th_out=TVDTheta(Qin_old,Qin_new,Qout_old,Q_guess+dQ,th_in,dx,tstep);
-      df   =(GetReachSegVolume(Qin_new,Q_guess+dQ,dx)-GetReachSegVolume(Qin_old,Qout_old,dx))/(tstep*SEC_PER_DAY);
-      df-=(1.0-th_in )*Qin_old +(th_in )*Qin_new;
-      df+=(1.0-th_out)*Qout_old+(th_out)*(Q_guess+dQ);
-      df-=f;
-
-      change=-f/(df/dQ);//[m3/s]
-      if (df==0.0){change=1e-7;}
-
-      Q_guess+=relax*change; //relaxation required for some tough cases
-
-      /*double minQ=min(min(Qin_old,Qin_new),Qout_old);
-      if(Q_guess<minQ){ Q_guess+=0.98*(minQ-Q_guess); }*///cheat -introduces MB errors
-
-      cout<<"Q_guess ["<<iter<<"]: "<< Q_guess<< " "<<f<<endl;
-      if (Q_guess<0){Q_guess=REAL_SMALL; change=0.0;}
-
-      iter++;
-      if (iter > 3){ relax = 0.9; }
-      if (iter > 10){ relax = 0.7; }
-    } while ((iter<ROUTE_MAXITER) && (fabs(change)>ROUTE_TOLERANCE));
-    //the above is really fast for most trivial changes in flow, since f is locally linear, 1 to 3 iterations sufficient
-
-    aQout_new[_nSegments-1]=Q_guess;
-    if (Q_guess<0){ cout << "Negative flow in basin "<<to_string(this->_ID)<<" Qoutold: "<<Qout_old<<" Qin: "<<Qin_new<<" "<<Qin_old<<endl; }
-
-    if (iter==ROUTE_MAXITER){
-      string warn="CSubBasin::RouteWater:TVD did not converge after "+to_string(ROUTE_MAXITER)+"  iterations for basin "
-                   +to_string(_ID)+ " flow: " +to_string(Q_guess)+" stage: "+to_string(_pChannel->GetStageElev(Q_guess,_slope,_mannings_n));
-      WriteWarning(warn,false);
-      /*for (int i = 0; i < 20; i++){
-        string warn = to_string(Qg[i]) + " " + to_string(ff[i]);
-        WriteWarning(warn,false);
-      }*/
-    }
-
   }
   //==============================================================
   else if ((route_method==ROUTE_PLUG_FLOW)

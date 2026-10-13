@@ -797,7 +797,6 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
       //Write hydrographs for gauged watersheds to Hydrographs.csv (ALWAYS DONE)
       //----------------------------------------------------------------
-
       if (Options.ave_hydrograph)
       {
         _HYDRO<<usetime<<","<<usedate<<","<<usehour;
@@ -918,6 +917,36 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
           _HYDRO<<endl;
         }
       }
+
+      //ReservoirStages.csv
+      //--------------------------------------------------------------
+      if (Options.write_reservoir)
+      {
+        int nn=(int)((tt.model_time+TIME_CORRECTION)/Options.timestep);//current timestep index
+
+        if((Options.period_starting) && (t==0)){}//don't write anything at time zero
+        else{
+	      _RESSTAGE<< t<<","<<thisdate<<","<<thishour<<","<<GetAveragePrecip();
+	      for (int p=0;p<_nSubBasins;p++)
+          {
+            pSB=_pSubBasins[p];
+	          if ((pSB->IsGauged())  && (pSB->IsEnabled()) && (pSB->GetReservoir()!=NULL))
+            {
+	            _RESSTAGE<<","<<pSB->GetReservoir()->GetResStage();
+
+	            for (i = 0; i < _nObservedTS; i++){
+	              if (IsContinuousStageObs(_pObservedTS[i],pSB->GetID()))
+	              {
+                  val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
+	                if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _RESSTAGE << "," << val; }
+	                else                                             { _RESSTAGE << ",";        }
+	              }
+              }
+            }
+          }
+	        _RESSTAGE<<endl;
+			  }
+      }
     }
     else if (Options.output_format==OUTPUT_ENSIM)
     {
@@ -990,7 +1019,6 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
     }
 
     //WaterLevels.csv
-    //Write hydrographs for gauged watersheds (ALWAYS DONE)
     //----------------------------------------------------------------
     if (Options.write_waterlevels)
     {
@@ -1018,36 +1046,6 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         }
         _LEVELS<<endl;
       }
-    }
-
-    //ReservoirStages.csv
-    //--------------------------------------------------------------
-    if ((Options.write_reservoir) && (Options.output_format==OUTPUT_STANDARD) && (!Options.suppress_output))
-    {
-      int nn=(int)((tt.model_time+TIME_CORRECTION)/Options.timestep);//current timestep index
-
-      if((Options.period_starting) && (t==0)){}//don't write anything at time zero
-      else{
-	    _RESSTAGE<< t<<","<<thisdate<<","<<thishour<<","<<GetAveragePrecip();
-	    for (int p=0;p<_nSubBasins;p++)
-        {
-          pSB=_pSubBasins[p];
-	        if ((pSB->IsGauged())  && (pSB->IsEnabled()) && (pSB->GetReservoir()!=NULL))
-          {
-	          _RESSTAGE<<","<<pSB->GetReservoir()->GetResStage();
-
-	          for (i = 0; i < _nObservedTS; i++){
-	            if (IsContinuousStageObs(_pObservedTS[i],pSB->GetID()))
-	            {
-                val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
-	              if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _RESSTAGE << "," << val; }
-	              else                                             { _RESSTAGE << ",";        }
-	            }
-            }
-          }
-        }
-	      _RESSTAGE<<endl;
-			}
     }
 
     // Demands.csv
@@ -1309,7 +1307,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       tmpFilename=FilenamePrepare("raven_debug.csv",Options);
       DEBUG.open(tmpFilename.c_str(),ios::app);
       DEBUG<<t<<","<<thisdate<<","<<thishour;
-      for(i=0;i<10;i++){DEBUG<<","<<g_debug_vars[i];}
+      for(i=0;i<MAX_DEBUG_VARS;i++){DEBUG<<","<<g_debug_vars[i];}
       DEBUG<<endl;
       DEBUG.close();
     }

@@ -375,7 +375,7 @@ void CRavenBMI::Initialize(std::string config_file)
   //cout<<"BMI - PREPARING OUTPUT DIR"<<endl;
   PrepareOutputdirectory(Options);
 
-  for (int i=0;i<10;i++){g_debug_vars[i]=0;}
+  for (int i=0;i<MAX_DEBUG_VARS;i++){g_debug_vars[i]=0;}
 
   ofstream WARNINGS;
   WARNINGS.open((Options.main_output_dir+"Raven_errors.txt").c_str());

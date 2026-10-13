@@ -1391,8 +1391,8 @@ void CForcingGrid::CalculateChunkSize(const optStruct& Options)
 
   tmpChunkSize = (int)(max(min(CHUNK_MEMORY  / BytesPerTimestep,ntime),1));      // number of timesteps per chunk - 10MB chunks
 
-  if(!Options.deltaresFEWS) {
-    tmpChunkSize = (int)((int)(tmpChunkSize*_interval)/_interval);               // make sure chunks are complete days (have to relax for FEWS)
+  if(!Options.deltaresFEWS) {              
+    tmpChunkSize =rvn_floor(ceil(tmpChunkSize*_interval)/_interval);             // make sure chunks are complete days (have to relax for FEWS)
   }
 
   tmpChunkSize = max(int(rvn_round(1.0/_interval)),tmpChunkSize);                // make sure  at least one day is read
