@@ -911,7 +911,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
             if(val==missval) { CheckValue3D(val,missval,it,irow,icol); }
             if(val==fillval) { CheckValue3D(val,fillval,it,irow,icol); }
             if(rvn_isnan(val)) {
-              string warn="CForcingGrid::ReadData: NaN data found in forcing file "+_filename+". Cannot proceed.";
+              string warn="CForcingGrid::ReadData: NaN data found in forcing file "+_filename+" variable: "+_varname+". Cannot proceed.";
               ExitGracefully(warn.c_str(),BAD_DATA);
             }
             _aVal[it][ic]=_LinTrans_a*val+_LinTrans_b;
@@ -927,7 +927,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
             if(val==missval) { CheckValue3D(val,missval,it,irow,icol); }
             if(val==fillval) { CheckValue3D(val,fillval,it,irow,icol); }
             if(rvn_isnan(val)) {
-              string warn="CForcingGrid::ReadData: NaN data found in forcing file "+_filename+". Cannot proceed.";
+              string warn="CForcingGrid::ReadData: NaN data found in forcing file "+_filename+" variable: "+_varname+". Cannot proceed.";
               ExitGracefully(warn.c_str(),BAD_DATA);
             }
             _aVal[it][ic]=_LinTrans_a*val+_LinTrans_b;
@@ -942,7 +942,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
             if(val==missval) { CheckValue3D(val,missval,it,irow,icol); }
             if(val==fillval) { CheckValue3D(val,fillval,it,irow,icol); }
             if(rvn_isnan(val)) {
-              string warn="CForcingGrid::ReadData: NaN data found in forcing file "+_filename+". Cannot proceed.";
+              string warn="CForcingGrid::ReadData: NaN data found in forcing file "+_filename+" variable: "+_varname+". Cannot proceed.";
               ExitGracefully(warn.c_str(),BAD_DATA);
             }
             _aVal[it][ic]=_LinTrans_a*val+_LinTrans_b;
@@ -958,7 +958,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
               if(val==missval) { CheckValue3D(val,missval,it,irow,icol); }
               if(val==fillval) { CheckValue3D(val,fillval,it,irow,icol); }
               if(rvn_isnan(val)) {
-                string warn="CForcingGrid::ReadData: NaN data found in forcing file "+_filename+". Cannot proceed.";
+                string warn="CForcingGrid::ReadData: NaN data found in forcing file "+_filename+" variable: "+_varname+". Cannot proceed.";
                 ExitGracefully(warn.c_str(),BAD_DATA);
               }
             }
@@ -974,7 +974,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
             if(val==missval) { CheckValue3D(val,missval,it,irow,icol); }
             if(val==fillval) { CheckValue3D(val,fillval,it,irow,icol); }
             if(rvn_isnan(val)) {
-              string warn="CForcingGrid::ReadData: NaN data found in forcing file "+_filename+". Cannot proceed.";
+              string warn="CForcingGrid::ReadData: NaN data found in forcing file "+_filename+" variable: "+_varname+". Cannot proceed.";
               ExitGracefully(warn.c_str(),BAD_DATA);
             }
             _aVal[it][ic]=_LinTrans_a*val+_LinTrans_b;
@@ -989,7 +989,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
             if(val==missval) { CheckValue3D(val,missval,it,irow,icol);}
             if(val==fillval) { CheckValue3D(val,fillval,it,irow,icol);}
             if(rvn_isnan(val)) {
-              string warn="CForcingGrid::ReadData: NaN data found in forcing file "+_filename+". Cannot proceed.";
+              string warn="CForcingGrid::ReadData: NaN data found in forcing file "+_filename+" variable: "+_varname+". Cannot proceed. (6)";
               ExitGracefully(warn.c_str(),BAD_DATA);
             }
             _aVal[it][ic]=_LinTrans_a*val+_LinTrans_b;
@@ -1006,7 +1006,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
             if(val==missval) { CheckValue2D(val,missval,_IdxNonZeroGridCells[ic],it); }   // throw error  if value to read in equals "missing_value"
             if(val==fillval) { CheckValue2D(val,fillval,_IdxNonZeroGridCells[ic],it); }   // throw error  if value to read in equals "_FillValue"
             if(rvn_isnan(val)) {
-              string warn="CForcingGrid::ReadData: NaN data found in forcing file "+_filename+". Cannot proceed.";
+              string warn="CForcingGrid::ReadData: NaN data found in forcing file "+_filename+" variable: "+_varname+". Cannot proceed.";
               ExitGracefully(warn.c_str(),BAD_DATA);
             }
             _aVal[it][ic]=_LinTrans_a*val+_LinTrans_b;
@@ -1020,7 +1020,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
             if(val==missval)  { CheckValue2D(val,missval,it,_IdxNonZeroGridCells[ic]); }  // throw error if value to read in equals "missing_value"
             if(val==fillval)  { CheckValue2D(val,fillval,it,_IdxNonZeroGridCells[ic]); }  // throw error if value to read in equals "_FillValue"
             if(rvn_isnan(val)) {
-              string warn="CForcingGrid::ReadData: NaN data found in forcing file "+_filename+". Cannot proceed.";
+              string warn="CForcingGrid::ReadData: NaN data found in forcing file "+_filename+" variable: "+_varname+". Cannot proceed.";
               ExitGracefully(warn.c_str(),BAD_DATA);
             }
             _aVal[it][ic]=_LinTrans_a*val+_LinTrans_b;
@@ -1392,7 +1392,7 @@ void CForcingGrid::CalculateChunkSize(const optStruct& Options)
   tmpChunkSize = (int)(max(min(CHUNK_MEMORY  / BytesPerTimestep,ntime),1));      // number of timesteps per chunk - 10MB chunks
 
   if(!Options.deltaresFEWS) {              
-    tmpChunkSize =rvn_floor(ceil(tmpChunkSize*_interval)/_interval);             // make sure chunks are complete days (have to relax for FEWS)
+    tmpChunkSize =(int)rvn_floor(ceil(tmpChunkSize*_interval)/_interval);        // make sure chunks are complete days (have to relax for FEWS)
   }
 
   tmpChunkSize = max(int(rvn_round(1.0/_interval)),tmpChunkSize);                // make sure  at least one day is read

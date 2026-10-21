@@ -12,13 +12,16 @@
 //////////////////////////////////////////////////////////////////
 /// \brief Estimates incoming clear sky shortwave radiation SW_radia and extraterrestrial radiation ET_rad [MJ/m2/d]
 /// \details Returns the clear sky total solar radiation (total incident shortwave radiation)
-/// \remark Units are Kcs in Dingman text
 ///
 /// \param Options [in] global options structure
 /// \param *F [in] Forcing functions for a particular HRU over current time step
 /// \param *pHRU [in] pointer to HRU for which radiation is calculated
 /// \param tt [in] current time structure
+/// 
 /// \param ET_rad [out] ET radiation [MJ/m2/d]
+/// \param ET_rad_flat [out] ET radiation without aspect/slope correction [MJ/m2/d]
+/// \param SW_rad_diff [out] clear sky diffuse radiation [MJ/m2/d]
+/// 
 /// \return Double value representing shortwave radiation [MJ/m2/d]
 //
 double CRadiation::EstimateShortwaveRadiation(CModel* pModel,
@@ -26,7 +29,8 @@ double CRadiation::EstimateShortwaveRadiation(CModel* pModel,
                                               const CHydroUnit   *pHRU,
                                               const time_struct  &tt,
                                               double             &ET_rad,
-                                              double             &ET_rad_flat)
+                                              double             &ET_rad_flat, 
+                                              double             &SW_rad_diff)
 {
   const optStruct* Options = pModel->GetOptStruct();
   double latrad=pHRU->GetLatRad();
@@ -39,10 +43,12 @@ double CRadiation::EstimateShortwaveRadiation(CModel* pModel,
     return 0.0;
   }
   //--------------------------------------------------------
-  case(SW_RAD_DATA):
+  case(SW_RAD_DATA)://ensures ET_rad still calculated!
   //--------------------------------------------------------
   case(SW_RAD_DEFAULT):
   {
+    double SW_rad_dir; //direct component of clear sky with aspect correction
+    double SW_rad_diff_temp; 
     double dew_pt    =GetDewPointTemp(F->temp_ave,F->rel_humidity);
     double slope     =pHRU->GetSlope();
     double solar_noon=pHRU->GetSolarNoon();
@@ -51,11 +57,34 @@ double CRadiation::EstimateShortwaveRadiation(CModel* pModel,
     double SWrad= ClearSkySolarRadiation(tt.julian_day, Options->timestep,
                                          latrad, lateq, slope, aspect,
                                          F->day_angle, F->day_length,
-                                         solar_noon, dew_pt, ET_rad, ET_rad_flat,
+                                         solar_noon, dew_pt, ET_rad, ET_rad_flat,SW_rad_dir,SW_rad_diff_temp,
                                          (Options->timestep >= 1.0));
-    if (Options->SW_radiation==SW_RAD_DATA){return F->SW_radia;} //ensures ET_rad still calculated!
-    else                                   {return SWrad;}
 
+    if (Options->SW_radiation==SW_RAD_DATA)
+    {
+      if      ((Options->SW_radia_diff==DIFFSWRAD_DATA) || 
+               (Options->SW_radia_diff==DIFFSWRAD_DIRECT))
+      {
+        SW_rad_diff=F->SW_radia_diff;                  //provided or calculated from difference with direct
+        SW_rad_diff=min(F->SW_radia,SW_rad_diff);      //corrects if diffuse radiation supplied is more than total supplied
+      }
+      else if (Options->SW_radia_diff==DIFFSWRAD_RUIZ_ARIAS)
+      { //Ruiz-Arias et al  (2010) Proposal of a regressive model for the hourly diffuse solar radiation under all sky conditions, Energy Conversion and Management, 2010
+        double kd = 0.952-1.041*exp(-2.3-4.702*min(F->SW_radia/ET_rad_flat,1.0));//Ruiz-Arias et al  (2010) eqn. 33
+        SW_rad_diff=(1.0-kd)*F->SW_radia;
+        SW_rad_diff=min(F->SW_radia,SW_rad_diff);
+      }
+      else  // [DEFAULT] negligible diffuse radiation
+      {
+        SW_rad_diff=0;
+      }
+      if(ET_rad_flat==0) { return F->SW_radia; } //doesn't correct for slope
+      return (F->SW_radia-SW_rad_diff)*(ET_rad/ET_rad_flat)+SW_rad_diff;
+    } 
+    else {
+      SW_rad_diff=SW_rad_diff_temp;
+      return SWrad;
+    }
   }
   //--------------------------------------------------------
   case(SW_RAD_UBCWM):
@@ -986,8 +1015,9 @@ double CRadiation::OpticalAirMass(const double latrad,//in radians
 /// \param solar_noon [in] solar noon correction
 /// \param dew_pt [in] Dew point temperature [C]
 /// \param ET_radia [out] ET radiation without atmospheric corrections
+/// \param ET_radia_flat [out] ET radiation without atmospheric corrections or slope/aspect corrections
 /// \param avg_daily [in] True if average daily total incident radiation is to be computed instead
-/// \return Double clear sky solar radiation
+/// \return  clear sky solar radiation, MJ/m2/d
 //
 double CRadiation::ClearSkySolarRadiation(const double &julian_day,
                                           const double &tstep,
@@ -997,11 +1027,13 @@ double CRadiation::ClearSkySolarRadiation(const double &julian_day,
                                           const double &aspect,    //rad]
                                           const double &day_angle,
                                           const double &day_length,
-                                          const double &solar_noon,//[days]
-                                          const double &dew_pt,    //dew point temp, [C]
-                                                double &ET_radia, //Extraterrestrial radiation on slope[MJ/m2/d]
+                                          const double &solar_noon,    //[days]
+                                          const double &dew_pt,        //dew point temp, [C]
+                                                double &ET_radia,      //Extraterrestrial radiation on slope[MJ/m2/d]
                                                 double &ET_radia_flat, //ET radiation on flat ground [MJ/m2/d]
-                                          const bool    avg_daily) //true if average daily is to be computed
+                                                double &SW_direct,     //direct component of clear sky radiation [MJ/m2/d] (with slope/aspect) 
+                                                double &SW_diffuse,    //diffuse component of clear sky radiation [MJ/m2/d] 
+                                          const bool    avg_daily)     //true if average daily is to be computed
 {
   double Ket,Ketp;          //daily solar radiation with (Ket) and without (Ketp) slope correction, [MJ/m2/d]
   double tau;               //total atmospheric transmissivity [-]
@@ -1022,19 +1054,17 @@ double CRadiation::ClearSkySolarRadiation(const double &julian_day,
   tau  =CalcScatteringTransmissivity(dew_pt,Mopt)-gamma_dust;               //Dingman E-9
   tau2 =0.5*(1.0-CalcDiffScatteringTransmissivity(dew_pt,Mopt)+gamma_dust); //Dingman E-15
 
-  //Ketp =CalcETRadiation(latrad,lateq ,declin,ecc,slope,solar_noon,day_length,t_sol,avg_daily); //old dingman approach
-  //Ket  =CalcETRadiation(latrad,latrad,declin,ecc,0.0  ,0.0,       day_length,t_sol,avg_daily);
-
   Ketp =CalcETRadiation2(latrad,aspect,declin,ecc,slope,t_sol,t_sol2,avg_daily);
   Ket  =CalcETRadiation2(latrad,aspect,declin,ecc,0.0  ,t_sol,t_sol2,avg_daily);
 
-  ET_radia=Ketp;
+  ET_radia     =Ketp;
   ET_radia_flat=Ket;
 
   //DingmanE-26 (from E-8,E-14,E-19,E-20)
-  return tau *Ketp+                               //direct solar radiation on surface
-         tau2*Ket+                                //diffuse radiation
-         tau2*GLOBAL_ALBEDO*(tau2+tau)*Ketp;      //backscattered radiation
+  SW_diffuse=tau2*Ket+tau2*GLOBAL_ALBEDO*(tau2+tau)*Ketp;//diffuse radiation + backscattered radiation
+  SW_direct =tau *Ketp;                                  //direct solar radiation on surface
+  
+  return SW_diffuse+SW_direct;
 }
 
 

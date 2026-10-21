@@ -42,6 +42,7 @@ void ZeroOutForcings(force_struct &F)
   F.cloud_cover=0.0;
   F.ET_radia=0.0;
   F.SW_radia=0.0;
+  F.SW_radia_diff=0.0;
   F.SW_radia_subcan=0.0;
   F.SW_subcan_net=0.0;
   F.LW_incoming=0.0;
@@ -80,10 +81,6 @@ void CopyDailyForcingItems(force_struct& Ffrom, force_struct& Fto)
 
   Fto.day_length     = Ffrom.day_length;
   Fto.day_angle      = Ffrom.day_angle;
-
-  //Fto.SW_radia_unc   = Ffrom.SW_radia_unc;
-  //Fto.ET_radia       = Ffrom.ET_radia;
-  //Fto.ET_radia_flat  = Ffrom.ET_radia_flat;
 
   Fto.PET_month_ave  = Ffrom.PET_month_ave;
 }
@@ -129,6 +126,8 @@ forcing_type GetForcingTypeFromString(const string &forcing_string)
   else if (f=="SW_RADIA"         ){return F_SW_RADIA;}
   else if (f=="SHORTWAVE"        ){return F_SW_RADIA;}//alias
   else if (f=="SW_RADIA_NET"     ){return F_SW_RADIA_NET;}
+  else if (f=="SW_RADIA_DIFF"    ){return F_SW_RADIA_DIFF;}
+  else if (f=="SW_RADIA_DIRECT"  ){return F_SW_RADIA_DIRECT;}
   else if (f=="SW_RADIA_SUBCAN"  ){return F_SW_RADIA_SUBCAN;}
   else if (f=="SW_SUBCAN_NET"    ){return F_SW_SUBCAN_NET;}
   else if (f=="LW_INCOMING"      ){return F_LW_INCOMING;}
@@ -197,6 +196,8 @@ double GetForcingFromType(const forcing_type &ftype, const force_struct &f)
   else if (ftype==F_SW_RADIA_SUBCAN ){return f.SW_radia_subcan;}
   else if (ftype==F_SW_SUBCAN_NET   ){return f.SW_subcan_net;}
   else if (ftype==F_SW_RADIA_NET    ){return f.SW_radia_net;}
+  else if (ftype==F_SW_RADIA_DIFF   ){return f.SW_radia_diff;}
+  else if (ftype==F_SW_RADIA_DIRECT ){return f.SW_radia-f.SW_radia_diff;}
   else if (ftype==F_LW_INCOMING     ){return f.LW_incoming;}
   else if (ftype==F_LW_RADIA_NET    ){return f.LW_radia_net;}
 
@@ -266,6 +267,8 @@ void  SetForcingFromType(const forcing_type &ftype, force_struct &f, const doubl
   else if (ftype==F_SW_RADIA_SUBCAN ){f.SW_radia_subcan=val;}
   else if (ftype==F_SW_SUBCAN_NET   ){f.SW_subcan_net=val;}
   else if (ftype==F_SW_RADIA_NET    ){f.SW_radia_net=val;}
+  else if (ftype==F_SW_RADIA_DIFF   ){f.SW_radia_diff=val;}
+  else if (ftype==F_SW_RADIA_DIRECT ){} //derived- cant set directly
   else if (ftype==F_LW_INCOMING     ){f.LW_incoming=val;}
   else if (ftype==F_LW_RADIA_NET    ){f.LW_radia_net=val;}
 
@@ -348,7 +351,9 @@ string GetForcingTypeUnits(forcing_type ftype)
   case F_SW_RADIA_UNC:    {units="MJ/m2/d"; break;}
   case F_SW_RADIA_SUBCAN: {units="MJ/m2/d"; break;}
   case F_SW_SUBCAN_NET:   {units="MJ/m2/d"; break;}
-  case F_SW_RADIA_NET:    {units="MJ/m2/d"; break;}
+  case F_SW_RADIA_NET:    {units="MJ/m2/d"; break;} 
+  case F_SW_RADIA_DIFF:   {units="MJ/m2/d"; break;}
+  case F_SW_RADIA_DIRECT: {units="MJ/m2/d"; break;}
   case F_LW_INCOMING:     {units="MJ/m2/d"; break;}
   case F_LW_RADIA_NET:    {units="MJ/m2/d"; break;}
 
@@ -417,6 +422,8 @@ string ForcingToString(const forcing_type ftype)
   case F_SW_SUBCAN_NET:   {fstring="SW_SUBCAN_NET"; break;}
   case F_LW_INCOMING:     {fstring="LW_INCOMING"; break;}
   case F_SW_RADIA_NET:    {fstring="SW_RADIA_NET"; break;}
+  case F_SW_RADIA_DIFF:   {fstring="SW_RADIA_DIFF"; break;}
+  case F_SW_RADIA_DIRECT: {fstring="SW_RADIA_DIRECT"; break;}
   case F_LW_RADIA_NET:    {fstring="LW_RADIA_NET"; break;}
 
   case F_DAY_LENGTH:      {fstring="DAY_LENGTH"; break;}

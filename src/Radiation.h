@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------*/
 
 #ifndef RADIATION_H
@@ -60,38 +60,42 @@ public:/*------------------------------------------------------*/
   static double CalcETRadiation           (const double latrad,			//latitude in radians
                                            const double lateq,			//equivalent latitude for slope
                                            const double declin,			//declination in radians
-                                           const double ecc,			  //eccentricity correction [-]
+                                           const double ecc,			//eccentricity correction [-]
                                            const double slope,			//in radians
-                                           const double solar_noon,	//effective solar noon correction for slope [days]
-                                           const double day_length,	// length of day (not corrected for slope) [days]
+                                           const double solar_noon,	    //effective solar noon correction for slope [days]
+                                           const double day_length,	    //length of day (not corrected for slope) [days]
                                            const double t_sol,			//time of day w.r.t. solar noon [days] [-0.5..0.5]
-                                           const bool   avg_daily);	//true if avg_daily is to be calculated
-  static double CalcETRadiation2          (const double &latrad,			//latitude in radians
-                                           const double &aspect,			//equivalent latitude for slope
-                                           const double &declin,			//declination in radians
-                                           const double &ecc,			  //eccentricity correction [-]
+                                           const bool   avg_daily);	    //true if avg_daily is to be calculated
+  static double CalcETRadiation2          (const double &latrad,		//latitude in radians
+                                           const double &aspect,	    //equivalent latitude for slope
+                                           const double &declin,	    //declination in radians
+                                           const double &ecc,			//eccentricity correction [-]
                                            const double &slope,			//in radians
-                                           const double &t1,         //starttime of timeestep w.r.t. solar noon [days] [-0.5..0.5]
-                                           const double &t2,         //endtime of timeestep w.r.t. solar noon [days] [-0.5..0.5] (must be > t1)
+                                           const double &t1,            //starttime of timeestep w.r.t. solar noon [days] [-0.5..0.5]
+                                           const double &t2,            //endtime of timeestep w.r.t. solar noon [days] [-0.5..0.5] (must be > t1)
                                            const bool   avg_daily);
   static double ClearSkySolarRadiation    (const double &julian_day,
                                            const double &tstep,
-                                           const double &latrad,			//[rad]
+                                           const double &latrad,		//[rad]
                                            const double &lateq,			//[rad]
                                            const double &slope,			//[rad]
-                                           const double &aspect,     //[rad]
+                                           const double &aspect,        //[rad]
                                            const double &day_angle,
                                            const double &day_length,
-                                           const double &solar_noon,	//[days]
-                                           const double &dew_pt,			//dew point temp, [C]
-                                           double &ET_radia,			  //ET radiation [MJ/m2/d]
-                                           double &ET_radia_flat, //ET radiation without slope correction [MJ/m2/d]
-                                           const bool   avg_daily);	//true if average daily is to be computed
+                                           const double &solar_noon,//[days]
+                                           const double &dew_pt,		//dew point temp, [C]
+                                           double &ET_radia,			//ET radiation [MJ/m2/d]
+                                           double &ET_radia_flat,       //ET radiation without slope correction    [MJ/m2/d]
+                                           double &SW_direct,           //direct component of clear sky radiation  [MJ/m2/d] (with slope/aspect) 
+                                           double &SW_diffuse,          //diffuse component of clear sky radiation [MJ/m2/d] 
+                                           const bool   avg_daily);	    //true if average daily is to be computed
   static double EstimateShortwaveRadiation(CModel* pModel,
                                            const force_struct *F,
                                            const CHydroUnit *pHRU,
                                            const time_struct  &tt,
-                                           double       &ET_rad,double &ET_rad_flat);
+                                                 double       &ET_rad,
+                                                 double       &ET_rad_flat, 
+                                                 double       &SW_rad_diff);
 
   static double SWCloudCoverCorrection    (CModel* pModel,
                                            const force_struct *F,

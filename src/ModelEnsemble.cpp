@@ -272,7 +272,7 @@ double SampleFromGamma(const double &shape, const double &scale)
     }
 
     const double d = shape - 1.0 / 3.0;
-    const double c = 1.0 / std::sqrt(9.0 * d);
+    const double c = 1.0 / sqrt(9.0 * d);
 
     double x,v;
     while (true)
@@ -283,11 +283,11 @@ double SampleFromGamma(const double &shape, const double &scale)
         v = 1.0 + c * x;
       } while (v <= 0.0);
 
-      v = v * v * v;
+      v = v*v*v;
 
       double u = UniformRandom();
-      if (u < 1.0 - 0.0331 * x * x * x * x){return scale * d * v;}        // Squeeze test
-      if (log(u) < 0.5 * x * x + d * (1.0 - v + std::log(v))){return scale * d * v;}// Full acceptance test
+      if (u < 1.0 - 0.0331*x*x*x*x){return scale * d * v;}        // Squeeze test
+      if (log(u) < 0.5*x*x+d * (1.0-v+log(v))){return scale * d * v;}// Full acceptance test
     }
 }
 
@@ -311,18 +311,12 @@ double SampleFromDistribution(disttype distribution, double distpar[3])
 {
   double value=0;
 
-  //std::mt19937 generator;
-
   if(distribution==DIST_UNIFORM)
   {
-    //std::uniform_real_distribution<double> distribution(dist->distpar[0],dist->distpar[1]);
-    //value=distribution(generator);
     value=distpar[0]+(distpar[1]-distpar[0])*UniformRandom();
   }
   else if(distribution==DIST_NORMAL)
   {
-    //std::normal_distribution<double> distribution(dist->distpar[0],dist->distpar[1]);
-    //value = distribution(generator);
     value=distpar[0]+(distpar[1]*GaussRandom());
   }
   else if (distribution == DIST_LOGNORMAL) {

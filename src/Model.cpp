@@ -1125,6 +1125,7 @@ force_struct CModel::GetAverageForcings() const
       Fave.ET_radia       +=area_wt*pF_hru->ET_radia;
       Fave.ET_radia_flat  +=area_wt*pF_hru->ET_radia_flat;
       Fave.SW_radia       +=area_wt*pF_hru->SW_radia;
+      Fave.SW_radia_diff  +=area_wt*pF_hru->SW_radia_diff;
       Fave.SW_radia_unc   +=area_wt*pF_hru->SW_radia_unc;
       Fave.SW_radia_net   +=area_wt*pF_hru->SW_radia_net;
       Fave.SW_radia_subcan+=area_wt*pF_hru->SW_radia_subcan;

@@ -134,6 +134,8 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   bool windspeed_gridded      = ForcingGridIsInput(F_WIND_VEL)       && (Options.wind_velocity ==WINDVEL_DATA);
   bool relhum_gridded         = ForcingGridIsInput(F_REL_HUMIDITY)   && (Options.rel_humidity  ==RELHUM_DATA);
   bool SWnet_gridded          = ForcingGridIsInput(F_SW_RADIA_NET)   && (Options.SW_radia_net  ==NETSWRAD_DATA);
+  bool SWdiff_gridded         = ForcingGridIsInput(F_SW_RADIA_DIFF)  && (Options.SW_radia_diff ==DIFFSWRAD_DATA);
+  bool SWdir_gridded          = ForcingGridIsInput(F_SW_RADIA_DIRECT)&& (Options.SW_radia_diff ==DIFFSWRAD_DIRECT);
   bool LWinc_gridded          = ForcingGridIsInput(F_LW_INCOMING)    && (Options.LW_incoming   ==LW_INC_DATA);
   bool LWnet_gridded          = ForcingGridIsInput(F_LW_RADIA_NET)   && (Options.LW_radiation  ==LW_RAD_DATA);
   bool cloud_gridded          = ForcingGridIsInput(F_CLOUD_COVER)    && (Options.cloud_cover   ==CLOUDCOV_DATA);
@@ -179,6 +181,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
     Fg[g].LW_radia_net    =_pGauges[g]->GetForcingValue    (F_LW_RADIA_NET,nn);
     Fg[g].SW_radia        =_pGauges[g]->GetForcingValue    (F_SW_RADIA,nn);
     Fg[g].SW_radia_net    =_pGauges[g]->GetForcingValue    (F_SW_RADIA_NET,nn);
+    Fg[g].SW_radia_diff   =_pGauges[g]->GetForcingValue    (F_SW_RADIA_DIFF,nn);
     Fg[g].SW_radia_subcan =_pGauges[g]->GetForcingValue    (F_SW_RADIA_SUBCAN,nn);
     Fg[g].SW_subcan_net   =_pGauges[g]->GetForcingValue    (F_SW_SUBCAN_NET,nn);
     Fg[g].LW_incoming     =_pGauges[g]->GetForcingValue    (F_LW_INCOMING,nn);
@@ -496,6 +499,21 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         pGrid_SW_net->ReadData(Options, tt.model_time);
         F.SW_radia_net = pGrid_SW_net->GetWeightedValue(k, tt.model_time, Options.timestep);
       }
+      if (SW_gridded) {
+        pGrid_SW = GetForcingGrid(F_SW_RADIA);
+        pGrid_SW->ReadData(Options, tt.model_time);
+        F.SW_radia = pGrid_SW->GetWeightedValue(k, tt.model_time, Options.timestep);
+      }
+      if (SWdiff_gridded) {
+        CForcingGrid *pGrid_SW_diff = GetForcingGrid(F_SW_RADIA_DIFF);
+        pGrid_SW_diff->ReadData(Options, tt.model_time);
+        F.SW_radia_diff = pGrid_SW_diff->GetWeightedValue(k, tt.model_time, Options.timestep);
+      }
+      if (SWdir_gridded) {
+        CForcingGrid *pGrid_SW_direct= GetForcingGrid(F_SW_RADIA_DIRECT);
+        pGrid_SW_direct->ReadData(Options, tt.model_time);
+        F.SW_radia_diff = max(F.SW_radia - pGrid_SW_direct->GetWeightedValue(k, tt.model_time, Options.timestep),0.0);
+      }
       if (LWinc_gridded) {
         pGrid_LW_inc = GetForcingGrid(F_LW_INCOMING);
         pGrid_LW_inc->ReadData(Options, tt.model_time);
@@ -511,11 +529,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         pGrid_cloudcov->ReadData(Options, tt.model_time);
         F.cloud_cover = pGrid_cloudcov->GetWeightedValue(k, tt.model_time, Options.timestep);
       }
-      if (SW_gridded) {
-        pGrid_SW = GetForcingGrid(F_SW_RADIA);
-        pGrid_SW->ReadData(Options, tt.model_time);
-        F.SW_radia = pGrid_SW->GetWeightedValue(k, tt.model_time, Options.timestep);
-      }
+
       if (irrig_gridded){
         pGrid_irrig = GetForcingGrid(F_IRRIGATION);
         pGrid_irrig->ReadData(Options, tt.model_time);
@@ -753,7 +767,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //  Radiation Calculations
       //-------------------------------------------------------------------
 
-      F.SW_radia = CRadiation::EstimateShortwaveRadiation(this, &F, _pHydroUnits[k], tt, F.ET_radia, F.ET_radia_flat);
+      F.SW_radia = CRadiation::EstimateShortwaveRadiation(this, &F, _pHydroUnits[k], tt, F.ET_radia, F.ET_radia_flat,F.SW_radia_diff); //updates F.SW_radia_diff
       F.SW_radia_unc = F.SW_radia;
       F.SW_radia *= CRadiation::SWCloudCoverCorrection(this, &F, elev);
 

@@ -265,6 +265,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.LW_radiation            =LW_RAD_DEFAULT;
   Options.LW_incoming             =LW_INC_DEFAULT;
   Options.SW_radiation            =SW_RAD_DEFAULT;
+  Options.SW_radia_diff           =DIFFSWRAD_NONE;
   Options.cloud_cover             =CLOUDCOV_NONE;
   Options.SW_canopycorr           =SW_CANOPY_CORR_NONE;
   Options.SW_cloudcovercorr       =SW_CLOUD_CORR_NONE;
@@ -447,6 +448,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":SnowSuppressesPET"         )){code=49; }
     else if  (!strcmp(s[0],":AllowSoilOverfill"         )){code=491;}
     else if  (!strcmp(s[0],":ForcingSlider"             )){code=492;}
+    else if  (!strcmp(s[0],":DiffuseSWMethod"           )){code=493;}
 	//---I/O------------------------------------------------------
     else if  (!strcmp(s[0],":DebugMode"                 )){code=50; }
     else if  (!strcmp(s[0],":BenchmarkingMode"          )){code=51; }
@@ -504,6 +506,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":NetCDFUseBasinFullname"    )){code=115;}
     else if  (!strcmp(s[0],":UncertaintyAnalysis"       )){code=116;}
 
+    if       (Len==0) {}
     else if  (!strcmp(s[0],":WriteGroundwaterHeads"     )){code=510;}//GWMIGRATE -TO REMOVE
     else if  (!strcmp(s[0],":WriteGroundwaterFlows"     )){code=511;}//GWMIGRATE -TO REMOVE
     else if  (!strcmp(s[0],":rvg_Filename"              )){code=512;}//GWMIGRATE -TO REMOVE
@@ -1443,6 +1446,17 @@ bool ParseMainInputFile (CModel     *&pModel,
       if ((Options.slider_weight<0) || (Options.slider_weight>1.0)){
         ExitGracefully("ParseMainInputFile: :ForcingSlider value muse be between 0 and 1",BAD_DATA_WARN);
       }
+      break;
+    }
+    case(493): //----------------------------------------------
+    {/*:DiffuseSWMethod  [string method] */
+      if (Options.noisy) {cout <<"Diffuse Shortwave Radiation Estimation Method (for correcting radiation data)"<<endl;}
+      if (Len<2){ImproperFormatWarning(":SWRadiationMethod",p,Options.noisy); break;}
+      if      (!strcmp(s[1],"DIFFSWRAD_DATA"      )){Options.SW_radia_diff=DIFFSWRAD_DATA;}
+      else if (!strcmp(s[1],"DIFFSWRAD_DIRECT"    )){Options.SW_radia_diff=DIFFSWRAD_DIRECT;}
+      else if (!strcmp(s[1],"DIFFSWRAD_RUIZ_ARIAS")){Options.SW_radia_diff=DIFFSWRAD_RUIZ_ARIAS;}
+      else if (!strcmp(s[1],"DIFFSWRAD_NONE"      )){Options.SW_radia_diff=DIFFSWRAD_NONE;}
+      else {ExitGracefully("ParseInput:DiffuseSWMethod: Unrecognized method",BAD_DATA_WARN);}
       break;
     }
     case(50):  //--------------------------------------------

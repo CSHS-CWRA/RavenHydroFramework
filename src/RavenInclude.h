@@ -704,9 +704,19 @@ enum recharge_method
 enum netSWRad_method
 {
    NETSWRAD_DATA,          ///< data supplied
-   NETSWRAD_CALC           ///< determined via calculations
+   NETSWRAD_CALC           ///< determined via calculations (default)
 };
 
+////////////////////////////////////////////////////////////////////
+/// \brief Methods of estimating/generating diffuse shortwave radiation
+//
+enum SW_diff_method
+{
+   DIFFSWRAD_DATA,          ///< diffuse SW supplied
+   DIFFSWRAD_DIRECT,        ///< direct SW supplied 
+   DIFFSWRAD_RUIZ_ARIAS,    ///< diffusive calculated from Ruiz-Arias et al., 2010 
+   DIFFSWRAD_NONE           ///< treated as negligible (default)   
+};
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods of handling snow cover depletion
 //
@@ -1136,6 +1146,7 @@ struct optStruct
   SW_cloudcover_corr SW_cloudcovercorr;       ///< method for cloudcover correction of shortwave radiation
   SW_canopy_corr     SW_canopycorr;           ///< method for estimating canopy transmittance of shortwave radiation
   netSWRad_method    SW_radia_net;            ///< method for calculating net shortwave radiation (calculated or data)
+  SW_diff_method     SW_radia_diff;           ///< methods for calculating total diffusive incoming shortwave
   evap_method        evaporation;             ///< PET estimation method
   evap_method        ow_evaporation;          ///< Open Water PET estimation method
   evap_method        evap_infill;             ///< PET estimation method when infilling blank PET_DATA
@@ -1290,7 +1301,7 @@ enum forcing_type
   F_TEMP_AVE_UNC,   F_TEMP_MIN_UNC,     F_TEMP_MAX_UNC,
   F_AIR_PRES,       F_AIR_DENS,         F_REL_HUMIDITY,
   F_CLOUD_COVER,    F_SW_RADIA,         F_LW_RADIA_NET,   F_ET_RADIA,        F_ET_RADIA_FLAT,
-  F_SW_RADIA_NET,   F_SW_RADIA_UNC,     F_LW_INCOMING,    F_SW_RADIA_SUBCAN, F_SW_SUBCAN_NET,
+  F_SW_RADIA_NET,   F_SW_RADIA_UNC,     F_LW_INCOMING,    F_SW_RADIA_SUBCAN, F_SW_SUBCAN_NET, F_SW_RADIA_DIFF,F_SW_RADIA_DIRECT,
   F_DAY_LENGTH,     F_DAY_ANGLE,        F_WIND_VEL,
   F_PET,F_OW_PET,   F_PET_MONTH_AVE,
   F_SUBDAILY_CORR,  F_POTENTIAL_MELT,
@@ -1331,8 +1342,9 @@ struct force_struct
   double ET_radia;            ///< uncorrected extraterrestrial shortwave radiation, after slope correction [MJ/m2/d]
   double ET_radia_flat;       ///< uncorrected extraterrestrial shortwave radiation on horizontal surface [MJ/m2/d]
   double SW_radia_unc;        ///< uncorrected shortwave radiation (before cloud and canopy corrections, after slope)[MJ/m2/d]
-  double SW_radia;            ///< Incoming shortwave radiation (slope/air mass/horizon/cloud cover/canopy corrections applied, uncorrected for albedo) [MJ/m2/d]
-  double SW_radia_net;        ///< Net shortwave radiation at canopy top (albedo corrected) [MJ/m2/d]
+  double SW_radia;            ///< Incoming shortwave radiation (slope/air mass/horizon/cloud cover/canopy corrections applied, uncorrected for albedo) (includes diffusive)[MJ/m2/d]
+  double SW_radia_diff;       ///< Diffusive component of net shortwave at canopy top [MJ/m2/d]
+  double SW_radia_net;        ///< Net shortwave radiation at canopy top (albedo corrected; includes diffusive)  [MJ/m2/d]
   double SW_radia_subcan;     ///< Shortwave incoming radiation at ground beneath canopy [MJ/m2/d]
   double SW_subcan_net;       ///< Net shortwave incoming radiation on ground beneath canopy [MJ/m2/d]
   double LW_radia_net;        ///< Net longwave radiation [MJ/m2/d]

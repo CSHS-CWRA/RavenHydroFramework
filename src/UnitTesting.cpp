@@ -401,7 +401,7 @@ void ShortwaveTest()
   double slope;
   double aspect;
   double dew_pt=GetDewPointTemp(10,0.5);
-  double ET_rad,ET_flat;
+  double ET_rad,ET_flat,SW_diff,SW_dir;
   double day_angle,declin,ecc,day_length;
   double latrad;
   double lateq,solar_noon;
@@ -436,7 +436,7 @@ void ShortwaveTest()
         lateq      = CRadiation::CalculateEquivLatitude(latrad,slope,aspect);
         solar_noon = CRadiation::CalculateSolarNoon    (latrad,slope,aspect); //relative to actual location
 
-        SW=CRadiation::ClearSkySolarRadiation(day+0.001,tstep,latrad,lateq,slope,aspect,day_angle,day_length,solar_noon,dew_pt,ET_rad,ET_flat,(tstep==1.0));
+        SW=CRadiation::ClearSkySolarRadiation(day+0.001,tstep,latrad,lateq,slope,aspect,day_angle,day_length,solar_noon,dew_pt,ET_rad,ET_flat,SW_dir,SW_diff,(tstep==1.0));
         SW=ET_rad;
         SHORT<<SW*conv<<",";
         //SHORT<<solar_noon*12/PI<<","; //report solar noon, in hrs
@@ -490,9 +490,9 @@ void ShortwaveTest()
     if (ceil(dday)==21)//21st day of the month
     {
     cout<<dmon<<endl;
-    SW=ClearSkySolarRadiation(jday,tstep,year,lat,slope,aspect,dew_pt,ET_rad,ET_flat,false);
+    SW=ClearSkySolarRadiation(jday,tstep,year,lat,slope,aspect,dew_pt,ET_rad,ET_flat,SW_dir,SW_diff,false);
     SHORT<<thisdate<<","<<t<<","<<t-floor(t)+dmon-1<<","<<SW<<",";
-    SHORT<<ClearSkySolarRadiation(jday,year,lat,slope,aspect,dew_pt,ET_rad,ET_flat,true)<<endl;
+    SHORT<<ClearSkySolarRadiation(jday,year,lat,slope,aspect,dew_pt,ET_rad,ET_flat,SW_dir,SW_diff,true)<<endl;
     }
     }*/
   //---------------------------------------------------
@@ -516,6 +516,7 @@ void ShortwaveGenerator()
   double day,latrad,slope,aspect,lateq,declin,ecc,Ketp,Ket;
   double day_angle,Mopt,t_sol,TIR,albedo, dew_pt;
   double day_length, solar_noon;
+  double SW_diff,SW_dir;
   int year;
   ifstream SHIN;
   ofstream SHORT;
@@ -561,7 +562,7 @@ void ShortwaveGenerator()
     Ketp =CRadiation::CalcETRadiation(latrad,lateq,declin,ecc,slope,solar_noon,day_length,t_sol,false);
     Ket  =CRadiation::CalcETRadiation(latrad,lateq,declin,ecc,0.0  ,0.0       ,day_length,t_sol,false);
 
-    TIR  =CRadiation::ClearSkySolarRadiation(day,tstep,latrad,lateq,tan(slope),aspect,day_angle,day_length,solar_noon,dew_pt,ET_rad,ET_flat,tstep==1.0);
+    TIR  =CRadiation::ClearSkySolarRadiation(day,tstep,latrad,lateq,tan(slope),aspect,day_angle,day_length,solar_noon,dew_pt,ET_rad,ET_flat,SW_dir,SW_diff,tstep==1.0);
 
     SHORT<<day<<","<<year<<","<<latrad*RADIANS_TO_DEGREES<<","<<tan(slope)<<","<<aspect*RADIANS_TO_DEGREES;
     SHORT<<","<<declin<<","<<ecc<<","<<t_sol<<",";

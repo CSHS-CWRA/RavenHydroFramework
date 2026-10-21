@@ -320,6 +320,7 @@ void CmvGlacierRelease::GetRatesOfChange( const double      *storage,
 
     rates[0]=K*glacier_stor;
   }
+  //-----------------------------------------------------------------
   else if (type == GRELEASE_LINEAR_ANALYTIC)
   {
     double K = pHRU->GetSurfaceProps()->glac_storage_coeff;
