@@ -67,7 +67,6 @@ void CmvFrozenGround::GetParticipatingParamList(string  *aP , class_type *aPC , 
     nP=0;
     aP [nP]="THERMAL_COND";            aPC [nP]=CLASS_SOIL; nP++;
     aP [nP]="HEAT_CAPACITY";           aPC [nP]=CLASS_SOIL; nP++;
-    aP [nP]="BULK_DENSITY";            aPC [nP]=CLASS_SOIL; nP++;
     aP [nP]="POROSITY";                aPC [nP]=CLASS_SOIL; nP++;
     aP [nP]="SNOW_DAMPEN_COEFF";       aPC [nP]=CLASS_LANDUSE; nP++;
   }
@@ -208,7 +207,6 @@ void   CmvFrozenGround::GetRatesOfChange( const double      *state_vars,
     double kappa_s   =pHRU->GetSoilProps(0)->thermal_cond;    //[MJ/m/d/K]
     double c_s       =pHRU->GetSoilProps(0)->heat_capacity;   //[MJ/m3/K]
     double poro      =pHRU->GetSoilProps(0)->porosity;
-    double soil_dens =pHRU->GetSoilProps(0)->bulk_density;    //[kg/m3]
     double damp_coeff=pHRU->GetSurfaceProps()->snow_dampen_coeff; //[1/m]
 
     double sat =soil_wc/(poro*thickness*MM_PER_METER);
