@@ -35,6 +35,7 @@
 #include "FrozenLake.h"
 #include "EnKF.h"
 #include "AgeTracers.h"
+#include "FrozenGround.h"
 
 bool ParseMainInputFile        (CModel *&pModel, optStruct &Options);
 bool ParseClassPropertiesFile  (CModel *&pModel, const optStruct &Options, bool &terrain_required);
@@ -599,6 +600,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":SnowRedistribute"          )){code=241;}
     else if  (!strcmp(s[0],":GlacierIceFlow"            )){code=242;}
     else if  (!strcmp(s[0],":FirnEvolution"             )){code=243;}
+    else if  (!strcmp(s[0],":SoilFreezing"              )){code=244;}
     //...
     else if  (!strcmp(s[0],":-->RedirectFlow"           )){code=294;}
     else if  (!strcmp(s[0],":ProcessGroup"              )){code=295;}
@@ -3245,6 +3247,26 @@ bool ParseMainInputFile (CModel     *&pModel,
       AddProcess(pModel, pMover, pProcGroup);
       break;
     }
+    case(244):  //----------------------------------------------
+    {/* Soil Freezing
+       :SoilFreezing [string method]*/
+      if (Options.noisy){cout <<"Soil Freezing Process"<<endl;}
+      if (Len<2){ImproperFormatWarning(":SoilFreezing",p,Options.noisy); break;}
+      groundfreeze_type gf_type=FREEZE_STEFAN;
+      if      (!strcmp(s[1],"FREEZE_STEFAN"    )){gf_type=FREEZE_STEFAN;}
+      else if (!strcmp(s[1],"FREEZE_THERMAL"   )){gf_type=FREEZE_THERMAL;}
+      else if (!strcmp(s[1],"FREEZE_RANKINEN"  )){gf_type=FREEZE_RANKINEN;}
+      else {
+        ExitGracefully("ParseMainInputFile: Unrecognized soil freezing process representation",BAD_DATA_WARN); break;
+      }
+
+      CmvFrozenGround::GetParticipatingStateVarList(gf_type,tmpS,tmpLev,tmpN);
+      pModel->AddStateVariables(tmpS,tmpLev,tmpN);
+
+      pMover = new CmvFrozenGround(gf_type, pModel);
+      AddProcess(pModel, pMover, pProcGroup);
+      break;
+    }
     case(294):  //----------------------------------------------
     {/*:-->RedirectFlow
      :-->RedirectFlow  [old 'To' SV] [new 'To' SV]*/
@@ -3887,7 +3909,6 @@ int  ParseSVTypeIndex(string s, CModel *pModel, CStateVariable *pStateVar)
 
   if (typ==UNRECOGNIZED_SVTYPE)
   {
-    //if IsNumeric(s){
     return DOESNT_EXIST;
   }
 

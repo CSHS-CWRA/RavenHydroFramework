@@ -632,7 +632,57 @@ double CHydroUnit::GetSnowDepth() const
   double SWE= GetStateVarValue(iSnow);
   return (SWE/TYPICAL_SNOW_DENS)*DENSITY_WATER; //[mm]
 }
+/////////////////////////////////////////////////////////////////////
+/// \brief returns soil flux correction factor between 0 and 1
+/// used to handle ice fraction corrections and wetland coverage changes
+//
+double CHydroUnit::GetSoilFluxReduction (const int from_layer,const int to_layer, const process_type ptype) const
+{
+  double corr=1.0;
+  //JRC: may want to have model options flag to enable/disable this. Only dip into this function when soil freezing is on.
 
+  const double lambda=4; //shape parameter for correction curve
+  int iSoilFrom    =DOESNT_EXIST;
+  int iPctFrozFrom =DOESNT_EXIST;
+  int iSoilTo      =DOESNT_EXIST;
+  int iPctFrozTo   =DOESNT_EXIST;
+  if (from_layer!=DOESNT_EXIST){
+    iSoilFrom    =_pModel->GetStateVarIndex(SOIL,         from_layer);
+    iPctFrozFrom =_pModel->GetStateVarIndex(SOIL_PCT_FROZ,from_layer);
+  }
+  if(to_layer!=DOESNT_EXIST) {
+    iSoilTo      =_pModel->GetStateVarIndex(SOIL,           to_layer);
+    iPctFrozTo   =_pModel->GetStateVarIndex(SOIL_PCT_FROZ,  to_layer);
+  }
+  //--Frozen Soil Corrections -----------------------------------------------------
+  if ((iPctFrozTo!=DOESNT_EXIST) && (iSoilTo!=DOESNT_EXIST))
+  {
+    double f_ice,sat,f_corr;
+    f_ice=GetStateVarValue(iPctFrozTo);
+    sat  =GetStateVarValue(iSoilTo)/GetSoilCapacity(to_layer);
+    f_corr=exp(-lambda*sat*sat*f_ice);
+    corr=f_corr;
+  }
+  if ((iPctFrozFrom!=DOESNT_EXIST) && (iSoilFrom!=DOESNT_EXIST))
+  {
+    double f_ice,sat,f_corr;
+    f_ice=GetStateVarValue(iPctFrozFrom);
+    sat  =GetStateVarValue(iSoilFrom)/GetSoilCapacity(from_layer);
+    f_corr=exp(-lambda*sat*sat*f_ice);
+    corr=min(corr,f_corr); //minimum capacity determines correction (sound for parallel layers)
+  }
+
+  //--Wetland Area Corrections --------------------------------------------------
+  //now used solely for ABST_HGDM to account for wetland area
+  if (ptype==INFILTRATION){
+    int iInfCorr     =_pModel->GetStateVarIndex(INFIL_CORR);
+    if (iInfCorr!=DOESNT_EXIST) 
+    {
+      corr*=GetStateVarValue(iInfCorr);
+    }
+  }
+  return min(max(corr,0.0),1.0);
+}
 //////////////////////////////////////////////////////////////////
 /// \brief returns snow surface temperature
 /// \note uses default snow temperature if not tracked as state variable

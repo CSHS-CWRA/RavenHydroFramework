@@ -363,13 +363,13 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       if (_FORCINGS.fail()){
         ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
       }
-      _FORCINGS<<"time [d], date, hour, day_angle,";
-      _FORCINGS<<" rain [mm/d], snow [mm/d], temp [C], temp_daily_min [C], temp_daily_max [C],temp_daily_ave [C],temp_monthly_min [C],temp_monthly_max [C],";
-      _FORCINGS<<" air_density [kg/m3], air_pressure [KPa], rel_humidity [-],";
-      _FORCINGS<<" cloud_cover [-],";
-      _FORCINGS<<" ET_radiation [MJ/m2/d], SW_radiation [MJ/m2/d], diffuse_SW [MJ/m2/d], net_SW_radiation [MJ/m2/d], LW_incoming [MJ/m2/d], net_LW_radiation [MJ/m2/d], wind_speed [m/s],";
-      _FORCINGS<<" PET [mm/d], OW_PET [mm/d],";
-      _FORCINGS<<" daily_correction [-], potential_melt [mm/d]";
+      _FORCINGS<<"time [d],date,hour,day_angle,";
+      _FORCINGS<<"rain [mm/d],snow [mm/d],temp [C],temp_daily_min [C],temp_daily_max [C],temp_daily_ave [C],temp_monthly_min [C],temp_monthly_max [C],";
+      _FORCINGS<<"air_density [kg/m3],air_pressure [KPa],rel_humidity [-],";
+      _FORCINGS<<"cloud_cover [-],";
+      _FORCINGS<<"ET_radiation [MJ/m2/d],SW_radiation [MJ/m2/d],SW_diffuse [MJ/m2/d],net_SW_radiation [MJ/m2/d],LW_incoming [MJ/m2/d],net_LW_radiation [MJ/m2/d],wind_speed [m/s],";
+      _FORCINGS<<"PET [mm/d],OW_PET [mm/d],";
+      _FORCINGS<<"daily_correction [-],potential_melt [mm/d]";
       _FORCINGS<<endl;
     }
   }

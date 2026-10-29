@@ -161,7 +161,7 @@ void CmvInfiltration::GetGreenAmptRunoff (const double            *state_vars,
   }
 
   runoff = threshPositive(rainthru-finf); //THRESHOLD BEHAVIOUR
-  runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces
+  runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces and ice
 
   rates[0]=rainthru-runoff;
   rates[1]=runoff;

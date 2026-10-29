@@ -361,10 +361,10 @@ void CheckForErrorWarnings(bool quiet, CModel *pModel)
   }
   WARNINGS.close();
   if ((warnings_found) && (!quiet)){
-    cout<<"*******************************************************"<<endl<<endl;
-    cout<<"WARNING: Warnings have been issued while parsing data. "<<endl;
-    cout<<"         See Raven_errors.txt for details              "<<endl<<endl;
-    cout<<"*******************************************************"<<endl<<endl;
+    cout<<"*************************************************************"<<endl<<endl;
+    cout<<"WARNING: Warnings have been issued while parsing data.       "<<endl;
+    cout<<"         See Raven_errors.txt for details                    "<<endl<<endl;
+    cout<<"*************************************************************"<<endl<<endl;
   }
 
   if (errors_found){

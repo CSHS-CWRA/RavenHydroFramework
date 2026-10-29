@@ -326,6 +326,8 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
 
   Fimp=pHRU->GetSurfaceProps()->impermeable_frac;
 
+  Fimp*=pHRU->GetSoilFluxReduction(DOESNT_EXIST,0,INFILTRATION); 
+
   ponded_water=max(state_vars[pModel->GetStateVarIndex(PONDED_WATER)],0.0);
 
   rainthru=(ponded_water/Options.timestep);//potential infiltration rate, mm/d
@@ -338,7 +340,7 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
   if (type==INF_RATIONAL)
   {
     runoff=pHRU->GetSurfaceProps()->partition_coeff*rainthru;
-    runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces
+    runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces and ice
     rates[0]=rainthru-runoff;
     rates[1]=runoff;
   }
@@ -346,7 +348,7 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
   else if ((type==INF_SCS) || (type==INF_SCS_NOABSTRACTION))
   {
     runoff=GetSCSRunoff(pHRU,Options,tt,rainthru);
-    runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces
+    runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces and ice
     rates[0]=rainthru-runoff;
     rates[1]=runoff;
 
@@ -361,7 +363,7 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
   else if (type==INF_ALL_INFILTRATES)
   {
     runoff=0.0;
-    runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces
+    runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces and ice
     rates[0]=rainthru-runoff;
     rates[1]=runoff;
   }
@@ -391,7 +393,7 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
 
     runoff=rainthru*threshMax(1.0-K1*pow(Smax-sat,gamma),1.0,0.0);
 
-    runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces
+    runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces and ice
 
     rates[0]=rainthru-runoff;
     rates[1]=runoff;
@@ -407,7 +409,7 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
 
     runoff=pow(sat,beta)*rainthru;
 
-    runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces
+    runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces and ice
 
     rates[0]=rainthru-runoff;
     rates[1]=runoff;
@@ -425,7 +427,7 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
 
     runoff  =sat_area*rainthru;
 
-    runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces
+    runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces and ice
 
     rates[0]=rainthru-runoff;
     rates[1]=runoff;
@@ -440,7 +442,7 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
 
     runoff =  sat_frac* min(stor/tens_stor,1.0) * rainthru;
 
-    runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces
+    runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces and ice
 
     rates[0]=rainthru-runoff;
     rates[1]=runoff;
@@ -461,7 +463,7 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
 
     runoff =  sat_area * rainthru;              //runoff rate [mm/d]
 
-    runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces
+    runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces and ice
 
     rates[0]=rainthru-runoff;
     rates[1]=runoff;
@@ -480,7 +482,7 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
                                            pHRU->GetSoilThickness(0),
                                            state_vars[iTopSoil],
                                            tt,Options);
-    runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces
+    runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces and ice
 
     rates[0]=rainthru-runoff;
     rates[1]=runoff;
@@ -500,7 +502,7 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
     double sat=stor/x1;
     tmp=tanh(ponded_water/x1);
     infil=x1*(1.0-(sat*sat))*tmp/(1.0+sat*tmp);
-    infil=(1.0-Fimp)*infil; //correct for impermeable surfaces
+    infil=(1.0-Fimp)*infil; //correct for impermeable surfaces and ice
     rates[0]=infil;
     rates[1]=rainthru-infil;
   }
@@ -547,7 +549,7 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
     runoff=max(runoff,0.0);
     infil=direct-runoff;
 
-    infil=(1.0-Fimp)*infil; //correct for impermeable surfaces
+    infil=(1.0-Fimp)*infil; //correct for impermeable surfaces and ice
     rates[0]=(infil         )/Options.timestep; //PONDED->SOIL
     rates[1]=(rainthru-infil)/Options.timestep; //PONDED->SW
   }
@@ -572,7 +574,7 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
     infil=max_stor*(pow(1.0-(c_star/c_max),b+1.0)-pow(1.0-min(c_star+ponded_water,c_max)/c_max,b+1.0));
     infil=min(infil,ponded_water);
 
-    infil=(1.0-Fimp)*infil/Options.timestep; //correct for impermeable surfaces
+    infil=(1.0-Fimp)*infil/Options.timestep; //correct for impermeable surfaces and ice
 
     rates[0]=infil;          //PONDED->SOIL[0]
     rates[1]=rainthru-infil; //PONDED->SW

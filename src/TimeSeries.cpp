@@ -906,6 +906,12 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long lon
     }
     return pTimeSeries;
   }
+
+  // CONSTANT FORMAT =============================================================
+  if(!strcmp(s[0],":Constant")){
+    pTimeSeries=new CTimeSeries(name,loc_ID,s_to_d(s[1]));
+    return pTimeSeries;
+  }
   // IRREGULAR PATTERN FORMAT ====================================================
   if(!strcmp(s[0],":IrregularPattern"))
   {
@@ -1082,11 +1088,18 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long lon
     ExitGracefully("CTimeSeries::Parse: Insufficient number of time series points",BAD_DATA);
   }
 
-  p->Tokenize(s,Len);//read closing term (e.g., ":EndData")
-  if(string(s[0]).substr(0,4)!=":End"){
-    ExitGracefully("CTimeSeries: Parse: exceeded specified number of time series points in sequence or no :EndData command used. ",BAD_DATA);
+  while (!p->Tokenize(s,Len))//read closing term (e.g., ":EndData")
+  {
+    if (IsComment(s[0],Len)){}//try again
+    else{
+      if(string(s[0]).substr(0,4)!=":End"){
+        ExitGracefully("CTimeSeries: Parse: exceeded specified number of time series points in sequence or no :EndData command used. ",BAD_DATA);
+      }
+      else{
+        break;
+      }
+    }
   }
-
 
   pTimeSeries=new CTimeSeries(name,loc_ID,p->GetFilename(),start_day,start_yr,tstep,aVal,n,is_pulse);
   delete [] aVal;  aVal =NULL;

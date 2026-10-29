@@ -15,7 +15,6 @@ double EstimateRelativeHumidity(const relhum_method method,
 double EstimateAirPressure     (const airpress_method method,
                                 const force_struct &F,
                                 const double       &elev);
-void  ApplyPrecipCorrections   (const optStruct Options);
 static inline void SumWhileHandlingBlanks(const double &gauge_val,double &val,const double &wt,double &wtsum)
 {
   if(gauge_val!=RAV_BLANK_DATA) {

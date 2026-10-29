@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ------------------------------------------------------------------
   Interflow
   ----------------------------------------------------------------*/
@@ -121,6 +121,8 @@ void   CmvInterflow::GetRatesOfChange(const double                      *state_v
     rates[0]=0.0;
     ExitGracefully("CmvInterflow::GetRatesOfChange: undefined interflow type",BAD_DATA);
   }
+  //ice content correction
+  rates[0]*=pHRU->GetSoilFluxReduction(m,DOESNT_EXIST,INTERFLOW);
 }
 
 //////////////////////////////////////////////////////////////////

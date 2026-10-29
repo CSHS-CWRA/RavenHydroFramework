@@ -188,6 +188,7 @@ const double  TC_WATER                =0.0492;                                  
 const double  TC_ICE                  =0.194;                                   ///< [MJ/m/d/K] Thermal conductivity of Ice (2.24 W/m/K)
 const double  TC_SAND                 =0.691;                                   ///< [MJ/m/d/K] Thermal conductivity of sand (8.0 W/m/K vs 8.8 in CLM)
 const double  TC_CLAY                 =0.216;                                   ///< [MJ/m/d/K] Thermal conductivity of clay (2.5 W/m/K vs 2.92 in CLM)
+const double  TC_SILT                 =0.4;                                     ///< [MJ/m/d/K] Thermal conductivity of silt (2.5 W/m/K vs 2.92 in CLM)
 const double  TC_ORGANIC              =0.0216;                                  ///< [MJ/m/d/K] Thermal conductivity of organic matter (0.25 W/m/K)
 const double  TC_AIR                  =0.00199;                                 ///< [MJ/m/d/K] Thermal conductivity of air (0.023 W/m/K)
 
@@ -197,6 +198,7 @@ const double  HCP_WATER               =4.186;                                   
 const double  HCP_ICE                 =1.938;                                   ///< [MJ/m3/K] Volumetric Heat Capacity of Ice
 const double  HCP_CLAY                =2.380;                                   ///< [MJ/m3/K] Volumetric Heat Capacity of Clay
 const double  HCP_SAND                =2.130;                                   ///< [MJ/m3/K] Volumetric Heat Capacity of Sand
+const double  HCP_SILT                =2.0;                                     ///< [MJ/m3/K] Volumetric Heat Capacity of Silt
 const double  HCP_ORGANIC             =2.500;                                   ///< [MJ/m3/K] Volumetric Heat Capacity of Organic Matter
 const double  HCP_AIR                 =0.00124;                                 ///< [MJ/m3/K] Volumetric Heat capacity of air
 
@@ -886,7 +888,6 @@ enum uncerttype
 /// - CStateVariables::SVTypeToString  (defined in StateVariables.cpp)
 /// - CStateVariables::StringToSVType  (defined in StateVariables.cpp)
 /// - CStateVariables::IsWaterStorage  (defined in StateVariables.cpp)
-/// - CStateVariables::IsEnergyStorage (defined in StateVariables.cpp)
 /// - CHydroUnit::GetStateVarMax
 /// - CModel::PartitionPrecip (if it is a water storage unit recieving precipitation)
 ///

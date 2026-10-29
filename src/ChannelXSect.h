@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2025 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------
   ChannelXSect.h
   ------------------------------------------------------------------
@@ -44,7 +44,7 @@ private:/*-------------------------------------------------------*/
 
   void Construct                        (const string name, CModel *pModel);
   void GenerateRatingCurvesFromProfile  ();
-  void GenerateRatingCurvesFromPowerLaw ();
+
 
   //void Interpolate        (const double &Q,double &interp, int &i) const;
   void GetPropsFromProfile(const double &elev,

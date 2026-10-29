@@ -25,12 +25,12 @@ CmvFrozenGround::CmvFrozenGround(groundfreeze_type type, CModelABC *pModel)
   _type =type;
   if (_type == FREEZE_STEFAN) {
     CHydroProcessABC::DynamicSpecifyConnections(1);
-    iFrom[0]=THAW_DEPTH; iTo[0]=THAW_DEPTH;
+    iFrom[0]=pModel->GetStateVarIndex(THAW_DEPTH);     iTo[0]=iFrom[0];
   }
   else if (_type == FREEZE_RANKINEN) {
     CHydroProcessABC::DynamicSpecifyConnections(2);
-    iFrom[0]=SOIL_TEMP;     iTo[0]=SOIL_TEMP;
-    iFrom[1]=SOIL_PCT_FROZ; iTo[1]=SOIL_PCT_FROZ;
+    iFrom[0]=pModel->GetStateVarIndex(SOIL_TEMP);     iTo[0]=iFrom[0];
+    iFrom[1]=pModel->GetStateVarIndex(SOIL_PCT_FROZ); iTo[1]=iFrom[1];
   }
 }
 
@@ -65,11 +65,11 @@ void CmvFrozenGround::GetParticipatingParamList(string  *aP , class_type *aPC , 
   else if(_type==FREEZE_RANKINEN)
   {
     nP=0;
-    aP [nP]="THERMAL_CONDUCTIVITY";     aPC [nP]=CLASS_SOIL; nP++;
-    aP [nP]="HEAT_CAPACITY";            aPC [nP]=CLASS_SOIL; nP++;
-    aP [nP]="BULK_DENSITY";             aPC [nP]=CLASS_SOIL; nP++;
-    aP [nP]="POROSITY";                 aPC [nP]=CLASS_SOIL; nP++;
-    aP [nP]="SNOW_DAMPEN_COEFF";        aPC [nP]=CLASS_LANDUSE; nP++;
+    aP [nP]="THERMAL_COND";            aPC [nP]=CLASS_SOIL; nP++;
+    aP [nP]="HEAT_CAPACITY";           aPC [nP]=CLASS_SOIL; nP++;
+    aP [nP]="BULK_DENSITY";            aPC [nP]=CLASS_SOIL; nP++;
+    aP [nP]="POROSITY";                aPC [nP]=CLASS_SOIL; nP++;
+    aP [nP]="SNOW_DAMPEN_COEFF";       aPC [nP]=CLASS_LANDUSE; nP++;
   }
   else if (_type == FREEZE_THERMAL)
   {
@@ -190,7 +190,9 @@ void   CmvFrozenGround::GetRatesOfChange( const double      *state_vars,
   }
   //-----------------------------------------------------------------
   else if(_type==FREEZE_RANKINEN)
-  {
+  { 
+    //based upon Rankinen et al 2004, A simple model for predicting soil temperature in snow-covered and 
+    //seasonally frozen soil: model description and testing, HESS https://doi.org/10.5194/hess-8-706-2004
     int iSlTemp=pModel->GetStateVarIndex(SOIL_TEMP,0);
     int iSoil  =pModel->GetStateVarIndex(SOIL,0);
     int iPctFrz=pModel->GetStateVarIndex(SOIL_PCT_FROZ);
@@ -207,30 +209,28 @@ void   CmvFrozenGround::GetRatesOfChange( const double      *state_vars,
     double c_s       =pHRU->GetSoilProps(0)->heat_capacity;   //[MJ/m3/K]
     double poro      =pHRU->GetSoilProps(0)->porosity;
     double soil_dens =pHRU->GetSoilProps(0)->bulk_density;    //[kg/m3]
-    double damp_coeff=pHRU->GetSurfaceProps()->snow_dampen_coeff; //[m]
+    double damp_coeff=pHRU->GetSurfaceProps()->snow_dampen_coeff; //[1/m]
 
     double sat =soil_wc/(poro*thickness*MM_PER_METER);
 
     double heat_cap  =CalculateHeatCapacity       (poro,c_s      ,sat,pct_froz);
     double therm_cond=CalculateThermalConductivity(poro,kappa_s  ,sat,pct_froz);
-    double density   =CalculateDensity            (poro,soil_dens,sat,pct_froz);
 
-    double C_ice=0.0;
-    const double RANGE=3.0;
-    if ((soil_temp>-RANGE) && (soil_temp<0.1)){C_ice=10;}//MJ/m3/K - gross approximation
-
-    //better?
+    double C_ice=0.0;       //effective heat capacity correction term during freeze/melt
+    const double RANGE=2.0; //[-degC] - minimum temp at which freezing happens
     if ((soil_temp>-RANGE) && (soil_temp<0.1)){
-    //  C_ice=DENSITY_ICE*LH_FUSION*sat*poro/(RANGE+0.1); //3.1 is temp range, in  degC - allows quick freezing of dry soils
+      C_ice=DENSITY_ICE*LH_FUSION*sat*poro/(RANGE+0.1); //RANGE+0.1 is temp range, in  degC - allows quick freezing of drier soils
     }
 
     double snow_factor=exp(-damp_coeff*snow_depth);
 
-    double soil_temp_new=(soil_temp+therm_cond/thickness/thickness/(soil_dens*heat_cap+C_ice)*(Tair-soil_temp)*Options.timestep)*snow_factor;
+    double soil_temp_new=soil_temp+(therm_cond/thickness/thickness/(heat_cap+C_ice)*(Tair-soil_temp)*Options.timestep)*snow_factor;
+
+	//could also increase soil temp with introduction of meltwater/rainwater
 
     //[MJ/m/d/K]/[m^2]/[MJ/m3/K]*[C]*[d]=[degC]
 
-    double pct_froz_new=min(max((soil_temp_new+RANGE)/(RANGE+0.1),0.0),1.0); //linear variation from -3 to 0.1 degrees
+    double pct_froz_new=1.0-min(max((soil_temp_new+RANGE)/(RANGE+0.1),0.0),1.0); //linear variation from -3 to 0.1 degrees
 
     rates[0]=(soil_temp_new-soil_temp)/Options.timestep;   //SOIL_TEMP->SOIL_TEMP;
     rates[1]=(pct_froz_new -pct_froz )/Options.timestep;   //SOIL_PCT_FROZ->SOIL_PCT_FROZ;
@@ -252,4 +252,5 @@ void   CmvFrozenGround::ApplyConstraints( const double     *state_vars,
                                            const time_struct &tt,
                                            double     *rates) const
 {
+  //no constraints 
 }

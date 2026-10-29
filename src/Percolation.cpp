@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2025 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ----------------------------------------------------------------
   Percolation
   ----------------------------------------------------------------*/
@@ -324,6 +324,11 @@ void   CmvPercolation::GetRatesOfChange( const double                   *state_v
     ExitGracefully("CmvPercolation::GetRatesOfChange: undefined percolation type",BAD_DATA);
   }
 
+  //ice content correction
+  rates[0]*=pHRU->GetSoilFluxReduction(pModel->GetStateVarLayer(iFrom[0]),
+                                       pModel->GetStateVarLayer(iTo[0]),
+                                       PERCOLATION);
+
 }//end percolation routines
 
 //////////////////////////////////////////////////////////////////
@@ -342,8 +347,9 @@ void   CmvPercolation::ApplyConstraints(const double             *state_vars,
                                         const time_struct &tt,
                                         double     *rates) const
 {
-  if ((pHRU->GetHRUType()==HRU_LAKE) || (pHRU->GetHRUType()==HRU_WATER) ||
-      (pHRU->GetHRUType()==HRU_ROCK)){return;}//Lake/Water/Rock
+  if ((pHRU->GetHRUType()==HRU_LAKE) || 
+      (pHRU->GetHRUType()==HRU_WATER) ||
+      (pHRU->GetHRUType()==HRU_ROCK)){return;}
 
   double min_stor=g_min_storage;
 

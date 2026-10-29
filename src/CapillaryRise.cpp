@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2025 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ------------------------------------------------------------------
   Capillary Rise
   ----------------------------------------------------------------*/
@@ -122,7 +122,7 @@ void   CmvCapillaryRise::GetRatesOfChange( const double      *storage,
   pSoil=NULL;
   max_stor=0.0;
   if      (toType==SOIL)       {
-    m                            = pModel->GetStateVarLayer(iTo[0]); //which soil layer
+    m        = pModel->GetStateVarLayer(iTo[0]); //which soil layer
     pSoil    = pHRU->GetSoilProps(m);
     max_stor = pHRU->GetSoilCapacity(m);  //maximum storage of soil layer [mm]
   }
@@ -144,7 +144,10 @@ void   CmvCapillaryRise::GetRatesOfChange( const double      *storage,
   {
     ExitGracefully("CmvCapillaryRise::GetRatesOfChange: undefined Capillary Rise type",BAD_DATA);
   }
-
+  //ice content correction
+  rates[0]*=pHRU->GetSoilFluxReduction(pModel->GetStateVarLayer(iFrom[0]),
+                                       pModel->GetStateVarLayer(iTo[0]),
+                                       CAPILLARY_RISE);
 }
 
 //////////////////////////////////////////////////////////////////

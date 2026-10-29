@@ -89,6 +89,7 @@ CmvHeatConduction::CmvHeatConduction(const CTransportModel *pTransMod,
   :CHydroProcessABC(HEATCONDUCTION, pModel)
 {
   //g_disable_freezing=true; TMP DEBUG ONLY
+  _initialized=false;
 
   _pTransModel=pTransMod;
 

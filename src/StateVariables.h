@@ -50,6 +50,5 @@ public:/*-------------------------------------------------------*/
   string               SVTypeToString      (const sv_type typ, const int layerindex);
 
   static bool          IsWaterStorage      (sv_type      typ,bool conv_coverup=true);
-  static bool          IsEnergyStorage     (sv_type      typ);
 };
 #endif

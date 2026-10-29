@@ -748,6 +748,14 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     ExitGracefully("CmvSoilEvaporation::GetRatesOfChange: undefined soil evaporation type",BAD_DATA);
   }//end soil_evap type select
 
+  //ice content correction
+  //currently only applied to the top layer
+  double prevRate=rates[0];
+  rates[0]*=pHRU->GetSoilFluxReduction(pModel->GetStateVarLayer(iFrom[0]),
+                                       pModel->GetStateVarLayer(iTo[0]),
+                                       SOIL_EVAPORATION);
+  PETused-=(prevRate-rates[0]);
+
   //updated used PET
   rates[_nConnections-1]=PETused;
 

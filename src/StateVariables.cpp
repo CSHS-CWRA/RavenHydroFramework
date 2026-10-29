@@ -393,7 +393,6 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
   else if (!tmp.compare("FIRN"            )){typ=FIRN;}
   else if (!tmp.compare("FIRN_GRAVITY"    )){typ=FIRN_GRAVITY;}
   else if (!tmp.compare("CUM_SNOWMELT"    )){typ=CUM_SNOWMELT;}
-  else if (!tmp.compare("SNOW_TEMP"       )){typ=SNOW_TEMP;}
   else if (!tmp.compare("SNOW_ALBEDO"     )){typ=SNOW_ALBEDO;}
   else if (!tmp.compare("CROP_HEAT_UNITS" )){typ=CROP_HEAT_UNITS;}
   else if (!tmp.compare("CUM_INFIL"       )){typ=CUM_INFIL;}
@@ -401,6 +400,7 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
   else if (!tmp.compare("CONV_STOR"       )){typ=CONV_STOR;}
   else if (!tmp.compare("GA_MOISTURE_INIT")){typ=GA_MOISTURE_INIT;}
   else if (!tmp.compare("LATERAL_EXCHANGE")){typ=LATERAL_EXCHANGE;}
+  else if (!tmp.compare("SOIL_TEMP"       )){typ=SOIL_TEMP;}
 
   else if (!tmp.compare("AET"             )){typ=AET; }
   else if (!tmp.compare("RUNOFF"          )){typ=RUNOFF; }
@@ -638,24 +638,6 @@ bool  CStateVariable::IsWaterStorage (sv_type      typ, bool conv_coverup)
   case(SNOW_DRIFT):      {return true;}
   case(LAKE_STORAGE):    {return true;}
   //..
-  default:
-  {
-    return false;
-  }
-  }
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns true if the state variable is an energy storage unit
-/// \param typ [in] State variable identifier
-/// \return Boolean indicating if the passed state variable is an energy storage unit
-bool  CStateVariable::IsEnergyStorage (sv_type      typ)
-{
-  switch(typ)
-  {
-  case(COLD_CONTENT):   {return true;}
-  case(ENERGY_LOSSES):  {return true;}
-    //..
   default:
   {
     return false;

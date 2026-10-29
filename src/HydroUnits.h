@@ -142,6 +142,7 @@ public:/*-------------------------------------------------------*/
   double                 GetSurfaceTemperature() const;
   double                 GetTotalAlbedo       (const bool subcanopy, const double &pct_froz) const;
   double                 GetSnowDepth         () const;
+  double                 GetSoilFluxReduction (const int from_layer,const int to_layer, const process_type ptype) const;
 
   //Manipulator functions (used in parser)
   void                   Disable              ();

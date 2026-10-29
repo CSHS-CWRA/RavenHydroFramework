@@ -459,7 +459,7 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
   S.HMETS_runoff_coeff=DefaultParameterValue(is_template,false);//0.4
   S.bsnow_distrib     =DefaultParameterValue(is_template,false);//0.4
   S.lakesnow_buffer_ht=DefaultParameterValue(is_template,false);//50 mm
-  S.snow_dampen_coeff =DefaultParameterValue(is_template,false);//3 m
+  S.snow_dampen_coeff =DefaultParameterValue(is_template,false);//3/m [1-8/m]
   S.convection_coeff  =DefaultParameterValue(is_template,false);//~2
   S.pet_lin_coeff     =DefaultParameterValue(is_template,false);//~0.1-0.3
   S.pet_vap_coeff     =DefaultParameterValue(is_template,false);//~1-3

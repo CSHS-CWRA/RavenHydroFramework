@@ -48,7 +48,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   _svind    =sv_index;                                      // state variable index (if output var is a SV or flux)
   _svind2   =sv_index2;                                     // state variable target index (if output var is a flux between)
   _force_str=force_string;                                  // name of forcing variable (if output var is a forcing function)
-
+  _ftype    =F_UNRECOGNIZED;
   _spaceAgg  =space_aggregation;                            // how we're aggregation the data (ByHRU,BySubbasin, etc.)
   _timeAgg   =time_aggregation;                             // yearly, monthly, etc.
   _aggstat   =stat;                                         // the statistic we're calculating

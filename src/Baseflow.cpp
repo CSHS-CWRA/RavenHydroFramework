@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2025 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ------------------------------------------------------------------
   Baseflow
   ----------------------------------------------------------------*/
@@ -281,6 +281,10 @@ void   CmvBaseflow::GetRatesOfChange( const double      *storage,
   {
     ExitGracefully("CmvBaseflow::GetRatesOfChange: undefined baseflow type",BAD_DATA);
   }
+  //ice content correction
+  rates[0]*=pHRU->GetSoilFluxReduction(pModel->GetStateVarLayer(iFrom[0]),
+                                       DOESNT_EXIST,
+                                       BASEFLOW);
 
 }
 

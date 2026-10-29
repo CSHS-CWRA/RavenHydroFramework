@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2026 the Raven Development Team
   ------------------------------------------------------------------
   Recharge
   ----------------------------------------------------------------*/
@@ -17,9 +17,8 @@
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the standard constructor
-/// \param cr_type [in] Model of capillary rise selected
-/// \param In_index [in] Soil storage unit index from which water is lost
-/// \param Out_index [in] Soil storage unit index to which water rises
+/// \param rech_type [in] Model of recharge selected
+/// \param to_index [in] Soil storage index which recieves recharge
 //
 CmvRecharge::CmvRecharge(recharge_type rech_type,
                          int           to_index,

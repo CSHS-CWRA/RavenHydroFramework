@@ -388,7 +388,6 @@ public:/*-------------------------------------------------------*/
   // CSoilProfile
   CSoilProfile           *StringToSoilProfile(const string s);
   int                     GetNumSoilProfiles();
-  const CSoilProfile     *GetSoilProfile(int c);
   void                    AddSoilProfile(CSoilProfile *pSoilProfile);
   void                    SummarizeSoilProfilesToScreen();
   void                    DestroyAllSoilProfiles();
