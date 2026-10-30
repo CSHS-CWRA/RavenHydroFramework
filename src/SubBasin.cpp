@@ -2470,7 +2470,7 @@ void CSubBasin::UpdateRoutingHydro(const double &tstep)
     sum+=_aRouteHydro[n  ];
   }
 
-  for(n=0;n<_nQinHist;n++) { 
+  for(n=0;n<_nQinHist;n++) {
   //  _aRouteHydro[n]/=sum; // THIS IS NOT VALID - NEEDS TO BE DONE FOR EACH COMPONENT SEPARATELY
 
   }

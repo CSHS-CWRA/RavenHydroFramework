@@ -347,7 +347,7 @@ void   CmvPercolation::ApplyConstraints(const double             *state_vars,
                                         const time_struct &tt,
                                         double     *rates) const
 {
-  if ((pHRU->GetHRUType()==HRU_LAKE) || 
+  if ((pHRU->GetHRUType()==HRU_LAKE) ||
       (pHRU->GetHRUType()==HRU_WATER) ||
       (pHRU->GetHRUType()==HRU_ROCK)){return;}
 
