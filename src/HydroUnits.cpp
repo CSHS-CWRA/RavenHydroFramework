@@ -676,7 +676,7 @@ double CHydroUnit::GetSoilFluxReduction (const int from_layer,const int to_layer
   //now used solely for ABST_HGDM to account for wetland area
   if (ptype==INFILTRATION){
     int iInfCorr     =_pModel->GetStateVarIndex(INFIL_CORR);
-    if (iInfCorr!=DOESNT_EXIST) 
+    if (iInfCorr!=DOESNT_EXIST)
     {
       corr*=GetStateVarValue(iInfCorr);
     }

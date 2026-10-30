@@ -104,6 +104,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   CForcingGrid *pGrid_pet        = NULL;
   CForcingGrid *pGrid_owpet      = NULL;
   CForcingGrid *pGrid_windspeed  = NULL;
+  CForcingGrid *pGrid_airpres    = NULL;
   CForcingGrid *pGrid_relhum     = NULL;
   CForcingGrid *pGrid_SW_net     = NULL;
   CForcingGrid *pGrid_LW_inc     = NULL;
@@ -131,6 +132,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   bool pet_gridded            = ForcingGridIsInput(F_PET)            && (Options.evaporation   ==PET_DATA);
   bool owpet_gridded          = ForcingGridIsInput(F_OW_PET)         && (Options.ow_evaporation==PET_DATA);
   bool windspeed_gridded      = ForcingGridIsInput(F_WIND_VEL)       && (Options.wind_velocity ==WINDVEL_DATA);
+  bool airpres_gridded        = ForcingGridIsInput(F_AIR_PRES)       && (Options.air_pressure  ==AIRPRESS_DATA);
   bool relhum_gridded         = ForcingGridIsInput(F_REL_HUMIDITY)   && (Options.rel_humidity  ==RELHUM_DATA);
   bool SWnet_gridded          = ForcingGridIsInput(F_SW_RADIA_NET)   && (Options.SW_radia_net  ==NETSWRAD_DATA);
   bool SWdiff_gridded         = ForcingGridIsInput(F_SW_RADIA_DIFF)  && (Options.SW_radia_diff ==DIFFSWRAD_DATA);
@@ -487,6 +489,11 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         pGrid_windspeed = GetForcingGrid(F_WIND_VEL);
         pGrid_windspeed->ReadData(Options, tt.model_time);
         F.wind_vel = pGrid_windspeed->GetWeightedValue(k, tt.model_time, Options.timestep);
+      }
+      if (airpres_gridded) {
+        pGrid_airpres = GetForcingGrid(F_AIR_PRES);
+        pGrid_airpres->ReadData(Options, tt.model_time);
+        F.air_pres = pGrid_airpres->GetWeightedValue(k, tt.model_time, Options.timestep);
       }
       if (relhum_gridded) {
         pGrid_relhum = GetForcingGrid(F_REL_HUMIDITY);
