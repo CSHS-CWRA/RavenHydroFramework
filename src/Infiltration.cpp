@@ -326,7 +326,7 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
 
   Fimp=pHRU->GetSurfaceProps()->impermeable_frac;
 
-  Fimp*=pHRU->GetSoilFluxReduction(DOESNT_EXIST,0,INFILTRATION); 
+  Fimp*=pHRU->GetSoilFluxReduction(DOESNT_EXIST,0,INFILTRATION);
 
   ponded_water=max(state_vars[pModel->GetStateVarIndex(PONDED_WATER)],0.0);
 

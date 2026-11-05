@@ -64,7 +64,7 @@ void CSoilClass::AutoCalculateSoilProps(const soil_struct &Stmp,
   string warn;
 
   //these parameters are required
-  
+
   _Soil.sand_con=Stmp.sand_con;
   _Soil.clay_con=Stmp.clay_con;
   _Soil.org_con =Stmp.org_con;

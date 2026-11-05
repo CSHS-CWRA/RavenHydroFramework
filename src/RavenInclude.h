@@ -715,9 +715,9 @@ enum netSWRad_method
 enum SW_diff_method
 {
    DIFFSWRAD_DATA,          ///< diffuse SW supplied
-   DIFFSWRAD_DIRECT,        ///< direct SW supplied 
-   DIFFSWRAD_RUIZ_ARIAS,    ///< diffusive calculated from Ruiz-Arias et al., 2010 
-   DIFFSWRAD_NONE           ///< treated as negligible (default)   
+   DIFFSWRAD_DIRECT,        ///< direct SW supplied
+   DIFFSWRAD_RUIZ_ARIAS,    ///< diffusive calculated from Ruiz-Arias et al., 2010
+   DIFFSWRAD_NONE           ///< treated as negligible (default)
 };
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods of handling snow cover depletion

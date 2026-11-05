@@ -1526,10 +1526,10 @@ double rvn_erf(const double &x)
 inline double d_int(const double x){ return( (x>0) ? rvn_floor(x) : -rvn_floor(-x) ); }
 //////////////////////////////////////////////////////////////////
 /// this code evaluates  exp(x^2)*erfc(x) for a real argument  x
-/// based upon the algorithm from "Rational Chebyshev approximations for the error function" by W. J. Cody, Math. Comp., 1969, PP. 631-638. 
+/// based upon the algorithm from "Rational Chebyshev approximations for the error function" by W. J. Cody, Math. Comp., 1969, PP. 631-638.
 /// as implemented in https://github.com/simonbyrne/LetsBeRational/blob/master/erf_cody.cpp
-/// 
-double rvn_erfcx(double x) 
+///
+double rvn_erfcx(double x)
 {
    static const double a[5] = { 3.1611237438705656,113.864154151050156,377.485237685302021,3209.37758913846947,.185777706184603153 };
    static const double b[4] = { 23.6012909523441209,244.024637934444173,1282.61652607737228,2844.23683343917062 };
@@ -1548,13 +1548,13 @@ double rvn_erfcx(double x)
 
    double y, del, ysq, xden, xnum, result;
 
-   // xinf   = the largest positive finite floating-point number. 
-   // xneg   = the largest negative argument acceptable to ERFCX; the negative of the solution to the equation 2*exp(x*x) = XINF. 
-   // xsmall = argument below which erf(x) may be represented by 2*x/sqrt(pi)  and above which  x*x  will not underflow. 
-   //            A conservative value is the largest machine number X such that   1.0 + X = 1.0   to machine precision. 
-   // xbig   = largest argument acceptable to ERFC;  solution to  the equation:  W(x) * (1-0.5/x**2) = XMIN,  where W(x) = exp(-x*x)/[x*sqrt(pi)]. 
-   // xhuge  = argument above which  1.0 - 1/(2*x*x) = 1.0  to machine precision.  A conservative value is  1/[2*sqrt(XSMALL)] 
-   // xmax   = largest acceptable argument to ERFCX; the minimum  of XINF and 1/[sqrt(pi)*XMIN]. 
+   // xinf   = the largest positive finite floating-point number.
+   // xneg   = the largest negative argument acceptable to ERFCX; the negative of the solution to the equation 2*exp(x*x) = XINF.
+   // xsmall = argument below which erf(x) may be represented by 2*x/sqrt(pi)  and above which  x*x  will not underflow.
+   //            A conservative value is the largest machine number X such that   1.0 + X = 1.0   to machine precision.
+   // xbig   = largest argument acceptable to ERFC;  solution to  the equation:  W(x) * (1-0.5/x**2) = XMIN,  where W(x) = exp(-x*x)/[x*sqrt(pi)].
+   // xhuge  = argument above which  1.0 - 1/(2*x*x) = 1.0  to machine precision.  A conservative value is  1/[2*sqrt(XSMALL)]
+   // xmax   = largest acceptable argument to ERFCX; the minimum  of XINF and 1/[sqrt(pi)*XMIN].
    // The numbers below were preselected for IEEE .
    static const double xinf = 1.79e308;
    static const double xneg = -26.628;
@@ -1581,8 +1581,8 @@ double rvn_erfcx(double x)
     result = exp(ysq) * result;
 
     return result;
-  } 
-  else if (y <= four) // 0.46875 < |X| < 4  
+  }
+  else if (y <= four) // 0.46875 < |X| < 4
   {
     xnum = c[8] * y;
     xden = y;
@@ -1591,8 +1591,8 @@ double rvn_erfcx(double x)
         xden = (xden + d[i]) * y;
     }
     result = (xnum + c[7]) / (xden + d[7]);
-  } 
-  else   // |X| > 4.0 
+  }
+  else   // |X| > 4.0
   {
     result = zero;
     if      ((y >= xbig) && (y >= xmax )){}
@@ -1612,11 +1612,11 @@ double rvn_erfcx(double x)
     }
   }
 
-  // Fix up for negative argument, erf, etc. 
+  // Fix up for negative argument, erf, etc.
   if (x < zero) {
     if (x < xneg) {
       return xinf;
-    } 
+    }
     else {
       double d__1 = x * 16.0;
       ysq = d_int(d__1) / 16.0;
@@ -1626,7 +1626,7 @@ double rvn_erfcx(double x)
     }
   }
   return result;
-} 
+}
 //////////////////////////////////////////////////////////////////
 /// local versions of math functiosn trunc, floor, round, and isnan
 /// - not available for standard BORLAND C compiler
@@ -1924,7 +1924,7 @@ double G_integral2(const double &t, const double &L, const double& v, const doub
 /// \param &L reach length [m]
 /// \param &v celerity [m/d]
 /// \param &D diffusivity [m2/d]
-/// 
+///
 /// \return Returns Unit hydrograph - sums to one
 //
 double DiffusiveWaveUH(const int n, const double& L, const double& v, const double& D, const double& dt)

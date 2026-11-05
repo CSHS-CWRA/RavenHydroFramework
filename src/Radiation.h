@@ -86,15 +86,15 @@ public:/*------------------------------------------------------*/
                                            const double &dew_pt,		//dew point temp, [C]
                                            double &ET_radia,			//ET radiation [MJ/m2/d]
                                            double &ET_radia_flat,       //ET radiation without slope correction    [MJ/m2/d]
-                                           double &SW_direct,           //direct component of clear sky radiation  [MJ/m2/d] (with slope/aspect) 
-                                           double &SW_diffuse,          //diffuse component of clear sky radiation [MJ/m2/d] 
+                                           double &SW_direct,           //direct component of clear sky radiation  [MJ/m2/d] (with slope/aspect)
+                                           double &SW_diffuse,          //diffuse component of clear sky radiation [MJ/m2/d]
                                            const bool   avg_daily);	    //true if average daily is to be computed
   static double EstimateShortwaveRadiation(CModel* pModel,
                                            const force_struct *F,
                                            const CHydroUnit *pHRU,
                                            const time_struct  &tt,
                                                  double       &ET_rad,
-                                                 double       &ET_rad_flat, 
+                                                 double       &ET_rad_flat,
                                                  double       &SW_rad_diff);
 
   static double SWCloudCoverCorrection    (CModel* pModel,

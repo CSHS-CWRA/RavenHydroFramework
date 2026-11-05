@@ -189,8 +189,8 @@ void   CmvFrozenGround::GetRatesOfChange( const double      *state_vars,
   }
   //-----------------------------------------------------------------
   else if(_type==FREEZE_RANKINEN)
-  { 
-    //based upon Rankinen et al 2004, A simple model for predicting soil temperature in snow-covered and 
+  {
+    //based upon Rankinen et al 2004, A simple model for predicting soil temperature in snow-covered and
     //seasonally frozen soil: model description and testing, HESS https://doi.org/10.5194/hess-8-706-2004
     int iSlTemp=pModel->GetStateVarIndex(SOIL_TEMP,0);
     int iSoil  =pModel->GetStateVarIndex(SOIL,0);
@@ -250,5 +250,5 @@ void   CmvFrozenGround::ApplyConstraints( const double     *state_vars,
                                            const time_struct &tt,
                                            double     *rates) const
 {
-  //no constraints 
+  //no constraints
 }

@@ -351,7 +351,7 @@ string GetForcingTypeUnits(forcing_type ftype)
   case F_SW_RADIA_UNC:    {units="MJ/m2/d"; break;}
   case F_SW_RADIA_SUBCAN: {units="MJ/m2/d"; break;}
   case F_SW_SUBCAN_NET:   {units="MJ/m2/d"; break;}
-  case F_SW_RADIA_NET:    {units="MJ/m2/d"; break;} 
+  case F_SW_RADIA_NET:    {units="MJ/m2/d"; break;}
   case F_SW_RADIA_DIFF:   {units="MJ/m2/d"; break;}
   case F_SW_RADIA_DIRECT: {units="MJ/m2/d"; break;}
   case F_LW_INCOMING:     {units="MJ/m2/d"; break;}
